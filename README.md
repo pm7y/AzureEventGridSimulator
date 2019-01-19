@@ -67,5 +67,6 @@ Detects when an event with a give Id has already been processed.
 
 - Subscriber retries
 - Dead lettering
+- Subscription filtering
 - File logging
 - Extensibility points
