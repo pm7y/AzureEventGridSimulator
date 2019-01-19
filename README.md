@@ -1,7 +1,7 @@
 
 # Azure Event Grid Simulator
 
-A simple Azure Event Grid simulator that provides topic endpoints that mimic the Event Grid functionality. This is useful for local testing purposes.
+A simple Azure Event Grid simulator that provides topic endpoints that mimic the Event Grid functionality. This is useful for local integration testing purposes.
 
 ## Features
 
@@ -53,7 +53,7 @@ You can configure 0 to _n_ subscribers to each topic. When a request is received
 ## Key Validation
 
 If the incoming request contains either an `aeg-sas-token` or an `aeg-sas-key` header _and_ there is a `Key` configured for the topic then the simulator will validate the key and reject the request if the value in the header is not valid.
-If you want to skip with validation then just
+If you want to skip the validation then set the `Key` to _null_ in `appsettings.json`.
 
 ## Size Validation
 
@@ -67,4 +67,5 @@ Detects when an event with a give Id has already been processed.
 
 - Subscriber retries
 - Dead lettering
-- 
+- File logging
+- Extensibility points
