@@ -1,0 +1,63 @@
+{
+	"info": {
+		"_postman_id": "5931e5ae-86d5-4bd9-8f70-b1dff37cde9c",
+		"name": "Azure Event Grid Simulator",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Typical Example",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "3eb2380a-2dfe-4f62-a3e9-93e265b23250",
+						"exec": [
+							"var uuid = require('uuid');",
+							"",
+							"pm.globals.set(\"eventId\", uuid.v4());",
+							"pm.globals.set(\"eventTime\", (new Date()).toISOString());"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "aeg-sas-key",
+						"type": "text",
+						"value": "TheLocal+DevelopmentKey="
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n  \"id\": \"{{eventId}}\",\n  \"subject\": \"/kicbox/cso/someAction\",\n  \"data\": {\n  \t\"MyProperty\": \"This is my awesome data!\"\n  },\n  \"eventType\": \"Example.DataType\",\n  \"eventTime\": \"{{eventTime}}\",\n  \"dataVersion\": \"1\",\n}]"
+				},
+				"url": {
+					"raw": "https://127.0.0.1:60101/api/events",
+					"protocol": "https",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "60101",
+					"path": [
+						"api",
+						"events"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

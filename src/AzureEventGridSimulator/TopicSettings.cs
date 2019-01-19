@@ -15,6 +15,6 @@ namespace AzureEventGridSimulator
         public int HttpsPort { get; set; }
 
         [JsonProperty(Required = Required.Always)]
-        public ICollection<SubscriptionSettings> Subscriptions { get; set; }
+        public ICollection<SubscriptionSettings> Subscribers { get; set; }
     }
 }

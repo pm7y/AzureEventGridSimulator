@@ -16,8 +16,8 @@ You can add multiple topics. One https port per topic.
     {
       "name": "mytopic1",
       "httpsPort": 60101,
-      "Key": "TheLocal+DevelopmentKey=",
-      "subscriptions": [
+      "key": "TheLocal+DevelopmentKey=",
+      "subscribers": [
         {
           "name": "FunctionSubscription",
           "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb"

@@ -47,13 +47,13 @@ namespace AzureEventGridSimulator
             // Add the default internal subscriber endpoint
             foreach (var topic in settings.Topics)
             {
-                if (topic.Subscriptions == null || !topic.Subscriptions.Any())
+                if (topic.Subscribers == null || !topic.Subscribers.Any())
                 {
-                    topic.Subscriptions = new List<SubscriptionSettings>();
+                    topic.Subscribers = new List<SubscriptionSettings>();
                 }
 
                 var internalSubscriber = InternalSubscriber.New(topic.Name);
-                topic.Subscriptions.Add(new SubscriptionSettings { Name = internalSubscriber.Name, Endpoint = internalSubscriber.Prefix });
+                topic.Subscribers.Add(new SubscriptionSettings { Name = internalSubscriber.Name, Endpoint = internalSubscriber.Prefix });
             }
 
             return settings;
@@ -210,7 +210,7 @@ namespace AzureEventGridSimulator
                         eventGridEvent.MetadataVersion = "1";
                     }
 
-                    foreach (var subscription in topic.Subscriptions)
+                    foreach (var subscription in topic.Subscribers)
                     {
 #pragma warning disable 4014
                         SendToSubscriber(subscription, formattedJson);
