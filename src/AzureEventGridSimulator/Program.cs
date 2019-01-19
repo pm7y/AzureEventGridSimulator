@@ -210,6 +210,8 @@ namespace AzureEventGridSimulator
                         eventGridEvent.MetadataVersion = "1";
                     }
 
+                    formattedJson = JsonConvert.SerializeObject(events, Formatting.Indented);
+
                     foreach (var subscription in topic.Subscribers)
                     {
 #pragma warning disable 4014
