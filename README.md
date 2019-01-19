@@ -15,7 +15,7 @@ You can add multiple topics. One https port per topic.
   "topics": [
     {
       "name": "mytopic1",
-      "httpsPort": 6101,
+      "httpsPort": 60101,
       "Key": "TheLocal+DevelopmentKey=",
       "subscriptions": [
         {
@@ -42,7 +42,7 @@ $localhostCertificate = Get-ChildItem -path cert:\LocalMachine\Root | `
 
 $thumbprint = $localhostCertificate.thumbprint;
 
-&netsh.exe http add sslcert ipport=127.0.0.1:6101 certhash=$thumbprint appid="{9c959566-4d24-41f9-8ff5-b7236a886585}"
+&netsh.exe http add sslcert ipport=127.0.0.1:60101 certhash=$thumbprint appid="{9c959566-4d24-41f9-8ff5-b7236a886585}"
 
 ```
 
@@ -54,6 +54,14 @@ You can configure 0 to _n_ subscribers to each topic. When a request is received
 
 If the incoming request contains either an `aeg-sas-token` or an `aeg-sas-key` header _and_ there is a `Key` configured for the topic then the simulator will validate the key and reject the request if the value in the header is not valid.
 If you want to skip with validation then just
+
+## Size Validation
+
+Azure Eveny Grid limits the overall array of events. It must be less than 1Mb and each individual event message must be less than 64Kb.
+
+## Replay Validation
+
+Detects when an event with a give Id has already been processed.
 
 ## Future Feature Ideas
 

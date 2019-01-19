@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +16,7 @@ namespace AzureEventGridSimulator
     public class Program
     {
         private static bool _quitting;
+        private static readonly List<string> ReceivedEventIds = new List<string>();
 
         public static void Main(string[] args)
         {
@@ -42,6 +43,19 @@ namespace AzureEventGridSimulator
 
             var settings = new SimulatorSettings();
             configuration.Bind(settings);
+
+            // Add the default internal subscriber endpoint
+            foreach (var topic in settings.Topics)
+            {
+                if (topic.Subscriptions == null || !topic.Subscriptions.Any())
+                {
+                    topic.Subscriptions = new List<SubscriptionSettings>();
+                }
+
+                var internalSubscriber = InternalSubscriber.New(topic.Name);
+                topic.Subscriptions.Add(new SubscriptionSettings { Name = internalSubscriber.Name, Endpoint = internalSubscriber.Prefix });
+            }
+
             return settings;
         }
 
@@ -87,7 +101,7 @@ namespace AzureEventGridSimulator
                     return;
                 }
 
-                if (string.IsNullOrWhiteSpace(topic.Key))
+                if (!string.IsNullOrWhiteSpace(topic.Key))
                 {
                     if (request.Headers.AllKeys.Any(k =>
                                                         string.Equals(k, "aeg-sas-key")))
@@ -98,9 +112,11 @@ namespace AzureEventGridSimulator
                             response.StatusCode = (int)HttpStatusCode.Unauthorized;
                             return;
                         }
+
+                        Log.Debug($"'aeg-sas-key' header is valid");
                     }
                     else if (request.Headers.AllKeys.Any(k =>
-                                                        string.Equals(k, "aeg-sas-token")))
+                                                             string.Equals(k, "aeg-sas-token")))
                     {
                         var token = request.Headers["aeg-sas-token"];
                         if (!TokenIsValid(token, topic.Key))
@@ -109,6 +125,8 @@ namespace AzureEventGridSimulator
                             response.StatusCode = (int)HttpStatusCode.Unauthorized;
                             return;
                         }
+
+                        Log.Debug($"'aeg-sas-token' header is valid");
                     }
                     else
                     {
@@ -126,6 +144,23 @@ namespace AzureEventGridSimulator
                     var events = JsonConvert.DeserializeObject<EditableEventGridEvent[]>(unformattedJson);
                     var formattedJson = JsonConvert.SerializeObject(events, Formatting.Indented);
 
+                    Log.Info(formattedJson);
+
+                    // Check the event hasn't already been seen
+                    foreach (var evt in events)
+                    {
+                        var eventId = evt.Id;
+
+                        if (ReceivedEventIds.Contains(eventId))
+                        {
+                            response.StatusCode = (int)HttpStatusCode.BadRequest;
+                            return;
+                        }
+
+                        ReceivedEventIds.Add(eventId);
+                    }
+
+                    // Check the overall message isn't > 1Mb
                     if (formattedJson.Length > 1 * 1024 * 1024)
                     {
                         Log.Error("The incoming message is greater the 1Mb.");
@@ -133,6 +168,7 @@ namespace AzureEventGridSimulator
                         return;
                     }
 
+                    // Check that no event is > 64Kb
                     foreach (var evt in events)
                     {
                         var evtJson = JsonConvert.SerializeObject(evt, Formatting.Indented);
@@ -145,12 +181,31 @@ namespace AzureEventGridSimulator
                         }
                     }
 
-                    Log.Info(formattedJson);
+                    // Check that each event is valid
+                    foreach (var evt in events)
+                    {
+                        evt.Validate();
+                    }
 
                     var topicPath = $"/azure/event/grid/simulator/{Environment.MachineName}/{topic.Name}";
 
+                    // Check that the topic is null or that it's valid
                     foreach (var eventGridEvent in events)
                     {
+                        if (!string.IsNullOrWhiteSpace(eventGridEvent.Topic))
+                        {
+                            Log.Warn("'Topic' property was expected to be null or empty.");
+
+                            var topicProperty = eventGridEvent.Topic.TrimEnd('/');
+
+                            if (!string.Equals(topicProperty, topicPath, StringComparison.OrdinalIgnoreCase))
+                            {
+                                Log.Error($"Topic property should be null or {topicPath}");
+                                response.StatusCode = (int)HttpStatusCode.BadRequest;
+                                return;
+                            }
+                        }
+
                         eventGridEvent.Topic = topicPath;
                         eventGridEvent.MetadataVersion = "1";
                     }
@@ -168,15 +223,6 @@ namespace AzureEventGridSimulator
                     response.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
                 }
-
-
-                /*
-                    Success	200 OK
-                    Event data has incorrect format	400 Bad Request
-                    Invalid access key	401 Unauthorized
-                    Incorrect endpoint	404 Not Found
-                    Array or event exceeds size limits	413 Payload Too Large
-                 */
 
                 response.StatusCode = (int)HttpStatusCode.OK;
             }
@@ -203,13 +249,12 @@ namespace AzureEventGridSimulator
                     httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
                     httpClient.Timeout = TimeSpan.FromSeconds(5);
 
-#pragma warning disable 4014
                     await httpClient.PostAsync(subscription.Endpoint, content)
                                     .ContinueWith(t =>
                                     {
                                         if (t.IsCompletedSuccessfully)
                                         {
-                                            Log.Info(
+                                            Log.Debug(
                                                      $"Sent to subscriber '{subscription.Name}' successfully");
                                         }
                                         else
@@ -218,7 +263,6 @@ namespace AzureEventGridSimulator
                                                       $"Failed to send to subscriber '{subscription.Name}', {t.Status.ToString()}, {t.Exception?.GetBaseException()?.Message}");
                                         }
                                     });
-#pragma warning restore 4014
                 }
             }
             catch (Exception ex)
@@ -254,13 +298,13 @@ namespace AzureEventGridSimulator
                 var signature = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(unsignedSas)));
                 var encodedComputedSignature = HttpUtility.UrlEncode(signature);
 
-                if (encodedSignature != signature)
+                if (encodedSignature == signature)
                 {
-                    Log.Warn($"{encodedComputedSignature} != {signature}");
-                    return false;
+                    return true;
                 }
 
-                return true;
+                Log.Warn($"{encodedComputedSignature} != {signature}");
+                return false;
             }
         }
     }
