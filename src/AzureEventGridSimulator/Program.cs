@@ -1,14 +1,15 @@
-﻿using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator
 {
@@ -24,7 +25,10 @@ namespace AzureEventGridSimulator
 
             Log.Debug($"Found {settings.Topics.Count} topics in appsettings.json.");
 
-            foreach (var topic in settings.Topics) CreateListener(topic);
+            foreach (var topic in settings.Topics)
+            {
+                CreateListener(topic);
+            }
 
             Console.ReadKey();
             _quitting = true;
@@ -33,8 +37,8 @@ namespace AzureEventGridSimulator
         private static SimulatorSettings GetSimulatorSettings()
         {
             var configuration = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json")
-                .Build();
+                                .AddJsonFile("appsettings.json")
+                                .Build();
 
             var settings = new SimulatorSettings();
             configuration.Bind(settings);
@@ -69,8 +73,8 @@ namespace AzureEventGridSimulator
         }
 
         private static async Task HandleRequestAsync(HttpListenerRequest request,
-            HttpListenerResponse response,
-            TopicSettings topic)
+                                                     HttpListenerResponse response,
+                                                     TopicSettings topic)
         {
             try
             {
@@ -79,44 +83,67 @@ namespace AzureEventGridSimulator
                 if (request.Url.LocalPath.ToLowerInvariant().TrimEnd('/') != "/api/events")
                 {
                     Log.Error("Invalid endpoint, should be in the form https://127.0.0.1:<port>/api/events");
-                    response.StatusCode = (int) HttpStatusCode.BadRequest;
+                    response.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
                 }
 
-                if (!string.IsNullOrWhiteSpace(topic.Key))
+                if (string.IsNullOrWhiteSpace(topic.Key))
                 {
                     if (request.Headers.AllKeys.Any(k =>
-                        string.Equals(k, "aeg-sas-key")))
-                        if (string.Equals(request.Headers["aeg-sas-key"], topic.Key))
+                                                        string.Equals(k, "aeg-sas-key")))
+                    {
+                        if (!string.Equals(request.Headers["aeg-sas-key"], topic.Key))
                         {
                             Log.Error("'aeg-sas-key' value did not match configured value!");
-                            response.StatusCode = (int) HttpStatusCode.Unauthorized;
+                            response.StatusCode = (int)HttpStatusCode.Unauthorized;
                             return;
                         }
-
-                    if (request.Headers.AllKeys.Any(k =>
-                        string.Equals(k, "aeg-sas-token")))
+                    }
+                    else if (request.Headers.AllKeys.Any(k =>
+                                                        string.Equals(k, "aeg-sas-token")))
                     {
                         var token = request.Headers["aeg-sas-token"];
                         if (!TokenIsValid(token, topic.Key))
                         {
                             Log.Error("'aeg-sas-key' value did not match configured value!");
-                            response.StatusCode = (int) HttpStatusCode.Unauthorized;
+                            response.StatusCode = (int)HttpStatusCode.Unauthorized;
                             return;
                         }
+                    }
+                    else
+                    {
+                        Log.Warn($"Request received without key header for topic '{topic.Name}'.");
                     }
                 }
                 else
                 {
-                    Log.Warn($"Request received without key header for topic '{topic.Name}'.");
+                    Log.Warn("There is no configured topic key so the request key/token header will not be validated.");
                 }
-
 
                 try
                 {
                     var unformattedJson = await GetJsonFromRequestBody(request);
                     var events = JsonConvert.DeserializeObject<EditableEventGridEvent[]>(unformattedJson);
                     var formattedJson = JsonConvert.SerializeObject(events, Formatting.Indented);
+
+                    if (formattedJson.Length > 1 * 1024 * 1024)
+                    {
+                        Log.Error("The incoming message is greater the 1Mb.");
+                        response.StatusCode = (int)HttpStatusCode.RequestEntityTooLarge;
+                        return;
+                    }
+
+                    foreach (var evt in events)
+                    {
+                        var evtJson = JsonConvert.SerializeObject(evt, Formatting.Indented);
+
+                        if (evtJson.Length > 64 * 1024)
+                        {
+                            Log.Error($"Event with Id '{evt.Id}' is greater than 64Kb.");
+                            response.StatusCode = (int)HttpStatusCode.RequestEntityTooLarge;
+                            return;
+                        }
+                    }
 
                     Log.Info(formattedJson);
 
@@ -138,7 +165,7 @@ namespace AzureEventGridSimulator
                 catch (JsonSerializationException ex)
                 {
                     Log.Error(ex);
-                    response.StatusCode = (int) HttpStatusCode.BadRequest;
+                    response.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
                 }
 
@@ -151,13 +178,13 @@ namespace AzureEventGridSimulator
                     Array or event exceeds size limits	413 Payload Too Large
                  */
 
-                response.StatusCode = 200; //OK
+                response.StatusCode = (int)HttpStatusCode.OK;
             }
             catch (Exception ex)
             {
                 Log.Error(ex);
 
-                response.StatusCode = 500; // error
+                response.StatusCode = (int)HttpStatusCode.InternalServerError;
             }
             finally
             {
@@ -178,22 +205,26 @@ namespace AzureEventGridSimulator
 
 #pragma warning disable 4014
                     await httpClient.PostAsync(subscription.Endpoint, content)
-                        .ContinueWith(t =>
-                        {
-                            if (t.IsCompletedSuccessfully)
-                                Log.Info(
-                                    $"Sent to subscriber '{subscription.Name}' successfully");
-                            else
-                                Log.Error(
-                                    $"Failed to send to subscriber '{subscription.Name}', {t.Status.ToString()}, {t.Exception?.GetBaseException()?.Message}");
-                        });
+                                    .ContinueWith(t =>
+                                    {
+                                        if (t.IsCompletedSuccessfully)
+                                        {
+                                            Log.Info(
+                                                     $"Sent to subscriber '{subscription.Name}' successfully");
+                                        }
+                                        else
+                                        {
+                                            Log.Error(
+                                                      $"Failed to send to subscriber '{subscription.Name}', {t.Status.ToString()}, {t.Exception?.GetBaseException()?.Message}");
+                                        }
+                                    });
 #pragma warning restore 4014
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(
-                    $"Failed to send to subscriber '{subscription.Name}', {ex.Message}");
+                          $"Failed to send to subscriber '{subscription.Name}', {ex.Message}");
                 throw;
             }
         }
