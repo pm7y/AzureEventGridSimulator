@@ -2,9 +2,10 @@
 Needs to be run with elevated privelages.
 
 Finds a localhost certificate (i.e. the developer cert) and binds this to a port or ports.
-We need to do this so that the AzureEventGridEmulator.exe can listen via https (which is the only scheme the event grid client will send to).
+We need to do this so that the AzureEventGridEmulator can listen via https (which is the only scheme Azure Event Grid supports).
 
-Have a look in AzureEventGridSimulator\appsettings.json - you will need a 'netsh.exe ...' line below for each topic port defined in appsettings.json.
+A port->cert mapping (i.e. netsh statement below) is required for each topic configured in appsettings.json.
+
 #>
 clear;
 
