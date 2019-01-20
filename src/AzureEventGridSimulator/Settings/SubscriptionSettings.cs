@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator
+namespace AzureEventGridSimulator.Settings
 {
     public class SubscriptionSettings
     {

@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using AzureEventGridSimulator.Settings;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
@@ -16,7 +17,7 @@ namespace AzureEventGridSimulator
     public class Program
     {
         private static bool _quitting;
-        private static readonly List<string> ReceivedEventIds = new List<string>();
+        private static readonly List<string> _receivedEventIds = new List<string>();
 
         public static void Main(string[] args)
         {
@@ -151,13 +152,13 @@ namespace AzureEventGridSimulator
                     {
                         var eventId = evt.Id;
 
-                        if (ReceivedEventIds.Contains(eventId))
+                        if (_receivedEventIds.Contains(eventId))
                         {
                             response.StatusCode = (int)HttpStatusCode.BadRequest;
                             return;
                         }
 
-                        ReceivedEventIds.Add(eventId);
+                        _receivedEventIds.Add(eventId);
                     }
 
                     // Check the overall message isn't > 1Mb

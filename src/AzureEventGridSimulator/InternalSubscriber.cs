@@ -35,9 +35,9 @@ namespace AzureEventGridSimulator
             _listener.Prefixes.Add(Prefix);
             _listener.Start();
 
-            // Log.Debug($"{nameof(InternalSubscriber)} for topic '{_topicName}' listening @ {Prefix}");
-
+#pragma warning disable 4014
             Process();
+#pragma warning restore 4014
         }
 
         private async Task Process()
@@ -45,7 +45,6 @@ namespace AzureEventGridSimulator
             while (true)
             {
                 var context = await _listener.GetContextAsync();
-                var request = context.Request;
                 var response = context.Response;
 
                 response.StatusCode = (int)HttpStatusCode.OK;
