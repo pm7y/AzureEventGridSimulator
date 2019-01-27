@@ -35,9 +35,10 @@ namespace AzureEventGridSimulator
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             app.UseAeg();
+            app.UseAegHeaderValidation();
+            app.UseAegEventValidation();
             app.UseAegTopicValidation();
-            app.UseAegSasHeaderValidation();
-            app.UseAegMessageValidation();
+            app.UseAegSizeValidation();
 
             app.UseMvc();
         }

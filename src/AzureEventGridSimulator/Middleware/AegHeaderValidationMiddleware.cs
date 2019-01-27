@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Http;
 
 namespace AzureEventGridSimulator.Middleware
 {
-    public class AegSasHeaderValidationMiddleware
+    public class AegHeaderValidationMiddleware
     {
         private readonly RequestDelegate _next;
 
-        public AegSasHeaderValidationMiddleware(RequestDelegate next)
+        public AegHeaderValidationMiddleware(RequestDelegate next)
         {
             _next = next;
         }

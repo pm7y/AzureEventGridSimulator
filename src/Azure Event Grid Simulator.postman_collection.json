@@ -39,10 +39,10 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "[{\n  \"id\": \"{{eventId}}\",\n  \"subject\": \"/kicbox/cso/someAction\",\n  \"data\": {\n  \t\"MyProperty\": \"This is my awesome data!\"\n  },\n  \"eventType\": \"Example.DataType\",\n  \"eventTime\": \"{{eventTime}}\",\n  \"dataVersion\": \"1\",\n}]"
+					"raw": "[{\n  \"id\": \"{{eventId}}\",\n  \"subject\": \"/example/subject\",\n  \"data\": {\n  \t\"MyProperty\": \"This is my awesome data!\"\n  },\n  \"eventType\": \"Example.DataType\",\n  \"eventTime\": \"{{eventTime}}\",\n  \"dataVersion\": \"1\",\n}]"
 				},
 				"url": {
-					"raw": "https://127.0.0.1:60101/api/events",
+					"raw": "https://127.0.0.1:60101/api/events?api-version=2018-01-01",
 					"protocol": "https",
 					"host": [
 						"127",
@@ -54,6 +54,12 @@
 					"path": [
 						"api",
 						"events"
+					],
+					"query": [
+						{
+							"key": "api-version",
+							"value": "2018-01-01"
+						}
 					]
 				}
 			},

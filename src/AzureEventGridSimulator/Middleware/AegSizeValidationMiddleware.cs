@@ -1,8 +1,5 @@
-﻿using System;
-using System.IO;
-using System.Net;
+﻿using System.Net;
 using System.Threading.Tasks;
-using AzureEventGridSimulator.Controllers;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -10,14 +7,14 @@ using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Middleware
 {
-    public class AegMessageValidationMiddleware
+    public class AegSizeValidationMiddleware
     {
         private const int MaximumAllowedOverallMessageSizeInBytes = 1536000;
         private const int MaximumAllowedEventGridEventSizeInBytes = 66560;
 
         private readonly RequestDelegate _next;
 
-        public AegMessageValidationMiddleware(RequestDelegate next)
+        public AegSizeValidationMiddleware(RequestDelegate next)
         {
             _next = next;
         }
@@ -51,21 +48,6 @@ namespace AzureEventGridSimulator.Middleware
                     logger.LogError("Event is larger than the allowed maximum.");
 
                     await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Event is larger than the allowed maximum.");
-                    return;
-                }
-            }
-
-            foreach (var evt in events)
-            {
-                try
-                {
-                    evt.Validate();
-                }
-                catch (InvalidOperationException ex)
-                {
-                    logger.LogError(ex, "Event was not valid.");
-
-                    await context.Response.ErrorResponse(HttpStatusCode.BadRequest, ex.Message);
                     return;
                 }
             }
