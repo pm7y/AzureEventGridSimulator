@@ -32,7 +32,7 @@ namespace AzureEventGridSimulator.Middleware
             var requestBody = Encoding.UTF8.GetString(buffer);
             context.Request.Body = body;
 
-            logger.LogDebug(requestBody);
+            logger.LogDebug("Message is {Bytes} in length.", requestBody.Length);
 
             var events = JsonConvert.DeserializeObject<EventGridEvent[]>(requestBody);
             var requestPort = context.Connection.LocalPort;

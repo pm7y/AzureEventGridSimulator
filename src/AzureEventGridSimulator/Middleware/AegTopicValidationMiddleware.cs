@@ -27,7 +27,6 @@ namespace AzureEventGridSimulator.Middleware
             var topicSettings = context.RetrieveTopicSettings();
             var expectedTopicPath = topicSettings.ExpectedTopicUri;
 
-            // Check that the topic is null or that it's valid
             foreach (var eventGridEvent in events)
             {
                 if (!string.IsNullOrEmpty(eventGridEvent.Topic) && string.IsNullOrWhiteSpace(expectedTopicPath))
@@ -52,19 +51,10 @@ namespace AzureEventGridSimulator.Middleware
                 eventGridEvent.MetadataVersion = "1";
             }
 
+            context.SaveEvents(events);
+            context.SaveRequestBodyJson(JsonConvert.SerializeObject(events));
+
             await _next(context);
-        }
-    }
-
-    public static class HttpResponseExtensions
-    {
-        public static async Task ErrorResponse(this HttpResponse response, HttpStatusCode statusCode, string errorMessage)
-        {
-            var error = new ErrorMessage(HttpStatusCode.BadRequest, errorMessage);
-            await response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
-
-            response.Headers.Add("Content-type", "application/json");
-            response.StatusCode = (int)HttpStatusCode.BadRequest;
         }
     }
 }

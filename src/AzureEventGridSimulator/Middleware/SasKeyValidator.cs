@@ -71,7 +71,8 @@ namespace AzureEventGridSimulator.Middleware
                     return true;
                 }
 
-                _logger.LogWarning($"{encodedComputedSignature} != {signature}");
+                _logger.LogWarning("{ExpectedSignature} != {MessageSignature}", encodedComputedSignature, signature);
+
                 return false;
             }
         }

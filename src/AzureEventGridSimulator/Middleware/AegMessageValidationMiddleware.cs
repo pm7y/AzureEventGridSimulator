@@ -31,11 +31,7 @@ namespace AzureEventGridSimulator.Middleware
             {
                 logger.LogError("Payload is larger than the allowed maximum of 1Mb.");
 
-                var error = new ErrorMessage(HttpStatusCode.BadRequest, "Payload is larger than the allowed maximum of 1Mb.");
-                await context.Response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
-
-                context.Response.Headers.Add("Content-type", "application/json");
-                context.Response.StatusCode = (int)HttpStatusCode.RequestEntityTooLarge;
+                await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Payload is larger than the allowed maximum.");
                 return;
             }
 
@@ -50,11 +46,7 @@ namespace AzureEventGridSimulator.Middleware
                 {
                     logger.LogError("Event is larger than the allowed maximum of 64Kb.");
 
-                    var error = new ErrorMessage(HttpStatusCode.BadRequest, "Event is larger than the allowed maximum of 64Kb.");
-                    await context.Response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
-
-                    context.Response.Headers.Add("Content-type", "application/json");
-                    context.Response.StatusCode = (int)HttpStatusCode.RequestEntityTooLarge;
+                    await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Event is larger than the allowed maximum.");
                     return;
                 }
             }
@@ -69,11 +61,7 @@ namespace AzureEventGridSimulator.Middleware
                 {
                     logger.LogError(ex, "Event was not valid.");
 
-                    var error = new ErrorMessage(HttpStatusCode.BadRequest, ex.Message);
-                    await context.Response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
-
-                    context.Response.Headers.Add("Content-type", "application/json");
-                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    await context.Response.ErrorResponse(HttpStatusCode.BadRequest, ex.Message);
                     return;
                 }
             }

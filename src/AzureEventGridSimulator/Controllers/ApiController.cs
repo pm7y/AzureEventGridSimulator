@@ -66,9 +66,8 @@ namespace AzureEventGridSimulator.Controllers
                                             }
                                             else
                                             {
-                                                _logger.LogError(t.Exception?.GetBaseException(),
-                                                              "Failed to send event {EventId} to subscriber '{SubscriberName}', {TaskStatus}.", evt.Id, subscription.Name,
-                                                              t.Status.ToString());
+                                                _logger.LogError("Failed to send event {EventId} to subscriber '{SubscriberName}', {TaskStatus}: {ErrorMessage}.", evt.Id, subscription.Name,
+                                                              t.Status.ToString(), t.Exception?.GetBaseException().Message);
                                             }
                                         });
                     }

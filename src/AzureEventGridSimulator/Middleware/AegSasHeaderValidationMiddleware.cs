@@ -23,8 +23,7 @@ namespace AzureEventGridSimulator.Middleware
             if (!string.IsNullOrWhiteSpace(topic.Key) &&
                 !aegSasHeaderValidator.IsValid(context.Request.Headers, topic.Key))
             {
-                context.Response.Headers.Add("Content-type", "application/json");
-                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                await context.Response.ErrorResponse(HttpStatusCode.Unauthorized, "The request did not contain a valid aeg-sas-key or aeg-sas-token.");
                 return;
             }
 

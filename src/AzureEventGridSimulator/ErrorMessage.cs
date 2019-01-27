@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator.Controllers
+namespace AzureEventGridSimulator
 {
     public class ErrorMessage
     {
