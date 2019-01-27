@@ -1,6 +1,8 @@
 
 # Azure Event Grid Simulator
 
+[![Build status](https://ci.appveyor.com/api/projects/status/7dhqhfg5lt73chsb?svg=true)](https://ci.appveyor.com/project/fallenidol/azureeventgridsimulator)
+
 A simple Azure Event Grid simulator that provides topic endpoints that mimic the Event Grid functionality. This is useful for local integration testing purposes.
 
 ## Features
