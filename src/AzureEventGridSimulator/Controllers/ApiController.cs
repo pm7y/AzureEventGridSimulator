@@ -75,7 +75,7 @@ namespace AzureEventGridSimulator.Controllers
             catch (Exception ex)
             {
                 _logger.Error(
-                          $"Failed to send to subscriber '{subscription.Name}', {ex.Message}");
+                              $"Failed to send to subscriber '{subscription.Name}', {ex.Message}");
             }
         }
     }

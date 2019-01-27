@@ -11,12 +11,10 @@ namespace AzureEventGridSimulator.Middleware
 {
     public class SasKeyValidator : IAegSasHeaderValidator
     {
-        private readonly IConfiguration _configuration;
         private readonly ILogger _logger;
 
-        public SasKeyValidator(IConfiguration configuration, ILogger logger)
+        public SasKeyValidator(ILogger logger)
         {
-            _configuration = configuration;
             _logger = logger;
         }
 
@@ -31,7 +29,7 @@ namespace AzureEventGridSimulator.Middleware
                     return false;
                 }
 
-                _logger.Debug($"'aeg-sas-key' header is valid");
+                _logger.Debug("'aeg-sas-key' header is valid");
                 return true;
             }
 
@@ -45,7 +43,7 @@ namespace AzureEventGridSimulator.Middleware
                     return false;
                 }
 
-                _logger.Debug($"'aeg-sas-token' header is valid");
+                _logger.Debug("'aeg-sas-token' header is valid");
                 return true;
             }
 

@@ -9,7 +9,9 @@ namespace AzureEventGridSimulator
     [DataContract]
     public class EventGridEvent
     {
-        /// <summary>Gets or sets an unique identifier for the event.</summary>
+        /// <summary>
+        /// Gets or sets an unique identifier for the event.
+        /// </summary>
         [DataMember(Name = "id")]
         public string Id { get; set; }
 
@@ -19,11 +21,15 @@ namespace AzureEventGridSimulator
         [DataMember(Name = "subject")]
         public string Subject { get; set; }
 
-        /// <summary>Gets or sets event data specific to the event type.</summary>
+        /// <summary>
+        /// Gets or sets event data specific to the event type.
+        /// </summary>
         [DataMember(Name = "data")]
         public object Data { get; set; }
 
-        /// <summary>Gets or sets the type of the event that occurred.</summary>
+        /// <summary>
+        /// Gets or sets the type of the event that occurred.
+        /// </summary>
         [DataMember(Name = "eventType")]
         public string EventType { get; set; }
 
@@ -33,22 +39,30 @@ namespace AzureEventGridSimulator
         [DataMember(Name = "eventTime")]
         public DateTime EventTime { get; set; }
 
-        /// <summary>Gets or sets the schema version of the data object.</summary>
+        /// <summary>
+        /// Gets or sets the schema version of the data object.
+        /// </summary>
         [DataMember(Name = "dataVersion")]
         public string DataVersion { get; set; }
 
-        /// <summary>Gets the schema version of the event metadata.</summary>
+        /// <summary>
+        /// Gets the schema version of the event metadata.
+        /// </summary>
         [DataMember(Name = "metadataVersion")]
         public string MetadataVersion { get; set; }
 
-        /// <summary>Gets or sets the resource path of the event source.</summary>
+        /// <summary>
+        /// Gets or sets the resource path of the event source.
+        /// </summary>
         [DataMember(Name = "topic")]
         public string Topic { get; set; }
 
         /// <summary>
         /// Validate the object.
         /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown if validation fails</exception>
+        /// <exception cref="InvalidOperationException" >
+        /// Thrown if validation fails
+        /// </exception>
         public virtual void Validate()
         {
             if (string.IsNullOrWhiteSpace(Id))

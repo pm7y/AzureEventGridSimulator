@@ -24,8 +24,8 @@ namespace AzureEventGridSimulator
 
             var settings = SettingsHelper.GetSimulatorSettings();
 
-            services.AddScoped<SimulatorSettings>(o => settings);
-            services.AddScoped<ILogger>(o => Log.Logger);
+            services.AddScoped(o => settings);
+            services.AddScoped(o => Log.Logger);
             services.AddScoped<IAegSasHeaderValidator, SasKeyValidator>();
         }
 

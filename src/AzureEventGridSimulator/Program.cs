@@ -13,8 +13,6 @@ namespace AzureEventGridSimulator
     {
         public static void Main(string[] args)
         {
-            var d = Environment.CurrentDirectory;
-
             Log.Logger = new LoggerConfiguration()
                          .MinimumLevel.Verbose()
                          .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -43,21 +41,20 @@ namespace AzureEventGridSimulator
             }
         }
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                   .UseKestrel(options =>
-                   {
-                       var settings = SettingsHelper.GetSimulatorSettings();
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args)
+        {
+            return WebHost.CreateDefaultBuilder(args)
+                          .UseKestrel(options =>
+                          {
+                              var settings = SettingsHelper.GetSimulatorSettings();
 
-                       foreach (var topics in settings.Topics)
-                       {
-                           options.Listen(IPAddress.Loopback, topics.HttpsPort,
-                                          listenOptions =>
-                                          {
-                                              listenOptions.UseHttps(StoreName.My, "localhost", true);
-                                          });
-                       }
-                   })
-                   .UseStartup<Startup>();
+                              foreach (var topics in settings.Topics)
+                              {
+                                  options.Listen(IPAddress.Loopback, topics.HttpsPort,
+                                                 listenOptions => { listenOptions.UseHttps(StoreName.My, "localhost", true); });
+                              }
+                          })
+                          .UseStartup<Startup>();
+        }
     }
 }
