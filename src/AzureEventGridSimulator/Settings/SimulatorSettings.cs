@@ -5,7 +5,7 @@ namespace AzureEventGridSimulator.Settings
 {
     public class SimulatorSettings
     {
-        [JsonProperty(Required = Required.Always)]
+        [JsonProperty(PropertyName = "topics", Required = Required.Always)]
         public ICollection<TopicSettings> Topics { get; set; }
     }
 }

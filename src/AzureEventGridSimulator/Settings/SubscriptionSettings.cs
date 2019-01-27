@@ -4,10 +4,10 @@ namespace AzureEventGridSimulator.Settings
 {
     public class SubscriptionSettings
     {
-        [JsonProperty(Required = Required.Always)]
+        [JsonProperty(PropertyName = "name", Required = Required.Always)]
         public string Name { get; set; }
 
-        [JsonProperty(Required = Required.Always)]
+        [JsonProperty(PropertyName = "endpoint", Required = Required.Always)]
         public string Endpoint { get; set; }
     }
 }

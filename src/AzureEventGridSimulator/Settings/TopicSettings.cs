@@ -5,16 +5,16 @@ namespace AzureEventGridSimulator.Settings
 {
     public class TopicSettings
     {
-        [JsonProperty(Required = Required.Always)]
+        [JsonProperty(PropertyName = "key", Required = Required.Always)]
         public string Key { get; set; }
 
-        [JsonProperty(Required = Required.Always)]
+        [JsonProperty(PropertyName = "name", Required = Required.Always)]
         public string Name { get; set; }
 
-        [JsonProperty(Required = Required.Always)]
+        [JsonProperty(PropertyName = "httpsPort", Required = Required.Always)]
         public int HttpsPort { get; set; }
 
-        [JsonProperty(Required = Required.Always)]
+        [JsonProperty(PropertyName = "subscribers", Required = Required.Always)]
         public ICollection<SubscriptionSettings> Subscribers { get; set; }
     }
 }

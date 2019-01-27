@@ -31,20 +31,9 @@ You can add multiple topics. One https port per topic.
 ## HTTPs
 
 Azure Event Grid only accepts connections over https and so the simulator needs to do this too so that it can accept connections from the Azure SDK.
-For each topic and https port that you configure you will need to map a certificate to the port.
-You can do that using the following powershell script. It first finds your local (IIS Express) development certificate (you can use another cert if you wish). It then uses `netsh` to bind the certicate to the desired port.
+The simulator uses the dotnet development certificate. You can ensure that this is installed by running the following command.
 
-```powershell
-$localhostCertificate = Get-ChildItem -path cert:\LocalMachine\Root | `
-                        where { $_.Subject -match "CN\=localhost" -and $_.notafter -ge (Get-Date)  } | `
-                        Sort-Object -Descending -Property notafter | `
-                        Select -First 1;
-
-$thumbprint = $localhostCertificate.thumbprint;
-
-&netsh.exe http add sslcert ipport=127.0.0.1:60101 certhash=$thumbprint appid="{9c959566-4d24-41f9-8ff5-b7236a886585}"
-
-```
+``` dotnet dev-certs https```
 
 ## Subscribers
 
@@ -59,14 +48,13 @@ If you want to skip the validation then set the `Key` to _null_ in `appsettings.
 
 Azure Eveny Grid limits the overall array of events. It must be less than 1Mb and each individual event message must be less than 64Kb.
 
-## Replay Validation
+## Message Validation
 
-Detects when an event with a give Id has already been processed.
+Ensures that each message passes some minimal validation test.
 
 ## Future Feature Ideas
 
 - Subscriber retries
 - Dead lettering
 - Subscription filtering
-- File logging
 - Extensibility points
