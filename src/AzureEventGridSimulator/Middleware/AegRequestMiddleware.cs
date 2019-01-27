@@ -12,8 +12,6 @@ namespace AzureEventGridSimulator.Middleware
 {
     public class AegRequestMiddleware
     {
-        private const int MaximumAllowedOverallMessageSizeInBytes = 1 * 1024 * 1024;
-
         private readonly RequestDelegate _next;
 
         public AegRequestMiddleware(RequestDelegate next)
@@ -23,7 +21,7 @@ namespace AzureEventGridSimulator.Middleware
 
         public async Task InvokeAsync(HttpContext context, SimulatorSettings simulatorSettings, ILogger logger)
         {
-            context.Request.EnableBuffering(MaximumAllowedOverallMessageSizeInBytes);
+            context.Request.EnableBuffering();
             var body = context.Request.Body;
 
             var buffer = new byte[Convert.ToInt32(context.Request.ContentLength)];
@@ -31,8 +29,6 @@ namespace AzureEventGridSimulator.Middleware
             context.Request.Body.Seek(0, SeekOrigin.Begin);
             var requestBody = Encoding.UTF8.GetString(buffer);
             context.Request.Body = body;
-
-            logger.LogDebug("Message is {Bytes} in length.", requestBody.Length);
 
             var events = JsonConvert.DeserializeObject<EventGridEvent[]>(requestBody);
             var requestPort = context.Connection.LocalPort;

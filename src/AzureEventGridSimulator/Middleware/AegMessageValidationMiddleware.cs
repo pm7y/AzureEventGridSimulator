@@ -12,7 +12,7 @@ namespace AzureEventGridSimulator.Middleware
 {
     public class AegMessageValidationMiddleware
     {
-        private const int MaximumAllowedOverallMessageSizeInBytes = 1 * 1024 * 1024;
+        private const int MaximumAllowedOverallMessageSizeInBytes = 1536000;
         private const int MaximumAllowedEventGridEventSizeInBytes = 66560;
 
         private readonly RequestDelegate _next;
@@ -27,9 +27,11 @@ namespace AzureEventGridSimulator.Middleware
             var requestBody = context.RetrieveRequestBodyJson();
             var requestBodyLength = requestBody.Length;
 
+            logger.LogDebug("Message is {Bytes} in length.", requestBody.Length);
+
             if (requestBodyLength > MaximumAllowedOverallMessageSizeInBytes)
             {
-                logger.LogError("Payload is larger than the allowed maximum of 1Mb.");
+                logger.LogError("Payload is larger than the allowed maximum.");
 
                 await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Payload is larger than the allowed maximum.");
                 return;
@@ -42,9 +44,11 @@ namespace AzureEventGridSimulator.Middleware
                 var eventJson = JsonConvert.SerializeObject(evt, Formatting.Indented);
                 var eventJsonLength = eventJson.Length;
 
+                logger.LogDebug("Event is {Bytes} in length.", eventJsonLength);
+
                 if (eventJsonLength > MaximumAllowedEventGridEventSizeInBytes)
                 {
-                    logger.LogError("Event is larger than the allowed maximum of 64Kb.");
+                    logger.LogError("Event is larger than the allowed maximum.");
 
                     await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Event is larger than the allowed maximum.");
                     return;

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using AzureEventGridSimulator.Controllers;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -12,8 +10,6 @@ namespace AzureEventGridSimulator.Middleware
 {
     public class AegTopicValidationMiddleware
     {
-        private const int MaximumAllowedOverallMessageSizeInBytes = 1 * 1024 * 1024;
-
         private readonly RequestDelegate _next;
 
         public AegTopicValidationMiddleware(RequestDelegate next)
@@ -31,16 +27,16 @@ namespace AzureEventGridSimulator.Middleware
             {
                 if (!string.IsNullOrEmpty(eventGridEvent.Topic) && string.IsNullOrWhiteSpace(expectedTopicPath))
                 {
-                    logger.LogError("'Topic' property was expected to be null or empty.");
+                    logger.LogError("'Topic' property was expected to be null/empty.");
 
                     await context.Response.ErrorResponse(HttpStatusCode.BadRequest, $"Property 'topic' was found to be set to '{eventGridEvent.Topic}', but was expected to either be null/empty.");
                     return;
                 }
-                else if (!string.IsNullOrWhiteSpace(expectedTopicPath))
+                else if (!string.IsNullOrEmpty(eventGridEvent.Topic) && !string.IsNullOrWhiteSpace(expectedTopicPath))
                 {
                     if (!string.Equals(eventGridEvent.Topic, expectedTopicPath, StringComparison.Ordinal))
                     {
-                        logger.LogError("'Topic' property should be '{ExpectedTopicPath}'.", expectedTopicPath);
+                        logger.LogError("'Topic' property was expected to be null/empty or '{ExpectedTopicPath}'.", expectedTopicPath);
 
                         await context.Response.ErrorResponse(HttpStatusCode.BadRequest, $"Property 'topic' was found to be set to '{eventGridEvent.Topic}', but was expected to either be null/empty or be set to '{expectedTopicPath}'.");
                         return;
