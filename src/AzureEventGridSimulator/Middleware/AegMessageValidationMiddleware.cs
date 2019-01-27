@@ -41,9 +41,10 @@ namespace AzureEventGridSimulator.Middleware
             {
                 logger.Error("Payload is larger than the allowed maximum of 1Mb.");
 
-                var error = ErrorMessage.New(HttpStatusCode.BadRequest, "Payload is larger than the allowed maximum of 1Mb.");
+                var error = new ErrorMessage(HttpStatusCode.BadRequest, "Payload is larger than the allowed maximum of 1Mb.");
                 await context.Response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
 
+                context.Response.Headers.Add("Content-type", "application/json");
                 context.Response.StatusCode = (int)HttpStatusCode.RequestEntityTooLarge;
                 return;
             }
@@ -59,9 +60,10 @@ namespace AzureEventGridSimulator.Middleware
                 {
                     logger.Error("Event is larger than the allowed maximum of 64Kb.");
 
-                    var error = ErrorMessage.New(HttpStatusCode.BadRequest, "Event is larger than the allowed maximum of 64Kb.");
+                    var error = new ErrorMessage(HttpStatusCode.BadRequest, "Event is larger than the allowed maximum of 64Kb.");
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
 
+                    context.Response.Headers.Add("Content-type", "application/json");
                     context.Response.StatusCode = (int)HttpStatusCode.RequestEntityTooLarge;
                     return;
                 }
@@ -74,9 +76,10 @@ namespace AzureEventGridSimulator.Middleware
                 {
                     logger.Error(ex, "Event was not valid.");
 
-                    var error = ErrorMessage.New(HttpStatusCode.BadRequest, ex.Message);
+                    var error = new ErrorMessage(HttpStatusCode.BadRequest, ex.Message);
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
 
+                    context.Response.Headers.Add("Content-type", "application/json");
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
                 }
@@ -99,9 +102,10 @@ namespace AzureEventGridSimulator.Middleware
                     {
                         logger.Error($"Topic property should be null or {expectedTopicPath}");
 
-                        var error = ErrorMessage.New(HttpStatusCode.BadRequest, $"Topic property should be null or '{expectedTopicPath}'");
+                        var error = new ErrorMessage(HttpStatusCode.BadRequest, $"Topic property should be null or '{expectedTopicPath}'");
                         await context.Response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
 
+                        context.Response.Headers.Add("Content-type", "application/json");
                         context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                         return;
                     }

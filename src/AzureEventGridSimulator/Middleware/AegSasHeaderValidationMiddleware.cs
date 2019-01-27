@@ -20,8 +20,10 @@ namespace AzureEventGridSimulator.Middleware
             var requestPort = context.Connection.LocalPort;
             var topic = simulatorSettings.Topics.First(t => t.HttpsPort == requestPort);
 
-            if (!aegSasHeaderValidator.IsValid(context.Request.Headers, topic.Key))
+            if (!string.IsNullOrWhiteSpace(topic.Key) &&
+                !aegSasHeaderValidator.IsValid(context.Request.Headers, topic.Key))
             {
+                context.Response.Headers.Add("Content-type", "application/json");
                 context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 return;
             }

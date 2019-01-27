@@ -4,30 +4,23 @@ namespace AzureEventGridSimulator.Controllers
 {
     public class ErrorMessage
     {
-        private ErrorMessage()
+        public ErrorMessage(HttpStatusCode statusCode, string errorMessage)
         {
+            Error = new ErrorDetails(statusCode, errorMessage);
         }
 
-        public ErrorDetails Error { get; private set; }
-
-        public static ErrorMessage New(HttpStatusCode statusCode, string errorMessage)
-        {
-            return new ErrorMessage { Error = ErrorDetails.New(statusCode, errorMessage) };
-        }
+        public ErrorDetails Error { get; }
 
         public class ErrorDetails
         {
-            private ErrorDetails()
+            internal ErrorDetails(HttpStatusCode statusCode, string errorMessage)
             {
+                Code = statusCode.ToString();
+                Message = errorMessage;
             }
 
-            public string Message { get; private set; }
-            public HttpStatusCode Code { get; private set; }
-
-            public static ErrorDetails New(HttpStatusCode statusCode, string errorMessage)
-            {
-                return new ErrorDetails { Code = statusCode, Message = errorMessage };
-            }
+            public string Message { get; }
+            public string Code { get; }
         }
     }
 }

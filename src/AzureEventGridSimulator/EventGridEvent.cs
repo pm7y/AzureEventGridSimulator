@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator
 {
@@ -37,7 +38,13 @@ namespace AzureEventGridSimulator
         /// Gets or sets the time (in UTC) the event was generated.
         /// </summary>
         [DataMember(Name = "eventTime")]
-        public DateTime EventTime { get; set; }
+        public string EventTime { get; set; }
+
+        [JsonIgnore]
+        public DateTime EventTimeParsed => DateTime.Parse(EventTime);
+
+        [JsonIgnore]
+        public bool EventTimeIsValid => DateTime.TryParse(EventTime, out _);
 
         /// <summary>
         /// Gets or sets the schema version of the data object.
@@ -67,37 +74,42 @@ namespace AzureEventGridSimulator
         {
             if (string.IsNullOrWhiteSpace(Id))
             {
-                throw new InvalidOperationException($"{nameof(Id)} must not be null or whitespace.");
+                throw new InvalidOperationException($"Required property '{nameof(Id)}' was not set.");
             }
 
             if (string.IsNullOrWhiteSpace(Subject))
             {
-                throw new InvalidOperationException($"{nameof(Subject)} must not be null or whitespace.");
+                throw new InvalidOperationException($"Required property '{nameof(Subject)}' was not set.");
             }
 
             if (string.IsNullOrWhiteSpace(EventType))
             {
-                throw new InvalidOperationException($"{nameof(EventType)} must not be null or whitespace.");
+                throw new InvalidOperationException($"Required property '{nameof(EventType)}' was not set.");
             }
 
-            if (EventTime.Kind != DateTimeKind.Utc)
+            if (string.IsNullOrWhiteSpace(EventTime))
             {
-                throw new InvalidOperationException($"{nameof(EventTime)} must be UTC.");
+                throw new InvalidOperationException($"Required property '{nameof(EventTime)}' was not set.");
             }
 
-            if (string.IsNullOrWhiteSpace(DataVersion))
+            if (!EventTimeIsValid)
             {
-                throw new InvalidOperationException($"{nameof(DataVersion)} must not be null or whitespace.");
+                throw new InvalidOperationException($"The event time property '{nameof(EventTime)}' was not a valid date/time.");
             }
 
-            if (MetadataVersion != null)
+            if (EventTimeParsed.Kind == DateTimeKind.Unspecified)
             {
-                throw new InvalidOperationException($"{nameof(MetadataVersion)} should be null.");
+                throw new InvalidOperationException($"Property '{nameof(EventTime)}' must be either Local or UTC.");
+            }
+
+            if (MetadataVersion != null && MetadataVersion != "1")
+            {
+                throw new InvalidOperationException($"Property '{nameof(MetadataVersion)}' was found to be set to '{MetadataVersion}', but was expected to either be null or be set to 1.");
             }
 
             if (Topic != null)
             {
-                throw new InvalidOperationException($"{nameof(Topic)} should be null.");
+                throw new InvalidOperationException($"Property '{nameof(Topic)}' was found to be set to '{Topic}', but was expected to either be null/empty.");
             }
         }
     }
