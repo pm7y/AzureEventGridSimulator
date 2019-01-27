@@ -1,5 +1,4 @@
 ﻿using AzureEventGridSimulator.Middleware;
-using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -25,10 +24,7 @@ namespace AzureEventGridSimulator
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-            var settings = SettingsHelper.GetSimulatorSettings();
-
             services.AddScoped<ILogger>(o => _loggerFactory.CreateLogger(nameof(AzureEventGridSimulator)));
-            services.AddScoped(o => settings);
             services.AddScoped<IAegSasHeaderValidator, SasKeyValidator>();
         }
 

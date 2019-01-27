@@ -1,5 +1,7 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using AzureEventGridSimulator.Middleware;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
@@ -11,40 +13,57 @@ namespace AzureEventGridSimulator
     {
         public static void Main(string[] args)
         {
-            var host = CreateWebHostBuilder(args)
-                       .ConfigureLogging((hostingContext, logging) =>
-                       {
-                           logging.AddConsole(options =>
-                           {
-                               options.IncludeScopes = true;
-                               options.DisableColors = false;
-                           });
-                           logging.AddDebug();
+            try
+            {
+                var host = WebHost.CreateDefaultBuilder()
+                                  .UseSimulatorSettings()
+                                  .UseStartup<Startup>()
+                                  .ConfigureLogging((hostingContext, logging) =>
+                                  {
+                                      logging.AddConsole(options =>
+                                      {
+                                          options.IncludeScopes = true;
+                                          options.DisableColors = false;
+                                      });
+                                      logging.AddDebug();
 
-                           logging.SetMinimumLevel(LogLevel.Debug);
+                                      logging.SetMinimumLevel(LogLevel.Debug);
 
-                           logging.AddFilter("System", LogLevel.Warning);
-                           logging.AddFilter("Microsoft", LogLevel.Warning);
-                       })
-                       .Build();
+                                      logging.AddFilter("System", LogLevel.Warning);
+                                      logging.AddFilter("Microsoft", LogLevel.Warning);
+                                  })
+                                  .UseKestrel(options =>
+                                  {
+                                      var simulatorSettings = (SimulatorSettings)options.ApplicationServices.GetService(typeof(SimulatorSettings));
 
-            host.Run();
-        }
+                                      foreach (var topics in simulatorSettings.Topics)
+                                      {
+                                          options.Listen(IPAddress.Loopback, topics.Port,
+                                                         listenOptions => { listenOptions.UseHttps(StoreName.My, "localhost", true); });
+                                      }
+                                  })
+                                  .Build();
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args)
-        {
-            return WebHost.CreateDefaultBuilder(args)
-                          .UseKestrel(options =>
-                          {
-                              var settings = SettingsHelper.GetSimulatorSettings();
+                var logger = (ILogger)host.Services.GetService(typeof(ILogger));
+                logger.LogInformation("Started");
 
-                              foreach (var topics in settings.Topics)
-                              {
-                                  options.Listen(IPAddress.Loopback, topics.Port,
-                                                 listenOptions => { listenOptions.UseHttps(StoreName.My, "localhost", true); });
-                              }
-                          })
-                          .UseStartup<Startup>();
+                try
+                {
+                    host.Run();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError("Failed to run the Azure Event Grid Simulator: {ErrorMessage}.", ex.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+
+            Console.WriteLine("");
+            Console.WriteLine("Any key to exit...");
+            Console.ReadKey();
         }
     }
 }
