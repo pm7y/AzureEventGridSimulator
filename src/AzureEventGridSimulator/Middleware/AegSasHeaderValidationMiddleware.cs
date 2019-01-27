@@ -18,7 +18,7 @@ namespace AzureEventGridSimulator.Middleware
         public async Task InvokeAsync(HttpContext context, SimulatorSettings simulatorSettings, IAegSasHeaderValidator aegSasHeaderValidator)
         {
             var requestPort = context.Connection.LocalPort;
-            var topic = simulatorSettings.Topics.First(t => t.HttpsPort == requestPort);
+            var topic = simulatorSettings.Topics.First(t => t.Port == requestPort);
 
             if (!string.IsNullOrWhiteSpace(topic.Key) &&
                 !aegSasHeaderValidator.IsValid(context.Request.Headers, topic.Key))

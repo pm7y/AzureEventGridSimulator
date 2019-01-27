@@ -11,8 +11,11 @@ namespace AzureEventGridSimulator.Settings
         [JsonProperty(PropertyName = "name", Required = Required.Always)]
         public string Name { get; set; }
 
-        [JsonProperty(PropertyName = "httpsPort", Required = Required.Always)]
-        public int HttpsPort { get; set; }
+        [JsonProperty(PropertyName = "port", Required = Required.Always)]
+        public int Port { get; set; }
+
+        [JsonProperty(PropertyName = "expectedTopicUri", Required = Required.Always)]
+        public string ExpectedTopicUri { get; set; }
 
         [JsonProperty(PropertyName = "subscribers", Required = Required.Always)]
         public ICollection<SubscriptionSettings> Subscribers { get; set; }

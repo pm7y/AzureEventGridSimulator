@@ -13,5 +13,15 @@ namespace AzureEventGridSimulator.Middleware
         {
             return builder.UseMiddleware<AegMessageValidationMiddleware>();
         }
+
+        public static IApplicationBuilder UseAegTopicValidation(this IApplicationBuilder builder)
+        {
+            return builder.UseMiddleware<AegTopicValidationMiddleware>();
+        }
+
+        public static IApplicationBuilder UseAeg(this IApplicationBuilder builder)
+        {
+            return builder.UseMiddleware<AegRequestMiddleware>();
+        }
     }
 }

@@ -4,8 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Middleware
 {
@@ -25,11 +24,11 @@ namespace AzureEventGridSimulator.Middleware
             {
                 if (!string.Equals(requestHeaders["aeg-sas-key"], topicKey))
                 {
-                    _logger.Error("'aeg-sas-key' value did not match configured value!");
+                    _logger.LogError("'aeg-sas-key' value did not match configured value!");
                     return false;
                 }
 
-                _logger.Debug("'aeg-sas-key' header is valid");
+                _logger.LogDebug("'aeg-sas-key' header is valid");
                 return true;
             }
 
@@ -39,11 +38,11 @@ namespace AzureEventGridSimulator.Middleware
                 var token = requestHeaders["aeg-sas-token"];
                 if (!TokenIsValid(token, topicKey))
                 {
-                    _logger.Error("'aeg-sas-key' value did not match configured value!");
+                    _logger.LogError("'aeg-sas-key' value did not match configured value!");
                     return false;
                 }
 
-                _logger.Debug("'aeg-sas-token' header is valid");
+                _logger.LogDebug("'aeg-sas-token' header is valid");
                 return true;
             }
 
@@ -72,7 +71,7 @@ namespace AzureEventGridSimulator.Middleware
                     return true;
                 }
 
-                _logger.Warning($"{encodedComputedSignature} != {signature}");
+                _logger.LogWarning($"{encodedComputedSignature} != {signature}");
                 return false;
             }
         }

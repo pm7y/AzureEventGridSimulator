@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Middleware;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Serilog;
 
 namespace AzureEventGridSimulator.Controllers
 {
@@ -16,66 +16,68 @@ namespace AzureEventGridSimulator.Controllers
     public class ApiController : ControllerBase
     {
         private readonly ILogger _logger;
-        private readonly SimulatorSettings _simulatorSettings;
 
-        public ApiController(ILogger logger,
-                             SimulatorSettings simulatorSettings)
+        public ApiController(ILogger logger)
         {
             _logger = logger;
-            _simulatorSettings = simulatorSettings;
         }
 
-        public TopicSettings TopicSettings => _simulatorSettings.Topics.First(t => t.HttpsPort == HttpContext.Connection.LocalPort);
+        public TopicSettings TopicSettings => HttpContext.RetrieveTopicSettings();
 
         [HttpPost]
         public IActionResult Post([FromBody] EventGridEvent[] events)
         {
-            _logger.Information("New request ({EventCount} event(s)) for '{TopicName}' @ {RequestUrl}", events.Length, TopicSettings.Name, Request.GetDisplayUrl());
-
-            var formattedJson = JsonConvert.SerializeObject(events);
+            _logger.LogInformation("New request ({EventCount} event(s)) for '{TopicName}' @ {RequestUrl}", events.Length, TopicSettings.Name, Request.GetDisplayUrl());
 
             foreach (var subscription in TopicSettings.Subscribers)
             {
 #pragma warning disable 4014
-                SendToSubscriber(subscription, formattedJson);
+                SendToSubscriber(subscription, events);
 #pragma warning restore 4014
             }
 
             return Ok();
         }
 
-        private async Task SendToSubscriber(SubscriptionSettings subscription, string json)
+        private async Task SendToSubscriber(SubscriptionSettings subscription, EventGridEvent[] events)
         {
             try
             {
-                _logger.Debug($"Sending to subscriber '{subscription.Name}'");
+                _logger.LogDebug("Sending to subscriber '{SubscriberName}'.", subscription.Name);
 
-                using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
-                using (var httpClient = new HttpClient())
+                // "Event Grid sends the events to subscribers in an array that has a single event. This behavior may change in the future."
+                // https://docs.microsoft.com/en-us/azure/event-grid/event-schema
+                foreach (var evt in events)
                 {
-                    httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
-                    httpClient.Timeout = TimeSpan.FromSeconds(5);
+                    var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
+                    using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+                    using (var httpClient = new HttpClient())
+                    {
+                        httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
+                        httpClient.Timeout = TimeSpan.FromSeconds(5);
 
-                    await httpClient.PostAsync(subscription.Endpoint, content)
-                                    .ContinueWith(t =>
-                                    {
-                                        if (t.IsCompletedSuccessfully)
+                        await httpClient.PostAsync(subscription.Endpoint, content)
+                                        .ContinueWith(t =>
                                         {
-                                            _logger.Debug(
-                                                          $"Sent to subscriber '{subscription.Name}' successfully");
-                                        }
-                                        else
-                                        {
-                                            _logger.Error(
-                                                          $"Failed to send to subscriber '{subscription.Name}', {t.Status.ToString()}, {t.Exception?.GetBaseException()?.Message}");
-                                        }
-                                    });
+                                            if (t.IsCompletedSuccessfully)
+                                            {
+                                                _logger.LogDebug(
+                                                              "Event {EventId} sent to subscriber '{SubscriberName}' successfully.", evt.Id, subscription.Name);
+                                            }
+                                            else
+                                            {
+                                                _logger.LogError(t.Exception?.GetBaseException(),
+                                                              "Failed to send event {EventId} to subscriber '{SubscriberName}', {TaskStatus}.", evt.Id, subscription.Name,
+                                                              t.Status.ToString());
+                                            }
+                                        });
+                    }
                 }
             }
             catch (Exception ex)
             {
-                _logger.Error(
-                              $"Failed to send to subscriber '{subscription.Name}', {ex.Message}");
+                _logger.LogError(ex,
+                              "Failed to send to subscriber '{SubscriberName}'.", subscription.Name);
             }
         }
     }

@@ -1,11 +1,9 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Serilog;
-using Serilog.Events;
+using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator
 {
@@ -13,32 +11,24 @@ namespace AzureEventGridSimulator
     {
         public static void Main(string[] args)
         {
-            Log.Logger = new LoggerConfiguration()
-                         .MinimumLevel.Verbose()
-                         .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                         .MinimumLevel.Override("System", LogEventLevel.Warning)
-                         .Enrich.FromLogContext()
-                         .WriteTo.Console()
-                         .CreateLogger();
+            var host = CreateWebHostBuilder(args)
+                       .ConfigureLogging((hostingContext, logging) =>
+                       {
+                           logging.AddConsole(options =>
+                           {
+                               options.IncludeScopes = true;
+                               options.DisableColors = false;
+                           });
+                           logging.AddDebug();
 
-            try
-            {
-                Log.Information("Starting Azure Event Grid Simulator...");
+                           logging.SetMinimumLevel(LogLevel.Debug);
 
-                var host = CreateWebHostBuilder(args)
-                           .UseSerilog()
-                           .Build();
+                           logging.AddFilter("System", LogLevel.Warning);
+                           logging.AddFilter("Microsoft", LogLevel.Warning);
+                       })
+                       .Build();
 
-                host.Run();
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, "Terminated unexpectedly.");
-            }
-            finally
-            {
-                Log.CloseAndFlush();
-            }
+            host.Run();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args)
@@ -50,7 +40,7 @@ namespace AzureEventGridSimulator
 
                               foreach (var topics in settings.Topics)
                               {
-                                  options.Listen(IPAddress.Loopback, topics.HttpsPort,
+                                  options.Listen(IPAddress.Loopback, topics.Port,
                                                  listenOptions => { listenOptions.UseHttps(StoreName.My, "localhost", true); });
                               }
                           })

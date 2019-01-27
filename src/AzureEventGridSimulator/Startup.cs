@@ -5,14 +5,17 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly ILoggerFactory _loggerFactory;
+
+        public Startup(IConfiguration configuration, ILoggerFactory loggerFactory)
         {
+            _loggerFactory = loggerFactory;
             Configuration = configuration;
         }
 
@@ -24,13 +27,15 @@ namespace AzureEventGridSimulator
 
             var settings = SettingsHelper.GetSimulatorSettings();
 
+            services.AddScoped<ILogger>(o => _loggerFactory.CreateLogger(nameof(AzureEventGridSimulator)));
             services.AddScoped(o => settings);
-            services.AddScoped(o => Log.Logger);
             services.AddScoped<IAegSasHeaderValidator, SasKeyValidator>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            app.UseAeg();
+            app.UseAegTopicValidation();
             app.UseAegSasHeaderValidation();
             app.UseAegMessageValidation();
 

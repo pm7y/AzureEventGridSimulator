@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Controllers
 {
@@ -9,6 +10,7 @@ namespace AzureEventGridSimulator.Controllers
             Error = new ErrorDetails(statusCode, errorMessage);
         }
 
+        [JsonProperty(PropertyName = "error")]
         public ErrorDetails Error { get; }
 
         public class ErrorDetails
@@ -19,8 +21,11 @@ namespace AzureEventGridSimulator.Controllers
                 Message = errorMessage;
             }
 
-            public string Message { get; }
+            [JsonProperty(PropertyName = "code", Order = 1)]
             public string Code { get; }
+
+            [JsonProperty(PropertyName = "message", Order = 2)]
+            public string Message { get; }
         }
     }
 }
