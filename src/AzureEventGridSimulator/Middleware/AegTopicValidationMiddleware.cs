@@ -43,7 +43,7 @@ namespace AzureEventGridSimulator.Middleware
                     }
                 }
 
-                eventGridEvent.Topic = expectedTopicPath;
+                eventGridEvent.Topic = expectedTopicPath ?? $"/azure/event/grid/simulator/{topicSettings.Name}";
                 eventGridEvent.MetadataVersion = "1";
             }
 
