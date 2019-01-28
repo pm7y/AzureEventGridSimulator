@@ -5,6 +5,15 @@
 
 A simple simulator which provides endpoints that mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics. This is useful for local integration testing purposes.
 
+## Why?
+
+There are a couple of similar projects out there. What I found though is that they don't adequately simulate an actual Event Grid Topic endpoint.
+
+Azure Event Grid only excepts connections over https and the Azure Event Grid SDK only sends requests over https. If you're posting to an Event Grid topic using custom code then maybe this isn't an issue. If you are using the SDK though then this is a problem.
+
+Typically an event grid topic endpoint url is like so: _https://<topic-name>.australiaeast.eventgrid.azure.net/api/events_. When you try and send to this using the Azure Event Grid SDK essentially what it does is post to https://topic-name.australiaeast.eventgrid.azure.net/. In other words it posts the payload to the host+port over https (https://host:port/) and drops the query uri.
+
+Any _simulator_ has to support this to be a truely usefuly solution and I couldn't find any that did and so I created my own.
 
 ## Configuration
 Topics and their subscribers are configured in the `appsettings.json` file.
@@ -94,7 +103,7 @@ Ensures that the properties of each event meets the minimum requirements.
 |DataVersion|_Optional_. e.g. `1`.|
 |Data|_Optional_. Any custom object.|
 
-## Future Development Ideas
+## Future Development
 
 - Subscription validation at start up. https://docs.microsoft.com/en-us/azure/event-grid/security-authentication
 - Event filtering. https://docs.microsoft.com/en-us/azure/event-grid/event-filtering
