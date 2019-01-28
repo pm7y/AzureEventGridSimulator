@@ -24,8 +24,8 @@ namespace AzureEventGridSimulator
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-            services.AddScoped<ILogger>(o => _loggerFactory.CreateLogger(nameof(AzureEventGridSimulator)));
-            services.AddScoped<IAegSasHeaderValidator, SasKeyValidator>();
+            services.AddScoped(o => _loggerFactory.CreateLogger(nameof(AzureEventGridSimulator)));
+            services.AddScoped<SasKeyValidator>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

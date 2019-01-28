@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Middleware
 {
-    public class SasKeyValidator : IAegSasHeaderValidator
+    public class SasKeyValidator
     {
         private readonly ILogger _logger;
 
@@ -55,6 +55,12 @@ namespace AzureEventGridSimulator.Middleware
             var decodedResource = HttpUtility.UrlDecode(query["r"], Encoding.UTF8);
             var decodedExpiration = HttpUtility.UrlDecode(query["e"], Encoding.UTF8);
             var encodedSignature = query["s"];
+
+            if (!DateTime.TryParse(decodedExpiration, out var tokenExpiryDateTime) ||
+                tokenExpiryDateTime.ToUniversalTime() <= DateTime.UtcNow)
+            {
+                return false;
+            }
 
             var encodedResource = HttpUtility.UrlEncode(decodedResource);
             var encodedExpiration = HttpUtility.UrlEncode(decodedExpiration);
