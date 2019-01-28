@@ -22,7 +22,8 @@ namespace AzureEventGridSimulator.Settings
                 throw new InvalidOperationException("Each topic must have a unique name.");
             }
 
-            if (Topics.SelectMany(o => o.Subscribers).GroupBy(o => o.Name).Count() != Topics.SelectMany(o => o.Subscribers).Count())
+            if (Topics.SelectMany(o => o.Subscribers ?? new List<SubscriptionSettings>()).GroupBy(o => o.Name).Count() !=
+                Topics.SelectMany(o => o.Subscribers ?? new List<SubscriptionSettings>()).Count())
             {
                 throw new InvalidOperationException("Each subscriber must have a unique name.");
             }
