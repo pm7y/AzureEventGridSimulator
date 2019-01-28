@@ -25,8 +25,10 @@ namespace AzureEventGridSimulator.Controllers
         public TopicSettings TopicSettings => HttpContext.RetrieveTopicSettings();
 
         [HttpPost]
-        public IActionResult Post([FromBody] EventGridEvent[] events)
+        public IActionResult Post([FromBody] EventGridEvent[] _)
         {
+            var events = HttpContext.RetrieveEvents();
+
             _logger.LogInformation("New request ({EventCount} event(s)) for '{TopicName}' @ {RequestUrl}", events.Length, TopicSettings.Name, Request.GetDisplayUrl());
 
             foreach (var subscription in TopicSettings.Subscribers)

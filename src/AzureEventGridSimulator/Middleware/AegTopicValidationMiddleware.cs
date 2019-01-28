@@ -48,7 +48,7 @@ namespace AzureEventGridSimulator.Middleware
             }
 
             context.SaveEvents(events);
-            context.SaveRequestBodyJson(JsonConvert.SerializeObject(events));
+            context.SaveRequestBodyJson(JsonConvert.SerializeObject(events, Formatting.Indented));
 
             await _next(context);
         }

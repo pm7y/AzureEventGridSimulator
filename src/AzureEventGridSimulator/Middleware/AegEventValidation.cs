@@ -1,12 +1,9 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using AzureEventGridSimulator.Controllers;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Middleware
 {
