@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Net;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Extensions;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -21,29 +21,10 @@ namespace AzureEventGridSimulator.Middleware
         {
             var events = context.RetrieveEvents();
             var topicSettings = context.RetrieveTopicSettings();
-            var expectedTopicPath = topicSettings.ExpectedTopicUri;
 
             foreach (var eventGridEvent in events)
             {
-                if (!string.IsNullOrEmpty(eventGridEvent.Topic) && string.IsNullOrWhiteSpace(expectedTopicPath))
-                {
-                    logger.LogError("'Topic' property was expected to be null/empty.");
-
-                    await context.Response.ErrorResponse(HttpStatusCode.BadRequest, $"Property 'topic' was found to be set to '{eventGridEvent.Topic}', but was expected to either be null/empty.");
-                    return;
-                }
-                else if (!string.IsNullOrEmpty(eventGridEvent.Topic) && !string.IsNullOrWhiteSpace(expectedTopicPath))
-                {
-                    if (!string.Equals(eventGridEvent.Topic, expectedTopicPath, StringComparison.Ordinal))
-                    {
-                        logger.LogError("'Topic' property was expected to be null/empty or '{ExpectedTopicPath}'.", expectedTopicPath);
-
-                        await context.Response.ErrorResponse(HttpStatusCode.BadRequest, $"Property 'topic' was found to be set to '{eventGridEvent.Topic}', but was expected to either be null/empty or be set to '{expectedTopicPath}'.");
-                        return;
-                    }
-                }
-
-                eventGridEvent.Topic = expectedTopicPath ?? $"/subscriptions/{Guid.Empty:D}/resourceGroups/eventGridSimulator/providers/Microsoft.EventGrid/topics/{topicSettings.Name}";
+                eventGridEvent.Topic = $"/subscriptions/{Guid.Empty:D}/resourceGroups/eventGridSimulator/providers/Microsoft.EventGrid/topics/{topicSettings.Name}";
                 eventGridEvent.MetadataVersion = "1";
             }
 

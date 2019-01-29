@@ -1,16 +1,17 @@
 ﻿using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Extensions;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore.Http;
 
 namespace AzureEventGridSimulator.Middleware
 {
-    public class AegHeaderValidationMiddleware
+    public class AegSasHeaderValidationMiddleware
     {
         private readonly RequestDelegate _next;
 
-        public AegHeaderValidationMiddleware(RequestDelegate next)
+        public AegSasHeaderValidationMiddleware(RequestDelegate next)
         {
             _next = next;
         }

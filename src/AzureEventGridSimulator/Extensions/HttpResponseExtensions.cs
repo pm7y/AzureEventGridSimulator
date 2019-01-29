@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator.Middleware
+namespace AzureEventGridSimulator.Extensions
 {
     public static class HttpResponseExtensions
     {

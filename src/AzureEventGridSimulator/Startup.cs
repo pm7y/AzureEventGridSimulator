@@ -1,4 +1,5 @@
-﻿using AzureEventGridSimulator.Middleware;
+﻿using AzureEventGridSimulator.Extensions;
+using AzureEventGridSimulator.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -31,7 +32,7 @@ namespace AzureEventGridSimulator
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             app.UseAeg();
-            app.UseAegHeaderValidation();
+            app.UseAegSasHeaderValidation();
             app.UseAegEventValidation();
             app.UseAegTopicValidation();
             app.UseAegSizeValidation();

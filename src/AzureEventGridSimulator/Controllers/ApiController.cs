@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Extensions;
 using AzureEventGridSimulator.Middleware;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -25,7 +26,7 @@ namespace AzureEventGridSimulator.Controllers
         public TopicSettings TopicSettings => HttpContext.RetrieveTopicSettings();
 
         [HttpPost]
-        public IActionResult Post([FromBody] EventGridEvent[] _)
+        public IActionResult Post()
         {
             var events = HttpContext.RetrieveEvents();
 

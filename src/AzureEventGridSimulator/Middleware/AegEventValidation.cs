@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Extensions;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;

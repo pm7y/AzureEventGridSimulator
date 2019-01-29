@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using AzureEventGridSimulator.Middleware;
+using AzureEventGridSimulator.Extensions;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;

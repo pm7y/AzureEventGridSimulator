@@ -1,12 +1,13 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using AzureEventGridSimulator.Middleware;
+using Microsoft.AspNetCore.Builder;
 
-namespace AzureEventGridSimulator.Middleware
+namespace AzureEventGridSimulator.Extensions
 {
     public static class MiddlewareExtensions
     {
-        public static IApplicationBuilder UseAegHeaderValidation(this IApplicationBuilder builder)
+        public static IApplicationBuilder UseAegSasHeaderValidation(this IApplicationBuilder builder)
         {
-            return builder.UseMiddleware<AegHeaderValidationMiddleware>();
+            return builder.UseMiddleware<AegSasHeaderValidationMiddleware>();
         }
 
         public static IApplicationBuilder UseAegSizeValidation(this IApplicationBuilder builder)

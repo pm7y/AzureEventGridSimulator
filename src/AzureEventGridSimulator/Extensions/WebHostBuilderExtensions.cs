@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AzureEventGridSimulator.Middleware
+namespace AzureEventGridSimulator.Extensions
 {
     public static class WebHostBuilderExtensions
     {
