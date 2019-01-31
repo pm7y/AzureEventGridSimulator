@@ -3,7 +3,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Extensions;
-using AzureEventGridSimulator.Middleware;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
