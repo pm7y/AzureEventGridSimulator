@@ -62,15 +62,18 @@ namespace AzureEventGridSimulator.Controllers
                         await httpClient.PostAsync(subscription.Endpoint, content)
                                         .ContinueWith(t =>
                                         {
-                                            if (t.IsCompletedSuccessfully)
+                                            if (t.IsCompletedSuccessfully && t.Result.IsSuccessStatusCode)
                                             {
                                                 _logger.LogDebug(
                                                               "Event {EventId} sent to subscriber '{SubscriberName}' successfully.", evt.Id, subscription.Name);
                                             }
                                             else
                                             {
-                                                _logger.LogError("Failed to send event {EventId} to subscriber '{SubscriberName}', {TaskStatus}: {ErrorMessage}.", evt.Id, subscription.Name,
-                                                              t.Status.ToString(), t.Exception?.GetBaseException().Message);
+                                                _logger.LogError(t.Exception?.GetBaseException(),
+                                                                 "Failed to send event {EventId} to subscriber '{SubscriberName}', '{TaskStatus}', '{Reason}'.", evt.Id,
+                                                                 subscription.Name,
+                                                                 t.Status.ToString(),
+                                                                 t.Result?.ReasonPhrase);
                                             }
                                         });
                     }
