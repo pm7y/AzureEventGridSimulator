@@ -18,7 +18,7 @@ namespace AzureEventGridSimulator.Middleware
         }
 
         public async Task InvokeAsync(HttpContext context, SimulatorSettings simulatorSettings, ILogger logger)
-        { 
+        {
             var events = context.RetrieveEvents();
 
             foreach (var evt in events)

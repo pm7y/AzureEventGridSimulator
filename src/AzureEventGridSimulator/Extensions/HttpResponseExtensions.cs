@@ -15,7 +15,6 @@ namespace AzureEventGridSimulator.Extensions
 
             response.StatusCode = (int)statusCode;
             await response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
-            
         }
     }
 }

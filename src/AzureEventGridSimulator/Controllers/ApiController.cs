@@ -64,7 +64,7 @@ namespace AzureEventGridSimulator.Controllers
                                             if (t.IsCompletedSuccessfully && t.Result.IsSuccessStatusCode)
                                             {
                                                 _logger.LogDebug(
-                                                              "Event {EventId} sent to subscriber '{SubscriberName}' successfully.", evt.Id, subscription.Name);
+                                                                 "Event {EventId} sent to subscriber '{SubscriberName}' successfully.", evt.Id, subscription.Name);
                                             }
                                             else
                                             {
@@ -81,7 +81,7 @@ namespace AzureEventGridSimulator.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                              "Failed to send to subscriber '{SubscriberName}'.", subscription.Name);
+                                 "Failed to send to subscriber '{SubscriberName}'.", subscription.Name);
             }
         }
     }

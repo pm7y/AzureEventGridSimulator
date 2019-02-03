@@ -104,7 +104,8 @@ namespace AzureEventGridSimulator
 
             if (MetadataVersion != null && MetadataVersion != "1")
             {
-                throw new InvalidOperationException($"Property '{nameof(MetadataVersion)}' was found to be set to '{MetadataVersion}', but was expected to either be null or be set to 1.");
+                throw new
+                    InvalidOperationException($"Property '{nameof(MetadataVersion)}' was found to be set to '{MetadataVersion}', but was expected to either be null or be set to 1.");
             }
 
             if (Topic != null)
