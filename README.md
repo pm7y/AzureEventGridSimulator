@@ -7,7 +7,7 @@ A simple simulator which provides endpoints that mimic the functionality of [Azu
 
 ## Configuration
 Topics and their subscribers are configured in the `appsettings.json` file.
-You can add multiple topics. Each topic must have a unique port. Each topic can have multiple subscribers.
+You can add multiple topics. Each topic must have a unique port. Each topic can have multiple subscribers. Each subscriber can have  multiple or null eventTypes.
 An example of one topic with one subscriber is shown below.
 
 ```json
@@ -20,6 +20,26 @@ An example of one topic with one subscriber is shown below.
       "subscribers": [
         {
           "name": "LocalAzureFunctionSubscription",
+		  "eventTypes": [ "UserProfileChangedEvent" ],
+          "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb"
+        }
+      ]
+    }
+  ]
+}
+```
+
+```json
+{
+  "topics": [
+    {
+      "name": "MyAwesomeTopic",
+      "httpsPort": 60101,
+      "key": "TheLocal+DevelopmentKey=",
+      "subscribers": [
+        {
+          "name": "CatchAllEvents",
+		  "eventTypes": null,
           "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb"
         }
       ]
@@ -54,6 +74,12 @@ _Data.json_
 #### Postman
 
 An example request that you can import into [Postman](https://www.getpostman.com/) can be found in the AzureEventGridSimulator repo here https://github.com/pmcilreavy/AzureEventGridSimulator/blob/master/src/Azure%20Event%20Grid%20Simulator.postman_collection.json.
+
+#### Docker
+
+You can build project with that command: `docker build -t {ANY_TAG_NAME} -f .\AzureEventGridSimulator\Dockerfile .`
+
+To run use: `docker run -dit -p 60101:60101 {ANY_TAG_NAME}`
 
 ## Notes
 
