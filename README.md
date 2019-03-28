@@ -75,11 +75,23 @@ _Data.json_
 
 An example request that you can import into [Postman](https://www.getpostman.com/) can be found in the AzureEventGridSimulator repo here https://github.com/pmcilreavy/AzureEventGridSimulator/blob/master/src/Azure%20Event%20Grid%20Simulator.postman_collection.json.
 
-#### Docker
+### Certificates  
+Generation script: `src\GenerateCertificates.ps1`
 
-You can build project with that command: `docker build -t {ANY_TAG_NAME} -f .\AzureEventGridSimulator\Dockerfile .`
+#### Docker  
+If you plan to run a docker contaner, don't forget to expose your ports, by default exposed only 80 and 5000 ports  
 
-To run use: `docker run -dit -p 60101:60101 {ANY_TAG_NAME}`
+You can build project with that command:  
+`docker build -t {ANY_TAG_NAME} -f .\AzureEventGridSimulator\Dockerfile .`
+
+To run use:  
+`docker run -dit -p {PORT}:{PORT} {ANY_TAG_NAME}`
+
+Example:  
+```
+docker build -t azureevent -f .\AzureEventGridSimulator\Dockerfile .
+docker run -dit -p 5000:5000 azureevent
+````
 
 ## Notes
 

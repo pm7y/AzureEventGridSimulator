@@ -5,6 +5,7 @@ using AzureEventGridSimulator.Extensions;
 using AzureEventGridSimulator.Settings;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Https.Internal;
 using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator
@@ -35,11 +36,21 @@ namespace AzureEventGridSimulator
                                   .UseKestrel(options =>
                                   {
                                       var simulatorSettings = (SimulatorSettings)options.ApplicationServices.GetService(typeof(SimulatorSettings));
+                                      var certificate = new X509Certificate2("server.pfx", "password");
 
                                       foreach (var topics in simulatorSettings.Topics)
                                       {
-                                          options.Listen(IPAddress.Loopback, topics.Port,
-                                                         listenOptions => { listenOptions.UseHttps(StoreName.My, "localhost", true); });
+                                          options.ListenAnyIP(topics.Port, listenOptions =>
+                                          {
+                                              listenOptions.UseHttps(httpsOptions =>
+                                              {
+                                                  httpsOptions.ServerCertificateSelector = (features, name) =>
+                                                  {
+                                                      // Here you would check the name, select an appropriate cert, and provide a fallback or fail for null names.
+                                                      return certificate;
+                                                  };
+                                              });
+                                          });
                                       }
                                   })
                                   .Build();
