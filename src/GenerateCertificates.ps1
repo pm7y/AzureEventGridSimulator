@@ -24,4 +24,4 @@ $serverCert = New-SelfSignedCertificate  `
 
 $password = ConvertTo-SecureString -String "password" -AsPlainText -Force
 
-Export-PfxCertificate -Cert $serverCert -Password $password -FilePath server.pfx
+Export-PfxCertificate -Cert $serverCert -Password $password -FilePath AzureEventGridSimulator\server.pfx

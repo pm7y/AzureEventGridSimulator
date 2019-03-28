@@ -21,7 +21,7 @@ WORKDIR /app
 COPY --from=publish /app .
 
 COPY --from=build /src/root-ca.cer .
-COPY --from=build /src/server.pfx .
+COPY --from=build /src/AzureEventGridSimulator/server.pfx .
 COPY --from=certtool /Windows/System32/certoc.exe .
 USER ContainerAdministrator
 RUN certoc.exe -addstore root root-ca.cer
