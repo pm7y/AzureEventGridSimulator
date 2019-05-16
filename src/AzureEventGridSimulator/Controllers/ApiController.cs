@@ -54,30 +54,36 @@ namespace AzureEventGridSimulator.Controllers
                 // https://docs.microsoft.com/en-us/azure/event-grid/event-schema
                 foreach (var evt in events)
                 {
-                    var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
-                    using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
-                    using (var httpClient = new HttpClient())
+                    if (subscription.Filter.AcceptsEvent(evt))
                     {
-                        httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
-                        httpClient.Timeout = TimeSpan.FromSeconds(5);
+                        var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
+                        using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+                        using (var httpClient = new HttpClient())
+                        {
+                            httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
+                            httpClient.Timeout = TimeSpan.FromSeconds(5);
 
-                        await httpClient.PostAsync(subscription.Endpoint, content)
-                                        .ContinueWith(t =>
-                                        {
-                                            if (t.IsCompletedSuccessfully && t.Result.IsSuccessStatusCode)
+                            await httpClient.PostAsync(subscription.Endpoint, content)
+                                            .ContinueWith(t =>
                                             {
-                                                _logger.LogDebug(
-                                                                 "Event {EventId} sent to subscriber '{SubscriberName}' successfully.", evt.Id, subscription.Name);
-                                            }
-                                            else
-                                            {
-                                                _logger.LogError(t.Exception?.GetBaseException(),
-                                                                 "Failed to send event {EventId} to subscriber '{SubscriberName}', '{TaskStatus}', '{Reason}'.", evt.Id,
-                                                                 subscription.Name,
-                                                                 t.Status.ToString(),
-                                                                 t.Result?.ReasonPhrase);
-                                            }
-                                        });
+                                                if (t.IsCompletedSuccessfully && t.Result.IsSuccessStatusCode)
+                                                {
+                                                    _logger.LogDebug("Event {EventId} sent to subscriber '{SubscriberName}' successfully.", evt.Id, subscription.Name);
+                                                }
+                                                else
+                                                {
+                                                    _logger.LogError(t.Exception?.GetBaseException(),
+                                                                     "Failed to send event {EventId} to subscriber '{SubscriberName}', '{TaskStatus}', '{Reason}'.", evt.Id,
+                                                                     subscription.Name,
+                                                                     t.Status.ToString(),
+                                                                     t.Result?.ReasonPhrase);
+                                                }
+                                            });
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Event {EventId} filtered out for subscriber '{SubscriberName}'.", evt.Id, subscription.Name);
                     }
                 }
             }
