@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,13 +32,15 @@ namespace AzureEventGridSimulator.Controllers
 
             _logger.LogInformation("New request ({EventCount} event(s)) for '{TopicName}' @ {RequestUrl}", events.Length, TopicSettings.Name, Request.GetDisplayUrl());
 
-            foreach (var subscription in TopicSettings.Subscribers)
+            if (TopicSettings?.Subscribers?.Any() == true)
             {
+                foreach (var subscription in TopicSettings.Subscribers)
+                {
 #pragma warning disable 4014
-                SendToSubscriber(subscription, events);
+                    SendToSubscriber(subscription, events);
 #pragma warning restore 4014
+                }
             }
-
             return Ok();
         }
 
