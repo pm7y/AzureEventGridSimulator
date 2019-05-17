@@ -70,5 +70,10 @@ namespace AzureEventGridSimulator.Settings
                 throw new ArgumentOutOfRangeException(nameof(Key), $"The key can only have one level of nesting (like data.key1)");
             }
         }
+
+        public override string ToString()
+        {
+            return string.Join(", ", Key, OperatorType, Value ?? "null", string.Join(", ", Values.HasItems() ? Values.Select(v => v.ToString()) : new string[] { "null" }));
+        }
     }
 }
