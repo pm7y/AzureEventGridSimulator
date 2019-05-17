@@ -1,0 +1,63 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Newtonsoft.Json;
+
+namespace AzureEventGridSimulator.Settings
+{
+    public class AdvancedFilterSetting
+    {
+        [JsonProperty(PropertyName = "operatorType", Required = Required.Always)]
+        public OperatorTypeEnum OperatorType { get; set; }
+
+        [JsonProperty(PropertyName = "key", Required = Required.Always)]
+        public string Key { get; set; }
+
+        [JsonProperty(PropertyName = "value", Required = Required.AllowNull)]
+        public object Value { get; set; }
+
+        [JsonProperty(PropertyName = "values", Required = Required.AllowNull)]
+        public ICollection<object> Values { get; set; }
+
+        public enum OperatorTypeEnum
+        {
+            NumberGreaterThan,
+            NumberGreaterThanOrEquals,
+            NumberLessThan,
+            NumberLessThanOrEquals,
+            NumberIn,
+            NumberNotIn,
+            BoolEquals,
+            StringContains,
+            StringBeginsWith,
+            StringEndsWith,
+            StringIn,
+            StringNotIn
+        }
+
+        internal void Validate()
+        {
+            const short MAX_STRING_LENGTH = 512;
+
+            if ((Value as string)?.Length > MAX_STRING_LENGTH)
+            {
+                throw new ArgumentOutOfRangeException(nameof(Value), $"Advanced filtering limits strings to {MAX_STRING_LENGTH} characters per string value");
+            }
+
+            if (Values.Any(o => (o as string).Length > MAX_STRING_LENGTH))
+            {
+                throw new ArgumentOutOfRangeException(nameof(Values), $"Advanced filtering limits strings to {MAX_STRING_LENGTH} characters per string value");
+            }
+
+            if (new OperatorTypeEnum[] { OperatorTypeEnum.NumberIn, OperatorTypeEnum.NumberNotIn, OperatorTypeEnum.StringIn, OperatorTypeEnum.StringNotIn }.Contains(OperatorType) && Values?.Count() > 5)
+            {
+                throw new ArgumentOutOfRangeException(nameof(OperatorType), $"Advanced filtering limits filters to five values for in and not in operators");
+            }
+
+            if (Key.Count(c => c == '.') > 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(Key), $"The key can only have one level of nesting (like data.key1)");
+            }
+        }
+    }
+}

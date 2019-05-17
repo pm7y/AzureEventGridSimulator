@@ -27,6 +27,12 @@ namespace AzureEventGridSimulator.Settings
             {
                 throw new InvalidOperationException("Each subscriber must have a unique name.");
             }
+
+            // validate the filters
+            foreach (var filter in Topics.SelectMany(t => t.Subscribers.Where(s => s.Filter!= null).Select(s => s.Filter)))
+            {
+                filter.Validate();
+            }
         }
     }
 }
