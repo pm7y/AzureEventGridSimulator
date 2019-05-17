@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AzureEventGridSimulator.Extensions;
 using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Settings
@@ -37,6 +38,16 @@ namespace AzureEventGridSimulator.Settings
 
         internal void Validate()
         {
+            if (string.IsNullOrWhiteSpace(Key))
+            {
+                throw new ArgumentException("A filter key must be provided", nameof(Key));
+            }
+
+            if (Value == null && !Values.HasItems())
+            {
+                throw new ArgumentException("Either a Value or a set of Values must be provided", nameof(Value));
+            }
+
             const short MAX_STRING_LENGTH = 512;
 
             if ((Value as string)?.Length > MAX_STRING_LENGTH)
@@ -44,7 +55,7 @@ namespace AzureEventGridSimulator.Settings
                 throw new ArgumentOutOfRangeException(nameof(Value), $"Advanced filtering limits strings to {MAX_STRING_LENGTH} characters per string value");
             }
 
-            if (Values.Any(o => (o as string).Length > MAX_STRING_LENGTH))
+            if (Values?.Any(o => (o as string)?.Length > MAX_STRING_LENGTH) == true)
             {
                 throw new ArgumentOutOfRangeException(nameof(Values), $"Advanced filtering limits strings to {MAX_STRING_LENGTH} characters per string value");
             }

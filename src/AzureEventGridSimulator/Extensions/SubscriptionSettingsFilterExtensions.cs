@@ -4,7 +4,7 @@ using AzureEventGridSimulator.Settings;
 
 namespace AzureEventGridSimulator.Extensions
 {
-    internal static class SubscriptionSettingsFilterExtensions
+    public static class SubscriptionSettingsFilterExtensions
     {
         public static bool AcceptsEvent(this FilterSetting filter, EventGridEvent gridEvent)
         {
