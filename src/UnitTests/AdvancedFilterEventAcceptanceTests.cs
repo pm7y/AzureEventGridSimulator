@@ -27,8 +27,6 @@ namespace Tests
         {
             return new AdvancedFilterSetting[]
             {
-                new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = null },
-                new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = string.Empty },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = "E" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = "Event" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = "Event" },
@@ -39,8 +37,6 @@ namespace Tests
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringContains, Value = "d" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringContains, Value = "EventId" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringEndsWith, Value = "EventId" },
-                new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringEndsWith, Value = string.Empty },
-                new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringEndsWith, Value = null },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringEndsWith, Value = "Id" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringEndsWith, Value = "d" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringEndsWith, Value = "D" },
@@ -110,7 +106,8 @@ namespace Tests
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 0.5 },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 1 },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberIn, Values = new object []{ 1.0, 2, 3.5, "stringValue", true } },
-               new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberNotIn, Values = new object []{ 0, 2, 3.5, "stringValue", true } },
+               new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberNotIn, Values = new object [0] },
+               new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberNotIn, Values = null },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberLessThan, Value = 1.1 },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberLessThan, Value = 2 },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberLessThanOrEquals, Value = 2 },
@@ -118,17 +115,17 @@ namespace Tests
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberLessThanOrEquals, Value = 1 },
                new AdvancedFilterSetting { Key = "Data.IsTrue", OperatorType = OperatorTypeEnum.BoolEquals, Value = true },
                new AdvancedFilterSetting { Key = "Data.Name", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = "StringValue"},
-               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberGreaterThan, Value = 0.123449f},
-               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 0.12345f},
-               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberIn, Values = new object[] { 0.12345d } },
-               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberLessThan, Value = 0.123451d },
-               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberLessThanOrEquals, Value = 0.12345d },
-               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberNotIn, Values = new object[] { 0.123451d } },
+               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberGreaterThan, Value = 0.123449},
+               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 0.12345},
+               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberIn, Values = new object[] { 0.12345 } },
+               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberLessThan, Value = 0.123451 },
+               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberLessThanOrEquals, Value = 0.12345 },
+               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberNotIn, Values = new object[] { 0.123451 } },
                new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = OperatorTypeEnum.NumberGreaterThan, Value = long.MaxValue },
                new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = OperatorTypeEnum.NumberGreaterThanOrEquals, Value = ulong.MaxValue },
                new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = OperatorTypeEnum.NumberIn, Values = new object[] { ulong.MaxValue } },
                new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = OperatorTypeEnum.NumberLessThanOrEquals, Value = ulong.MaxValue },
-               new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = OperatorTypeEnum.NumberNotIn, Values = new object[] { ulong.MaxValue } },
+               new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = OperatorTypeEnum.NumberNotIn, Values = new object[] { long.MaxValue } },
                            };
         }
 
@@ -158,6 +155,8 @@ namespace Tests
 
         #endregion
 
+        #region Negative Configurations
+
         private static AdvancedFilterSetting[] GetNegativeIdFilterConfigurations()
         {
             return new AdvancedFilterSetting[]
@@ -166,16 +165,20 @@ namespace Tests
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = string.Empty },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = "A" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = "a" },
+                new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringContains, Value = null },
+                new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringContains, Value = string.Empty },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringContains, Value = "a" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringContains, Value = "TEN" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringEndsWith, Value = "b" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringEndsWith, Value = string.Empty },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringEndsWith, Value = null },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringEndsWith, Value = "B" },
+                new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringIn, Values = null },
+                new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringIn, Values = new string[0] },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringIn, Values = new string[] {"notCorrect" } },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringIn, Values = new string[] {"different", "not_found", "Another" } },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringNotIn, Values = new string[] {"different", "EventID", "Another" } },
-                new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringNotIn, Values = new string[] {"different", "EventId", "Another" } }
+                new AdvancedFilterSetting { Key = "Id", OperatorType = OperatorTypeEnum.StringNotIn, Values = new string[] {"different", "EventId", "Another" } },
             };
         }
 
@@ -218,7 +221,7 @@ namespace Tests
         private static AdvancedFilterSetting[] GetNegativeDataVersionFilterConfigurations()
         {
             return new AdvancedFilterSetting[] {
-               new AdvancedFilterSetting { Key = "DataVersion", OperatorType = OperatorTypeEnum.StringBeginsWith, Value ="5" },
+               new AdvancedFilterSetting { Key = "DataVersion", OperatorType = OperatorTypeEnum.StringBeginsWith, Value ="a" },
                new AdvancedFilterSetting { Key = "DataVersion", OperatorType = OperatorTypeEnum.StringContains, Value ="_" },
                new AdvancedFilterSetting { Key = "DataVersion", OperatorType = OperatorTypeEnum.StringEndsWith, Value ="7" },
                new AdvancedFilterSetting { Key = "DataVersion", OperatorType = OperatorTypeEnum.StringIn, Values = new object[] { "5.0.1" } },
@@ -230,19 +233,31 @@ namespace Tests
         {
             return new AdvancedFilterSetting[] {
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberGreaterThan, Value = 2 },
+               new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberGreaterThan, Value = null },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberGreaterThan, Value = 1 },
+               new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberGreaterThanOrEquals, Value = null},
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 1.01 },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 5 },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberIn, Values = new object []{ 1.1, 2, 3.5, "stringValue", true } },
+               new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberIn, Values = new object [0] },
+               new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberIn, Values = null },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberNotIn, Values = new object []{ 0, 1, 2, 3.5, "stringValue", true } },
+               // while the value is not in the array, the fact that the values in the array are not all parsable as numbers means the full evaluation cannot be completed and so by default we fail
+               new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberNotIn, Values = new object []{ 0, 2, 3.5, "stringValue", true } },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberLessThan, Value = 1 },
+               new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberLessThan, Value = null },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberLessThan, Value = 0.99999999 },
+               new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberLessThanOrEquals, Value = null },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberLessThanOrEquals, Value = 0.9 },
                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = OperatorTypeEnum.NumberLessThanOrEquals, Value = -1 },
+               new AdvancedFilterSetting { Key = "Data.IsTrue", OperatorType = OperatorTypeEnum.BoolEquals, Value = null },
                new AdvancedFilterSetting { Key = "Data.IsTrue", OperatorType = OperatorTypeEnum.BoolEquals, Value = false },
-               new AdvancedFilterSetting { Key = "Data.Name", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = "String_Value"},
+               new AdvancedFilterSetting { Key = "Data.Name", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = null },
+               new AdvancedFilterSetting { Key = "Data.Name", OperatorType = OperatorTypeEnum.StringBeginsWith, Value = "String_Value" },
+               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberGreaterThan, Value = null },
                new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberGreaterThan, Value = 0.12345},
-               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 0.123451},
+               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberGreaterThanOrEquals, Value = null },
+               new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 0.123451 },
                new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberIn, Values = new object[] { 0.123451 } },
                new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberLessThan, Value = 0.12345 },
                new AdvancedFilterSetting { Key = "Data.DoubleValue", OperatorType = OperatorTypeEnum.NumberLessThanOrEquals, Value = 0.1234 },
@@ -282,23 +297,26 @@ namespace Tests
             };
         }
 
-        //[TestCaseSource(nameof(GetPositiveIdFilterConfigurations))]
+        #endregion
+
+        [TestCaseSource(nameof(GetPositiveIdFilterConfigurations))]
         [TestCaseSource(nameof(GetPositiveDataVersionFilterConfigurations))]
-        //[TestCaseSource(nameof(GetPositiveEventDataFilterConfigurations))]
+        [TestCaseSource(nameof(GetPositiveEventDataFilterConfigurations))]
         [TestCaseSource(nameof(GetPositiveEventTypeFilterConfigurations))]
         [TestCaseSource(nameof(GetPositiveSubjectFilterConfigurations))]
         [TestCaseSource(nameof(GetPositiveTopicFilterConfigurations))]
-        //[TestCaseSource(nameof(GetPositiveEventTypeVersionFilterConfigurations))]
-        //[TestCaseSource(nameof(GetPositiveSourceFilterConfigurations))]
-        //[TestCaseSource(nameof(GetPositiveEventIdFilterConfigurations))]
+        /* These 3 tests are only really possible once we support the cloud event schema 
+         * [TestCaseSource(nameof(GetPositiveEventTypeVersionFilterConfigurations))]
+         * [TestCaseSource(nameof(GetPositiveSourceFilterConfigurations))]
+         * [TestCaseSource(nameof(GetPositiveEventIdFilterConfigurations))] */
         public void TestAdvancedFilteringSuccess(AdvancedFilterSetting filter)
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new AdvancedFilterSetting[] { filter } };
-            Assert.True(filterConfig.AcceptsEvent(_gridEvent));
+            Assert.True(filterConfig.AcceptsEvent(_gridEvent), $"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate() }");
         }
 
-        //[TestCaseSource(nameof(GetNegativeIdFilterConfigurations))]
-        //[TestCaseSource(nameof(GetNegativeDataVersionFilterConfigurations))]
+        [TestCaseSource(nameof(GetNegativeIdFilterConfigurations))]
+        [TestCaseSource(nameof(GetNegativeDataVersionFilterConfigurations))]
         [TestCaseSource(nameof(GetNegativeEventDataFilterConfigurations))]
         [TestCaseSource(nameof(GetNegativeEventIdFilterConfigurations))]
         [TestCaseSource(nameof(GetNegativeEventTypeFilterConfigurations))]
@@ -309,7 +327,7 @@ namespace Tests
         public void TestAdvancedFilteringFailure(AdvancedFilterSetting filter)
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new AdvancedFilterSetting[] { filter } };
-            Assert.False(filterConfig.AcceptsEvent(_gridEvent));
+            Assert.False(filterConfig.AcceptsEvent(_gridEvent), $"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate() }");
         }
     }
 }

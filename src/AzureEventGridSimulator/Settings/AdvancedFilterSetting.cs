@@ -14,10 +14,10 @@ namespace AzureEventGridSimulator.Settings
         [JsonProperty(PropertyName = "key", Required = Required.Always)]
         public string Key { get; set; }
 
-        [JsonProperty(PropertyName = "value", Required = Required.AllowNull)]
+        [JsonProperty(PropertyName = "value", Required = Required.DisallowNull)]
         public object Value { get; set; }
 
-        [JsonProperty(PropertyName = "values", Required = Required.AllowNull)]
+        [JsonProperty(PropertyName = "values", Required = Required.DisallowNull)]
         public ICollection<object> Values { get; set; }
 
         public enum OperatorTypeEnum
