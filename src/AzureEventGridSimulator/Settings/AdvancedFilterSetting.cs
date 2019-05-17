@@ -73,7 +73,7 @@ namespace AzureEventGridSimulator.Settings
 
         public override string ToString()
         {
-            return string.Join(", ", Key, OperatorType, Value ?? "null", string.Join(", ", Values.HasItems() ? Values.Select(v => v.ToString()) : new string[] { "null" }));
+            return string.Join(", ", Key, OperatorType, Value ?? "null", string.Join(", ", Values.HasItems() ? Values.Select(v => v.ToString()) : new string[] { "null" }), Guid.NewGuid());
         }
     }
 }
