@@ -48,32 +48,32 @@ namespace AzureEventGridSimulator.Settings
                 throw new ArgumentException("Either a Value or a set of Values must be provided", nameof(Value));
             }
 
-            const short MAX_STRING_LENGTH = 512;
+            const short maxStringLength = 512;
 
-            if ((Value as string)?.Length > MAX_STRING_LENGTH)
+            if ((Value as string)?.Length > maxStringLength)
             {
-                throw new ArgumentOutOfRangeException(nameof(Value), $"Advanced filtering limits strings to {MAX_STRING_LENGTH} characters per string value");
+                throw new ArgumentOutOfRangeException(nameof(Value), $"Advanced filtering limits strings to {maxStringLength} characters per string value");
             }
 
-            if (Values?.Any(o => (o as string)?.Length > MAX_STRING_LENGTH) == true)
+            if (Values?.Any(o => (o as string)?.Length > maxStringLength) == true)
             {
-                throw new ArgumentOutOfRangeException(nameof(Values), $"Advanced filtering limits strings to {MAX_STRING_LENGTH} characters per string value");
+                throw new ArgumentOutOfRangeException(nameof(Values), $"Advanced filtering limits strings to {maxStringLength} characters per string value");
             }
 
-            if (new OperatorTypeEnum[] { OperatorTypeEnum.NumberIn, OperatorTypeEnum.NumberNotIn, OperatorTypeEnum.StringIn, OperatorTypeEnum.StringNotIn }.Contains(OperatorType) && Values?.Count() > 5)
+            if (new[] { OperatorTypeEnum.NumberIn, OperatorTypeEnum.NumberNotIn, OperatorTypeEnum.StringIn, OperatorTypeEnum.StringNotIn }.Contains(OperatorType) && Values?.Count > 5)
             {
-                throw new ArgumentOutOfRangeException(nameof(OperatorType), $"Advanced filtering limits filters to five values for in and not in operators");
+                throw new ArgumentOutOfRangeException(nameof(OperatorType), "Advanced filtering limits filters to five values for in and not in operators");
             }
 
             if (Key.Count(c => c == '.') > 1)
             {
-                throw new ArgumentOutOfRangeException(nameof(Key), $"The key can only have one level of nesting (like data.key1)");
+                throw new ArgumentOutOfRangeException(nameof(Key), "The key can only have one level of nesting (like data.key1)");
             }
         }
 
         public override string ToString()
         {
-            return string.Join(", ", Key, OperatorType, Value ?? "null", string.Join(", ", Values.HasItems() ? Values.Select(v => v.ToString()) : new string[] { "null" }), Guid.NewGuid());
+            return string.Join(", ", Key, OperatorType, Value ?? "null", string.Join(", ", Values.HasItems() ? Values.Select(v => v.ToString()) : new[] { "null" }), Guid.NewGuid());
         }
     }
 }

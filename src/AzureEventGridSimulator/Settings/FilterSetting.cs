@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Settings
@@ -11,7 +10,7 @@ namespace AzureEventGridSimulator.Settings
         public ICollection<string> IncludedEventTypes { get; set; }
 
         [JsonProperty(PropertyName = "isSubjectCaseSensitive", Required = Required.AllowNull)]
-        public bool IsSubjectCaseSensitive { get; set; } = false;
+        public bool IsSubjectCaseSensitive { get; set; }
 
         [JsonProperty(PropertyName = "subjectBeginsWith", Required = Required.AllowNull)]
         public string SubjectBeginsWith { get; set; }
@@ -26,7 +25,7 @@ namespace AzureEventGridSimulator.Settings
         {
             if (AdvancedFilters?.Count > 5)
             {
-                throw new ArgumentOutOfRangeException(nameof(AdvancedFilters), "Advanced filtering is lmited to five advanced filters per event grid subscription");
+                throw new ArgumentOutOfRangeException(nameof(AdvancedFilters), "Advanced filtering is limited to five advanced filters per event grid subscription.");
             }
 
             foreach (var advancedFilter in AdvancedFilters?? new AdvancedFilterSetting[0])

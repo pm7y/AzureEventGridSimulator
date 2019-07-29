@@ -3,7 +3,7 @@ using AzureEventGridSimulator.Extensions;
 using AzureEventGridSimulator.Settings;
 using Xunit;
 
-namespace Tests
+namespace UnitTests
 {
     public class SimpleFilterEventAcceptanceTests
     {
@@ -17,8 +17,8 @@ namespace Tests
 
         [Theory]
         [InlineData(data: null)]
-        [InlineData(data: new object[] { new string[] { "All" } })]
-        [InlineData(data: new object[] { new string[] { "This.is.a.test" } })]
+        [InlineData(data: new object[] { new[] { "All" } })]
+        [InlineData(data: new object[] { new[] { "This.is.a.test" } })]
         public void TestEventTypeFilteringSuccess(string[] includedEventTypes)
         {
             var filterConfig = new FilterSetting { IncludedEventTypes = includedEventTypes };
@@ -27,11 +27,11 @@ namespace Tests
         }
 
         [Theory]
-        [InlineData(data: new object[] { new string[] { "This" } })]
-        [InlineData(data: new object[] { new string[] { "this.is.a.test" } })]
-        [InlineData(data: new object[] { new string[] { "THIS.IS.A.TEST" } })]
-        [InlineData(data: new object[] { new string[] { "this.is.a.test.event" } })]
-        [InlineData(data: new object[] { new string[] { "this.is.a.testevent" } })]
+        [InlineData(data: new object[] { new[] { "This" } })]
+        [InlineData(data: new object[] { new[] { "this.is.a.test" } })]
+        [InlineData(data: new object[] { new[] { "THIS.IS.A.TEST" } })]
+        [InlineData(data: new object[] { new[] { "this.is.a.test.event" } })]
+        [InlineData(data: new object[] { new[] { "this.is.a.testevent" } })]
         [InlineData(data: new object[] { new string[0] })]
         public void TestEventTypeFilteringFailure(string[] includedEventTypes)
         {

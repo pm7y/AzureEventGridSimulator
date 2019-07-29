@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using AzureEventGridSimulator.Settings;
 using Xunit;
 
-namespace Tests
+namespace UnitTests
 {
     public class FilterSettingsValidationTests
     {
@@ -11,7 +11,7 @@ namespace Tests
         {
             return new SimulatorSettings
             {
-                Topics = new TopicSettings[]
+                Topics = new[]
                 {
                     new TopicSettings
                     {
@@ -51,14 +51,14 @@ namespace Tests
         public void TestFilterSettingsValidationWithSixAdvancedFilters()
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new List<AdvancedFilterSetting>() };
-            for (int i = 0; i < 6; i++)
+            for (var i = 0; i < 6; i++)
             {
                 filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
             }
 
             var exception = Assert.ThrowsAny<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
             Assert.Equal(nameof(filterConfig.AdvancedFilters), exception.ParamName);
-            Assert.Equal("Advanced filtering is lmited to five advanced filters per event grid subscription\r\nParameter name: AdvancedFilters", exception.Message);
+            Assert.Equal("Advanced filtering is limited to five advanced filters per event grid subscription.\r\nParameter name: AdvancedFilters", exception.Message);
         }
     }
 }

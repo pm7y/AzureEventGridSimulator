@@ -16,6 +16,7 @@ namespace AzureEventGridSimulator.Middleware
             _next = next;
         }
 
+        // ReSharper disable once UnusedMember.Global
         public async Task InvokeAsync(HttpContext context, SimulatorSettings simulatorSettings, SasKeyValidator aegSasHeaderValidator)
         {
             var requestPort = context.Connection.LocalPort;

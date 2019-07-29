@@ -10,7 +10,7 @@ namespace UnitTests
         [Fact]
         public void TestConfigurationLoad()
         {
-            string json = "{\"topics\":[{\"name\":\"MyAwesomeTopic\",\"port\":60101,\"key\":\"TheLocal+DevelopmentKey=\",\"subscribers\":[{\"name\":\"LocalAzureFunctionSubscription\",\"endpoint\":\"http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb\",\"filter\":{\"includedEventTypes\":[\"some.special.event.type\"],\"subjectBeginsWith\":\"MySubject\",\"subjectEndsWith\":\"_success\",\"isSubjectCaseSensitive\":true,\"advancedFilters\":[{\"operatorType\":\"NumberGreaterThanOrEquals\",\"key\":\"Data.Key1\",\"value\":5},{\"operatorType\":\"StringContains\",\"key\":\"Subject\",\"values\":[\"container1\",\"container2\"]}]}}]},{\"name\":\"ATopicWithNoSubscribers\",\"port\":60102,\"key\":\"TheLocal+DevelopmentKey=\",\"subscribers\":[]}]}";
+            var json = "{\"topics\":[{\"name\":\"MyAwesomeTopic\",\"port\":60101,\"key\":\"TheLocal+DevelopmentKey=\",\"subscribers\":[{\"name\":\"LocalAzureFunctionSubscription\",\"endpoint\":\"http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb\",\"filter\":{\"includedEventTypes\":[\"some.special.event.type\"],\"subjectBeginsWith\":\"MySubject\",\"subjectEndsWith\":\"_success\",\"isSubjectCaseSensitive\":true,\"advancedFilters\":[{\"operatorType\":\"NumberGreaterThanOrEquals\",\"key\":\"Data.Key1\",\"value\":5},{\"operatorType\":\"StringContains\",\"key\":\"Subject\",\"values\":[\"container1\",\"container2\"]}]}}]},{\"name\":\"ATopicWithNoSubscribers\",\"port\":60102,\"key\":\"TheLocal+DevelopmentKey=\",\"subscribers\":[]}]}";
 
             var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
             Assert.NotNull(settings);

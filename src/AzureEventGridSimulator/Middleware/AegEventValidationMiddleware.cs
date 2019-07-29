@@ -17,6 +17,7 @@ namespace AzureEventGridSimulator.Middleware
             _next = next;
         }
 
+        // ReSharper disable once UnusedMember.Global
         public async Task InvokeAsync(HttpContext context, SimulatorSettings simulatorSettings, ILogger logger)
         {
             var events = context.RetrieveEvents();

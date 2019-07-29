@@ -9,7 +9,7 @@ namespace AzureEventGridSimulator.Extensions
     {
         public static bool AcceptsEvent(this FilterSetting filter, EventGridEvent gridEvent)
         {
-            bool retVal = filter == null;
+            var retVal = filter == null;
 
             if (!retVal)
             {
@@ -36,7 +36,7 @@ namespace AzureEventGridSimulator.Extensions
 
         public static bool AcceptsEvent(this AdvancedFilterSetting filter, EventGridEvent gridEvent)
         {
-            bool retVal = filter == null;
+            var retVal = filter == null;
 
             if (!retVal)
             {
@@ -84,9 +84,6 @@ namespace AzureEventGridSimulator.Extensions
                         case AdvancedFilterSetting.OperatorTypeEnum.StringNotIn:
                             retVal = Try(() => !(filter.Values ?? new object[0]).Select(v => Convert.ToString(v).ToUpper()).Contains(Convert.ToString(value).ToUpper()));
                             break;
-                        default:
-                            retVal = false;
-                            break;
                     }
                 }
             }
@@ -119,7 +116,7 @@ namespace AzureEventGridSimulator.Extensions
 
         public static bool TryGetValue(this EventGridEvent gridEvent, string key, out object value)
         {
-            bool retval = false;
+            var retval = false;
             value = null;
 
             if (!string.IsNullOrWhiteSpace(key))
@@ -155,7 +152,7 @@ namespace AzureEventGridSimulator.Extensions
                         if (split[0] == (nameof(gridEvent.Data)) && gridEvent.Data != null && split.Length > 1)
                         {
                             // look for the property on the grid event data object
-                            if (JObject.FromObject(gridEvent.Data).TryGetValue(split[1], out JToken dataValue))
+                            if (JObject.FromObject(gridEvent.Data).TryGetValue(split[1], out var dataValue))
                             {
                                 value = dataValue.ToObject<object>();
                                 retval = true;

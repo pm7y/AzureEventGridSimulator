@@ -13,12 +13,12 @@ namespace AzureEventGridSimulator.Settings
 
         public void Validate()
         {
-            if (Topics.GroupBy(o => o.Port).Count() != Topics.Count())
+            if (Topics.GroupBy(o => o.Port).Count() != Topics.Count)
             {
                 throw new InvalidOperationException("Each topic must use a unique port.");
             }
 
-            if (Topics.GroupBy(o => o.Name).Count() != Topics.Count())
+            if (Topics.GroupBy(o => o.Name).Count() != Topics.Count)
             {
                 throw new InvalidOperationException("Each topic must have a unique name.");
             }

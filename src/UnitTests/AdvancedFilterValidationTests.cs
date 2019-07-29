@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using AzureEventGridSimulator.Settings;
 using Xunit;
-using static AzureEventGridSimulator.Settings.AdvancedFilterSetting;
 
-namespace Tests
+namespace UnitTests
 {
     public class AdvancedFilterValidationTests
     {
@@ -13,7 +12,7 @@ namespace Tests
         {
             return new SimulatorSettings
             {
-                Topics = new TopicSettings[]
+                Topics = new[]
                 {
                     new TopicSettings
                     {
@@ -24,7 +23,7 @@ namespace Tests
                         {
                             new SubscriptionSettings
                             {
-                                Filter = new FilterSetting{ AdvancedFilters = new AdvancedFilterSetting[]{ advancedFilter } }
+                                Filter = new FilterSetting{ AdvancedFilters = new[]{ advancedFilter } }
                             }
                         }
                     }
@@ -110,7 +109,7 @@ namespace Tests
         [Fact]
         public void TestFilterValidationWithFiveValues()
         {
-            foreach (OperatorTypeEnum operatorType in Enum.GetValues(typeof(OperatorTypeEnum)))
+            foreach (AdvancedFilterSetting.OperatorTypeEnum operatorType in Enum.GetValues(typeof(AdvancedFilterSetting.OperatorTypeEnum)))
             {
                 var filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[5], OperatorType = operatorType };
                 GetValidSimulatorSettings(filterConfig).Validate();
@@ -120,10 +119,10 @@ namespace Tests
         [Fact]
         public void TestFilterValidationWithSixValues()
         {
-            foreach (OperatorTypeEnum operatorType in Enum.GetValues(typeof(OperatorTypeEnum)))
+            foreach (AdvancedFilterSetting.OperatorTypeEnum operatorType in Enum.GetValues(typeof(AdvancedFilterSetting.OperatorTypeEnum)))
             {
                 var filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[6], OperatorType = operatorType };
-                if (new OperatorTypeEnum[] { OperatorTypeEnum.NumberIn, OperatorTypeEnum.NumberNotIn, OperatorTypeEnum.StringIn, OperatorTypeEnum.StringNotIn }.Contains(operatorType))
+                if (new[] { AdvancedFilterSetting.OperatorTypeEnum.NumberIn, AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, AdvancedFilterSetting.OperatorTypeEnum.StringIn, AdvancedFilterSetting.OperatorTypeEnum.StringNotIn }.Contains(operatorType))
                 {
                     var exception = Assert.Throws<ArgumentOutOfRangeException>(GetValidSimulatorSettings(filterConfig).Validate);
                     Assert.Equal(nameof(filterConfig.OperatorType), exception.ParamName);

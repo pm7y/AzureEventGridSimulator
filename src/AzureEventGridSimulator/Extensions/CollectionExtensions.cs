@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace AzureEventGridSimulator.Extensions
 {
-    public static class ICollectionExtensions
+    public static class CollectionExtensions
     {
         public static bool HasItems<T>(this ICollection<T> collection)
         {
