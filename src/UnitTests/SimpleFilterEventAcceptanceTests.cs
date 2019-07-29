@@ -1,13 +1,13 @@
 ﻿using AzureEventGridSimulator;
 using AzureEventGridSimulator.Extensions;
 using AzureEventGridSimulator.Settings;
-using NUnit.Framework;
+using Xunit;
 
 namespace Tests
 {
     public class SimpleFilterEventAcceptanceTests
     {
-        [Test]
+        [Fact]
         public void TestDefaultFilterSettingsAcceptsDefaultGridEvent()
         {
             var filterConfig = new FilterSetting();
@@ -15,9 +15,10 @@ namespace Tests
             Assert.True(filterConfig.AcceptsEvent(gridEvent));
         }
 
-        [TestCase(arg: null)]
-        [TestCase(arg: new string[] { "All" })]
-        [TestCase(arg: new string[] { "This.is.a.test" })]
+        [Theory]
+        [InlineData(data: null)]
+        [InlineData(data: new object[] { new string[] { "All" } })]
+        [InlineData(data: new object[] { new string[] { "This.is.a.test" } })]
         public void TestEventTypeFilteringSuccess(string[] includedEventTypes)
         {
             var filterConfig = new FilterSetting { IncludedEventTypes = includedEventTypes };
@@ -25,12 +26,13 @@ namespace Tests
             Assert.True(filterConfig.AcceptsEvent(gridEvent));
         }
 
-        [TestCase(arg: new string[] { "This" })]
-        [TestCase(arg: new string[] { "this.is.a.test" })]
-        [TestCase(arg: new string[] { "THIS.IS.A.TEST" })]
-        [TestCase(arg: new string[] { "this.is.a.test.event" })]
-        [TestCase(arg: new string[] { "this.is.a.testevent" })]
-        [TestCase(arg: new string[0])]
+        [Theory]
+        [InlineData(data: new object[] { new string[] { "This" } })]
+        [InlineData(data: new object[] { new string[] { "this.is.a.test" } })]
+        [InlineData(data: new object[] { new string[] { "THIS.IS.A.TEST" } })]
+        [InlineData(data: new object[] { new string[] { "this.is.a.test.event" } })]
+        [InlineData(data: new object[] { new string[] { "this.is.a.testevent" } })]
+        [InlineData(data: new object[] { new string[0] })]
         public void TestEventTypeFilteringFailure(string[] includedEventTypes)
         {
             var filterConfig = new FilterSetting { IncludedEventTypes = includedEventTypes };
@@ -38,25 +40,26 @@ namespace Tests
             Assert.False(filterConfig.AcceptsEvent(gridEvent));
         }
 
-        [TestCase("This", null, true)]
-        [TestCase("This", null, false)]
-        [TestCase("THIS", null, false)]
-        [TestCase("this_is_a_test_subject", null, false)]
-        [TestCase("This_Is_A_Test_", null, true)]
-        [TestCase("T", null, true)]
-        [TestCase("t", null, false)]
-        [TestCase("", null, true)]
-        [TestCase("", null, false)]
-        [TestCase(null, null, false)]
-        [TestCase(null, null, true)]
-        [TestCase("This", "ect", true)]
-        [TestCase("This", "eCt", false)]
-        [TestCase("this_is_a_test_subject", "this_is_a_test_subject", false)]
-        [TestCase("This_Is_A_Test_Subject", "This_Is_A_Test_Subject", true)]
-        [TestCase(null, "This_Is_A_Test_Subject", true)]
-        [TestCase(null, "_Subject", true)]
-        [TestCase(null, "_subject", false)]
-        [TestCase(null, "_SUBJECT", false)]
+        [Theory]
+        [InlineData("This", null, true)]
+        [InlineData("This", null, false)]
+        [InlineData("THIS", null, false)]
+        [InlineData("this_is_a_test_subject", null, false)]
+        [InlineData("This_Is_A_Test_", null, true)]
+        [InlineData("T", null, true)]
+        [InlineData("t", null, false)]
+        [InlineData("", null, true)]
+        [InlineData("", null, false)]
+        [InlineData(null, null, false)]
+        [InlineData(null, null, true)]
+        [InlineData("This", "ect", true)]
+        [InlineData("This", "eCt", false)]
+        [InlineData("this_is_a_test_subject", "this_is_a_test_subject", false)]
+        [InlineData("This_Is_A_Test_Subject", "This_Is_A_Test_Subject", true)]
+        [InlineData(null, "This_Is_A_Test_Subject", true)]
+        [InlineData(null, "_Subject", true)]
+        [InlineData(null, "_subject", false)]
+        [InlineData(null, "_SUBJECT", false)]
         public void TestSubjectFilteringSuccess(string beginsWith, string endsWith, bool caseSensitive)
         {
             var filterConfig = new FilterSetting { SubjectBeginsWith = beginsWith, SubjectEndsWith = endsWith, IsSubjectCaseSensitive = caseSensitive };
@@ -64,19 +67,20 @@ namespace Tests
             Assert.True(filterConfig.AcceptsEvent(gridEvent));
         }
 
-        [TestCase("Thus", null, true)]
-        [TestCase("Thus", null, false)]
-        [TestCase("TH", null, true)]
-        [TestCase("wrong", null, false)]
-        [TestCase("t", null, true)]
-        [TestCase("This", "wrong", false)]
-        [TestCase("This", "eCt", true)]
-        [TestCase("this_is_a_test_subject", "this_is_a_test_subject", true)]
-        [TestCase("This_Is_A_Test_Subject", "wrong", true)]
-        [TestCase(null, "THIS_IS_A_TEST_SUBJECT", true)]
-        [TestCase(null, "this_is_a_test_subject", true)]
-        [TestCase(null, "_subject", true)]
-        [TestCase(null, "_SUBJECT", true)]
+        [Theory]
+        [InlineData("Thus", null, true)]
+        [InlineData("Thus", null, false)]
+        [InlineData("TH", null, true)]
+        [InlineData("wrong", null, false)]
+        [InlineData("t", null, true)]
+        [InlineData("This", "wrong", false)]
+        [InlineData("This", "eCt", true)]
+        [InlineData("this_is_a_test_subject", "this_is_a_test_subject", true)]
+        [InlineData("This_Is_A_Test_Subject", "wrong", true)]
+        [InlineData(null, "THIS_IS_A_TEST_SUBJECT", true)]
+        [InlineData(null, "this_is_a_test_subject", true)]
+        [InlineData(null, "_subject", true)]
+        [InlineData(null, "_SUBJECT", true)]
         public void TestSubjectFilteringFailure(string beginsWith, string endsWith, bool caseSensitive)
         {
             var filterConfig = new FilterSetting { SubjectBeginsWith = beginsWith, SubjectEndsWith = endsWith, IsSubjectCaseSensitive = caseSensitive };

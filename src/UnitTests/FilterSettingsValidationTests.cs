@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using AzureEventGridSimulator.Settings;
-using NUnit.Framework;
+using Xunit;
 
 namespace Tests
 {
@@ -32,9 +32,10 @@ namespace Tests
             return new AdvancedFilterSetting { Key = "key", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.BoolEquals, Value = true };
         }
 
-        [TestCase(0)]
-        [TestCase(1)]
-        [TestCase(5)]
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(5)]
         public void TestFilterSettingsValidationWithValidNumberOfAdvancedFilterSettings(byte n)
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new List<AdvancedFilterSetting>() };
@@ -43,10 +44,10 @@ namespace Tests
                 filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
             }
 
-            Assert.DoesNotThrow(GetValidSimulatorSettings(filterConfig).Validate);
+            GetValidSimulatorSettings(filterConfig).Validate();
         }
 
-        [Test]
+        [Fact]
         public void TestFilterSettingsValidationWithSixAdvancedFilters()
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new List<AdvancedFilterSetting>() };
@@ -55,9 +56,9 @@ namespace Tests
                 filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
             }
 
-            var exception = Assert.Catch<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
-            Assert.AreEqual(nameof(filterConfig.AdvancedFilters), exception.ParamName);
-            Assert.AreEqual("Advanced filtering is lmited to five advanced filters per event grid subscription\r\nParameter name: AdvancedFilters", exception.Message);
+            var exception = Assert.ThrowsAny<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
+            Assert.Equal(nameof(filterConfig.AdvancedFilters), exception.ParamName);
+            Assert.Equal("Advanced filtering is lmited to five advanced filters per event grid subscription\r\nParameter name: AdvancedFilters", exception.Message);
         }
     }
 }

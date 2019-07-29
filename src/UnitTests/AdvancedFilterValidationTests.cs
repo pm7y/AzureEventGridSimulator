@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using AzureEventGridSimulator.Settings;
-using NUnit.Framework;
+using Xunit;
 using static AzureEventGridSimulator.Settings.AdvancedFilterSetting;
 
 namespace Tests
@@ -32,124 +32,124 @@ namespace Tests
             };
         }
 
-        [Test]
+        [Fact]
         public void TestDefaultFilterValidation()
         {
-            AdvancedFilterSetting filterConfig = new AdvancedFilterSetting();
-            var exception = Assert.Catch<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
-            Assert.AreEqual(nameof(filterConfig.Key), exception.ParamName);
-            Assert.AreEqual("A filter key must be provided\r\nParameter name: Key", exception.Message);
+            var filterConfig = new AdvancedFilterSetting();
+            var exception = Assert.Throws<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
+            Assert.Equal(nameof(filterConfig.Key), exception.ParamName);
+            Assert.Equal("A filter key must be provided\r\nParameter name: Key", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithEmptyKey()
         {
-            AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = "" };
-            var exception = Assert.Catch<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
-            Assert.AreEqual(nameof(filterConfig.Key), exception.ParamName);
-            Assert.AreEqual("A filter key must be provided\r\nParameter name: Key", exception.Message);
+            var filterConfig = new AdvancedFilterSetting { Key = "" };
+            var exception = Assert.Throws<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
+            Assert.Equal(nameof(filterConfig.Key), exception.ParamName);
+            Assert.Equal("A filter key must be provided\r\nParameter name: Key", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithWhitespaceKey()
         {
-            AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = " " };
-            var exception = Assert.Catch<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
-            Assert.AreEqual(nameof(filterConfig.Key), exception.ParamName);
-            Assert.AreEqual("A filter key must be provided\r\nParameter name: Key", exception.Message);
+            var filterConfig = new AdvancedFilterSetting { Key = " " };
+            var exception = Assert.Throws<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
+            Assert.Equal(nameof(filterConfig.Key), exception.ParamName);
+            Assert.Equal("A filter key must be provided\r\nParameter name: Key", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithKey()
         {
-            AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = "Data" };
-            var exception = Assert.Catch<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
-            Assert.AreEqual(nameof(filterConfig.Value), exception.ParamName);
-            Assert.AreEqual("Either a Value or a set of Values must be provided\r\nParameter name: Value", exception.Message);
+            var filterConfig = new AdvancedFilterSetting { Key = "Data" };
+            var exception = Assert.Throws<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
+            Assert.Equal(nameof(filterConfig.Value), exception.ParamName);
+            Assert.Equal("Either a Value or a set of Values must be provided\r\nParameter name: Value", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithKeyAndValue()
         {
-            AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = "Data", Value = "SomeValue" };
-            Assert.DoesNotThrow(GetValidSimulatorSettings(filterConfig).Validate);
+            var filterConfig = new AdvancedFilterSetting { Key = "Data", Value = "SomeValue" };
+            GetValidSimulatorSettings(filterConfig).Validate();
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithValidLongValue()
         {
-            AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = "Data", Value = "SomeValue".PadLeft(512, 'a') };
-            Assert.DoesNotThrow(GetValidSimulatorSettings(filterConfig).Validate);
+            var filterConfig = new AdvancedFilterSetting { Key = "Data", Value = "SomeValue".PadLeft(512, 'a') };
+            GetValidSimulatorSettings(filterConfig).Validate();
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithOverlyLongValue()
         {
-            AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = "Data", Value = "SomeValue".PadLeft(513, 'a') };
-            var exception = Assert.Catch<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
-            Assert.AreEqual(nameof(filterConfig.Value), exception.ParamName);
-            Assert.AreEqual("Advanced filtering limits strings to 512 characters per string value\r\nParameter name: Value", exception.Message);
+            var filterConfig = new AdvancedFilterSetting { Key = "Data", Value = "SomeValue".PadLeft(513, 'a') };
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(GetValidSimulatorSettings(filterConfig).Validate);
+            Assert.Equal(nameof(filterConfig.Value), exception.ParamName);
+            Assert.Equal("Advanced filtering limits strings to 512 characters per string value\r\nParameter name: Value", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithValidLongValues()
         {
-            AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[] { "SomeValue".PadLeft(512, 'a') } };
-            Assert.DoesNotThrow(GetValidSimulatorSettings(filterConfig).Validate);
+            var filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[] { "SomeValue".PadLeft(512, 'a') } };
+            GetValidSimulatorSettings(filterConfig).Validate();
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithOverlyLongValues()
         {
-            AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[] { "SomeValue".PadLeft(513, 'a') } };
-            var exception = Assert.Catch<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
-            Assert.AreEqual(nameof(filterConfig.Values), exception.ParamName);
-            Assert.AreEqual("Advanced filtering limits strings to 512 characters per string value\r\nParameter name: Values", exception.Message);
+            var filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[] { "SomeValue".PadLeft(513, 'a') } };
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(GetValidSimulatorSettings(filterConfig).Validate);
+            Assert.Equal(nameof(filterConfig.Values), exception.ParamName);
+            Assert.Equal("Advanced filtering limits strings to 512 characters per string value\r\nParameter name: Values", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithFiveValues()
         {
             foreach (OperatorTypeEnum operatorType in Enum.GetValues(typeof(OperatorTypeEnum)))
             {
-                AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[5], OperatorType = operatorType };
-                Assert.DoesNotThrow(GetValidSimulatorSettings(filterConfig).Validate);
+                var filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[5], OperatorType = operatorType };
+                GetValidSimulatorSettings(filterConfig).Validate();
             }
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithSixValues()
         {
             foreach (OperatorTypeEnum operatorType in Enum.GetValues(typeof(OperatorTypeEnum)))
             {
-                AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[6], OperatorType = operatorType };
+                var filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[6], OperatorType = operatorType };
                 if (new OperatorTypeEnum[] { OperatorTypeEnum.NumberIn, OperatorTypeEnum.NumberNotIn, OperatorTypeEnum.StringIn, OperatorTypeEnum.StringNotIn }.Contains(operatorType))
                 {
-                    var exception = Assert.Catch<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
-                    Assert.AreEqual(nameof(filterConfig.OperatorType), exception.ParamName);
-                    Assert.AreEqual("Advanced filtering limits filters to five values for in and not in operators\r\nParameter name: OperatorType", exception.Message);
+                    var exception = Assert.Throws<ArgumentOutOfRangeException>(GetValidSimulatorSettings(filterConfig).Validate);
+                    Assert.Equal(nameof(filterConfig.OperatorType), exception.ParamName);
+                    Assert.Equal("Advanced filtering limits filters to five values for in and not in operators\r\nParameter name: OperatorType", exception.Message);
                 }
                 else
                 {
-                    Assert.DoesNotThrow(GetValidSimulatorSettings(filterConfig).Validate);
+                    GetValidSimulatorSettings(filterConfig).Validate();
                 }
             }
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithSingleDepthKey()
         {
-            AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = "Data.key1", Value = "SomeValue" };
-            Assert.DoesNotThrow(GetValidSimulatorSettings(filterConfig).Validate);
+            var filterConfig = new AdvancedFilterSetting { Key = "Data.key1", Value = "SomeValue" };
+            GetValidSimulatorSettings(filterConfig).Validate();
         }
 
-        [Test]
+        [Fact]
         public void TestFilterValidationWithGrandchildKey()
         {
-            AdvancedFilterSetting filterConfig = new AdvancedFilterSetting { Key = "Data.Key1.SubKey", Value = "SomeValue" };
-            var exception = Assert.Catch<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
-            Assert.AreEqual(nameof(filterConfig.Key), exception.ParamName);
-            Assert.AreEqual("The key can only have one level of nesting (like data.key1)\r\nParameter name: Key", exception.Message);
+            var filterConfig = new AdvancedFilterSetting { Key = "Data.Key1.SubKey", Value = "SomeValue" };
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(GetValidSimulatorSettings(filterConfig).Validate);
+            Assert.Equal(nameof(filterConfig.Key), exception.ParamName);
+            Assert.Equal("The key can only have one level of nesting (like data.key1)\r\nParameter name: Key", exception.Message);
         }
     }
 }
