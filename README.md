@@ -28,6 +28,58 @@ An example of one topic with one subscriber is shown below.
 }
 ```
 
+### Filtering Events
+Event filtering is configurable using the filter model defined here: https://docs.microsoft.com/en-us/azure/event-grid/event-filtering. This page provides a full guide to the configuration options available and all parts of this guide are currently supported. For ease of transition, explicit limitations have also been adhered to.
+
+Filters are configured in the `appsettings.json` file, at the subscriber level. Extending the example above to include a basic filter which will only deliver events to the subscription if they are of a specific type is illustrated below.
+```json
+{
+  "topics": [
+    {
+      "name": "MyAwesomeTopic",
+      "httpsPort": 60101,
+      "key": "TheLocal+DevelopmentKey=",
+      "subscribers": [
+        {
+          "name": "LocalAzureFunctionSubscription",
+          "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb",
+          "filter": {
+            "includedEventTypes": [
+              "my.eventType"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+This can be extended to allow subject filtering:
+```json
+"filter": {
+  "subjectBeginsWith": "/blobServices/default/containers/mycontainer/log",
+  "subjectEndsWith": ".jpg",
+  "isSubjectCaseSensitive": true
+}
+```
+or advanced filtering:
+```json
+"filter": {
+  "advancedFilters": [
+    {
+      "operatorType": "NumberGreaterThanOrEquals",
+      "key": "Data.Key1",
+      "value": 5
+    },
+    {
+      "operatorType": "StringContains",
+      "key": "Subject",
+      "values": ["container1", "container2"]
+    }
+  ]
+}
+```
+
 ## Usage
 
 Once configured and running, requests are `posted` to a topic endpoint. The endpoint of a topic will be in the form: `https://localhost:<configured-port>/api/events?api-version=2018-01-01`.
@@ -106,5 +158,4 @@ It posts the payload to https://host:port and drops the query uri. All of the ex
 ## Future Development
 
 - Subscription validation at start up. https://docs.microsoft.com/en-us/azure/event-grid/security-authentication
-- Event filtering. https://docs.microsoft.com/en-us/azure/event-grid/event-filtering
 - Subscriber retries & dead lettering. https://docs.microsoft.com/en-us/azure/event-grid/delivery-and-retry

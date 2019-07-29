@@ -9,5 +9,8 @@ namespace AzureEventGridSimulator.Settings
 
         [JsonProperty(PropertyName = "endpoint", Required = Required.Always)]
         public string Endpoint { get; set; }
+
+        [JsonProperty(PropertyName = "filter", Required = Required.AllowNull)]
+        public FilterSetting Filter { get; set; }
     }
 }
