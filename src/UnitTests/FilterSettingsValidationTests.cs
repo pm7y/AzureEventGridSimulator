@@ -21,7 +21,7 @@ namespace UnitTests
                         Subscribers = new List<SubscriptionSettings>
                         {
                             new SubscriptionSettings { Filter = filter }
-                        }
+                        }.ToArray()
                     }
                 }
             };

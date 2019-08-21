@@ -25,7 +25,7 @@ namespace UnitTests
                             {
                                 Filter = new FilterSetting{ AdvancedFilters = new[]{ advancedFilter } }
                             }
-                        }
+                        }.ToArray()
                     }
                 }
             };

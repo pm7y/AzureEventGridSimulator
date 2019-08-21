@@ -32,7 +32,7 @@ namespace AzureEventGridSimulator.Controllers
 
             _logger.LogInformation("New request ({EventCount} event(s)) for '{TopicName}' @ {RequestUrl}", events.Length, TopicSettings.Name, Request.GetDisplayUrl());
 
-            if (TopicSettings?.Subscribers?.Any() == true)
+            if (TopicSettings.Subscribers.Any())
             {
                 foreach (var subscription in TopicSettings.Subscribers)
                 {

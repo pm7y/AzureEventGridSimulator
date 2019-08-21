@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Settings
@@ -16,6 +15,6 @@ namespace AzureEventGridSimulator.Settings
         public int Port { get; set; }
 
         [JsonProperty(PropertyName = "subscribers", Required = Required.Default)]
-        public ICollection<SubscriptionSettings> Subscribers { get; set; }
+        public SubscriptionSettings[] Subscribers { get; set; } = Array.Empty<SubscriptionSettings>();
     }
 }
