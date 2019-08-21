@@ -4,13 +4,14 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using AzureEventGridSimulator.Extensions;
-using AzureEventGridSimulator.Settings;
+using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator.Middleware
+namespace AzureEventGridSimulator.Infrastructure.Middleware
 {
     public class AegRequestMiddleware
     {

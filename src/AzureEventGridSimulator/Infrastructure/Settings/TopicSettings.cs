@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator.Settings
+namespace AzureEventGridSimulator.Infrastructure.Settings
 {
     public class TopicSettings
     {

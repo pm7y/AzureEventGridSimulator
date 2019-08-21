@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using AzureEventGridSimulator.Extensions;
+using AzureEventGridSimulator.Infrastructure.Extensions;
 using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator.Settings
+namespace AzureEventGridSimulator.Infrastructure.Settings
 {
     public class AdvancedFilterSetting
     {

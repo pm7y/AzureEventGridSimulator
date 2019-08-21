@@ -1,5 +1,7 @@
-﻿using AzureEventGridSimulator.Extensions;
-using AzureEventGridSimulator.Middleware;
+﻿using System.Reflection;
+using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Infrastructure.Middleware;
+using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +25,8 @@ namespace AzureEventGridSimulator
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMediatR(Assembly.GetExecutingAssembly());
+            services.AddHttpClient();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             services.AddScoped(o => _loggerFactory.CreateLogger(nameof(AzureEventGridSimulator)));

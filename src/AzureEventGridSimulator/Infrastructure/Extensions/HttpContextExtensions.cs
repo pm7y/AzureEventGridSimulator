@@ -1,7 +1,8 @@
-﻿using AzureEventGridSimulator.Settings;
+﻿using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore.Http;
 
-namespace AzureEventGridSimulator.Extensions
+namespace AzureEventGridSimulator.Infrastructure.Extensions
 {
     public static class HttpContextExtensions
     {

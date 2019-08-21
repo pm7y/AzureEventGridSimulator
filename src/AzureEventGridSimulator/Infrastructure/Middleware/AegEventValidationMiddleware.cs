@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
-using AzureEventGridSimulator.Extensions;
-using AzureEventGridSimulator.Settings;
+using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-namespace AzureEventGridSimulator.Middleware
+namespace AzureEventGridSimulator.Infrastructure.Middleware
 {
     public class AegEventValidationMiddleware
     {

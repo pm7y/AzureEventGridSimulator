@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace AzureEventGridSimulator.Extensions
+namespace AzureEventGridSimulator.Infrastructure.Extensions
 {
     public static class CollectionExtensions
     {

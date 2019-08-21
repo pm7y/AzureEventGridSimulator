@@ -6,7 +6,7 @@ using System.Web;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-namespace AzureEventGridSimulator.Middleware
+namespace AzureEventGridSimulator.Infrastructure.Middleware
 {
     public class SasKeyValidator
     {

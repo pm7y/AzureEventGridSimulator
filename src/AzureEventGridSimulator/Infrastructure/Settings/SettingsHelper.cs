@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-namespace AzureEventGridSimulator.Settings
+namespace AzureEventGridSimulator.Infrastructure.Settings
 {
     public static class SettingsHelper
     {

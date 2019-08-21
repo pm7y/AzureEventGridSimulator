@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator.Settings
+namespace AzureEventGridSimulator.Infrastructure.Settings
 {
     public class FilterSetting
     {

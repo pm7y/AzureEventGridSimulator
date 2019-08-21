@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using AzureEventGridSimulator.Settings;
+using AzureEventGridSimulator.Infrastructure.Settings;
 using Newtonsoft.Json;
 using Xunit;
 

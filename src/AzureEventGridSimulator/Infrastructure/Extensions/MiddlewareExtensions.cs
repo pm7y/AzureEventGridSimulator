@@ -1,7 +1,7 @@
-﻿using AzureEventGridSimulator.Middleware;
+﻿using AzureEventGridSimulator.Infrastructure.Middleware;
 using Microsoft.AspNetCore.Builder;
 
-namespace AzureEventGridSimulator.Extensions
+namespace AzureEventGridSimulator.Infrastructure.Extensions
 {
     public static class MiddlewareExtensions
     {

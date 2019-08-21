@@ -2,7 +2,7 @@
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator
+namespace AzureEventGridSimulator.Domain.Entities
 {
     /// <summary>
     /// Properties of an event published to an Event Grid topic.

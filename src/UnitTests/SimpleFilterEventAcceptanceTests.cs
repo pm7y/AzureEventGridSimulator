@@ -1,6 +1,7 @@
 ﻿using AzureEventGridSimulator;
-using AzureEventGridSimulator.Extensions;
-using AzureEventGridSimulator.Settings;
+using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Infrastructure.Settings;
 using Xunit;
 
 namespace UnitTests

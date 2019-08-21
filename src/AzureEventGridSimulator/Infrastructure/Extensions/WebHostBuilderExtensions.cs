@@ -1,8 +1,8 @@
-﻿using AzureEventGridSimulator.Settings;
+﻿using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AzureEventGridSimulator.Extensions
+namespace AzureEventGridSimulator.Infrastructure.Extensions
 {
     public static class WebHostBuilderExtensions
     {

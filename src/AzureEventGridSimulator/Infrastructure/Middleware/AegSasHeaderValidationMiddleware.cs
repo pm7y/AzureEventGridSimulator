@@ -1,11 +1,11 @@
 ﻿using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using AzureEventGridSimulator.Extensions;
-using AzureEventGridSimulator.Settings;
+using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore.Http;
 
-namespace AzureEventGridSimulator.Middleware
+namespace AzureEventGridSimulator.Infrastructure.Middleware
 {
     public class AegSasHeaderValidationMiddleware
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using AzureEventGridSimulator.Settings;
+using AzureEventGridSimulator.Infrastructure.Settings;
 using Xunit;
 
 namespace UnitTests

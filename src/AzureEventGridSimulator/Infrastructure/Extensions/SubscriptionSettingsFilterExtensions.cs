@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Linq;
-using AzureEventGridSimulator.Settings;
+using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Infrastructure.Settings;
 using Newtonsoft.Json.Linq;
 
-namespace AzureEventGridSimulator.Extensions
+namespace AzureEventGridSimulator.Infrastructure.Extensions
 {
     public static class SubscriptionSettingsFilterExtensions
     {
