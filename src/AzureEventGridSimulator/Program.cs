@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace AzureEventGridSimulator
 {
@@ -16,23 +19,27 @@ namespace AzureEventGridSimulator
             try
             {
                 var host = WebHost.CreateDefaultBuilder()
-                                  .UseSimulatorSettings()
-                                  .UseStartup<Startup>()
-                                  .ConfigureLogging((hostingContext, logging) =>
+                                  .ConfigureAppConfiguration((context, builder) =>
                                   {
-                                      logging.ClearProviders();
+                                      var env = context.HostingEnvironment;
 
-                                      logging.AddConsole(options =>
-                                      {
-                                          options.IncludeScopes = true;
-                                          options.DisableColors = false;
-                                      });
+                                      var config = builder.AddJsonFile("appsettings.json", false, false)
+                                                          .AddJsonFile($"appsettings.{env.EnvironmentName.ToLowerInvariant().Trim()}.json", true, false)
+                                                          .AddEnvironmentVariables()
+                                                          .Build();
 
-                                      logging.SetMinimumLevel(LogLevel.Debug);
-
-                                      logging.AddFilter("System", LogLevel.Error);
-                                      logging.AddFilter("Microsoft", LogLevel.Error);
+                                      Log.Logger = new LoggerConfiguration()
+                                                   .Enrich.FromLogContext()
+                                                   .Enrich.WithProperty("AspNetCoreEnvironment", env.EnvironmentName)
+                                                   .Enrich.WithMachineName()
+                                                   .MinimumLevel.Debug()
+                                                   .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+                                                   .MinimumLevel.Override("System", LogEventLevel.Error)
+                                                   .ReadFrom.Configuration(config)
+                                                   .CreateLogger();
                                   })
+                                  .UseStartup<Startup>()
+                                  .UseSerilog()
                                   .UseKestrel(options =>
                                   {
                                       var simulatorSettings = (SimulatorSettings)options.ApplicationServices.GetService(typeof(SimulatorSettings));
@@ -57,12 +64,16 @@ namespace AzureEventGridSimulator
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError("Failed to run the Azure Event Grid Simulator: {ErrorMessage}.", ex.Message);
+                    logger.LogError(ex, "Failed to run the Azure Event Grid Simulator.");
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
             }
 
             Console.WriteLine("");

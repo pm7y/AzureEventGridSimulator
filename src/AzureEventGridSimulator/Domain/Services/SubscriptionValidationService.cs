@@ -102,7 +102,7 @@ namespace AzureEventGridSimulator.Domain.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError("Failed to receive validation event from subscriber '{SubscriberName}': {ErrorMessage}", subscription.Name, ex.Message);
+                _logger.LogError(ex, "Failed to receive validation event from subscriber '{SubscriberName}'", subscription.Name);
                 _logger.LogInformation("'{SubscriberName}' manual validation url: {ValidationUrl}", subscription.Name, validationUrl);
             }
 

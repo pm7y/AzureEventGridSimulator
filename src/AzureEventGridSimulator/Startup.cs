@@ -4,9 +4,9 @@ using System.Net.Sockets;
 using System.Reflection;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Infrastructure.Middleware;
+using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +28,11 @@ namespace AzureEventGridSimulator
 
         public void ConfigureServices(IServiceCollection services)
         {
+            var settings = new SimulatorSettings();
+            Configuration.Bind(settings);
+            settings.Validate();
+            services.AddSingleton(o => settings);
+
             services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddHttpClient();
 
@@ -40,7 +45,7 @@ namespace AzureEventGridSimulator
                     .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app)
         {
             app.UseMiddleware<EventGridMiddleware>();
             app.UseMvc();

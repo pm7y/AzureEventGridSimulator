@@ -74,14 +74,13 @@ namespace AzureEventGridSimulator.Domain.Commands
                     }
                     else
                     {
-                        _logger.LogDebug("Event {EventId} filtered out for subscriber '{SubscriberName}'.", evt.Id, subscription.Name);
+                        _logger.LogWarning("Event {EventId} filtered out for subscriber '{SubscriberName}'.", evt.Id, subscription.Name);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,
-                                 "Failed to send to subscriber '{SubscriberName}'.", subscription.Name);
+                _logger.LogError(ex, "Failed to send to subscriber '{SubscriberName}'.", subscription.Name);
             }
         }
 
