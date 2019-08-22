@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Xunit;
 
-namespace UnitTests
+namespace UnitTests.Filtering
 {
     public class FilterSettingsValidationTests
     {

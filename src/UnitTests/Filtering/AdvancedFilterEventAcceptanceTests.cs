@@ -1,11 +1,10 @@
 ﻿using System;
-using AzureEventGridSimulator;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Xunit;
 
-namespace UnitTests
+namespace UnitTests.Filtering
 {
     public class AdvancedFilterEventAcceptanceTests
     {

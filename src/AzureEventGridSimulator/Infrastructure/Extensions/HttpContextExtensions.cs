@@ -1,34 +1,20 @@
-﻿using AzureEventGridSimulator.Domain.Entities;
-using AzureEventGridSimulator.Infrastructure.Settings;
+﻿using System;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
 namespace AzureEventGridSimulator.Infrastructure.Extensions
 {
     public static class HttpContextExtensions
     {
-        public static EventGridEvent[] RetrieveEvents(this HttpContext httpContext)
+        public static async Task<string> RequestBody(this HttpContext context)
         {
-            return (EventGridEvent[])httpContext.Items["Events"];
-        }
-
-        public static void SaveEvents(this HttpContext httpContext, EventGridEvent[] events)
-        {
-            httpContext.Items["Events"] = events;
-        }
-
-        public static string RetrieveRequestBodyJson(this HttpContext httpContext)
-        {
-            return (string)httpContext.Items["RequestBody"];
-        }
-
-        public static void SaveRequestBodyJson(this HttpContext httpContext, string json)
-        {
-            httpContext.Items["RequestBody"] = json;
-        }
-
-        public static TopicSettings RetrieveTopicSettings(this HttpContext httpContext)
-        {
-            return (TopicSettings)httpContext.Items["TopicSettings"];
+            var buffer = new byte[Convert.ToInt32(context.Request.ContentLength)];
+            await context.Request.Body.ReadAsync(buffer, 0, buffer.Length);
+            context.Request.Body.Seek(0, SeekOrigin.Begin);
+            var requestBody = Encoding.UTF8.GetString(buffer);
+            return requestBody;
         }
     }
 }

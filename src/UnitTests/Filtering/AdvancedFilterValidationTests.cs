@@ -4,7 +4,7 @@ using System.Linq;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Xunit;
 
-namespace UnitTests
+namespace UnitTests.Filtering
 {
     public class AdvancedFilterValidationTests
     {

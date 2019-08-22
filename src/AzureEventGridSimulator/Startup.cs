@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Middleware;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
@@ -27,7 +26,7 @@ namespace AzureEventGridSimulator
         {
             services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddHttpClient();
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             services.AddScoped(o => _loggerFactory.CreateLogger(nameof(AzureEventGridSimulator)));
             services.AddScoped<SasKeyValidator>();
@@ -35,12 +34,7 @@ namespace AzureEventGridSimulator
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            app.UseAeg();
-            app.UseAegSasHeaderValidation();
-            app.UseAegEventValidation();
-            app.UseAegTopicValidation();
-            app.UseAegSizeValidation();
-
+            app.UseMiddleware<EventGridMiddleware>();
             app.UseMvc();
         }
     }

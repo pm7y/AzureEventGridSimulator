@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -26,6 +27,12 @@ namespace AzureEventGridSimulator.Domain.Commands
         protected override Task Handle(SendNotificationEventsToSubscriberCommand request, CancellationToken cancellationToken)
         {
             _logger.LogInformation("{EventCount} event(s) received on topic '{TopicName}'", request.Events.Length, request.Topic.Name);
+
+            foreach (var eventGridEvent in request.Events)
+            {
+                eventGridEvent.Topic = $"/subscriptions/{Guid.Empty:D}/resourceGroups/eventGridSimulator/providers/Microsoft.EventGrid/topics/{request.Topic.Name}";
+                eventGridEvent.MetadataVersion = "1";
+            }
 
             foreach (var subscription in request.Topic.Subscribers)
             {
