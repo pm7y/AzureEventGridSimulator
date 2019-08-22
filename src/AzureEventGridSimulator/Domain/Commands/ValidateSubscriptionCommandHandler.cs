@@ -1,6 +1,7 @@
-﻿using System;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -17,10 +18,20 @@ namespace AzureEventGridSimulator.Domain.Commands
 
         public Task<bool> Handle(ValidateSubscriptionCommand request, CancellationToken cancellationToken)
         {
-            // TODO Actually validate this properly.
+            var subscriber = request.Topic.Subscribers.FirstOrDefault(s => s.ValidationCode == request.ValidationCode);
 
-            var validCode = new Guid("d9ebebb7-f884-40b5-8c0d-9ec72f6f19cd");
-            return Task.FromResult(request.ValidationCode == validCode);
+            if (subscriber != null &&
+                subscriber.ValidationCode == request.ValidationCode &&
+                !subscriber.ValidationPeriodExpired)
+            {
+                subscriber.ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful;
+                _logger.LogInformation("Subscription {SubscriptionName} on topic {TopicName} was successfully validated.", subscriber.Name, request.Topic.Name);
+
+                return Task.FromResult(true);
+            }
+
+            _logger.LogWarning("Validation failed for code {ValidationCode} on topic {TopicName}.", request.ValidationCode, request.Topic.Name);
+            return Task.FromResult(false);
         }
     }
 }

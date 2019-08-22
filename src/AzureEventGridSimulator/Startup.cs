@@ -1,4 +1,8 @@
-﻿using System.Reflection;
+﻿using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Reflection;
+using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Infrastructure.Middleware;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
@@ -26,10 +30,14 @@ namespace AzureEventGridSimulator
         {
             services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddHttpClient();
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
-            services.AddScoped(o => _loggerFactory.CreateLogger(nameof(AzureEventGridSimulator)));
+            services.AddHostedService<SubscriptionValidationService>();
+            services.AddSingleton(o => _loggerFactory.CreateLogger(nameof(AzureEventGridSimulator)));
             services.AddScoped<SasKeyValidator>();
+            services.AddSingleton<ValidationIpAddress>();
+
+            services.AddMvc()
+                    .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -37,5 +45,24 @@ namespace AzureEventGridSimulator
             app.UseMiddleware<EventGridMiddleware>();
             app.UseMvc();
         }
+    }
+
+    public class ValidationIpAddress
+    {
+        private readonly string _ipAddress;
+
+        public ValidationIpAddress()
+        {
+            var hostName = Dns.GetHostName();
+            _ipAddress = Dns.GetHostAddresses(hostName).First(ip => ip.AddressFamily == AddressFamily.InterNetwork &&
+                                                                    !IPAddress.IsLoopback(ip)).ToString();
+        }
+
+        public override string ToString()
+        {
+            return _ipAddress;
+        }
+
+        public static implicit operator string(ValidationIpAddress d) => d.ToString();
     }
 }

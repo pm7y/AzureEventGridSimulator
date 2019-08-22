@@ -20,17 +20,18 @@ namespace AzureEventGridSimulator
                                   .UseStartup<Startup>()
                                   .ConfigureLogging((hostingContext, logging) =>
                                   {
+                                      logging.ClearProviders();
+
                                       logging.AddConsole(options =>
                                       {
                                           options.IncludeScopes = true;
                                           options.DisableColors = false;
                                       });
-                                      logging.AddDebug();
 
                                       logging.SetMinimumLevel(LogLevel.Debug);
 
-                                      logging.AddFilter("System", LogLevel.Warning);
-                                      logging.AddFilter("Microsoft", LogLevel.Warning);
+                                      logging.AddFilter("System", LogLevel.Error);
+                                      logging.AddFilter("Microsoft", LogLevel.Error);
                                   })
                                   .UseKestrel(options =>
                                   {
@@ -38,8 +39,11 @@ namespace AzureEventGridSimulator
 
                                       foreach (var topics in simulatorSettings.Topics)
                                       {
-                                          options.Listen(IPAddress.Loopback, topics.Port,
-                                                         listenOptions => { listenOptions.UseHttps(StoreName.My, "localhost", true); });
+                                          options.Listen(IPAddress.Any, topics.Port,
+                                                         listenOptions =>
+                                                         {
+                                                             listenOptions.UseHttps(StoreName.My, "localhost", true);
+                                                         });
                                       }
                                   })
                                   .Build();

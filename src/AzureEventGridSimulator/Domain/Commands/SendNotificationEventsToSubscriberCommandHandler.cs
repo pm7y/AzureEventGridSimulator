@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -48,6 +47,12 @@ namespace AzureEventGridSimulator.Domain.Commands
         {
             try
             {
+                if (subscription.ValidationStatus != SubscriptionValidationStatus.ValidationSuccessful)
+                {
+                    _logger.LogWarning("Subscription '{SubscriberName}' can't receive events. It's still pending validation.", subscription.Name);
+                    return;
+                }
+
                 _logger.LogDebug("Sending to subscriber '{SubscriberName}'.", subscription.Name);
 
                 // "Event Grid sends the events to subscribers in an array that has a single event. This behaviour may change in the future."

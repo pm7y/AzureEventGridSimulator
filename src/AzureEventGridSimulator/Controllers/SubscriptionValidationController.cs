@@ -31,7 +31,7 @@ namespace AzureEventGridSimulator.Controllers
                 return BadRequest(new ErrorMessage(HttpStatusCode.BadRequest, "The validation code was not correct."));
             }
 
-            return Ok();
+            return Ok("Webhook successfully validated as a subscription endpoint");
         }
     }
 }
