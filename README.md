@@ -32,14 +32,14 @@ An example of one topic with one subscriber is shown below.
 ### Topic Settings
 
 - `name`: The name of the topic. It can only contain letters, numbers, and dashes.
-- `port`: The port to use for this address. The topic will listen on `https://0.0.0.0:{port}/`.
+- `port`: The port to use for the topic endpoint. The topic will listen on `https://0.0.0.0:{port}/`.
 - `key`: The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place.
 - `subscribers`: The subscriptions for this topic.
 
 ### Subscriber Settings
 
 - `name`: The name of the subscriber. It can only contain letters, numbers, and dashes.
-- `endpoint`: The subscription endpoint url. Events recieved by topic will be sent to this address.
+- `endpoint`: The subscription endpoint url. Events received by topic will be sent to this address.
 - `disableValidation`:
   - `false` (the default) subscription validation will be attempted each time the simulator starts.
   - `true` to disable subscription validation.
@@ -193,3 +193,6 @@ It posts the payload to https://host:port and drops the query uri. All of the ex
 ## Future Development
 
 - Subscriber retries & dead lettering. https://docs.microsoft.com/en-us/azure/event-grid/delivery-and-retry
+- Ceritifcate cofiguration in `appsettings.json`.
+- Docker support.
+- Maybe a web based console?
