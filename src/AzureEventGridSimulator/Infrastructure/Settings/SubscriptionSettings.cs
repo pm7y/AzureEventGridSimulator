@@ -18,6 +18,9 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
         [JsonProperty(PropertyName = "filter", Required = Required.Default)]
         public FilterSetting Filter { get; set; }
 
+        [JsonProperty(PropertyName = "disableValidation", Required = Required.Default)]
+        public bool DisableValidation { get; set; }
+
         [JsonIgnore]
         public SubscriptionValidationStatus ValidationStatus { get; set; }
 

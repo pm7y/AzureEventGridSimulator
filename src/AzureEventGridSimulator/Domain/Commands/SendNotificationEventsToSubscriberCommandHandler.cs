@@ -47,7 +47,8 @@ namespace AzureEventGridSimulator.Domain.Commands
         {
             try
             {
-                if (subscription.ValidationStatus != SubscriptionValidationStatus.ValidationSuccessful)
+                if (!subscription.DisableValidation &&
+                    subscription.ValidationStatus != SubscriptionValidationStatus.ValidationSuccessful)
                 {
                     _logger.LogWarning("Subscription '{SubscriberName}' can't receive events. It's still pending validation.", subscription.Name);
                     return;

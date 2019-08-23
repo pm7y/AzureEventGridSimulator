@@ -1,11 +1,11 @@
-
 # Azure Event Grid Simulator
 
 [![Build status](https://ci.appveyor.com/api/projects/status/7dhqhfg5lt73chsb?svg=true)](https://ci.appveyor.com/project/fallenidol/azureeventgridsimulator)
 
-A simple simulator which provides endpoints that mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library. 
+A simple simulator which provides endpoints that mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library.
 
 ## Configuration
+
 Topics and their subscribers are configured in the `appsettings.json` file.
 You can add multiple topics. Each topic must have a unique port. Each topic can have multiple subscribers.
 An example of one topic with one subscriber is shown below.
@@ -15,12 +15,13 @@ An example of one topic with one subscriber is shown below.
   "topics": [
     {
       "name": "MyAwesomeTopic",
-      "httpsPort": 60101,
+      "port": 60101,
       "key": "TheLocal+DevelopmentKey=",
       "subscribers": [
         {
           "name": "LocalAzureFunctionSubscription",
-          "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb"
+          "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb",
+          "validationMode": "None"
         }
       ]
     }
@@ -28,10 +29,38 @@ An example of one topic with one subscriber is shown below.
 }
 ```
 
-### Filtering Events
-Event filtering is configurable using the filter model defined here: https://docs.microsoft.com/en-us/azure/event-grid/event-filtering. This page provides a full guide to the configuration options available and all parts of this guide are currently supported. For ease of transition, explicit limitations have also been adhered to.
+### Topic Settings
 
-Filters are configured in the `appsettings.json` file, at the subscriber level. Extending the example above to include a basic filter which will only deliver events to the subscription if they are of a specific type is illustrated below.
+- `name`: The name of the topic. It can only contain letters, numbers, and dashes.
+- `port`: The port to use for this address. The topic will listen on `https://0.0.0.0:{port}/`.
+- `key`: The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place.
+- `subscribers`: The subscriptions for this topic.
+
+### Subscriber Settings
+
+- `name`: The name of the subscriber. It can only contain letters, numbers, and dashes.
+- `endpoint`: The subscription endpoint url. Events recieved by topic will be sent to this address.
+- `disableValidation`:
+  - `false` (the default) subscription validation will be attempted each time the simulator starts.
+  - `true` to disable subscription validation.
+
+#### Subscription Validation
+
+When a subscription is added to Azure Event Grid it first sends a validation event to the subscription endpoint. The validation event contains a `validationCode` which the subscription endpoint must echo back. If this does not occur then Azure Event Grid will not enable the subscription. Azure Event Grid also supports manual validation via a `validationUrl` which is sent with the `validationCode` in the initial validation message.
+
+More information about subscription validation can be found at [https://docs.microsoft.com/en-us/azure/event-grid/security-authentication](https://docs.microsoft.com/en-us/azure/event-grid/security-authentication).
+
+The Azure Event Grid Simualator can mimick this behaviour using the `validationRequired` setting.
+
+- `false` (the default), subscription validation will be disabled.
+- `true`, a subscription validation event will be sent to the subscriber when the simulator starts. The subscription will not accept events until it is successfully validated.
+
+#### Filtering Events
+
+Event filtering is configurable on each subscriber using the filter model defined here: https://docs.microsoft.com/en-us/azure/event-grid/event-filtering. This page provides a full guide to the configuration options available and all parts of this guide are currently supported. For ease of transition, explicit limitations have also been adhered to.
+
+Extending the example above to include a basic filter which will only deliver events to the subscription if they are of a specific type is illustrated below.
+
 ```json
 {
   "topics": [
@@ -44,9 +73,7 @@ Filters are configured in the `appsettings.json` file, at the subscriber level. 
           "name": "LocalAzureFunctionSubscription",
           "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb",
           "filter": {
-            "includedEventTypes": [
-              "my.eventType"
-            ]
+            "includedEventTypes": ["my.eventType"]
           }
         }
       ]
@@ -54,7 +81,9 @@ Filters are configured in the `appsettings.json` file, at the subscriber level. 
   ]
 }
 ```
+
 This can be extended to allow subject filtering:
+
 ```json
 "filter": {
   "subjectBeginsWith": "/blobServices/default/containers/mycontainer/log",
@@ -62,7 +91,9 @@ This can be extended to allow subject filtering:
   "isSubjectCaseSensitive": true
 }
 ```
+
 or advanced filtering:
+
 ```json
 "filter": {
   "advancedFilters": [
@@ -80,7 +111,7 @@ or advanced filtering:
 }
 ```
 
-## Usage
+## Using the Simulator
 
 Once configured and running, requests are `posted` to a topic endpoint. The endpoint of a topic will be in the form: `https://localhost:<configured-port>/api/events?api-version=2018-01-01`.
 
@@ -89,18 +120,22 @@ Once configured and running, requests are `posted` to a topic endpoint. The endp
 ```bash
 curl -k -H "Content-Type: application/json" -H "aeg-sas-key: TheLocal+DevelopmentKey=" -X POST "https://localhost:60101/api/events?api-version=2018-01-01" -d @Data.json
 ```
+
 _Data.json_
+
 ```json
-[{
-  "id": "8727823",
-  "subject": "/example/subject",
-  "data": {
-  	"MyProperty": "This is my awesome data!"
-  },
-  "eventType": "Example.DataType",
-  "eventTime": "2019-01-01T00:00:00.000Z",
-  "dataVersion": "1",
-}]
+[
+  {
+    "id": "8727823",
+    "subject": "/example/subject",
+    "data": {
+      "MyProperty": "This is my awesome data!"
+    },
+    "eventType": "Example.DataType",
+    "eventTime": "2019-01-01T00:00:00.000Z",
+    "dataVersion": "1"
+  }
+]
 ```
 
 #### Postman
@@ -113,7 +148,7 @@ An example request that you can import into [Postman](https://www.getpostman.com
 
 Azure Event Grid only accepts connections over https and so the simulator only supports _https_ too. The simulator uses the dotnet development certificate to secure each topic port. You can ensure that this certifcate is installed by running the following command.
 
-``` dotnet dev-certs https```
+`dotnet dev-certs https`
 
 ### Subscribers
 
@@ -134,16 +169,16 @@ Azure Event Grid imposes certain size limits to the overall message body and to 
 
 Ensures that the properties of each event meets the minimum requirements.
 
-|Field|Description|
-|-----|-----------|
-|Id|Must be a string. Not null or whitespace.|
-|Subject|Must be a string. Not null or whitespace.|
-|EventType|Must be a string. Not null or whitespace.|
-|EventTime|Must be a valid date/time.|
-|MetadataVersion|Must be null or `1`.|
-|Topic|Leave null or empty. Event Grid will populate this field.|
-|DataVersion|_Optional_. e.g. `1`.|
-|Data|_Optional_. Any custom object.|
+| Field           | Description                                               |
+| --------------- | --------------------------------------------------------- |
+| Id              | Must be a string. Not null or whitespace.                 |
+| Subject         | Must be a string. Not null or whitespace.                 |
+| EventType       | Must be a string. Not null or whitespace.                 |
+| EventTime       | Must be a valid date/time.                                |
+| MetadataVersion | Must be null or `1`.                                      |
+| Topic           | Leave null or empty. Event Grid will populate this field. |
+| DataVersion     | _Optional_. e.g. `1`.                                     |
+| Data            | _Optional_. Any custom object.                            |
 
 ## Why?
 
@@ -151,11 +186,10 @@ There are a couple of similar projects out there. What I found though is that th
 
 Azure Event Grid only excepts connections over https and the `Microsoft.Azure.EventGrid` client only sends requests over https. If you're posting events to an Event Grid topic using custom code then maybe this isn't an issue. If you are using the client library though then any test endpoint must be https.
 
-Typically an event grid topic endpoint url is like so: _https://topic-name.location-name.eventgrid.azure.net/api/events_. Note that all the information needed to post to a topic is contained in the host part. The `Microsoft.Azure.EventGrid` client will essentially reduce the url you give it down to just the host part and prefix it with **https** (regardless of the original scheme). 
+Typically an event grid topic endpoint url is like so: _https://topic-name.location-name.eventgrid.azure.net/api/events_. Note that all the information needed to post to a topic is contained in the host part. The `Microsoft.Azure.EventGrid` client will essentially reduce the url you give it down to just the host part and prefix it with **https** (regardless of the original scheme).
 
 It posts the payload to https://host:port and drops the query uri. All of the existing simulator/ emulator projects I found don't support https and use a the query uri to distinguish between the topics. This isn't compatible with the `Microsoft.Azure.EventGrid` client.
 
 ## Future Development
 
-- Subscription validation at start up. https://docs.microsoft.com/en-us/azure/event-grid/security-authentication
 - Subscriber retries & dead lettering. https://docs.microsoft.com/en-us/azure/event-grid/delivery-and-retry

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -45,7 +46,7 @@ namespace AzureEventGridSimulator.Domain.Services
         {
             foreach (var topic in _simulatorSettings.Topics)
             {
-                foreach (var subscription in topic.Subscribers)
+                foreach (var subscription in topic.Subscribers.Where(s => !s.DisableValidation))
                 {
 #pragma warning disable 4014
                     ValidateSubscription(topic, subscription);
@@ -61,7 +62,7 @@ namespace AzureEventGridSimulator.Domain.Services
             try
             {
                 _logger.LogDebug("Sending subscription validation event to subscriber '{SubscriberName}'.", subscription.Name);
-                
+
                 var evt = new EventGridEvent
                 {
                     EventTime = DateTime.UtcNow.ToString("O"),
