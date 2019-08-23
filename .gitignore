@@ -330,3 +330,6 @@ ASALocalRun/
 .mfractor/
 /win-x64
 /src/AzureEventGridSimulator/appsettings.development.json
+/build-win64
+/build-osx-x64
+/build-linux-x64
