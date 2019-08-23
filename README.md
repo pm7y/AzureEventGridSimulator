@@ -21,7 +21,7 @@ An example of one topic with one subscriber is shown below.
         {
           "name": "LocalAzureFunctionSubscription",
           "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb",
-          "validationMode": "None"
+          "disableValidation": true
         }
       ]
     }
