@@ -23,6 +23,7 @@ namespace UnitTests.Filtering
                         {
                             new SubscriptionSettings
                             {
+                                Name = "SubscriberName",
                                 Filter = new FilterSetting{ AdvancedFilters = new[]{ advancedFilter } }
                             }
                         }.ToArray()

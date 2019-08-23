@@ -20,7 +20,11 @@ namespace UnitTests.Filtering
                         Port = 12345,
                         Subscribers = new List<SubscriptionSettings>
                         {
-                            new SubscriptionSettings { Filter = filter }
+                            new SubscriptionSettings
+                            {
+                                Name = "SubscriberName",
+                                Filter = filter
+                            }
                         }.ToArray()
                     }
                 }
@@ -29,7 +33,12 @@ namespace UnitTests.Filtering
 
         private AdvancedFilterSetting GetValidAdvancedFilter()
         {
-            return new AdvancedFilterSetting { Key = "key", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.BoolEquals, Value = true };
+            return new AdvancedFilterSetting
+            {
+                Key = "key",
+                OperatorType = AdvancedFilterSetting.OperatorTypeEnum.BoolEquals,
+                Value = true
+            };
         }
 
         [Theory]
