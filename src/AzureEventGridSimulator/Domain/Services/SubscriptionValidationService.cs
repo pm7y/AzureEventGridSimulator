@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -30,10 +31,10 @@ namespace AzureEventGridSimulator.Domain.Services
             _logger = logger;
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
 #pragma warning disable 4014
-            SendSubscriptionValidationEventToAllSubscriptions();
+            return SendSubscriptionValidationEventToAllSubscriptions();
 #pragma warning restore 4014
         }
 
@@ -42,17 +43,21 @@ namespace AzureEventGridSimulator.Domain.Services
             return Task.CompletedTask;
         }
 
-        private async Task SendSubscriptionValidationEventToAllSubscriptions()
+        private Task SendSubscriptionValidationEventToAllSubscriptions()
         {
+            var tasks = new List<Task>();
+
             foreach (var topic in _simulatorSettings.Topics)
             {
                 foreach (var subscription in topic.Subscribers.Where(s => !s.DisableValidation))
                 {
 #pragma warning disable 4014
-                    ValidateSubscription(topic, subscription);
+                    tasks.Add(ValidateSubscription(topic, subscription));
 #pragma warning restore 4014
                 }
             }
+
+            return Task.WhenAll(tasks);
         }
 
         private async Task<bool> ValidateSubscription(TopicSettings topic, SubscriptionSettings subscription)
