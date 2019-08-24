@@ -333,3 +333,6 @@ ASALocalRun/
 /build-win64
 /build-osx-x64
 /build-linux-x64
+/src/build-win-64
+/src/build-osx-64
+/src/build-linux-64

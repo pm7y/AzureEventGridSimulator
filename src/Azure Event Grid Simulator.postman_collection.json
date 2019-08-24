@@ -6,7 +6,7 @@
 	},
 	"item": [
 		{
-			"name": "Typical Example",
+			"name": "Notification",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -35,11 +35,16 @@
 						"key": "aeg-sas-key",
 						"type": "text",
 						"value": "TheLocal+DevelopmentKey="
+					},
+					{
+						"key": "aeg-event-type",
+						"type": "text",
+						"value": "Notification"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "[{\n  \"id\": \"{{eventId}}\",\n  \"subject\": \"/example/subject\",\n  \"data\": {\n  \t\"MyProperty\": \"This is my awesome data!\"\n  },\n  \"eventType\": \"Example.DataType\",\n  \"eventTime\": \"{{eventTime}}\",\n  \"dataVersion\": \"1\",\n}]"
+					"raw": "[{\n  \"id\": \"{{eventId}}\",\n  \"subject\": \"/example/subject\",\n  \"data\": {\n  \t\"MyProperty\": \"This is my awesome data!\"\n  },\n  \"eventType\": \"some.special.event.type\",\n  \"eventTime\": \"{{eventTime}}\",\n  \"dataVersion\": \"1\",\n}]"
 				},
 				"url": {
 					"raw": "https://127.0.0.1:60101/api/events?api-version=2018-01-01",
@@ -59,6 +64,34 @@
 						{
 							"key": "api-version",
 							"value": "2018-01-01"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Subscription Validation",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://127.0.0.1:60101/validate?id=d9ebebb7-f884-40b5-8c0d-9ec72f6f19cd",
+					"protocol": "https",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "60101",
+					"path": [
+						"validate"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "d9ebebb7-f884-40b5-8c0d-9ec72f6f19cd"
 						}
 					]
 				}
