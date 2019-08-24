@@ -70,7 +70,7 @@ namespace AzureEventGridSimulator.Domain.Entities
         /// <exception cref="InvalidOperationException" >
         /// Thrown if validation fails
         /// </exception>
-        public virtual void Validate()
+        public void Validate()
         {
             if (string.IsNullOrWhiteSpace(Id))
             {

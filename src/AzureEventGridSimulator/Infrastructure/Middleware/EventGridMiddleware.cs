@@ -34,7 +34,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
 
             if (IsValidationRequest(context))
             {
-                await ValidateSubscriptionValidationRequest(context, simulatorSettings, logger);
+                await ValidateSubscriptionValidationRequest(context);
                 return;
             }
 
@@ -42,9 +42,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             await context.Response.ErrorResponse(HttpStatusCode.BadRequest, "Request not supported.");
         }
 
-        private async Task ValidateSubscriptionValidationRequest(HttpContext context,
-                                                    SimulatorSettings simulatorSettings,
-                                                    ILogger logger)
+        private async Task ValidateSubscriptionValidationRequest(HttpContext context)
         {
             var id = context.Request.Query["id"];
 
@@ -81,12 +79,12 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             //
             // Validate the overall body size and the size of each event.
             //
-            const int MaximumAllowedOverallMessageSizeInBytes = 1536000;
-            const int MaximumAllowedEventGridEventSizeInBytes = 66560;
+            const int maximumAllowedOverallMessageSizeInBytes = 1536000;
+            const int maximumAllowedEventGridEventSizeInBytes = 66560;
 
             logger.LogDebug("Message is {Bytes} in length.", requestBody.Length);
 
-            if (requestBody.Length > MaximumAllowedOverallMessageSizeInBytes)
+            if (requestBody.Length > maximumAllowedOverallMessageSizeInBytes)
             {
                 logger.LogError("Payload is larger than the allowed maximum.");
 
@@ -100,7 +98,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
 
                 logger.LogDebug("Event is {Bytes} in length.", eventSize);
 
-                if (eventSize > MaximumAllowedEventGridEventSizeInBytes)
+                if (eventSize > maximumAllowedEventGridEventSizeInBytes)
                 {
                     logger.LogError("Event is larger than the allowed maximum.");
 

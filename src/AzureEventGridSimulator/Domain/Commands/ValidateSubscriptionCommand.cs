@@ -12,7 +12,7 @@ namespace AzureEventGridSimulator.Domain.Commands
             Topic = topic;
         }
 
-        public TopicSettings Topic { get; set; }
+        public TopicSettings Topic { get; }
 
         public Guid ValidationCode { get; }
     }

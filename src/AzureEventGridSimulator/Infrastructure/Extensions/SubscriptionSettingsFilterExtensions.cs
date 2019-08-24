@@ -42,7 +42,7 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
             if (!retVal)
             {
                 // filter is not null
-                if (gridEvent.TryGetValue(filter.Key, out object value))
+                if (gridEvent.TryGetValue(filter.Key, out var value))
                 {
                     switch (filter.OperatorType)
                     {
@@ -72,11 +72,11 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
                             retVal = Try(() => !string.IsNullOrEmpty(Convert.ToString(filter.Value)) && Convert.ToString(value).ToUpper().Contains(Convert.ToString(filter.Value).ToUpper()));
                             break;
                         case AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith:
-                            // null or empty values cannot be considered to be the beginning character of a string 
+                            // null or empty values cannot be considered to be the beginning character of a string
                             retVal = Try(() => !string.IsNullOrEmpty(Convert.ToString(filter.Value)) && Convert.ToString(value).ToUpper().StartsWith(Convert.ToString(filter.Value).ToUpper()));
                             break;
                         case AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith:
-                            // null or empty values cannot be considered to be the end character of a string 
+                            // null or empty values cannot be considered to be the end character of a string
                             retVal = Try(() => !string.IsNullOrEmpty(Convert.ToString(filter.Value)) && Convert.ToString(value).ToUpper().EndsWith(Convert.ToString(filter.Value).ToUpper()));
                             break;
                         case AdvancedFilterSetting.OperatorTypeEnum.StringIn:
@@ -96,7 +96,7 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
         {
             if (value == null)
             {
-                throw new ArgumentNullException(nameof(value), "null is not convertable to a number in this implementation");
+                throw new ArgumentNullException(nameof(value), "null is not convertible to a number in this implementation");
             }
 
             return Convert.ToDouble(value);

@@ -7,7 +7,7 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
 {
     public class SubscriptionSettings
     {
-        private DateTime _expired = DateTime.UtcNow.AddMinutes(5);
+        private readonly DateTime _expired = DateTime.UtcNow.AddMinutes(5);
 
         [JsonProperty(PropertyName = "name", Required = Required.Always)]
         public string Name { get; set; }

@@ -4,8 +4,7 @@
     {
         None = 0,
         ValidationEventSent = 1,
-        AwaitingValidationCode = 2,
-        ValidationFailed = 3,
-        ValidationSuccessful = 4
+        ValidationFailed = 2,
+        ValidationSuccessful = 3
     }
 }
