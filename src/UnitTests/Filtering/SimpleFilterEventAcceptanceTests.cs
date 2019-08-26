@@ -1,6 +1,7 @@
 ﻿using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using Shouldly;
 using Xunit;
 
 namespace UnitTests.Filtering
@@ -12,7 +13,8 @@ namespace UnitTests.Filtering
         {
             var filterConfig = new FilterSetting();
             var gridEvent = new EventGridEvent();
-            Assert.True(filterConfig.AcceptsEvent(gridEvent));
+
+            filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
         }
 
         [Theory]
@@ -23,7 +25,8 @@ namespace UnitTests.Filtering
         {
             var filterConfig = new FilterSetting { IncludedEventTypes = includedEventTypes };
             var gridEvent = new EventGridEvent { EventType = "This.is.a.test" };
-            Assert.True(filterConfig.AcceptsEvent(gridEvent));
+
+            filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
         }
 
         [Theory]
@@ -37,7 +40,8 @@ namespace UnitTests.Filtering
         {
             var filterConfig = new FilterSetting { IncludedEventTypes = includedEventTypes };
             var gridEvent = new EventGridEvent { EventType = "This.is.a.test" };
-            Assert.False(filterConfig.AcceptsEvent(gridEvent));
+
+            filterConfig.AcceptsEvent(gridEvent).ShouldBeFalse();
         }
 
         [Theory]
@@ -64,7 +68,8 @@ namespace UnitTests.Filtering
         {
             var filterConfig = new FilterSetting { SubjectBeginsWith = beginsWith, SubjectEndsWith = endsWith, IsSubjectCaseSensitive = caseSensitive };
             var gridEvent = new EventGridEvent { Subject = "This_Is_A_Test_Subject" };
-            Assert.True(filterConfig.AcceptsEvent(gridEvent));
+
+            filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
         }
 
         [Theory]
@@ -85,7 +90,8 @@ namespace UnitTests.Filtering
         {
             var filterConfig = new FilterSetting { SubjectBeginsWith = beginsWith, SubjectEndsWith = endsWith, IsSubjectCaseSensitive = caseSensitive };
             var gridEvent = new EventGridEvent { Subject = "This_Is_A_Test_Subject" };
-            Assert.False(filterConfig.AcceptsEvent(gridEvent));
+
+            filterConfig.AcceptsEvent(gridEvent).ShouldBeFalse();
         }
     }
 }

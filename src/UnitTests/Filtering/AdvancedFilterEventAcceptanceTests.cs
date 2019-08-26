@@ -2,6 +2,7 @@
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using Shouldly;
 using Xunit;
 
 namespace UnitTests.Filtering
@@ -25,7 +26,8 @@ namespace UnitTests.Filtering
         public void TestAdvancedFilteringSuccess(AdvancedFilterSetting filter)
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new[] { filter } };
-            Assert.True(filterConfig.AcceptsEvent(GridEvent), $"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate() }");
+
+            filterConfig.AcceptsEvent(GridEvent).ShouldBeTrue($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate() }");
         }
 
         [Theory]
@@ -33,7 +35,8 @@ namespace UnitTests.Filtering
         public void TestAdvancedFilteringFailure(AdvancedFilterSetting filter)
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new[] { filter } };
-            Assert.False(filterConfig.AcceptsEvent(GridEvent), $"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate() }");
+
+            filterConfig.AcceptsEvent(GridEvent).ShouldBeFalse($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate() }");
         }
     }
 }

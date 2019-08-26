@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using Shouldly;
 using Xunit;
 
 namespace UnitTests.Filtering
@@ -47,13 +48,16 @@ namespace UnitTests.Filtering
         [InlineData(5)]
         public void TestFilterSettingsValidationWithValidNumberOfAdvancedFilterSettings(byte n)
         {
-            var filterConfig = new FilterSetting { AdvancedFilters = new List<AdvancedFilterSetting>() };
-            for (byte i = 0; i < n; i++)
+            Should.NotThrow(() =>
             {
-                filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
-            }
+                var filterConfig = new FilterSetting { AdvancedFilters = new List<AdvancedFilterSetting>() };
+                for (byte i = 0; i < n; i++)
+                {
+                    filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
+                }
 
-            GetValidSimulatorSettings(filterConfig).Validate();
+                GetValidSimulatorSettings(filterConfig).Validate();
+            });
         }
 
         [Fact]
@@ -65,9 +69,10 @@ namespace UnitTests.Filtering
                 filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
             }
 
-            var exception = Assert.ThrowsAny<ArgumentException>(GetValidSimulatorSettings(filterConfig).Validate);
-            Assert.Equal(nameof(filterConfig.AdvancedFilters), exception.ParamName);
-            Assert.Equal("Advanced filtering is limited to five advanced filters per event grid subscription.\r\nParameter name: AdvancedFilters", exception.Message);
+            var exception = Should.Throw<ArgumentException>(() => GetValidSimulatorSettings(filterConfig).Validate());
+
+            exception.ParamName.ShouldBe(nameof(filterConfig.AdvancedFilters));
+            exception.Message.ShouldBe("Advanced filtering is limited to five advanced filters per event grid subscription.\r\nParameter name: AdvancedFilters");
         }
     }
 }
