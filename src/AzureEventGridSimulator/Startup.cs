@@ -42,7 +42,7 @@ namespace AzureEventGridSimulator
             services.AddSingleton<ValidationIpAddress>();
 
             services.AddMvc()
-                    .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+                    .SetCompatibilityVersion(CompatibilityVersion.Latest);
         }
 
         public void Configure(IApplicationBuilder app)
