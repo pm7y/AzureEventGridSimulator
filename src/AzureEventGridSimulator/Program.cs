@@ -14,46 +14,53 @@ namespace AzureEventGridSimulator
 {
     public static class Program
     {
-        public static void Main()
+        public static void Main(string[] args)
         {
             try
             {
-                var host = WebHost.CreateDefaultBuilder()
-                                  .ConfigureAppConfiguration((context, builder) =>
-                                  {
-                                      var env = context.HostingEnvironment;
+                var host = WebHost
+                    .CreateDefaultBuilder(args)
+                    .ConfigureAppConfiguration((context, builder) =>
+                    {
+                        var env = context.HostingEnvironment;
 
-                                      var config = builder.AddJsonFile("appsettings.json", false, false)
-                                                          .AddJsonFile($"appsettings.{env.EnvironmentName.ToLowerInvariant().Trim()}.json", true, false)
-                                                          .AddEnvironmentVariables()
-                                                          .Build();
+                        var config = builder.Build();
 
-                                      Log.Logger = new LoggerConfiguration()
-                                                   .Enrich.FromLogContext()
-                                                   .Enrich.WithProperty("AspNetCoreEnvironment", env.EnvironmentName)
-                                                   .Enrich.WithMachineName()
-                                                   .MinimumLevel.Debug()
-                                                   .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
-                                                   .MinimumLevel.Override("System", LogEventLevel.Error)
-                                                   .ReadFrom.Configuration(config)
-                                                   .CreateLogger();
-                                  })
-                                  .UseStartup<Startup>()
-                                  .UseSerilog()
-                                  .UseKestrel(options =>
-                                  {
-                                      var simulatorSettings = (SimulatorSettings)options.ApplicationServices.GetService(typeof(SimulatorSettings));
+                        var configFile = config.GetValue<string>("ConfigFile");
+                        if (!string.IsNullOrEmpty(configFile))
+                        {
+                            builder.AddJsonFile(configFile, optional: false);
+                        }
 
-                                      foreach (var topics in simulatorSettings.Topics)
-                                      {
-                                          options.Listen(IPAddress.Any, topics.Port,
-                                                         listenOptions =>
-                                                         {
-                                                             listenOptions.UseHttps(StoreName.My, "localhost", true);
-                                                         });
-                                      }
-                                  })
-                                  .Build();
+                        Log.Logger = new LoggerConfiguration()
+                            .Enrich.FromLogContext()
+                            .Enrich.WithProperty("AspNetCoreEnvironment", env.EnvironmentName)
+                            .Enrich.WithMachineName()
+                            .MinimumLevel.Debug()
+                            .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+                            .MinimumLevel.Override("System", LogEventLevel.Error)
+                            .ReadFrom.Configuration(config)
+                            .CreateLogger();
+                    })
+                    .UseStartup<Startup>()
+                    .UseSerilog()
+                    .UseKestrel(options =>
+                    {
+                        var simulatorSettings = (SimulatorSettings)options.ApplicationServices.GetService(typeof(SimulatorSettings));
+
+                        foreach (var topics in simulatorSettings.Topics)
+                        {
+                            options.Listen(
+                                IPAddress.Any,
+                                topics.Port,
+                                listenOptions =>
+                                {
+                                    listenOptions.UseHttps(StoreName.My, "localhost", true);
+                                }
+                            );
+                        }
+                    })
+                    .Build();
 
                 var logger = (ILogger)host.Services.GetService(typeof(ILogger));
                 logger.LogInformation("Started");

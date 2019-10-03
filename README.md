@@ -6,7 +6,12 @@ A simple simulator which provides endpoints that mimic the functionality of [Azu
 
 ## Configuration
 
-Topics and their subscribers are configured in the `appsettings.json` file.
+Topics and their subscribers are configured in the `appsettings.json` file. Alternatively, you can specify the configuration file to use by setting the `ConfigFile` command line argument, e.g.
+
+```
+AzureEventGridSimulator.exe --ConfigFile=/page/to/config.json
+```
+
 You can add multiple topics. Each topic must have a unique port. Each topic can have multiple subscribers.
 An example of one topic with one subscriber is shown below.
 
