@@ -135,9 +135,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             return context.Request.Headers.Keys.Any(k => string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)) &&
                    context.Request.Headers["Content-Type"].Any(v => string.Equals(v, "application/json")) &&
                    context.Request.Method == HttpMethods.Post &&
-                   string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase) &&
-                   context.Request.Headers.Keys.Any(k => string.Equals(k, "aeg-event-type", StringComparison.OrdinalIgnoreCase)) &&
-                   context.Request.Headers["aeg-event-type"].Any(v => string.Equals(v, "Notification"));
+                   string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase);
         }
 
         private bool IsValidationRequest(HttpContext context)
