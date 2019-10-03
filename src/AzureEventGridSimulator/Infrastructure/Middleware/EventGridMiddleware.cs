@@ -133,7 +133,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
         private bool IsNotificationRequest(HttpContext context)
         {
             return context.Request.Headers.Keys.Any(k => string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)) &&
-                   context.Request.Headers["Content-Type"].Any(v => string.Equals(v, "application/json")) &&
+                   context.Request.Headers["Content-Type"].Any(v => !string.IsNullOrWhiteSpace(v) && v.IndexOf("application/json", StringComparison.OrdinalIgnoreCase) >= 0) &&
                    context.Request.Method == HttpMethods.Post &&
                    string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase);
         }
