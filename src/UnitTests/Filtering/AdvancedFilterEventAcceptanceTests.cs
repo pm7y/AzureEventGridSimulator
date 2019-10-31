@@ -12,7 +12,7 @@ namespace UnitTests.Filtering
         private static readonly EventGridEvent GridEvent = new EventGridEvent
         {
             Id = "EventId",
-            Data = new { NumberValue = 1, IsTrue = true, Name = "StringValue", DoubleValue = 0.12345d, NumberMaxValue = ulong.MaxValue },
+            Data = new { NumberValue = 1, IsTrue = true, Name = "StringValue", DoubleValue = 0.12345d, NumberMaxValue = ulong.MaxValue, SubObject = new { Id = 1, Name = "Test" } },
             DataVersion = "5.0",
             EventTime = DateTime.UtcNow.ToString("O"),
             EventType = "this.is.a.test.event.type",
@@ -37,6 +37,49 @@ namespace UnitTests.Filtering
             var filterConfig = new FilterSetting { AdvancedFilters = new[] { filter } };
 
             filterConfig.AcceptsEvent(GridEvent).ShouldBeFalse($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate() }");
+        }
+
+        [Fact]
+        public void TestSimpleEventDataFilteringSuccess()
+        {
+            var filterConfig = new FilterSetting
+            {
+                AdvancedFilters = new[] {
+                    new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object[]{ 1 } }
+                }
+            };
+            var gridEvent = new EventGridEvent { Data = 1 };
+
+            filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
+        }
+
+        [Fact]
+        public void TestSimpleEventDataFilteringUsingValueSuccess()
+        {
+            var filterConfig = new FilterSetting
+            {
+                AdvancedFilters = new[] {
+                    new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 1 },
+                    new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberLessThanOrEquals, Value = 1 }
+                }
+            };
+            var gridEvent = new EventGridEvent { Data = 1 };
+
+            filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
+        }
+
+        [Fact]
+        public void TestSimpleEventDataFilteringFailure()
+        {
+            var filterConfig = new FilterSetting
+            {
+                AdvancedFilters = new[] {
+                    new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Value = 1 }
+                }
+            };
+            var gridEvent = new EventGridEvent { Data = 1 };
+
+            filterConfig.AcceptsEvent(gridEvent).ShouldBeFalse();
         }
     }
 }
