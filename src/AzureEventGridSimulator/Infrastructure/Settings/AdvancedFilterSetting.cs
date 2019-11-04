@@ -64,11 +64,6 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
             {
                 throw new ArgumentOutOfRangeException(nameof(OperatorType), "Advanced filtering limits filters to five values for in and not in operators");
             }
-
-            if (Key.Count(c => c == '.') > 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(Key), "The key can only have one level of nesting (like data.key1)");
-            }
         }
 
         public override string ToString()

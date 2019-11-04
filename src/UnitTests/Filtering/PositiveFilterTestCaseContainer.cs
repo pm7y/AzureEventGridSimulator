@@ -124,6 +124,8 @@ namespace UnitTests.Filtering
                 new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object[] { ulong.MaxValue } },
                 new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberLessThanOrEquals, Value = ulong.MaxValue },
                 new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, Values = new object[] { long.MaxValue } },
+                new AdvancedFilterSetting { Key = "Data.SubObject.Name", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = new object[] { "Test" } },
+                new AdvancedFilterSetting { Key = "Data.SubObject.Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object[] { 1 } }
             };
         }
     }

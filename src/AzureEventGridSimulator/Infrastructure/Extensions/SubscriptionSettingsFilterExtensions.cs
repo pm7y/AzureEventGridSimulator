@@ -152,11 +152,19 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
                         var split = key.Split('.');
                         if (split[0] == (nameof(gridEvent.Data)) && gridEvent.Data != null && split.Length > 1)
                         {
-                            // look for the property on the grid event data object
-                            if (JObject.FromObject(gridEvent.Data).TryGetValue(split[1], out var dataValue))
+                            var tmpValue = gridEvent.Data;
+                            for (int i = 0; i < split.Length; i++)
                             {
-                                value = dataValue.ToObject<object>();
-                                retval = true;
+                                // look for the property on the grid event data object
+                                if (JObject.FromObject(tmpValue).TryGetValue(split[i], out var dataValue))
+                                {
+                                    tmpValue = dataValue.ToObject<object>();
+                                    if (i == split.Length - 1)
+                                    {
+                                        retval = true;
+                                        value = tmpValue;
+                                    }
+                                }
                             }
                         }
                         break;

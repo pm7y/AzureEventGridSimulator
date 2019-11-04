@@ -62,7 +62,8 @@ The Azure Event Grid Simualator can mimick this behaviour using the `validationR
 
 #### Filtering Events
 
-Event filtering is configurable on each subscriber using the filter model defined here: https://docs.microsoft.com/en-us/azure/event-grid/event-filtering. This page provides a full guide to the configuration options available and all parts of this guide are currently supported. For ease of transition, explicit limitations have also been adhered to.
+Event filtering is configurable on each subscriber using the filter model defined here: https://docs.microsoft.com/en-us/azure/event-grid/event-filtering. This page provides a full guide to the configuration options available and all parts of this guide are currently supported. For ease of transition, explicit limitations have also been adhered to. 
+The restrictions mentioned have been further modified (https://azure.microsoft.com/en-us/updates/advanced-filtering-generally-available-in-event-grid/) and these new less restrictive filtering limits have been observed.
 
 Extending the example above to include a basic filter which will only deliver events to the subscription if they are of a specific type is illustrated below.
 
@@ -115,6 +116,7 @@ or advanced filtering:
   ]
 }
 ```
+
 
 ## Using the Simulator
 

@@ -169,11 +169,12 @@ namespace UnitTests.Filtering
         [Fact]
         public void TestFilterValidationWithGrandchildKey()
         {
-            var filterConfig = new AdvancedFilterSetting { Key = "Data.Key1.SubKey", Value = "SomeValue" };
-            var exception = Should.Throw<ArgumentOutOfRangeException>(() => GetValidSimulatorSettings(filterConfig).Validate());
-
-            exception.ParamName.ShouldBe(nameof(filterConfig.Key));
-            exception.Message.ShouldBe("The key can only have one level of nesting (like data.key1)\r\nParameter name: Key");
+            // following the announcement here https://azure.microsoft.com/en-us/updates/advanced-filtering-generally-available-in-event-grid/ this should now work 
+            Should.NotThrow(() =>
+            {
+                var filterConfig = new AdvancedFilterSetting { Key = "Data.Key1.SubKey", Value = "SomeValue" };
+                GetValidSimulatorSettings(filterConfig).Validate();
+            });
         }
     }
 }
