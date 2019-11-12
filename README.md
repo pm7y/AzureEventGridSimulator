@@ -149,13 +149,22 @@ _Data.json_
 
 An example request that you can import into [Postman](https://www.getpostman.com/) can be found in the AzureEventGridSimulator repo here https://github.com/pmcilreavy/AzureEventGridSimulator/blob/master/src/Azure%20Event%20Grid%20Simulator.postman_collection.json.
 
+#### EventGridClient
+
+```csharp
+var client = new EventGridClient(new TopicCredentials("TheLocal+DevelopmentKey="));
+await client.PublishEventsWithHttpMessagesAsync(
+    topicHostname: "localhost:60101",
+    events: new List<EventGridEvent> { <your event> });
+```
+
 ## Notes
 
 ### HTTPs
 
-Azure Event Grid only accepts connections over https and so the simulator only supports _https_ too. The simulator uses the dotnet development certificate to secure each topic port. You can ensure that this certifcate is installed by running the following command.
+Azure Event Grid only accepts connections over https and so the simulator only supports _https_ too. The simulator uses the dotnet development certificate to secure each topic port. You can ensure that this certifcate is installed and trusted by running the following command.
 
-`dotnet dev-certs https`
+`dotnet dev-certs https --trust`
 
 ### Subscribers
 
