@@ -32,18 +32,18 @@ namespace AzureEventGridSimulator.Domain.Commands
                 eventGridEvent.Topic = $"/subscriptions/{Guid.Empty:D}/resourceGroups/eventGridSimulator/providers/Microsoft.EventGrid/topics/{request.Topic.Name}";
                 eventGridEvent.MetadataVersion = "1";
             }
-
+            
             foreach (var subscription in request.Topic.Subscribers)
             {
 #pragma warning disable 4014
-                SendToSubscriber(subscription, request.Events);
+                SendToSubscriber(subscription, request.Events, request.Topic.Key);
 #pragma warning restore 4014
             }
 
             return Task.CompletedTask;
         }
 
-        private async Task SendToSubscriber(SubscriptionSettings subscription, EventGridEvent[] events)
+        private async Task SendToSubscriber(SubscriptionSettings subscription, EventGridEvent[] events, string key)
         {
             try
             {
@@ -67,6 +67,12 @@ namespace AzureEventGridSimulator.Domain.Commands
                         {
                             var httpClient = _httpClientFactory.CreateClient();
                             httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
+
+                            if (!string.IsNullOrEmpty(key))
+                            {
+                                httpClient.DefaultRequestHeaders.Add("aeg-sas-key", key);
+                            }
+
                             httpClient.Timeout = TimeSpan.FromSeconds(15);
 
                             await httpClient.PostAsync(subscription.Endpoint, content)

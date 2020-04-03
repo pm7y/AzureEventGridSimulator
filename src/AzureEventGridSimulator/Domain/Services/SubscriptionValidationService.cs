@@ -88,6 +88,12 @@ namespace AzureEventGridSimulator.Domain.Services
                 {
                     var httpClient = _httpClientFactory.CreateClient();
                     httpClient.DefaultRequestHeaders.Add("aeg-event-type", "SubscriptionValidation");
+
+                    if (!string.IsNullOrEmpty(topic.Key))
+                    {
+                        httpClient.DefaultRequestHeaders.Add("aeg-sas-key", topic.Key);
+                    }
+
                     httpClient.Timeout = TimeSpan.FromSeconds(15);
 
                     subscription.ValidationStatus = SubscriptionValidationStatus.ValidationEventSent;
