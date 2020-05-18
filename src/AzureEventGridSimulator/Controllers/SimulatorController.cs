@@ -1,6 +1,8 @@
 ﻿using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -28,12 +30,10 @@ namespace AzureEventGridSimulator.Controllers
         {
             get
             {
-                using (var reader = new StreamReader(HttpContext.Request.Body))
-                {
-                    var events = (EventGridEvent[])new JsonSerializer().Deserialize(reader, typeof(EventGridEvent[]));
 
-                    return events;
-                }
+                var body = HttpContext.RequestBody().Result;
+                return JsonConvert.DeserializeObject<EventGridEvent[]>(body);
+                
             }
         }
     }
