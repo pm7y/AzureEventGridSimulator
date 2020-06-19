@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Domain.Commands
 {
+    // ReSharper disable once UnusedMember.Global
     public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHandler<SendNotificationEventsToSubscriberCommand>
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -62,16 +63,15 @@ namespace AzureEventGridSimulator.Domain.Commands
                 {
                     if (subscription.Filter.AcceptsEvent(evt))
                     {
+                        // ReSharper disable once MethodHasAsyncOverload
                         var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
-                        using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
-                        {
-                            var httpClient = _httpClientFactory.CreateClient();
-                            httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
-                            httpClient.Timeout = TimeSpan.FromSeconds(15);
+                        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                        var httpClient = _httpClientFactory.CreateClient();
+                        httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
+                        httpClient.Timeout = TimeSpan.FromSeconds(15);
 
-                            await httpClient.PostAsync(subscription.Endpoint, content)
-                                            .ContinueWith(t => LogResult(t, evt, subscription));
-                        }
+                        await httpClient.PostAsync(subscription.Endpoint, content)
+                                        .ContinueWith(t => LogResult(t, evt, subscription));
                     }
                     else
                     {

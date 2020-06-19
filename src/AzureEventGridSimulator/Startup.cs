@@ -41,7 +41,7 @@ namespace AzureEventGridSimulator
             services.AddScoped<SasKeyValidator>();
             services.AddSingleton<ValidationIpAddress>();
 
-            services.AddMvc()
+            services.AddControllers(options => options.EnableEndpointRouting = false)
                     .SetCompatibilityVersion(CompatibilityVersion.Latest);
         }
 

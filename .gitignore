@@ -328,6 +328,8 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+
+# Build artifacts
 /win-x64
 /src/AzureEventGridSimulator/appsettings.development.json
 /build-win64
@@ -336,3 +338,10 @@ ASALocalRun/
 /src/build-win-64
 /src/build-osx-64
 /src/build-linux-64
+.vscode/
+build-win-64
+build-osx-64
+build-linux-64
+
+# vscode
+src/AzureEventGridSimulator/.config/

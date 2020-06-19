@@ -14,6 +14,7 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
             response.Headers.Add("Content-type", "application/json");
 
             response.StatusCode = (int)statusCode;
+            // ReSharper disable once MethodHasAsyncOverload
             await response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
         }
     }

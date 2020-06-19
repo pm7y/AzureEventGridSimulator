@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Commands
 {
+    // ReSharper disable once UnusedMember.Global
     public class ValidateSubscriptionCommandHandler : IRequestHandler<ValidateSubscriptionCommand, bool>
     {
         private readonly ILogger _logger;

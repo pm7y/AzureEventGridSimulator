@@ -72,7 +72,7 @@ namespace UnitTests.Filtering
             var exception = Should.Throw<ArgumentException>(() => GetValidSimulatorSettings(filterConfig).Validate());
 
             exception.ParamName.ShouldBe(nameof(filterConfig.AdvancedFilters));
-            exception.Message.ShouldBe("Advanced filtering is limited to five advanced filters per event grid subscription.\r\nParameter name: AdvancedFilters");
+            exception.Message.ShouldBe("Advanced filtering is limited to five advanced filters per event grid subscription. (Parameter 'AdvancedFilters')");
         }
     }
 }

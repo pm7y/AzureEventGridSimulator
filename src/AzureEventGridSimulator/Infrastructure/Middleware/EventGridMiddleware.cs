@@ -94,6 +94,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
 
             foreach (var evt in events)
             {
+                // ReSharper disable once MethodHasAsyncOverload
                 var eventSize = JsonConvert.SerializeObject(evt, Formatting.None).Length;
 
                 logger.LogDebug("Event is {Bytes} in length.", eventSize);

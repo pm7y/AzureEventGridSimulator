@@ -1,6 +1,4 @@
-﻿using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;

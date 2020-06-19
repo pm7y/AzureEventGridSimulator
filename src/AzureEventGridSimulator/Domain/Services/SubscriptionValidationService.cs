@@ -83,27 +83,26 @@ namespace AzureEventGridSimulator.Domain.Services
                     }
                 };
 
+                // ReSharper disable once MethodHasAsyncOverload
                 var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
-                using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+                using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var httpClient = _httpClientFactory.CreateClient();
+                httpClient.DefaultRequestHeaders.Add("aeg-event-type", "SubscriptionValidation");
+                httpClient.Timeout = TimeSpan.FromSeconds(15);
+
+                subscription.ValidationStatus = SubscriptionValidationStatus.ValidationEventSent;
+
+                var response = await httpClient.PostAsync(subscription.Endpoint, content);
+                response.EnsureSuccessStatusCode();
+
+                var text = await response.Content.ReadAsStringAsync();
+                var validationResponse = JsonConvert.DeserializeObject<SubscriptionValidationResponse>(text);
+
+                if (validationResponse.ValidationResponse == subscription.ValidationCode)
                 {
-                    var httpClient = _httpClientFactory.CreateClient();
-                    httpClient.DefaultRequestHeaders.Add("aeg-event-type", "SubscriptionValidation");
-                    httpClient.Timeout = TimeSpan.FromSeconds(15);
-
-                    subscription.ValidationStatus = SubscriptionValidationStatus.ValidationEventSent;
-
-                    var response = await httpClient.PostAsync(subscription.Endpoint, content);
-                    response.EnsureSuccessStatusCode();
-
-                    var text = await response.Content.ReadAsStringAsync();
-                    var validationResponse = JsonConvert.DeserializeObject<SubscriptionValidationResponse>(text);
-
-                    if (validationResponse.ValidationResponse == subscription.ValidationCode)
-                    {
-                        subscription.ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful;
-                        _logger.LogInformation("Successfully validated subscriber '{SubscriberName}'.", subscription.Name);
-                        return true;
-                    }
+                    subscription.ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful;
+                    _logger.LogInformation("Successfully validated subscriber '{SubscriberName}'.", subscription.Name);
+                    return true;
                 }
             }
             catch (Exception ex)
