@@ -68,7 +68,11 @@ namespace AzureEventGridSimulator.Domain.Commands
                         using var content = new StringContent(json, Encoding.UTF8, "application/json");
                         var httpClient = _httpClientFactory.CreateClient();
                         httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
-                        httpClient.Timeout = TimeSpan.FromSeconds(15);
+                        httpClient.DefaultRequestHeaders.Add("aeg-subscription-name", subscription.Name.ToUpperInvariant());
+                        httpClient.DefaultRequestHeaders.Add("aeg-data-version", evt.DataVersion);
+                        httpClient.DefaultRequestHeaders.Add("aeg-metadata-version", evt.MetadataVersion);
+                        httpClient.DefaultRequestHeaders.Add("aeg-delivery-count", "0"); // TODO implement re-tries
+                        httpClient.Timeout = TimeSpan.FromSeconds(60);
 
                         await httpClient.PostAsync(subscription.Endpoint, content)
                                         .ContinueWith(t => LogResult(t, evt, subscription));
