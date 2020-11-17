@@ -82,7 +82,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             const int maximumAllowedOverallMessageSizeInBytes = 1536000;
             const int maximumAllowedEventGridEventSizeInBytes = 66560;
 
-            logger.LogDebug("Message is {Bytes} in length.", requestBody.Length);
+            logger.LogTrace("Message is {Bytes} in length.", requestBody.Length);
 
             if (requestBody.Length > maximumAllowedOverallMessageSizeInBytes)
             {
@@ -97,7 +97,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                 // ReSharper disable once MethodHasAsyncOverload
                 var eventSize = JsonConvert.SerializeObject(evt, Formatting.None).Length;
 
-                logger.LogDebug("Event is {Bytes} in length.", eventSize);
+                logger.LogTrace("Event is {Bytes} in length.", eventSize);
 
                 if (eventSize > maximumAllowedEventGridEventSizeInBytes)
                 {
