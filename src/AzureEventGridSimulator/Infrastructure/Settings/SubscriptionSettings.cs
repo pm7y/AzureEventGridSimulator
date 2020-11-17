@@ -21,6 +21,9 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
         [JsonProperty(PropertyName = "disableValidation", Required = Required.Default)]
         public bool DisableValidation { get; set; }
 
+        [JsonProperty(PropertyName = "disabled", Required = Required.Default)]
+        public bool Disabled { get; set; }
+
         [JsonIgnore]
         public SubscriptionValidationStatus ValidationStatus { get; set; }
 

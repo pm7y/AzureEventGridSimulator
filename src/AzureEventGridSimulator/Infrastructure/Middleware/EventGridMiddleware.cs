@@ -24,7 +24,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
         public async Task InvokeAsync(HttpContext context,
                                       SimulatorSettings simulatorSettings,
                                       SasKeyValidator sasHeaderValidator,
-                                      ILogger logger)
+                                      ILogger<EventGridMiddleware> logger)
         {
             if (IsNotificationRequest(context))
             {
@@ -39,7 +39,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             }
 
             // This is the end of the line.
-            await context.Response.ErrorResponse(HttpStatusCode.BadRequest, "Request not supported.");
+            await context.Response.ErrorResponse(HttpStatusCode.BadRequest, "Request not supported.", null);
         }
 
         private async Task ValidateSubscriptionValidationRequest(HttpContext context)
@@ -48,7 +48,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
 
             if (string.IsNullOrWhiteSpace(id))
             {
-                await context.Response.ErrorResponse(HttpStatusCode.BadRequest, "The request did not contain a validation code.");
+                await context.Response.ErrorResponse(HttpStatusCode.BadRequest, "The request did not contain a validation code.", null);
                 return;
             }
 
@@ -58,7 +58,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
         private async Task ValidateNotificationRequest(HttpContext context,
                                                       SimulatorSettings simulatorSettings,
                                                       SasKeyValidator sasHeaderValidator,
-                                                      ILogger logger)
+                                                      ILogger<EventGridMiddleware> logger)
         {
             var topic = simulatorSettings.Topics.First(t => t.Port == context.Connection.LocalPort);
 
@@ -68,7 +68,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             if (!string.IsNullOrWhiteSpace(topic.Key) &&
                 !sasHeaderValidator.IsValid(context.Request.Headers, topic.Key))
             {
-                await context.Response.ErrorResponse(HttpStatusCode.Unauthorized, "The request did not contain a valid aeg-sas-key or aeg-sas-token.");
+                await context.Response.ErrorResponse(HttpStatusCode.Unauthorized, "The request did not contain a valid aeg-sas-key or aeg-sas-token.", null);
                 return;
             }
 
@@ -88,12 +88,13 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             {
                 logger.LogError("Payload is larger than the allowed maximum.");
 
-                await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Payload is larger than the allowed maximum.");
+                await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Payload is larger than the allowed maximum.", null);
                 return;
             }
 
             foreach (var evt in events)
             {
+                // ReSharper disable once MethodHasAsyncOverload
                 var eventSize = JsonConvert.SerializeObject(evt, Formatting.None).Length;
 
                 logger.LogDebug("Event is {Bytes} in length.", eventSize);
@@ -102,7 +103,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                 {
                     logger.LogError("Event is larger than the allowed maximum.");
 
-                    await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Event is larger than the allowed maximum.");
+                    await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Event is larger than the allowed maximum.", null);
                     return;
                 }
             }
@@ -121,7 +122,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                 {
                     logger.LogError(ex, "Event was not valid.");
 
-                    await context.Response.ErrorResponse(HttpStatusCode.BadRequest, ex.Message);
+                    await context.Response.ErrorResponse(HttpStatusCode.BadRequest, ex.Message, null);
                     return;
                 }
 

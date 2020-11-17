@@ -10,9 +10,9 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
 {
     public class SasKeyValidator
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<SasKeyValidator> _logger;
 
-        public SasKeyValidator(ILogger logger)
+        public SasKeyValidator(ILogger<SasKeyValidator> logger)
         {
             _logger = logger;
         }
@@ -67,20 +67,18 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
 
             var unsignedSas = $"r={encodedResource}&e={encodedExpiration}";
 
-            using (var hmac = new HMACSHA256(Convert.FromBase64String(key)))
+            using var hmac = new HMACSHA256(Convert.FromBase64String(key));
+            var signature = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(unsignedSas)));
+            var encodedComputedSignature = HttpUtility.UrlEncode(signature);
+
+            if (encodedSignature == signature)
             {
-                var signature = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(unsignedSas)));
-                var encodedComputedSignature = HttpUtility.UrlEncode(signature);
-
-                if (encodedSignature == signature)
-                {
-                    return true;
-                }
-
-                _logger.LogWarning("{ExpectedSignature} != {MessageSignature}", encodedComputedSignature, signature);
-
-                return false;
+                return true;
             }
+
+            _logger.LogWarning("{ExpectedSignature} != {MessageSignature}", encodedComputedSignature, signature);
+
+            return false;
         }
     }
 }

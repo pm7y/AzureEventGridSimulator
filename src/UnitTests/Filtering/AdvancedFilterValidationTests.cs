@@ -40,7 +40,7 @@ namespace UnitTests.Filtering
             var exception = Should.Throw<ArgumentException>(() => GetValidSimulatorSettings(filterConfig).Validate());
 
             exception.ParamName.ShouldBe(nameof(filterConfig.Key));
-            exception.Message.ShouldBe("A filter key must be provided\r\nParameter name: Key");
+            exception.Message.ShouldBe("A filter key must be provided (Parameter 'Key')");
         }
 
         [Fact]
@@ -50,7 +50,7 @@ namespace UnitTests.Filtering
             var exception = Should.Throw<ArgumentException>(() => GetValidSimulatorSettings(filterConfig).Validate());
 
             exception.ParamName.ShouldBe(nameof(filterConfig.Key));
-            exception.Message.ShouldBe("A filter key must be provided\r\nParameter name: Key");
+            exception.Message.ShouldBe("A filter key must be provided (Parameter 'Key')");
         }
 
         [Fact]
@@ -60,7 +60,7 @@ namespace UnitTests.Filtering
             var exception = Should.Throw<ArgumentException>(() => GetValidSimulatorSettings(filterConfig).Validate());
 
             exception.ParamName.ShouldBe(nameof(filterConfig.Key));
-            exception.Message.ShouldBe("A filter key must be provided\r\nParameter name: Key");
+            exception.Message.ShouldBe("A filter key must be provided (Parameter 'Key')");
         }
 
         [Fact]
@@ -70,7 +70,7 @@ namespace UnitTests.Filtering
             var exception = Should.Throw<ArgumentException>(() => GetValidSimulatorSettings(filterConfig).Validate());
 
             exception.ParamName.ShouldBe(nameof(filterConfig.Value));
-            exception.Message.ShouldBe("Either a Value or a set of Values must be provided\r\nParameter name: Value");
+            exception.Message.ShouldBe("Either a Value or a set of Values must be provided (Parameter 'Value')");
         }
 
         [Fact]
@@ -100,7 +100,7 @@ namespace UnitTests.Filtering
             var exception = Should.Throw<ArgumentOutOfRangeException>(() => GetValidSimulatorSettings(filterConfig).Validate());
 
             exception.ParamName.ShouldBe(nameof(filterConfig.Value));
-            exception.Message.ShouldBe("Advanced filtering limits strings to 512 characters per string value\r\nParameter name: Value");
+            exception.Message.ShouldBe("Advanced filtering limits strings to 512 characters per string value (Parameter 'Value')");
         }
 
         [Fact]
@@ -120,7 +120,7 @@ namespace UnitTests.Filtering
             var exception = Should.Throw<ArgumentOutOfRangeException>(() => GetValidSimulatorSettings(filterConfig).Validate());
 
             exception.ParamName.ShouldBe(nameof(filterConfig.Values));
-            exception.Message.ShouldBe("Advanced filtering limits strings to 512 characters per string value\r\nParameter name: Values");
+            exception.Message.ShouldBe("Advanced filtering limits strings to 512 characters per string value (Parameter 'Values')");
         }
 
         [Fact]
@@ -147,7 +147,7 @@ namespace UnitTests.Filtering
                     var exception = Should.Throw<ArgumentOutOfRangeException>(() => GetValidSimulatorSettings(filterConfig).Validate());
 
                     exception.ParamName.ShouldBe(nameof(filterConfig.OperatorType));
-                    exception.Message.ShouldBe("Advanced filtering limits filters to five values for in and not in operators\r\nParameter name: OperatorType");
+                    exception.Message.ShouldBe("Advanced filtering limits filters to five values for in and not in operators (Parameter 'OperatorType')");
                 }
                 else
                 {

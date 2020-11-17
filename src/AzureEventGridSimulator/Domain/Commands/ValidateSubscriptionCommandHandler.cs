@@ -7,11 +7,12 @@ using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Commands
 {
+    // ReSharper disable once UnusedMember.Global
     public class ValidateSubscriptionCommandHandler : IRequestHandler<ValidateSubscriptionCommand, bool>
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<ValidateSubscriptionCommandHandler> _logger;
 
-        public ValidateSubscriptionCommandHandler(ILogger logger)
+        public ValidateSubscriptionCommandHandler(ILogger<ValidateSubscriptionCommandHandler> logger)
         {
             _logger = logger;
         }
@@ -30,7 +31,7 @@ namespace AzureEventGridSimulator.Domain.Commands
                 return Task.FromResult(true);
             }
 
-            _logger.LogWarning("Validation failed for code {ValidationCode} on topic {TopicName}.", request.ValidationCode, request.Topic.Name);
+            _logger.LogWarning("Validation failed for code {ValidationCode} on topic {TopicName}.", request.ValidationCode, request.Topic?.Name);
             return Task.FromResult(false);
         }
     }

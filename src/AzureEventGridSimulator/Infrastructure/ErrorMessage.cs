@@ -5,9 +5,9 @@ namespace AzureEventGridSimulator.Infrastructure
 {
     public class ErrorMessage
     {
-        public ErrorMessage(HttpStatusCode statusCode, string errorMessage)
+        public ErrorMessage(HttpStatusCode statusCode, string errorMessage, string code)
         {
-            Error = new ErrorDetails(statusCode, errorMessage);
+            Error = new ErrorDetails(statusCode, errorMessage, code);
         }
 
         [JsonProperty(PropertyName = "error")]
@@ -15,9 +15,9 @@ namespace AzureEventGridSimulator.Infrastructure
 
         public class ErrorDetails
         {
-            internal ErrorDetails(HttpStatusCode statusCode, string errorMessage)
+            internal ErrorDetails(HttpStatusCode statusCode, string errorMessage, string code)
             {
-                Code = statusCode.ToString();
+                Code = code ?? statusCode.ToString();
                 Message = errorMessage;
             }
 
