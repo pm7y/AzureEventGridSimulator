@@ -1,8 +1,8 @@
 ﻿using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Reflection;
-using AzureEventGridSimulator.Domain.Services;
+using System.Threading.Tasks;
+using AzureEventGridSimulator.Domain.Commands;
+using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Middleware;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
@@ -10,64 +10,82 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace AzureEventGridSimulator
 {
     public class Startup
     {
-        private readonly ILoggerFactory _loggerFactory;
+        private readonly IConfiguration _configuration;
 
-        public Startup(IConfiguration configuration, ILoggerFactory loggerFactory)
+        public Startup(IConfiguration configuration)
         {
-            _loggerFactory = loggerFactory;
-            Configuration = configuration;
+            _configuration = configuration;
         }
-
-        private IConfiguration Configuration { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
             var settings = new SimulatorSettings();
-            Configuration.Bind(settings);
+            _configuration.Bind(settings);
             settings.Validate();
             services.AddSingleton(o => settings);
 
             services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddHttpClient();
 
-            services.AddHostedService<SubscriptionValidationService>();
-            services.AddSingleton(o => _loggerFactory.CreateLogger(nameof(AzureEventGridSimulator)));
             services.AddScoped<SasKeyValidator>();
             services.AddSingleton<ValidationIpAddress>();
 
             services.AddControllers(options => options.EnableEndpointRouting = false)
+                    .AddJsonOptions(options =>
+                    {
+                        options.JsonSerializerOptions.WriteIndented = true;
+                    })
                     .SetCompatibilityVersion(CompatibilityVersion.Latest);
         }
 
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder app,
+                              IHostApplicationLifetime lifetime,
+                              ILogger<Startup> logger)
         {
+            lifetime.ApplicationStarted.Register(async () => await Task.CompletedTask.ContinueWith((t) => OnApplicationStarted(app, lifetime, logger)));
+
+            // app.UseSerilogRequestLogging(); // Not using this for now
             app.UseMiddleware<EventGridMiddleware>();
             app.UseMvc();
         }
-    }
 
-    public class ValidationIpAddress
-    {
-        private readonly string _ipAddress;
-
-        public ValidationIpAddress()
+        private static async Task OnApplicationStarted(IApplicationBuilder app, IHostApplicationLifetime lifetime, ILogger<Startup> logger)
         {
-            var hostName = Dns.GetHostName();
-            _ipAddress = Dns.GetHostAddresses(hostName).First(ip => ip.AddressFamily == AddressFamily.InterNetwork &&
-                                                                    !IPAddress.IsLoopback(ip)).ToString();
-        }
+            var simulatorSettings = app.ApplicationServices.GetService(typeof(SimulatorSettings)) as SimulatorSettings;
 
-        public override string ToString()
-        {
-            return _ipAddress;
-        }
+            if (simulatorSettings is null)
+            {
+                logger.LogCritical("Settings are not found. The application will now exit.");
+                lifetime.StopApplication();
+                return;
+            }
 
-        public static implicit operator string(ValidationIpAddress d) => d.ToString();
+            if (!simulatorSettings.Topics.Any())
+            {
+                logger.LogCritical("There are no configured topics. The application will now exit.");
+                lifetime.StopApplication();
+                return;
+            }
+
+            if (simulatorSettings.Topics.All(o => o.Disabled))
+            {
+                logger.LogCritical("All of the configured topics are disabled. The application will now exit.");
+                lifetime.StopApplication();
+                return;
+            }
+
+            if ((app.ApplicationServices.GetService(typeof(IMediator)) is IMediator mediator))
+            {
+                await mediator.Send(new ValidateAllSubscriptionsCommand());
+            }
+        }
     }
 }

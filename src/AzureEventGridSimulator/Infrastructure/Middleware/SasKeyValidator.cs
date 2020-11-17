@@ -10,9 +10,9 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
 {
     public class SasKeyValidator
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<SasKeyValidator> _logger;
 
-        public SasKeyValidator(ILogger logger)
+        public SasKeyValidator(ILogger<SasKeyValidator> logger)
         {
             _logger = logger;
         }

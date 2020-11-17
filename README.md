@@ -51,18 +51,15 @@ An example of one topic with one subscriber is shown below.
 
 #### Subscription Validation
 
-When a subscription is added to Azure Event Grid it first sends a validation event to the subscription endpoint. The validation event contains a `validationCode` which the subscription endpoint must echo back. If this does not occur then Azure Event Grid will not enable the subscription. Azure Event Grid also supports manual validation via a `validationUrl` which is sent with the `validationCode` in the initial validation message.
+When a subscription is added to Azure Event Grid it first sends a validation event to the subscription endpoint. The validation event contains a `validationCode` which the subscription endpoint must echo back. If this does not occur then Azure Event Grid will not enable the subscription.
 
-More information about subscription validation can be found at [https://docs.microsoft.com/en-us/azure/event-grid/security-authentication](https://docs.microsoft.com/en-us/azure/event-grid/security-authentication).
+More information about subscription validation can be found at [https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery](https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery).
 
-The Azure Event Grid Simualator can mimick this behaviour using the `validationRequired` setting.
-
-- `false` (the default), subscription validation will be disabled.
-- `true`, a subscription validation event will be sent to the subscriber when the simulator starts. The subscription will not accept events until it is successfully validated.
+The Azure Event Grid Simualator will mimick this validation behaviour at start up but it can be disabled using the `disableValidation` setting (above).
 
 #### Filtering Events
 
-Event filtering is configurable on each subscriber using the filter model defined here: https://docs.microsoft.com/en-us/azure/event-grid/event-filtering. This page provides a full guide to the configuration options available and all parts of this guide are currently supported. For ease of transition, explicit limitations have also been adhered to. 
+Event filtering is configurable on each subscriber using the filter model defined here: https://docs.microsoft.com/en-us/azure/event-grid/event-filtering. This page provides a full guide to the configuration options available and all parts of this guide are currently supported. For ease of transition, explicit limitations have also been adhered to.
 The restrictions mentioned have been further modified (https://azure.microsoft.com/en-us/updates/advanced-filtering-generally-available-in-event-grid/) and these new less restrictive filtering limits have been observed.
 
 Extending the example above to include a basic filter which will only deliver events to the subscription if they are of a specific type is illustrated below.
@@ -72,7 +69,7 @@ Extending the example above to include a basic filter which will only deliver ev
   "topics": [
     {
       "name": "MyAwesomeTopic",
-      "httpsPort": 60101,
+      "port": 60101,
       "key": "TheLocal+DevelopmentKey=",
       "subscribers": [
         {
@@ -116,7 +113,6 @@ or advanced filtering:
   ]
 }
 ```
-
 
 ## Using the Simulator
 
@@ -208,7 +204,10 @@ It posts the payload to https://host:port and drops the query uri. All of the ex
 
 ## Future Development
 
+Some features that could be added if there was a need for them: -
+
 - Subscriber retries & dead lettering. https://docs.microsoft.com/en-us/azure/event-grid/delivery-and-retry
-- Ceritifcate cofiguration in `appsettings.json`.
-- Docker support.
-- Maybe a web based console?
+- Certificate configuration in `appsettings.json`.
+- Subscriber token auth
+- Better Docker support.
+- Maybe a web based console for admin stats etc.

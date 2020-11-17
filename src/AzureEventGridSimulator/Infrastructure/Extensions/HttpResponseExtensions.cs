@@ -7,9 +7,9 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
 {
     public static class HttpResponseExtensions
     {
-        public static async Task ErrorResponse(this HttpResponse response, HttpStatusCode statusCode, string errorMessage)
+        public static async Task ErrorResponse(this HttpResponse response, HttpStatusCode statusCode, string errorMessage, string code)
         {
-            var error = new ErrorMessage(statusCode, errorMessage);
+            var error = new ErrorMessage(statusCode, errorMessage, code);
 
             response.Headers.Add("Content-type", "application/json");
 

@@ -1,0 +1,40 @@
+{
+  "topics": [
+
+    {
+      "name": "SupplyChain-DEV",
+      "port": 60111,
+      "key": "TheLocal+DevelopmentKey=",
+      "disabled": true, // this topic is disabled it's endpoint won't be created at startup
+      "subscribers": [
+        {
+          "name": "LocalWebApiSubscription",
+          "endpoint": "https://localhost:5050/api/SomeApi"
+        }
+      ]
+    },
+
+    {
+      "name": "MyAwesomeTopic",
+      "port": 60101,
+      "key": "TheLocal+DevelopmentKey=",
+      "disabled": false,
+      "subscribers": [
+        {
+          "name": "LocalAzureFunctionSubscription",
+          "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=ExampleFunction",
+          "disableValidation": true
+        }
+      ]
+    },
+
+    {
+      "name": "ATopicWithNoSubscribers",
+      "port": 60102,
+      "key": "TheLocal+DevelopmentKey=",
+      "subscribers": [
+        // There are no subscribers defined yet, so you can send events to this topic but they won't be delivered to anyone
+      ]
+    }
+  ]
+}

@@ -16,9 +16,9 @@ namespace AzureEventGridSimulator.Domain.Commands
     public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHandler<SendNotificationEventsToSubscriberCommand>
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger _logger;
+        private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
 
-        public SendNotificationEventsToSubscriberCommandHandler(IHttpClientFactory httpClientFactory, ILogger logger)
+        public SendNotificationEventsToSubscriberCommandHandler(IHttpClientFactory httpClientFactory, ILogger<SendNotificationEventsToSubscriberCommandHandler> logger)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
@@ -48,6 +48,12 @@ namespace AzureEventGridSimulator.Domain.Commands
         {
             try
             {
+                if (subscription.Disabled)
+                {
+                    _logger.LogWarning("Subscription '{SubscriberName}' is disabled and so Notification was skipped.", subscription.Name);
+                    return;
+                }
+
                 if (!subscription.DisableValidation &&
                     subscription.ValidationStatus != SubscriptionValidationStatus.ValidationSuccessful)
                 {

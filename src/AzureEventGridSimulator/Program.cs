@@ -1,14 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace AzureEventGridSimulator
 {
@@ -18,52 +18,52 @@ namespace AzureEventGridSimulator
         {
             try
             {
+                var environmentName = WebHost
+                                      .CreateDefaultBuilder(args)
+                                      .GetSetting("ENVIRONMENT");
+
+                Log.Logger = new LoggerConfiguration()
+                             .Enrich.FromLogContext()
+                             .Enrich.WithProperty("AspNetCoreEnvironment", environmentName)
+                             .Enrich.WithProperty("ApplicationName", nameof(AzureEventGridSimulator))
+                             .Enrich.WithMachineName()
+                             .MinimumLevel.Debug()
+                             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                             .MinimumLevel.Override("System", LogEventLevel.Warning)
+                             .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Warning)
+                             .WriteTo.Console()
+                             .WriteTo.Seq("http://localhost:5341/")
+                             .CreateLogger();
+
                 var host = WebHost
-                    .CreateDefaultBuilder(args)
-                    .ConfigureAppConfiguration((context, builder) =>
-                    {
-                        var env = context.HostingEnvironment;
+                           .CreateDefaultBuilder(args)
+                           .UseSerilog()
+                           .ConfigureAppConfiguration((context, builder) =>
+                           {
+                               var configFileOverriddenFromCommandLine = context.Configuration.GetValue<string>("ConfigFile");
+                               if (!string.IsNullOrWhiteSpace(configFileOverriddenFromCommandLine))
+                               {
+                                   // The path to the config file has been passed at the command line
+                                   // e.g. AzureEventGridSimulator.exe --ConfigFile=/path/to/config.json
+                                   builder.AddJsonFile(configFileOverriddenFromCommandLine, optional: false);
+                                   Log.Logger.Warning("Overriding settings with '{SettingsPath}'", configFileOverriddenFromCommandLine);
+                               }
+                           })
+                           .UseUrls("https://127.0.0.1:0") // The default which we'll override with the configured topics
+                           .UseStartup<Startup>()
+                           .UseKestrel(options =>
+                           {
+                               var simulatorSettings = (SimulatorSettings)options.ApplicationServices.GetService(typeof(SimulatorSettings));
+                               var enabledTopics = simulatorSettings.Topics.Where(t => !t.Disabled);
 
-                        var config = builder.Build();
-
-                        var configFile = config.GetValue<string>("ConfigFile");
-                        if (!string.IsNullOrEmpty(configFile))
-                        {
-                            builder.AddJsonFile(configFile, optional: false);
-                        }
-
-                        Log.Logger = new LoggerConfiguration()
-                            .Enrich.FromLogContext()
-                            .Enrich.WithProperty("AspNetCoreEnvironment", env.EnvironmentName)
-                            .Enrich.WithMachineName()
-                            .MinimumLevel.Debug()
-                            .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
-                            .MinimumLevel.Override("System", LogEventLevel.Error)
-                            .ReadFrom.Configuration(config)
-                            .CreateLogger();
-                    })
-                    .UseStartup<Startup>()
-                    .UseSerilog()
-                    .UseKestrel(options =>
-                    {
-                        var simulatorSettings = (SimulatorSettings)options.ApplicationServices.GetService(typeof(SimulatorSettings));
-
-                        foreach (var topics in simulatorSettings.Topics)
-                        {
-                            options.Listen(
-                                IPAddress.Any,
-                                topics.Port,
-                                listenOptions =>
-                                {
-                                    listenOptions.UseHttps(StoreName.My, "localhost", true);
-                                }
-                            );
-                        }
-                    })
-                    .Build();
-
-                var logger = (ILogger)host.Services.GetService(typeof(ILogger));
-                logger.LogInformation("Started");
+                               foreach (var topics in enabledTopics)
+                               {
+                                   options.Listen(IPAddress.Any,
+                                                  topics.Port,
+                                                  listenOptions => { listenOptions.UseHttps(StoreName.My, "localhost", true); });
+                               }
+                           })
+                           .Build();
 
                 try
                 {
@@ -71,21 +71,17 @@ namespace AzureEventGridSimulator
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Failed to run the Azure Event Grid Simulator.");
+                    Log.Logger.Fatal($"Error running the Azure Event Grid Simulator: {ex.Message}");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Log.Logger.Fatal($"Failed to start the Azure Event Grid Simulator: {ex.Message}");
             }
             finally
             {
                 Log.CloseAndFlush();
             }
-
-            Console.WriteLine("");
-            Console.WriteLine("Any key to exit...");
-            Console.ReadKey();
         }
     }
 }

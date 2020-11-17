@@ -1,66 +1,53 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Services;
+using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using Microsoft.Extensions.Hosting;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator.Domain.Services
+namespace AzureEventGridSimulator.Domain.Commands
 {
-    public class SubscriptionValidationService : IHostedService
+    public class ValidateAllSubscriptionsCommandHandler : IRequestHandler<ValidateAllSubscriptionsCommand>
     {
-        private readonly SimulatorSettings _simulatorSettings;
+        private readonly ILogger<ValidateAllSubscriptionsCommandHandler> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly SimulatorSettings _simulatorSettings;
         private readonly ValidationIpAddress _validationIpAddress;
-        private readonly ILogger _logger;
 
-        public SubscriptionValidationService(SimulatorSettings simulatorSettings,
-                                             IHttpClientFactory httpClientFactory,
-                                             ValidationIpAddress validationIpAddress,
-                                             ILogger logger)
+        public ValidateAllSubscriptionsCommandHandler(ILogger<ValidateAllSubscriptionsCommandHandler> logger,
+                                                      IHttpClientFactory httpClientFactory,
+                                                      SimulatorSettings simulatorSettings,
+                                                      ValidationIpAddress validationIpAddress)
         {
-            _simulatorSettings = simulatorSettings;
-            _httpClientFactory = httpClientFactory;
-            _validationIpAddress = validationIpAddress;
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
+            _simulatorSettings = simulatorSettings;
+            _validationIpAddress = validationIpAddress;
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task<Unit> Handle(ValidateAllSubscriptionsCommand request, CancellationToken cancellationToken)
         {
-#pragma warning disable 4014
-            return SendSubscriptionValidationEventToAllSubscriptions();
-#pragma warning restore 4014
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-
-        private Task SendSubscriptionValidationEventToAllSubscriptions()
-        {
-            var tasks = new List<Task>();
-
-            foreach (var topic in _simulatorSettings.Topics)
+            foreach (var enabledTopic in _simulatorSettings.Topics
+                                                           .Where(o => !o.Disabled))
             {
-                foreach (var subscription in topic.Subscribers.Where(s => !s.DisableValidation))
+                foreach (var subscriber in enabledTopic.Subscribers
+                                                       .Where(o => !o.Disabled))
                 {
-#pragma warning disable 4014
-                    tasks.Add(ValidateSubscription(topic, subscription));
-#pragma warning restore 4014
+                    await ValidateSubscription(enabledTopic, subscriber);
                 }
             }
 
-            return Task.WhenAll(tasks);
+            return Unit.Value;
         }
 
-        private async Task<bool> ValidateSubscription(TopicSettings topic, SubscriptionSettings subscription)
+        private async Task ValidateSubscription(TopicSettings topic, SubscriptionSettings subscription)
         {
             var validationUrl = $"https://{_validationIpAddress}:{topic.Port}/validate?id={subscription.ValidationCode}";
 
@@ -86,9 +73,13 @@ namespace AzureEventGridSimulator.Domain.Services
                 // ReSharper disable once MethodHasAsyncOverload
                 var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
                 using var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var httpClient = _httpClientFactory.CreateClient();
+                using var httpClient = _httpClientFactory.CreateClient();
                 httpClient.DefaultRequestHeaders.Add("aeg-event-type", "SubscriptionValidation");
-                httpClient.Timeout = TimeSpan.FromSeconds(15);
+                httpClient.DefaultRequestHeaders.Add("aeg-subscription-name", subscription.Name.ToUpperInvariant());
+                httpClient.DefaultRequestHeaders.Add("aeg-data-version", evt.DataVersion);
+                httpClient.DefaultRequestHeaders.Add("aeg-metadata-version", evt.MetadataVersion);
+                httpClient.DefaultRequestHeaders.Add("aeg-delivery-count", "0"); // TODO implement re-tries
+                httpClient.Timeout = TimeSpan.FromSeconds(60);
 
                 subscription.ValidationStatus = SubscriptionValidationStatus.ValidationEventSent;
 
@@ -102,17 +93,16 @@ namespace AzureEventGridSimulator.Domain.Services
                 {
                     subscription.ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful;
                     _logger.LogInformation("Successfully validated subscriber '{SubscriberName}'.", subscription.Name);
-                    return true;
+                    return;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to receive validation event from subscriber '{SubscriberName}'", subscription.Name);
-                _logger.LogInformation("'{SubscriberName}' manual validation url: {ValidationUrl}", subscription.Name, validationUrl);
+                _logger.LogError("Failed to validate subscriber '{SubscriberName}'. Note that subscriber must be started before the simulator. Or you can disable validation for this subscriber via settings: '{Error}'", subscription.Name, ex.Message);
             }
 
             subscription.ValidationStatus = SubscriptionValidationStatus.ValidationFailed;
-            return false;
         }
+
     }
 }
