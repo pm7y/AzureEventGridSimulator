@@ -36,5 +36,32 @@
         // There are no subscribers defined yet, so you can send events to this topic but they won't be delivered to anyone
       ]
     }
-  ]
+  ],
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Error",
+        "System": "Error"
+      }
+    },
+    "WriteTo": [
+      { "Name": "Console" },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "log_.txt",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 7
+        }
+      },
+      {
+        "Name": "Seq",
+        "Args": {
+          "serverUrl": "http://localhost:5341",
+          "apiKey": null
+        }
+      }
+    ]
+  }
 }

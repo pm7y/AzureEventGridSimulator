@@ -7,6 +7,7 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 
@@ -18,25 +19,36 @@ namespace AzureEventGridSimulator
         {
             try
             {
-                var environmentName = WebHost
-                                      .CreateDefaultBuilder(args)
-                                      .GetSetting("ENVIRONMENT");
-
-                Log.Logger = new LoggerConfiguration()
-                             .Enrich.FromLogContext()
-                             .Enrich.WithProperty("AspNetCoreEnvironment", environmentName)
-                             .Enrich.WithProperty("ApplicationName", nameof(AzureEventGridSimulator))
-                             .Enrich.WithMachineName()
-                             .MinimumLevel.Debug()
-                             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                             .MinimumLevel.Override("System", LogEventLevel.Warning)
-                             .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Warning)
-                             .WriteTo.Console()
-                             .WriteTo.Seq("http://localhost:5341/")
-                             .CreateLogger();
-
                 var host = WebHost
-                           .CreateDefaultBuilder(args)
+                           .CreateDefaultBuilder<Startup>(args)
+                           .ConfigureAppConfiguration((context, builder) =>
+                           {
+                               var configRoot = builder.Build();
+
+                               // System.IO.File.WriteAllText("appsettings.debug.txt", configRoot.GetDebugView());
+
+                               var atLeastOneSinkExists = configRoot.GetSection("Serilog:WriteTo").GetChildren().ToArray().Any();
+
+                               var logConfig = new LoggerConfiguration()
+                                               .Enrich.FromLogContext()
+                                               .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
+                                               .Enrich.WithProperty("Application", nameof(AzureEventGridSimulator))
+                                               .Enrich.WithMachineName()
+                                               .MinimumLevel.Is(LogEventLevel.Information)
+                                               .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+                                               .MinimumLevel.Override("System", LogEventLevel.Error)
+                                               .ReadFrom.Configuration(configRoot, "Serilog");
+
+                               if (!atLeastOneSinkExists)
+                               {
+                                   logConfig = logConfig.WriteTo.Console();
+                               }
+
+                               Log.Logger = logConfig.CreateLogger();
+
+                               Log.Logger.Information("It's alive!");
+                           })
+                           .ConfigureLogging((context, builder) => { builder.ClearProviders(); })
                            .UseSerilog()
                            .ConfigureAppConfiguration((context, builder) =>
                            {
@@ -50,7 +62,6 @@ namespace AzureEventGridSimulator
                                }
                            })
                            .UseUrls("https://127.0.0.1:0") // The default which we'll override with the configured topics
-                           .UseStartup<Startup>()
                            .UseKestrel(options =>
                            {
                                var simulatorSettings = (SimulatorSettings)options.ApplicationServices.GetService(typeof(SimulatorSettings));
@@ -60,7 +71,7 @@ namespace AzureEventGridSimulator
                                {
                                    options.Listen(IPAddress.Any,
                                                   topics.Port,
-                                                  listenOptions => { listenOptions.UseHttps(StoreName.My, "localhost", true); });
+                                                  listenOptions => { listenOptions.UseHttps(StoreName.My, "localhost", true).UseConnectionLogging(); });
                                }
                            })
                            .Build();

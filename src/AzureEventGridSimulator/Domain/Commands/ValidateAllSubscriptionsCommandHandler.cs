@@ -99,6 +99,7 @@ namespace AzureEventGridSimulator.Domain.Commands
             catch (Exception ex)
             {
                 _logger.LogError("Failed to validate subscriber '{SubscriberName}'. Note that subscriber must be started before the simulator. Or you can disable validation for this subscriber via settings: '{Error}'", subscription.Name, ex.Message);
+                _logger.LogInformation("'{SubscriberName}' manual validation url: {ValidationUrl}", subscription.Name, validationUrl);
             }
 
             subscription.ValidationStatus = SubscriptionValidationStatus.ValidationFailed;
