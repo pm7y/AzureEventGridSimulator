@@ -38,7 +38,7 @@ namespace AzureEventGridSimulator.Domain.Commands
                                                            .Where(o => !o.Disabled))
             {
                 foreach (var subscriber in enabledTopic.Subscribers
-                                                       .Where(o => !o.Disabled))
+                                                       .Where(o => !o.DisableValidation && !o.Disabled))
                 {
                     await ValidateSubscription(enabledTopic, subscriber);
                 }

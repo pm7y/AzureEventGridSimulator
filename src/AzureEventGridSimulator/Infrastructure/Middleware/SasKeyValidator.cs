@@ -28,7 +28,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                     return false;
                 }
 
-                _logger.LogDebug("'aeg-sas-key' header is valid");
+                _logger.LogTrace("'aeg-sas-key' header is valid");
                 return true;
             }
 
@@ -42,7 +42,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                     return false;
                 }
 
-                _logger.LogDebug("'aeg-sas-token' header is valid");
+                _logger.LogTrace("'aeg-sas-token' header is valid");
                 return true;
             }
 

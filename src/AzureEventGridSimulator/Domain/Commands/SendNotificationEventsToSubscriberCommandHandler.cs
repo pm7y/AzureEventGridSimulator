@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -34,11 +35,22 @@ namespace AzureEventGridSimulator.Domain.Commands
                 eventGridEvent.MetadataVersion = "1";
             }
 
-            foreach (var subscription in request.Topic.Subscribers)
+            if (!request.Topic.Subscribers.Any())
             {
+                _logger.LogWarning("'{TopicName}' has no subscribers so {EventCount} event(s) could not be forwarded", request.Topic.Name, request.Events.Length);
+            }
+            else if (request.Topic.Subscribers.All(o => o.Disabled))
+            {
+                _logger.LogWarning("'{TopicName}' has no enabled subscribers so {EventCount} event(s) could not be forwarded", request.Topic.Name, request.Events.Length);
+            }
+            else
+            {
+                foreach (var subscription in request.Topic.Subscribers)
+                {
 #pragma warning disable 4014
-                SendToSubscriber(subscription, request.Events);
+                    SendToSubscriber(subscription, request.Events);
 #pragma warning restore 4014
+                }
             }
 
             return Task.CompletedTask;
@@ -85,7 +97,7 @@ namespace AzureEventGridSimulator.Domain.Commands
                     }
                     else
                     {
-                        _logger.LogWarning("Event {EventId} filtered out for subscriber '{SubscriberName}'.", evt.Id, subscription.Name);
+                        _logger.LogDebug("Event {EventId} filtered out for subscriber '{SubscriberName}'.", evt.Id, subscription.Name);
                     }
                 }
             }
