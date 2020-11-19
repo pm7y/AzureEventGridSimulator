@@ -45,35 +45,51 @@ namespace AzureEventGridSimulator.Domain.Commands
             }
             else
             {
-                foreach (var subscription in request.Topic.Subscribers)
+                var eventsFilteredOutByAllSubscribers = request.Events
+                                                               .Where(e => request.Topic.Subscribers.All(s => !s.Filter.AcceptsEvent(e)))
+                                                               .ToArray();
+
+                if (eventsFilteredOutByAllSubscribers.Any())
                 {
+                    foreach (var eventFilteredOutByAllSubscribers in eventsFilteredOutByAllSubscribers)
+                    {
+                        _logger.LogWarning("All subscribers of topic '{TopicName}' filtered out event {EventId}",
+                                           request.Topic.Name,
+                                           eventFilteredOutByAllSubscribers.Id);
+                    }
+                }
+                else
+                {
+                    foreach (var subscription in request.Topic.Subscribers)
+                    {
 #pragma warning disable 4014
-                    SendToSubscriber(subscription, request.Events);
+                        SendToSubscriber(subscription, request.Events, request.Topic.Name);
 #pragma warning restore 4014
+                    }
                 }
             }
 
             return Task.CompletedTask;
         }
 
-        private async Task SendToSubscriber(SubscriptionSettings subscription, EventGridEvent[] events)
+        private async Task SendToSubscriber(SubscriptionSettings subscription, EventGridEvent[] events, string topicName)
         {
             try
             {
                 if (subscription.Disabled)
                 {
-                    _logger.LogWarning("Subscription '{SubscriberName}' is disabled and so Notification was skipped.", subscription.Name);
+                    _logger.LogWarning("Subscription '{SubscriberName}' on topic '{TopicName}' is disabled and so Notification was skipped.", subscription.Name, topicName);
                     return;
                 }
 
                 if (!subscription.DisableValidation &&
                     subscription.ValidationStatus != SubscriptionValidationStatus.ValidationSuccessful)
                 {
-                    _logger.LogWarning("Subscription '{SubscriberName}' can't receive events. It's still pending validation.", subscription.Name);
+                    _logger.LogWarning("Subscription '{SubscriberName}' on topic '{TopicName}' can't receive events. It's still pending validation.", subscription.Name, topicName);
                     return;
                 }
 
-                _logger.LogDebug("Sending to subscriber '{SubscriberName}'.", subscription.Name);
+                _logger.LogDebug("Sending to subscriber '{SubscriberName}' on topic '{TopicName}'.", subscription.Name, topicName);
 
                 // "Event Grid sends the events to subscribers in an array that has a single event. This behaviour may change in the future."
                 // https://docs.microsoft.com/en-us/azure/event-grid/event-schema
@@ -93,7 +109,7 @@ namespace AzureEventGridSimulator.Domain.Commands
                         httpClient.Timeout = TimeSpan.FromSeconds(60);
 
                         await httpClient.PostAsync(subscription.Endpoint, content)
-                                        .ContinueWith(t => LogResult(t, evt, subscription));
+                                        .ContinueWith(t => LogResult(t, evt, subscription, topicName));
                     }
                     else
                     {
@@ -107,11 +123,11 @@ namespace AzureEventGridSimulator.Domain.Commands
             }
         }
 
-        private void LogResult(Task<HttpResponseMessage> task, EventGridEvent evt, SubscriptionSettings subscription)
+        private void LogResult(Task<HttpResponseMessage> task, EventGridEvent evt, SubscriptionSettings subscription, string topicName)
         {
             if (task.IsCompletedSuccessfully && task.Result.IsSuccessStatusCode)
             {
-                _logger.LogDebug("Event {EventId} sent to subscriber '{SubscriberName}' successfully.", evt.Id, subscription.Name);
+                _logger.LogDebug("Event {EventId} sent to subscriber '{SubscriberName}' on topic '{TopicName}' successfully.", evt.Id, subscription.Name, topicName);
             }
             else
             {
