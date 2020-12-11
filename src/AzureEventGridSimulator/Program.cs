@@ -67,11 +67,33 @@ namespace AzureEventGridSimulator
                                var simulatorSettings = (SimulatorSettings)options.ApplicationServices.GetService(typeof(SimulatorSettings));
                                var enabledTopics = simulatorSettings.Topics.Where(t => !t.Disabled);
 
+                               var cert = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Certificates__Default__Path");
+                               var certPass = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Certificates__Default__Password");
+
+                               X509Certificate2 certificate = null;
+                               if (string.IsNullOrWhiteSpace(cert) == false && string.IsNullOrWhiteSpace(certPass) == false) {
+                                   Log.Logger.Warning("ASPNETCORE_Kestrel__Certificates__Default__Path is define, using '{ASPNETCORE_Kestrel__Certificates__Default__Path}'", cert);
+                                   certificate = new X509Certificate2(cert, certPass);
+                               }
+
                                foreach (var topics in enabledTopics)
                                {
                                    options.Listen(IPAddress.Any,
                                                   topics.Port,
-                                                  listenOptions => { listenOptions.UseHttps(StoreName.My, "localhost", true).UseConnectionLogging(); });
+                                                  listenOptions =>
+                                                  {
+                                                      if (certificate != null) {
+                                                        listenOptions
+                                                            .UseHttps(httpsOptions => httpsOptions.ServerCertificateSelector = (features, name) => certificate)
+                                                            .UseConnectionLogging();
+                                                      }
+                                                      else
+                                                      {
+                                                          listenOptions
+                                                              .UseHttps(StoreName.My, "localhost", true)
+                                                              .UseConnectionLogging();
+                                                      }
+                                                  });
                                }
                            })
                            .Build();
