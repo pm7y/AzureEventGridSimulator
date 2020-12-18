@@ -114,6 +114,53 @@ or advanced filtering:
 }
 ```
 
+## Docker
+You can use that emulater within the Docker, here example how to use it:
+
+### dockerfile example
+```
+FROM mcr.microsoft.com/dotnet/sdk:3.1 as build
+WORKDIR /source
+
+# restores nuget packages
+COPY AzureEventGridSimulator/src/AzureEventGridSimulator/*.csproj .
+RUN dotnet restore
+
+# copy source code
+COPY AzureEventGridSimulator/src/AzureEventGridSimulator .
+
+# builds the source code using the SDK
+RUN dotnet publish -c release -o /app
+
+# runs the deployable on a separate image
+# that is shipped with the .NET Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:3.1
+WORKDIR /app
+COPY --from=build /app .
+
+USER ContainerAdministrator
+# if certificate is needed
+#COPY YOUR_KEY_HERE.pfx .
+#ENV ASPNETCORE_Kestrel__Certificates__Default__Password="YOUR_KEY_PASSWORD_HERE"
+#ENV ASPNETCORE_Kestrel__Certificates__Default__Path="C:\\app\\YOUR_KEY_HERE.pfx"
+ENV ASPNETCORE_ENVIRONMENT=Development
+
+ENTRYPOINT ["AzureEventGridSimulator.exe"]
+```
+
+#### Docker Build
+`docker build -t {TAG_NAME} .`
+
+#### Simple Run command
+`docker run -it --rm {TAG_NAME}`
+
+#### Customizable Run command
+Alternatively, you can specify the configuration file, you have to map you config file   
+${PWD} - your curretn folder   
+C:\temp\ - folder inside the container   
+`docker run -it --rm -v ${PWD}:C:\temp\ {TAG_NAME} --entrypoint AzureEventGridSimulator.exe --ConfigFile=C:\temp\{NAME OF YOUR CONFIGURATION FILE}`
+
+
 ## Using the Simulator
 
 Once configured and running, requests are `posted` to a topic endpoint. The endpoint of a topic will be in the form: `https://localhost:<configured-port>/api/events?api-version=2018-01-01`.
