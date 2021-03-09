@@ -24,7 +24,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             {
                 if (!string.Equals(requestHeaders["aeg-sas-key"], topicKey))
                 {
-                    _logger.LogError("'aeg-sas-key' value did not match configured value!");
+                    _logger.LogError("'aeg-sas-key' value did not match the expected value!");
                     return false;
                 }
 
@@ -35,14 +35,28 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             if (requestHeaders
                 .Any(h => string.Equals("aeg-sas-token", h.Key, StringComparison.OrdinalIgnoreCase)))
             {
-                var token = requestHeaders["aeg-sas-token"];
+                var token = requestHeaders["aeg-sas-token"].First();
                 if (!TokenIsValid(token, topicKey))
                 {
-                    _logger.LogError("'aeg-sas-key' value did not match configured value!");
+                    _logger.LogError("'aeg-sas-token' value did not match the expected value!");
                     return false;
                 }
 
                 _logger.LogTrace("'aeg-sas-token' header is valid");
+                return true;
+            }
+
+            if (requestHeaders
+                .Any(h => string.Equals("Authorization", h.Key, StringComparison.OrdinalIgnoreCase)))
+            {
+                var token = requestHeaders["Authorization"].ToString();
+                if (token.StartsWith("SharedAccessSignature") && !TokenIsValid(token.Replace("SharedAccessSignature", "").Trim(), topicKey))
+                {
+                    _logger.LogError("'Authorization: SharedAccessSignature' value did not match the expected value!");
+                    return false;
+                }
+
+                _logger.LogTrace("'Authorization: SharedAccessSignature' header is valid");
                 return true;
             }
 
