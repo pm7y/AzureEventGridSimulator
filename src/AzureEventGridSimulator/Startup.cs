@@ -49,7 +49,7 @@ namespace AzureEventGridSimulator
         {
             lifetime.ApplicationStarted.Register(async () => await Task.CompletedTask.ContinueWith((t) => OnApplicationStarted(app, lifetime, logger)));
 
-            // app.UseSerilogRequestLogging(); // Not using this for now
+            app.UseSerilogRequestLogging(); // Not using this for now
             app.UseMiddleware<EventGridMiddleware>();
             app.UseMvc();
         }
@@ -60,21 +60,21 @@ namespace AzureEventGridSimulator
 
             if (simulatorSettings is null)
             {
-                logger.LogCritical("Settings are not found. The application will now exit.");
+                logger.LogCritical("Settings are not found. The application will now exit");
                 lifetime.StopApplication();
                 return;
             }
 
             if (!simulatorSettings.Topics.Any())
             {
-                logger.LogCritical("There are no configured topics. The application will now exit.");
+                logger.LogCritical("There are no configured topics. The application will now exit");
                 lifetime.StopApplication();
                 return;
             }
 
             if (simulatorSettings.Topics.All(o => o.Disabled))
             {
-                logger.LogCritical("All of the configured topics are disabled. The application will now exit.");
+                logger.LogCritical("All of the configured topics are disabled. The application will now exit");
                 lifetime.StopApplication();
                 return;
             }

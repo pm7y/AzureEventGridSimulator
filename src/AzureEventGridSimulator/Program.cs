@@ -20,36 +20,6 @@ namespace AzureEventGridSimulator
                 .CreateDefaultBuilder<Startup>(args)
                 .ConfigureAppConfiguration((context, builder) =>
                 {
-                    var configRoot = builder.Build();
-
-                    // You can uncomment this to get a dump of the current effective settings.
-                    // System.IO.File.WriteAllText("appsettings.debug.txt", configRoot.GetDebugView());
-
-                    var atLeastOneSinkExists = configRoot.GetSection("Serilog:WriteTo").GetChildren().ToArray().Any();
-
-                    var logConfig = new LoggerConfiguration()
-                                    .Enrich.FromLogContext()
-                                    .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
-                                    .Enrich.WithProperty("Application", nameof(AzureEventGridSimulator))
-                                    .Enrich.WithMachineName()
-                                    .MinimumLevel.Is(LogEventLevel.Information)
-                                    .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
-                                    .MinimumLevel.Override("System", LogEventLevel.Error)
-                                    .ReadFrom.Configuration(configRoot, "Serilog");
-
-                    if (!atLeastOneSinkExists)
-                    {
-                        logConfig = logConfig.WriteTo.Console();
-                    }
-
-                    Log.Logger = logConfig.CreateLogger();
-
-                    Log.Logger.Information("It's alive!");
-                })
-                .ConfigureLogging((context, builder) => { builder.ClearProviders(); })
-                .UseSerilog()
-                .ConfigureAppConfiguration((context, builder) =>
-                {
                     var configFileOverriddenFromCommandLine = context.Configuration.GetValue<string>("ConfigFile");
                     if (!string.IsNullOrWhiteSpace(configFileOverriddenFromCommandLine))
                     {
@@ -58,7 +28,35 @@ namespace AzureEventGridSimulator
                         builder.AddJsonFile(configFileOverriddenFromCommandLine, optional: false);
                         Log.Logger.Warning("Overriding settings with '{SettingsPath}'", configFileOverriddenFromCommandLine);
                     }
+
+                    // You can uncomment this to get a dump of the current effective config settings.
+                    //System.IO.File.WriteAllText("appsettings.debug.txt", builder.Build().GetDebugView());
                 })
+                .ConfigureLogging((context, builder) =>
+                {
+                    builder.ClearProviders();
+
+                    var atLeastOneLogHasBeenConfigured = context.Configuration.GetSection("Serilog:WriteTo").GetChildren().ToArray().Any();
+
+                    var logConfig = new LoggerConfiguration()
+                                    .Enrich.FromLogContext()
+                                    .Enrich.WithMachineName()
+                                    .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
+                                    .Enrich.WithProperty("Application", nameof(AzureEventGridSimulator))
+                                    .MinimumLevel.Is(LogEventLevel.Information)
+                                    .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+                                    .MinimumLevel.Override("System", LogEventLevel.Error)
+                                    .ReadFrom.Configuration(context.Configuration, "Serilog");
+
+                    if (!atLeastOneLogHasBeenConfigured)
+                    {
+                        logConfig = logConfig.WriteTo.Console();
+                    }
+
+                    Log.Logger = logConfig.CreateLogger();
+                    Log.Logger.Information("It's alive!");
+                })
+                .UseSerilog()
                 .UseKestrel(options =>
                 {
                     var simulatorSettings = (SimulatorSettings)options.ApplicationServices.GetService(typeof(SimulatorSettings));
