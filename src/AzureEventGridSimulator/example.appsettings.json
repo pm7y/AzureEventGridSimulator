@@ -20,7 +20,7 @@
       "port": 60102,
       "key": "TheLocal+DevelopmentKey=",
       "subscribers": [
-        // There are no subscribers defined yet, so you can send events to this topic but they won't be delivered to anyone
+        
       ]
     },
 
@@ -28,15 +28,28 @@
       "name": "ADisabledTopic",
       "port": 60103,
       "key": "TheLocal+DevelopmentKey=",
-      "disabled": true, // this topic is disabled so it's endpoint won't be created at startup
+      "disabled": true, 
       "subscribers": [
         {
           "name": "LocalWebApiSubscription",
           "endpoint": "https://localhost:5050/api/SomeApi"
         }
       ]
-    }
+    },
 
+    {
+      "name": "RequestCatcherTopic",
+      "port": 60104,
+      "key": "TheLocal+DevelopmentKey=",
+      "disabled": true,
+      "subscribers": [
+        {
+          "name": "RequestCatcherSubscription",
+          "endpoint": "https://azureeventgridsimulator.requestcatcher.com/test"
+        }
+      ]
+    }
+    
   ],
   "Serilog": {
     "MinimumLevel": {
