@@ -55,8 +55,8 @@
     "MinimumLevel": {
       "Default": "Information",
       "Override": {
-        "Microsoft": "Error",
-        "System": "Error"
+        "Microsoft": "Warning",
+        "System": "Warning"
       }
     },
     "WriteTo": [
