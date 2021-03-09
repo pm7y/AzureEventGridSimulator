@@ -14,8 +14,8 @@ namespace AzureEventGridSimulator.Controllers
     [ApiController]
     public class SubscriptionValidationController : ControllerBase
     {
-        private readonly SimulatorSettings _simulatorSettings;
         private readonly IMediator _mediator;
+        private readonly SimulatorSettings _simulatorSettings;
 
         public SubscriptionValidationController(SimulatorSettings simulatorSettings,
                                                 IMediator mediator)

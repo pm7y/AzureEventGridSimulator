@@ -8,9 +8,9 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
     {
         public static async Task<string> RequestBody(this HttpContext context)
         {
-             var reader = new StreamReader(context.Request.Body);
+            var reader = new StreamReader(context.Request.Body);
             reader.BaseStream.Seek(0, SeekOrigin.Begin);
-            return await reader.ReadToEndAsync();          
+            return await reader.ReadToEndAsync();
         }
     }
 }

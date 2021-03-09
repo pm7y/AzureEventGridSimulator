@@ -56,9 +56,9 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
         }
 
         private async Task ValidateNotificationRequest(HttpContext context,
-                                                      SimulatorSettings simulatorSettings,
-                                                      SasKeyValidator sasHeaderValidator,
-                                                      ILogger<EventGridMiddleware> logger)
+                                                       SimulatorSettings simulatorSettings,
+                                                       SasKeyValidator sasHeaderValidator,
+                                                       ILogger<EventGridMiddleware> logger)
         {
             var topic = simulatorSettings.Topics.First(t => t.Port == context.Connection.LocalPort);
 
@@ -125,7 +125,6 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                     await context.Response.ErrorResponse(HttpStatusCode.BadRequest, ex.Message, null);
                     return;
                 }
-
             }
 
             await _next(context);

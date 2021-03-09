@@ -60,7 +60,8 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
                 throw new ArgumentOutOfRangeException(nameof(Values), $"Advanced filtering limits strings to {maxStringLength} characters per string value");
             }
 
-            if (new[] { OperatorTypeEnum.NumberIn, OperatorTypeEnum.NumberNotIn, OperatorTypeEnum.StringIn, OperatorTypeEnum.StringNotIn }.Contains(OperatorType) && Values?.Count > 5)
+            if (new[] { OperatorTypeEnum.NumberIn, OperatorTypeEnum.NumberNotIn, OperatorTypeEnum.StringIn, OperatorTypeEnum.StringNotIn }.Contains(OperatorType) &&
+                Values?.Count > 5)
             {
                 throw new ArgumentOutOfRangeException(nameof(OperatorType), "Advanced filtering limits filters to five values for in and not in operators");
             }
@@ -68,7 +69,8 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
 
         public override string ToString()
         {
-            return string.Join(", ", Key, OperatorType, Value ?? "null", string.Join(", ", Values.HasItems() ? Values.Select(v => v.ToString()) : new[] { "null" }), Guid.NewGuid());
+            return string.Join(", ", Key, OperatorType, Value ?? "null", string.Join(", ", Values.HasItems() ? Values.Select(v => v.ToString()) : new[] { "null" }),
+                               Guid.NewGuid());
         }
     }
 }

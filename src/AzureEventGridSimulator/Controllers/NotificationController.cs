@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Commands;
@@ -7,7 +7,6 @@ using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -18,7 +17,7 @@ namespace AzureEventGridSimulator.Controllers
     [ApiController]
     public class NotificationController : ControllerBase
     {
-        private const string SUPPORTED_API_VERSION = "2018-01-01";
+        private const string _supportedApiVersion = "2018-01-01";
 
         private readonly IMediator _mediator;
         private readonly SimulatorSettings _simulatorSettings;
@@ -33,7 +32,7 @@ namespace AzureEventGridSimulator.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromQuery(Name = "api-version")] string apiVersion)
         {
-            if (!string.IsNullOrWhiteSpace(apiVersion) && !string.Equals(SUPPORTED_API_VERSION, apiVersion))
+            if (!string.IsNullOrWhiteSpace(apiVersion) && !string.Equals(_supportedApiVersion, apiVersion))
             {
                 return BadRequest(new ErrorMessage(
                                                    HttpStatusCode.BadRequest,
@@ -46,7 +45,7 @@ namespace AzureEventGridSimulator.Controllers
 
             await _mediator.Send(new SendNotificationEventsToSubscriberCommand(eventsFromCurrentRequestBody, topicSettingsForCurrentRequestPort));
 
-            Response.Headers.Add("api-supported-versions", SUPPORTED_API_VERSION);
+            Response.Headers.Add("api-supported-versions", _supportedApiVersion);
             return Ok();
         }
     }

@@ -76,37 +76,37 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
                     retVal = Try(() => Convert.ToBoolean(value) == Convert.ToBoolean(filter.Value));
                     break;
                 case AdvancedFilterSetting.OperatorTypeEnum.StringContains:
-                    {
-                        // a string cannot be considered to contain null or and empty string
-                        var valueAsString = value as string;
-                        var filterValueAsString = filter.Value as string;
+                {
+                    // a string cannot be considered to contain null or and empty string
+                    var valueAsString = value as string;
+                    var filterValueAsString = filter.Value as string;
 
-                        retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
-                                           !string.IsNullOrEmpty(valueAsString) &&
-                                           valueAsString.Contains(filterValueAsString, StringComparison.OrdinalIgnoreCase));
-                    }
+                    retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
+                                       !string.IsNullOrEmpty(valueAsString) &&
+                                       valueAsString.Contains(filterValueAsString, StringComparison.OrdinalIgnoreCase));
+                }
                     break;
                 case AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith:
-                    {
-                        // null or empty values cannot be considered to be the beginning character of a string
-                        var valueAsString = value as string;
-                        var filterValueAsString = filter.Value as string;
+                {
+                    // null or empty values cannot be considered to be the beginning character of a string
+                    var valueAsString = value as string;
+                    var filterValueAsString = filter.Value as string;
 
-                        retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
-                                           !string.IsNullOrEmpty(valueAsString) &&
-                                           valueAsString.StartsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
-                    }
+                    retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
+                                       !string.IsNullOrEmpty(valueAsString) &&
+                                       valueAsString.StartsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
+                }
                     break;
                 case AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith:
-                    {
-                        // null or empty values cannot be considered to be the end character of a string
-                        var valueAsString = value as string;
-                        var filterValueAsString = filter.Value as string;
+                {
+                    // null or empty values cannot be considered to be the end character of a string
+                    var valueAsString = value as string;
+                    var filterValueAsString = filter.Value as string;
 
-                        retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
-                                           !string.IsNullOrEmpty(valueAsString) &&
-                                           valueAsString.EndsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
-                    }
+                    retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
+                                       !string.IsNullOrEmpty(valueAsString) &&
+                                       valueAsString.EndsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
+                }
                     break;
                 case AdvancedFilterSetting.OperatorTypeEnum.StringIn:
                     retVal = Try(() => (filter.Values ?? new object[0]).Select(v => Convert.ToString(v)?.ToUpper()).Contains(Convert.ToString(value)?.ToUpper()));
@@ -193,6 +193,7 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
                                 }
                             }
                         }
+
                         break;
                 }
             }

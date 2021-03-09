@@ -39,10 +39,7 @@ namespace AzureEventGridSimulator
             services.AddSingleton<ValidationIpAddress>();
 
             services.AddControllers(options => options.EnableEndpointRouting = false)
-                    .AddJsonOptions(options =>
-                    {
-                        options.JsonSerializerOptions.WriteIndented = true;
-                    })
+                    .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; })
                     .SetCompatibilityVersion(CompatibilityVersion.Latest);
         }
 

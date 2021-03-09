@@ -27,7 +27,8 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
                 throw new InvalidOperationException("Each subscriber must have a unique name.");
             }
 
-            if (Topics.Select(t => t.Name).Concat(Topics.SelectMany(t => t.Subscribers).Select(s => s.Name)).Any(name => string.IsNullOrWhiteSpace(name) || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))))
+            if (Topics.Select(t => t.Name).Concat(Topics.SelectMany(t => t.Subscribers).Select(s => s.Name))
+                      .Any(name => string.IsNullOrWhiteSpace(name) || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))))
             {
                 throw new InvalidOperationException("A topic/subscriber name can only contain letters, numbers, and dashes.");
             }
