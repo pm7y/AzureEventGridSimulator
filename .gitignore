@@ -345,3 +345,6 @@ build-linux-64
 
 # vscode
 src/AzureEventGridSimulator/.config/
+
+/src/AzureEventGridSimulator/appsettings.debug.txt
+/**/*/log_*.txt
