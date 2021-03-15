@@ -22,6 +22,9 @@ namespace AzureEventGridSimulator.Infrastructure
             return _ipAddress;
         }
 
-        public static implicit operator string(ValidationIpAddress d) => d.ToString();
+        public static implicit operator string(ValidationIpAddress d)
+        {
+            return d.ToString();
+        }
     }
 }

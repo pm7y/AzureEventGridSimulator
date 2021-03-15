@@ -16,8 +16,8 @@ namespace AzureEventGridSimulator.Domain.Commands
 {
     public class ValidateAllSubscriptionsCommandHandler : IRequestHandler<ValidateAllSubscriptionsCommand>
     {
-        private readonly ILogger<ValidateAllSubscriptionsCommandHandler> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<ValidateAllSubscriptionsCommandHandler> _logger;
         private readonly SimulatorSettings _simulatorSettings;
         private readonly ValidationIpAddress _validationIpAddress;
 

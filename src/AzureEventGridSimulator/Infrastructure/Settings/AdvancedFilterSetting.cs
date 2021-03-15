@@ -8,18 +8,6 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
 {
     public class AdvancedFilterSetting
     {
-        [JsonProperty(PropertyName = "operatorType", Required = Required.Always)]
-        public OperatorTypeEnum OperatorType { get; set; }
-
-        [JsonProperty(PropertyName = "key", Required = Required.Always)]
-        public string Key { get; set; }
-
-        [JsonProperty(PropertyName = "value", Required = Required.DisallowNull)]
-        public object Value { get; set; }
-
-        [JsonProperty(PropertyName = "values", Required = Required.DisallowNull)]
-        public ICollection<object> Values { get; set; }
-
         public enum OperatorTypeEnum
         {
             NumberGreaterThan,
@@ -35,6 +23,18 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
             StringIn,
             StringNotIn
         }
+
+        [JsonProperty(PropertyName = "operatorType", Required = Required.Always)]
+        public OperatorTypeEnum OperatorType { get; set; }
+
+        [JsonProperty(PropertyName = "key", Required = Required.Always)]
+        public string Key { get; set; }
+
+        [JsonProperty(PropertyName = "value", Required = Required.DisallowNull)]
+        public object Value { get; set; }
+
+        [JsonProperty(PropertyName = "values", Required = Required.DisallowNull)]
+        public ICollection<object> Values { get; set; }
 
         internal void Validate()
         {

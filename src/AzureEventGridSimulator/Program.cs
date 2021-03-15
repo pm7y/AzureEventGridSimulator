@@ -55,8 +55,6 @@ namespace AzureEventGridSimulator
                                options.ListenLocalhost(topics.Port, listenOptions => listenOptions.UseHttps());
                            }
                        }
-
-                       Log.Information("It's alive!");
                    });
         }
 

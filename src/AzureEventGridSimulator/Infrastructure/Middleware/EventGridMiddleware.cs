@@ -39,7 +39,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             }
 
             // This is the end of the line.
-            await context.Response.ErrorResponse(HttpStatusCode.BadRequest, "Request not supported.", null);
+            await context.WriteErrorResponse(HttpStatusCode.BadRequest, "Request not supported.", null);
         }
 
         private async Task ValidateSubscriptionValidationRequest(HttpContext context)
@@ -48,7 +48,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
 
             if (string.IsNullOrWhiteSpace(id))
             {
-                await context.Response.ErrorResponse(HttpStatusCode.BadRequest, "The request did not contain a validation code.", null);
+                await context.WriteErrorResponse(HttpStatusCode.BadRequest, "The request did not contain a validation code.", null);
                 return;
             }
 
@@ -68,7 +68,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             if (!string.IsNullOrWhiteSpace(topic.Key) &&
                 !sasHeaderValidator.IsValid(context.Request.Headers, topic.Key))
             {
-                await context.Response.ErrorResponse(HttpStatusCode.Unauthorized, "The request did not contain a valid aeg-sas-key or aeg-sas-token.", null);
+                await context.WriteErrorResponse(HttpStatusCode.Unauthorized, "The request did not contain a valid aeg-sas-key or aeg-sas-token.", null);
                 return;
             }
 
@@ -88,7 +88,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             {
                 logger.LogError("Payload is larger than the allowed maximum.");
 
-                await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Payload is larger than the allowed maximum.", null);
+                await context.WriteErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Payload is larger than the allowed maximum.", null);
                 return;
             }
 
@@ -103,11 +103,10 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                 {
                     logger.LogError("Event is larger than the allowed maximum.");
 
-                    await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Event is larger than the allowed maximum.", null);
+                    await context.WriteErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Event is larger than the allowed maximum.", null);
                     return;
                 }
             }
-
 
             //
             // Validate the properties of each event.
@@ -122,7 +121,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                 {
                     logger.LogError(ex, "Event was not valid.");
 
-                    await context.Response.ErrorResponse(HttpStatusCode.BadRequest, ex.Message, null);
+                    await context.WriteErrorResponse(HttpStatusCode.BadRequest, ex.Message, null);
                     return;
                 }
             }
@@ -135,7 +134,8 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             return context.Request.Headers.Keys.Any(k => string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)) &&
                    context.Request.Headers["Content-Type"].Any(v => !string.IsNullOrWhiteSpace(v) && v.IndexOf("application/json", StringComparison.OrdinalIgnoreCase) >= 0) &&
                    context.Request.Method == HttpMethods.Post &&
-                   string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase);
+                   (string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(context.Request.Path, "/", StringComparison.OrdinalIgnoreCase));
         }
 
         private bool IsValidationRequest(HttpContext context)

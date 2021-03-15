@@ -156,7 +156,7 @@ ENTRYPOINT ["AzureEventGridSimulator.exe"]
 
 #### Customizable Run command
 Alternatively, you can specify the configuration file, you have to map you config file   
-${PWD} - your curretn folder   
+${PWD} - your current folder   
 C:\temp\ - folder inside the container   
 `docker run -it --rm -v ${PWD}:C:\temp\ {TAG_NAME} --entrypoint AzureEventGridSimulator.exe --ConfigFile=C:\temp\{NAME OF YOUR CONFIGURATION FILE}`
 

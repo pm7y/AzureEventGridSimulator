@@ -51,9 +51,9 @@ namespace UnitTests
             settings.ShouldNotBeNull();
             settings.Topics.ShouldNotBeNull();
             settings.Topics.ShouldAllBe(t =>
-                t.Subscribers.All(s => s.Filter != null) &&
-                t.Subscribers.All(s => s.Filter.AdvancedFilters != null)
-            );
+                                            t.Subscribers.All(s => s.Filter != null) &&
+                                            t.Subscribers.All(s => s.Filter.AdvancedFilters != null)
+                                       );
 
             Should.NotThrow(() => { settings.Validate(); });
         }

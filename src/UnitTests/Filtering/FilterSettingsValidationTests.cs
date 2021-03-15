@@ -10,7 +10,7 @@ namespace UnitTests.Filtering
     {
         private SimulatorSettings GetValidSimulatorSettings(FilterSetting filter)
         {
-            return new SimulatorSettings
+            return new()
             {
                 Topics = new[]
                 {
@@ -21,7 +21,7 @@ namespace UnitTests.Filtering
                         Port = 12345,
                         Subscribers = new List<SubscriptionSettings>
                         {
-                            new SubscriptionSettings
+                            new()
                             {
                                 Name = "SubscriberName",
                                 Filter = filter
@@ -34,7 +34,7 @@ namespace UnitTests.Filtering
 
         private AdvancedFilterSetting GetValidAdvancedFilter()
         {
-            return new AdvancedFilterSetting
+            return new()
             {
                 Key = "key",
                 OperatorType = AdvancedFilterSetting.OperatorTypeEnum.BoolEquals,

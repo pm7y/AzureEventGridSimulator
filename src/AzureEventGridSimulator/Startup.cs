@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Middleware;
@@ -8,6 +10,7 @@ using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,24 +41,39 @@ namespace AzureEventGridSimulator
             services.AddScoped<SasKeyValidator>();
             services.AddSingleton<ValidationIpAddress>();
 
-            services.AddControllers(options => options.EnableEndpointRouting = false)
+            services.AddControllers(options =>
+                    {
+                        options.EnableEndpointRouting = false;
+                        options.Filters.Add(new RequestLoggingAsyncActionFilter());
+                    })
                     .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; })
                     .SetCompatibilityVersion(CompatibilityVersion.Latest);
+
+            services.AddApiVersioning(config =>
+            {
+                config.DefaultApiVersion = new ApiVersion(DateTime.Parse(Constants.SupportedApiVersion, new ApiVersionFormatProvider()));
+                config.AssumeDefaultVersionWhenUnspecified = true;
+                config.ReportApiVersions = true;
+            });
         }
 
+        // ReSharper disable once UnusedMember.Global
         public void Configure(IApplicationBuilder app,
                               IHostApplicationLifetime lifetime,
                               ILogger<Startup> logger)
         {
-            lifetime.ApplicationStarted.Register(async () => await Task.CompletedTask.ContinueWith((t) => OnApplicationStarted(app, lifetime, logger)));
+            lifetime.ApplicationStarted.Register(async () => await Task.CompletedTask.ContinueWith(t => OnApplicationStarted(app, lifetime, logger)));
 
-            app.UseSerilogRequestLogging(); // Not using this for now
+            app.UseSerilogRequestLogging();
+            app.UseMiddleware<RequestResponseLoggingMiddleware>();
             app.UseMiddleware<EventGridMiddleware>();
             app.UseMvc();
         }
 
         private static async Task OnApplicationStarted(IApplicationBuilder app, IHostApplicationLifetime lifetime, ILogger<Startup> logger)
         {
+            logger.LogInformation("It's alive!");
+
             var simulatorSettings = app.ApplicationServices.GetService(typeof(SimulatorSettings)) as SimulatorSettings;
 
             if (simulatorSettings is null)
@@ -79,7 +97,7 @@ namespace AzureEventGridSimulator
                 return;
             }
 
-            if ((app.ApplicationServices.GetService(typeof(IMediator)) is IMediator mediator))
+            if (app.ApplicationServices.GetService(typeof(IMediator)) is IMediator mediator)
             {
                 await mediator.Send(new ValidateAllSubscriptionsCommand());
             }

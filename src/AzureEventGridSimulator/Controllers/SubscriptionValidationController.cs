@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Settings;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AzureEventGridSimulator.Controllers
 {
     [Route("/validate")]
+    [ApiVersion(Constants.SupportedApiVersion)]
     [ApiController]
     public class SubscriptionValidationController : ControllerBase
     {
