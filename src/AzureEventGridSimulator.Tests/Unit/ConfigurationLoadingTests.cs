@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
-namespace UnitTests
+namespace AzureEventGridSimulator.Tests.Unit
 {
     public class ConfigurationLoadingTests
     {

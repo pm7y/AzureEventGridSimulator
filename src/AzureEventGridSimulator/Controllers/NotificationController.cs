@@ -30,7 +30,7 @@ namespace AzureEventGridSimulator.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromQuery(Name = "api-version")] string apiVersion)
         {
-            var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Connection.LocalPort);
+            var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
             var eventsFromCurrentRequestBody = JsonConvert.DeserializeObject<EventGridEvent[]>(await HttpContext.RequestBody());
 
             await _mediator.Send(new SendNotificationEventsToSubscriberCommand(eventsFromCurrentRequestBody, topicSettingsForCurrentRequestPort));

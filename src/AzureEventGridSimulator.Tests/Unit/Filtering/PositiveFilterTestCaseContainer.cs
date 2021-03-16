@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AzureEventGridSimulator.Infrastructure.Settings;
 
-namespace UnitTests.Filtering
+namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
     internal class PositiveFilterTestCaseContainer : IEnumerable<object[]>
     {

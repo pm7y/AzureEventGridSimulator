@@ -29,7 +29,7 @@ namespace AzureEventGridSimulator.Controllers
         [HttpGet]
         public async Task<IActionResult> Get(Guid id)
         {
-            var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Connection.LocalPort);
+            var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
             var isValid = await _mediator.Send(new ValidateSubscriptionCommand(topicSettingsForCurrentRequestPort, id));
 
             if (!isValid)

@@ -16,7 +16,7 @@ namespace AzureEventGridSimulator
 {
     public static class Program
     {
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args, IConfiguration configuration)
+        private static IWebHostBuilder ConfigureWebHost(string[] args, IConfiguration configuration)
         {
             return WebHost
                    .CreateDefaultBuilder<Startup>(args)
@@ -62,7 +62,7 @@ namespace AzureEventGridSimulator
         {
             try
             {
-                var webHost = CreateWebHost(args);
+                var webHost = CreateWebHostBuilder(args).Build();
 
                 webHost.Run();
             }
@@ -76,7 +76,7 @@ namespace AzureEventGridSimulator
             }
         }
 
-        public static IWebHost CreateWebHost(string[] args)
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args)
         {
             var environmentName = GetHostingEnvironment();
 
@@ -103,9 +103,9 @@ namespace AzureEventGridSimulator
 
             CreateLogger(config, environmentName);
 
-            var host = CreateWebHostBuilder(args, config).Build();
+            var hostBuilder = ConfigureWebHost(args, config);
 
-            return host;
+            return hostBuilder;
         }
 
         private static string GetHostingEnvironment()
@@ -148,14 +148,6 @@ namespace AzureEventGridSimulator
             }
 
             Log.Logger = logConfig.CreateLogger();
-        }
-    }
-
-    public static class WebHostBuilderExtensions
-    {
-        public static IWebHostBuilder UseStuff(this IWebHostBuilder hostBuilder)
-        {
-            return hostBuilder;
         }
     }
 }

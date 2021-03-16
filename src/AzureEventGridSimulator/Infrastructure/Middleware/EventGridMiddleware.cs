@@ -60,7 +60,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                                                        SasKeyValidator sasHeaderValidator,
                                                        ILogger<EventGridMiddleware> logger)
         {
-            var topic = simulatorSettings.Topics.First(t => t.Port == context.Connection.LocalPort);
+            var topic = simulatorSettings.Topics.First(t => t.Port == context.Request.Host.Port);
 
             //
             // Validate the key/ token supplied in the header.
