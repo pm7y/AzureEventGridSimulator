@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using AzureEventGridSimulator.Infrastructure.Settings;
+// ReSharper disable StringLiteralTypo
 
 namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
@@ -24,7 +25,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             return GetEnumerator();
         }
 
-        private static AdvancedFilterSetting[] GetPositiveIdFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetPositiveIdFilterConfigurations()
         {
             return new[]
             {
@@ -52,11 +53,11 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
                     { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = new object[] { "different", "EVENTID", "Another" } },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringNotIn, Values = new[] { "different", "notfound", "Another" } },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringNotIn, Values = null },
-                new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringNotIn, Values = new string[0] }
+                new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringNotIn, Values = System.Array.Empty<string>() }
             };
         }
 
-        private static AdvancedFilterSetting[] GetPositiveTopicFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetPositiveTopicFilterConfigurations()
         {
             return new[]
             {
@@ -69,7 +70,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetPositiveSubjectFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetPositiveSubjectFilterConfigurations()
         {
             return new[]
             {
@@ -82,7 +83,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetPositiveEventTypeFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetPositiveEventTypeFilterConfigurations()
         {
             return new[]
             {
@@ -96,7 +97,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetPositiveDataVersionFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetPositiveDataVersionFilterConfigurations()
         {
             return new[]
             {
@@ -108,7 +109,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetPositiveEventDataFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetPositiveEventDataFilterConfigurations()
         {
             return new[]
             {
@@ -118,7 +119,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
                 new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 1 },
                 new AdvancedFilterSetting
                     { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object[] { 1.0, 2, 3.5, "stringValue", true } },
-                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, Values = new object [0] },
+                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, Values = System.Array.Empty<object>() },
                 new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, Values = null },
                 new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberLessThan, Value = 1.1 },
                 new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberLessThan, Value = 2 },

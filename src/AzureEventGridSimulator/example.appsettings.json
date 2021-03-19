@@ -5,7 +5,6 @@
       "name": "MyAwesomeTopic",
       "port": 60101,
       "key": "TheLocal+DevelopmentKey=",
-      "disabled": false,
       "subscribers": [
         {
           "name": "LocalAzureFunctionSubscription",
@@ -41,11 +40,11 @@
       "name": "RequestCatcherTopic",
       "port": 60104,
       "key": "TheLocal+DevelopmentKey=",
-      "disabled": true,
       "subscribers": [
         {
           "name": "RequestCatcherSubscription",
-          "endpoint": "https://azureeventgridsimulator.requestcatcher.com/test"
+          "endpoint": "https://azureeventgridsimulator.requestcatcher.com",
+          "disableValidation": true
         }
       ]
     }
@@ -59,6 +58,11 @@
         "System": "Warning"
       }
     },
+    "Using": [
+      "Serilog.Sinks.Console",
+      "Serilog.Sinks.File",
+      "Serilog.Sinks.Seq"
+    ],
     "WriteTo": [
       { "Name": "Console" },
       {

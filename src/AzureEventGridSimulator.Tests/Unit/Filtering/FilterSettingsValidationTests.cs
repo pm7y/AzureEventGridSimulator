@@ -8,7 +8,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
     public class FilterSettingsValidationTests
     {
-        private SimulatorSettings GetValidSimulatorSettings(FilterSetting filter)
+        private static SimulatorSettings GetValidSimulatorSettings(FilterSetting filter)
         {
             return new()
             {
@@ -32,7 +32,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private AdvancedFilterSetting GetValidAdvancedFilter()
+        private static AdvancedFilterSetting GetValidAdvancedFilter()
         {
             return new()
             {

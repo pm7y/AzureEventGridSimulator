@@ -11,7 +11,7 @@ namespace AzureEventGridSimulator.Tests.Unit
         [Fact]
         public void TestConfigurationLoad()
         {
-            var json = @"
+            const string json = @"
 {
     ""topics"": [{
         ""name"": ""MyAwesomeTopic"",

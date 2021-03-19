@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using AzureEventGridSimulator.Infrastructure.Settings;
+// ReSharper disable StringLiteralTypo
 
 namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
@@ -27,7 +28,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             return GetEnumerator();
         }
 
-        private static AdvancedFilterSetting[] GetNegativeIdFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetNegativeIdFilterConfigurations()
         {
             return new[]
             {
@@ -44,7 +45,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith, Value = null },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith, Value = "B" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = null },
-                new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = new string[0] },
+                new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = System.Array.Empty<string>() },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = new[] { "notCorrect" } },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = new[] { "different", "not_found", "Another" } },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringNotIn, Values = new[] { "different", "EventID", "Another" } },
@@ -52,7 +53,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetNegativeTopicFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetNegativeTopicFilterConfigurations()
         {
             return new[]
             {
@@ -65,7 +66,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetNegativeSubjectFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetNegativeSubjectFilterConfigurations()
         {
             return new[]
             {
@@ -78,7 +79,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetNegativeEventTypeFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetNegativeEventTypeFilterConfigurations()
         {
             return new[]
             {
@@ -86,7 +87,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
                 new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith, Value = "hIs" },
                 new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringContains, Value = ".." },
                 new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith, Value = "EVENTTYPE" },
-                new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = new object[0] },
+                new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = System.Array.Empty<object>() },
                 new AdvancedFilterSetting
                 {
                     Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringNotIn,
@@ -95,7 +96,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetNegativeDataVersionFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetNegativeDataVersionFilterConfigurations()
         {
             return new[]
             {
@@ -107,7 +108,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetNegativeEventDataFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetNegativeEventDataFilterConfigurations()
         {
             return new[]
             {
@@ -119,7 +120,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
                 new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 5 },
                 new AdvancedFilterSetting
                     { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object[] { 1.1, 2, 3.5, "stringValue", true } },
-                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object [0] },
+                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = System.Array.Empty<object>() },
                 new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = null },
                 new AdvancedFilterSetting
                     { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, Values = new object[] { 0, 1, 2, 3.5, "stringValue", true } },
@@ -156,9 +157,9 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetNegativeEventIdFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetNegativeEventIdFilterConfigurations()
         {
-            // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn not conform to the cloud schema
+            // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn't not conform to the cloud schema
             // special case for use with the cloud event schema (https://docs.microsoft.com/en-us/azure/event-grid/cloudevents-schema)
             return new[]
             {
@@ -166,9 +167,9 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetNegativeSourceFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetNegativeSourceFilterConfigurations()
         {
-            // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn not conform to the cloud schema
+            // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn't not conform to the cloud schema
             // no positive tests are available for this key yet since no support for the cloud event schema is available at the moment
             return new[]
             {
@@ -176,9 +177,9 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
             };
         }
 
-        private static AdvancedFilterSetting[] GetNegativeEventTypeVersionFilterConfigurations()
+        private static IEnumerable<AdvancedFilterSetting> GetNegativeEventTypeVersionFilterConfigurations()
         {
-            // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn not conform to the cloud schema
+            // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn't not conform to the cloud schema
             // no positive tests are available for this key yet since no support for the cloud event schema is available at the moment
             return new[]
             {

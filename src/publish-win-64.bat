@@ -8,7 +8,7 @@ ECHO REMOVE OUTPUT FOLDER "build-win-64"
 rd /S /Q "build-win-64"
 
 ECHO PUBLISHING SOLUTION
-dotnet publish ./AzureEventGridSimulator/AzureEventGridSimulator.csproj -o "../build-win-64" -c Release -r win-x64
+dotnet publish ./AzureEventGridSimulator/AzureEventGridSimulator.csproj -o "../build-win-64" -v q -c Release --self-contained true -p:PublishReadyToRun=false -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:TrimUnusedDependencies=true -f net5.0 -r win-x64 /nologo
 
 ECHO DONE!
 pause

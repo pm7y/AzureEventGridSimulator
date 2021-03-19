@@ -3,8 +3,10 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
+using AzureEventGridSimulator.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 
 namespace AzureEventGridSimulator.Infrastructure.Middleware
 {
@@ -20,9 +22,9 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
         public bool IsValid(IHeaderDictionary requestHeaders, string topicKey)
         {
             if (requestHeaders
-                .Any(h => string.Equals("aeg-sas-key", h.Key, StringComparison.OrdinalIgnoreCase)))
+                .Any(h => string.Equals(Constants.AegSasKeyHeader, h.Key, StringComparison.OrdinalIgnoreCase)))
             {
-                if (!string.Equals(requestHeaders["aeg-sas-key"], topicKey))
+                if (!string.Equals(requestHeaders[Constants.AegSasKeyHeader], topicKey))
                 {
                     _logger.LogError("'aeg-sas-key' value did not match the expected value!");
                     return false;
@@ -33,9 +35,9 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             }
 
             if (requestHeaders
-                .Any(h => string.Equals("aeg-sas-token", h.Key, StringComparison.OrdinalIgnoreCase)))
+                .Any(h => string.Equals(Constants.AegSasTokenHeader, h.Key, StringComparison.OrdinalIgnoreCase)))
             {
-                var token = requestHeaders["aeg-sas-token"].First();
+                var token = requestHeaders[Constants.AegSasTokenHeader].First();
                 if (!TokenIsValid(token, topicKey))
                 {
                     _logger.LogError("'aeg-sas-token' value did not match the expected value!");
@@ -46,11 +48,12 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                 return true;
             }
 
+            // ReSharper disable once InvertIf
             if (requestHeaders
-                .Any(h => string.Equals("Authorization", h.Key, StringComparison.OrdinalIgnoreCase)))
+                .Any(h => string.Equals(HeaderNames.Authorization, h.Key, StringComparison.OrdinalIgnoreCase)))
             {
-                var token = requestHeaders["Authorization"].ToString();
-                if (token.StartsWith("SharedAccessSignature") && !TokenIsValid(token.Replace("SharedAccessSignature", "").Trim(), topicKey))
+                var token = requestHeaders[HeaderNames.Authorization].ToString();
+                if (token.StartsWith(Constants.SasAuthorizationType) && !TokenIsValid(token.Replace(Constants.SasAuthorizationType, "").Trim(), topicKey))
                 {
                     _logger.LogError("'Authorization: SharedAccessSignature' value did not match the expected value!");
                     return false;

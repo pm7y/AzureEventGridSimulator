@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Net.Http;
-using System.Reflection;
+﻿using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -12,28 +9,18 @@ using Xunit;
 
 namespace AzureEventGridSimulator.Tests.Integration
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class TestContextFixture :  WebApplicationFactory<Startup>, IAsyncLifetime
     {
-        public TestContextFixture()
-        {
-
-        }
-
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment(Environments.Development);
 
-            builder.ConfigureAppConfiguration((context, configurationBuilder) =>
+            builder.ConfigureAppConfiguration((_, configurationBuilder) =>
             {
                 configurationBuilder
                     .SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("appsettings.tests.json", false, true);
-                    // .AddJsonFile("appsettings.tests.json", false, true)
-                    // .AddJsonFile("appsettings.tests.localdev.json", optional: true, true)
-                    // .AddEnvironmentVariables()
-                    // .AddUserSecrets(Assembly.GetExecutingAssembly(), true);
-
-                // builder.ConfigureServices(services => { });
             });
 
             builder.ConfigureLogging(logging =>
@@ -42,7 +29,6 @@ namespace AzureEventGridSimulator.Tests.Integration
                 logging.AddConsole();
             });
         }
-
 
         public Task InitializeAsync()
         {

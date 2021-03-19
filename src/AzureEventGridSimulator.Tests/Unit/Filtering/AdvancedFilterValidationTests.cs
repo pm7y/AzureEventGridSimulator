@@ -9,7 +9,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
     public class AdvancedFilterValidationTests
     {
-        private SimulatorSettings GetValidSimulatorSettings(AdvancedFilterSetting advancedFilter)
+        private static SimulatorSettings GetValidSimulatorSettings(AdvancedFilterSetting advancedFilter)
         {
             return new()
             {
@@ -173,7 +173,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
         [Fact]
         public void TestFilterValidationWithGrandchildKey()
         {
-            // following the announcement here https://azure.microsoft.com/en-us/updates/advanced-filtering-generally-available-in-event-grid/ this should now work 
+            // following the announcement here https://azure.microsoft.com/en-us/updates/advanced-filtering-generally-available-in-event-grid/ this should now work
             Should.NotThrow(() =>
             {
                 var filterConfig = new AdvancedFilterSetting { Key = "Data.Key1.SubKey", Value = "SomeValue" };

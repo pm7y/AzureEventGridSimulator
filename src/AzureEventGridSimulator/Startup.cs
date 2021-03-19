@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace AzureEventGridSimulator
 {
@@ -33,7 +34,7 @@ namespace AzureEventGridSimulator
             var settings = new SimulatorSettings();
             _configuration.Bind(settings);
             settings.Validate();
-            services.AddSingleton(o => settings);
+            services.AddSingleton(_ => settings);
 
             services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddHttpClient();
@@ -44,7 +45,6 @@ namespace AzureEventGridSimulator
             services.AddControllers(options =>
                     {
                         options.EnableEndpointRouting = false;
-                        options.Filters.Add(new RequestLoggingAsyncActionFilter());
                     })
                     .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; })
                     .SetCompatibilityVersion(CompatibilityVersion.Latest);
@@ -58,23 +58,24 @@ namespace AzureEventGridSimulator
         }
 
         // ReSharper disable once UnusedMember.Global
-        public void Configure(IApplicationBuilder app,
+        // ReSharper disable once CA1822
+        public static void Configure(IApplicationBuilder app,
                               IHostApplicationLifetime lifetime,
                               ILogger<Startup> logger)
         {
-            lifetime.ApplicationStarted.Register(async () => await Task.CompletedTask.ContinueWith(t => OnApplicationStarted(app, lifetime, logger)));
+            lifetime.ApplicationStarted.Register(async () => await Task.CompletedTask.ContinueWith(_ => OnApplicationStarted(app, lifetime, logger)));
 
             app.UseSerilogRequestLogging();
-            app.UseMiddleware<RequestResponseLoggingMiddleware>();
+            app.UseMiddleware<RequestLoggingMiddleware>();
             app.UseMiddleware<EventGridMiddleware>();
             app.UseMvc();
         }
 
-        private static async Task OnApplicationStarted(IApplicationBuilder app, IHostApplicationLifetime lifetime, ILogger<Startup> logger)
+        private static async Task OnApplicationStarted(IApplicationBuilder app, IHostApplicationLifetime lifetime, ILogger logger)
         {
-            logger.LogInformation("It's alive!");
+            logger.LogInformation("It's Alive !");
 
-            var simulatorSettings = app.ApplicationServices.GetService(typeof(SimulatorSettings)) as SimulatorSettings;
+            var simulatorSettings = (SimulatorSettings)app.ApplicationServices.GetService(typeof(SimulatorSettings));
 
             if (simulatorSettings is null)
             {

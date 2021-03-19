@@ -28,7 +28,7 @@ namespace AzureEventGridSimulator.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromQuery(Name = "api-version")] string apiVersion)
+        public async Task<IActionResult> Post()
         {
             var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
             var eventsFromCurrentRequestBody = JsonConvert.DeserializeObject<EventGridEvent[]>(await HttpContext.RequestBody());

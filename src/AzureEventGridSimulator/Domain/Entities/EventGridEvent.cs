@@ -41,10 +41,10 @@ namespace AzureEventGridSimulator.Domain.Entities
         public string EventTime { get; set; }
 
         [JsonIgnore]
-        public DateTime EventTimeParsed => DateTime.Parse(EventTime);
+        private DateTime EventTimeParsed => DateTime.Parse(EventTime);
 
         [JsonIgnore]
-        public bool EventTimeIsValid => DateTime.TryParse(EventTime, out _);
+        private bool EventTimeIsValid => DateTime.TryParse(EventTime, out _);
 
         /// <summary>
         /// Gets or sets the schema version of the data object.

@@ -28,7 +28,7 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
                 throw new ArgumentOutOfRangeException(nameof(AdvancedFilters), "Advanced filtering is limited to five advanced filters per event grid subscription.");
             }
 
-            foreach (var advancedFilter in AdvancedFilters ?? new AdvancedFilterSetting[0])
+            foreach (var advancedFilter in AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>())
             {
                 advancedFilter.Validate();
             }

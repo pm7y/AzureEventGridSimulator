@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Domain.Commands
 {
+    // ReSharper disable once UnusedType.Global
     public class ValidateAllSubscriptionsCommandHandler : IRequestHandler<ValidateAllSubscriptionsCommand>
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -53,7 +54,7 @@ namespace AzureEventGridSimulator.Domain.Commands
 
             try
             {
-                _logger.LogDebug("Sending subscription validation event to subscriber '{SubscriberName}'.", subscription.Name);
+                _logger.LogDebug("Sending subscription validation event to subscriber '{SubscriberName}'", subscription.Name);
 
                 var evt = new EventGridEvent
                 {
@@ -74,11 +75,11 @@ namespace AzureEventGridSimulator.Domain.Commands
                 var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
                 using var content = new StringContent(json, Encoding.UTF8, "application/json");
                 using var httpClient = _httpClientFactory.CreateClient();
-                httpClient.DefaultRequestHeaders.Add("aeg-event-type", "SubscriptionValidation");
-                httpClient.DefaultRequestHeaders.Add("aeg-subscription-name", subscription.Name.ToUpperInvariant());
-                httpClient.DefaultRequestHeaders.Add("aeg-data-version", evt.DataVersion);
-                httpClient.DefaultRequestHeaders.Add("aeg-metadata-version", evt.MetadataVersion);
-                httpClient.DefaultRequestHeaders.Add("aeg-delivery-count", "0"); // TODO implement re-tries
+                httpClient.DefaultRequestHeaders.Add(Constants.AegEventTypeHeader, Constants.ValidationEventType);
+                httpClient.DefaultRequestHeaders.Add(Constants.AegSubscriptionNameHeader, subscription.Name.ToUpperInvariant());
+                httpClient.DefaultRequestHeaders.Add(Constants.AegDataVersionHeader, evt.DataVersion);
+                httpClient.DefaultRequestHeaders.Add(Constants.AegMetadataVersionHeader, evt.MetadataVersion);
+                httpClient.DefaultRequestHeaders.Add(Constants.AegDeliveryCountHeader, "0"); // TODO implement re-tries
                 httpClient.Timeout = TimeSpan.FromSeconds(60);
 
                 subscription.ValidationStatus = SubscriptionValidationStatus.ValidationEventSent;
@@ -92,7 +93,7 @@ namespace AzureEventGridSimulator.Domain.Commands
                 if (validationResponse.ValidationResponse == subscription.ValidationCode)
                 {
                     subscription.ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful;
-                    _logger.LogInformation("Successfully validated subscriber '{SubscriberName}'.", subscription.Name);
+                    _logger.LogInformation("Successfully validated subscriber '{SubscriberName}'", subscription.Name);
                     return;
                 }
             }

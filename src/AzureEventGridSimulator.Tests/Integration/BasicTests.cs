@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
-using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Domain;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Newtonsoft.Json;
 using Shouldly;
@@ -30,8 +30,8 @@ namespace AzureEventGridSimulator.Tests.Integration
                 BaseAddress = new Uri("https://localhost:60101")
             });
 
-            client.DefaultRequestHeaders.Add("aeg-sas-key", "TheLocal+DevelopmentKey=");
-            client.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
+            client.DefaultRequestHeaders.Add(Constants.AegSasKeyHeader, "TheLocal+DevelopmentKey=");
+            client.DefaultRequestHeaders.Add(Constants.AegEventTypeHeader, Constants.NotificationEventType);
 
             var testEvent = new Azure.Messaging.EventGrid.EventGridEvent("subject", "eventType", "1.0", new { Blah = 1 });
             var json = JsonConvert.SerializeObject(new[] { testEvent }, Formatting.Indented);

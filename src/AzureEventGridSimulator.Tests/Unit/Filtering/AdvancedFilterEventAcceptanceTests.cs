@@ -9,7 +9,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
     public class AdvancedFilterEventAcceptanceTests
     {
-        private static readonly EventGridEvent GridEvent = new()
+        private static readonly EventGridEvent _gridEvent = new()
         {
             Id = "EventId",
             Data = new { NumberValue = 1, IsTrue = true, Name = "StringValue", DoubleValue = 0.12345d, NumberMaxValue = ulong.MaxValue, SubObject = new { Id = 1, Name = "Test" } },
@@ -27,7 +27,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new[] { filter } };
 
-            filterConfig.AcceptsEvent(GridEvent).ShouldBeTrue($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}");
+            filterConfig.AcceptsEvent(_gridEvent).ShouldBeTrue($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}");
         }
 
         [Theory]
@@ -36,7 +36,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new[] { filter } };
 
-            filterConfig.AcceptsEvent(GridEvent).ShouldBeFalse($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}");
+            filterConfig.AcceptsEvent(_gridEvent).ShouldBeFalse($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}");
         }
 
         [Fact]
