@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Azure.Messaging.EventGrid;
 using AzureEventGridSimulator.Domain;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Newtonsoft.Json;
@@ -33,7 +34,7 @@ namespace AzureEventGridSimulator.Tests.Integration
             client.DefaultRequestHeaders.Add(Constants.AegSasKeyHeader, "TheLocal+DevelopmentKey=");
             client.DefaultRequestHeaders.Add(Constants.AegEventTypeHeader, Constants.NotificationEventType);
 
-            var testEvent = new Azure.Messaging.EventGrid.EventGridEvent("subject", "eventType", "1.0", new { Blah = 1 });
+            var testEvent = new EventGridEvent("subject", "eventType", "1.0", new { Blah = 1 });
             var json = JsonConvert.SerializeObject(new[] { testEvent }, Formatting.Indented);
 
             // Act

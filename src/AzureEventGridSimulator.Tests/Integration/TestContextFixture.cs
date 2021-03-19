@@ -10,8 +10,19 @@ using Xunit;
 namespace AzureEventGridSimulator.Tests.Integration
 {
     // ReSharper disable once ClassNeverInstantiated.Global
-    public class TestContextFixture :  WebApplicationFactory<Startup>, IAsyncLifetime
+    public class TestContextFixture : WebApplicationFactory<Startup>, IAsyncLifetime
     {
+        public Task InitializeAsync()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task DisposeAsync()
+        {
+            Dispose();
+            return Task.CompletedTask;
+        }
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment(Environments.Development);
@@ -28,17 +39,6 @@ namespace AzureEventGridSimulator.Tests.Integration
                 logging.ClearProviders();
                 logging.AddConsole();
             });
-        }
-
-        public Task InitializeAsync()
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task DisposeAsync()
-        {
-            Dispose();
-            return Task.CompletedTask;
         }
     }
 }

@@ -19,7 +19,7 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
 
             return responseString;
         }
-        
+
         public static async Task WriteErrorResponse(this HttpContext context, HttpStatusCode statusCode, string errorMessage, string code)
         {
             var error = new ErrorMessage(statusCode, errorMessage, code);

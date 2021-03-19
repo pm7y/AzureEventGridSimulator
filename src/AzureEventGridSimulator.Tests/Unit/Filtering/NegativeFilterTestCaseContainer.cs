@@ -1,7 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AzureEventGridSimulator.Infrastructure.Settings;
+
 // ReSharper disable StringLiteralTypo
 
 namespace AzureEventGridSimulator.Tests.Unit.Filtering
@@ -45,7 +47,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith, Value = null },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith, Value = "B" },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = null },
-                new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = System.Array.Empty<string>() },
+                new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = Array.Empty<string>() },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = new[] { "notCorrect" } },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = new[] { "different", "not_found", "Another" } },
                 new AdvancedFilterSetting { Key = "Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringNotIn, Values = new[] { "different", "EventID", "Another" } },
@@ -87,7 +89,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
                 new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith, Value = "hIs" },
                 new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringContains, Value = ".." },
                 new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith, Value = "EVENTTYPE" },
-                new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = System.Array.Empty<object>() },
+                new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = Array.Empty<object>() },
                 new AdvancedFilterSetting
                 {
                     Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringNotIn,
@@ -120,7 +122,7 @@ namespace AzureEventGridSimulator.Tests.Unit.Filtering
                 new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 5 },
                 new AdvancedFilterSetting
                     { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object[] { 1.1, 2, 3.5, "stringValue", true } },
-                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = System.Array.Empty<object>() },
+                new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = Array.Empty<object>() },
                 new AdvancedFilterSetting { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = null },
                 new AdvancedFilterSetting
                     { Key = "Data.NumberValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, Values = new object[] { 0, 1, 2, 3.5, "stringValue", true } },

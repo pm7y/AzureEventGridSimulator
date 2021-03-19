@@ -42,10 +42,7 @@ namespace AzureEventGridSimulator
             services.AddScoped<SasKeyValidator>();
             services.AddSingleton<ValidationIpAddress>();
 
-            services.AddControllers(options =>
-                    {
-                        options.EnableEndpointRouting = false;
-                    })
+            services.AddControllers(options => { options.EnableEndpointRouting = false; })
                     .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; })
                     .SetCompatibilityVersion(CompatibilityVersion.Latest);
 
@@ -60,8 +57,8 @@ namespace AzureEventGridSimulator
         // ReSharper disable once UnusedMember.Global
         // ReSharper disable once CA1822
         public static void Configure(IApplicationBuilder app,
-                              IHostApplicationLifetime lifetime,
-                              ILogger<Startup> logger)
+                                     IHostApplicationLifetime lifetime,
+                                     ILogger<Startup> logger)
         {
             lifetime.ApplicationStarted.Register(async () => await Task.CompletedTask.ContinueWith(_ => OnApplicationStarted(app, lifetime, logger)));
 

@@ -22,10 +22,7 @@ namespace AzureEventGridSimulator
             return WebHost
                    .CreateDefaultBuilder<Startup>(args)
                    .UseConfiguration(configuration)
-                   .ConfigureLogging(builder =>
-                   {
-                       builder.ClearProviders();
-                   })
+                   .ConfigureLogging(builder => { builder.ClearProviders(); })
                    .UseSerilog()
                    .UseKestrel(options =>
                    {
@@ -158,7 +155,7 @@ namespace AzureEventGridSimulator
                 logConfig = logConfig.WriteTo.Console();
             }
 
-            // Serilog.Debugging.SelfLog.Enable(s => Console.WriteLine($"SeriLog Debug -> {s}"));
+            // Serilog.Debugging.SelfLog.Enable(s => Console.WriteLine($"Serilog Debug -> {s}"));
 
             Log.Logger = logConfig.CreateLogger();
         }

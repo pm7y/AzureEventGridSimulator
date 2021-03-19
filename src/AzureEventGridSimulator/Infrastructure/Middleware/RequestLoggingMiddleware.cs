@@ -40,7 +40,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             var redactedHeaders = new[] { HeaderNames.Authorization, Constants.AegSasKeyHeader, Constants.AegSasTokenHeader };
 
             foreach (var (key, stringValues) in context.Request.Headers
-                                                                                      .Where(o => !string.IsNullOrWhiteSpace(o.Value.First())))
+                                                       .Where(o => !string.IsNullOrWhiteSpace(o.Value.First())))
             {
                 var value = redactedHeaders.Any(o => string.Equals(key, o, StringComparison.OrdinalIgnoreCase)) ? "--REDACTED--" : stringValues.First();
 
