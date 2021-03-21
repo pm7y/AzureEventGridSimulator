@@ -16,7 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
+using ILogger=Microsoft.Extensions.Logging.ILogger;
 
 namespace AzureEventGridSimulator
 {

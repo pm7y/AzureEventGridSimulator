@@ -158,6 +158,34 @@ namespace AzureEventGridSimulator
             // Serilog.Debugging.SelfLog.Enable(s => Console.WriteLine($"Serilog Debug -> {s}"));
 
             Log.Logger = logConfig.CreateLogger();
+
+            ShowSerilogUsingWarningIfNecessary(config);
+        }
+
+        private static void ShowSerilogUsingWarningIfNecessary(IConfiguration config)
+        {
+            var usingNeedsToBeConfigured = config.GetSection("Serilog").Exists() &&
+                                           !config.GetSection("Serilog:Using").Exists();
+            // ReSharper disable once InvertIf
+            if (usingNeedsToBeConfigured)
+            {
+                // Warn the user about the necessity for the serilog using section with .net 5.0.
+                // https://github.com/serilog/serilog-settings-configuration#net-50-single-file-applications
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine(@"Oops, the Azure Event Grid simulator was unable to start." + Environment.NewLine);
+                Console.WriteLine(@"Serilog with .net 5.0 now requires a 'Using' section.");
+                Console.WriteLine(@"https://github.com/serilog/serilog-settings-configuration#net-50-single-file-applications" +
+                                  Environment.NewLine);
+                Console.WriteLine(
+                                  @"Please add the following to the Serilog config section and restart: -" + Environment.NewLine);
+                Console.ResetColor();
+                Console.WriteLine(@"   ""Using"": [""Serilog.Sinks.Console"", ""Serilog.Sinks.File"", ""Serilog.Sinks.Seq""]" +
+                                  Environment.NewLine);
+
+                Console.WriteLine(@"Any key to exit...");
+                Console.ReadKey();
+                Environment.Exit(-1);
+            }
         }
     }
 }
