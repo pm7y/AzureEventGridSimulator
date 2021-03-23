@@ -42,7 +42,7 @@ namespace AzureEventGridSimulator.Tests.Integration
             var response = await client.PostAsync("/api/events", jsonContent);
 
             // Assert
-            response.EnsureSuccessStatusCode(); // Status Code 200-299
+            response.EnsureSuccessStatusCode();
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
         }
     }

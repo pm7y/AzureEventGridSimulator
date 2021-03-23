@@ -12,7 +12,6 @@ using Newtonsoft.Json;
 namespace AzureEventGridSimulator.Controllers
 {
     [Route("/api/events")]
-    [Route("/")]
     [ApiVersion(Constants.SupportedApiVersion)]
     [ApiController]
     public class NotificationController : ControllerBase
