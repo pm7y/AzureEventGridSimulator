@@ -48,7 +48,6 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                 return true;
             }
 
-            // ReSharper disable once InvertIf
             if (requestHeaders
                 .Any(h => string.Equals(HeaderNames.Authorization, h.Key, StringComparison.OrdinalIgnoreCase)))
             {

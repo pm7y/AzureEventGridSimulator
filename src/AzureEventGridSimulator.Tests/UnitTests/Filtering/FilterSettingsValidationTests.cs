@@ -6,6 +6,7 @@ using Xunit;
 
 namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
+    [Trait("Category","unit")]
     public class FilterSettingsValidationTests
     {
         private static SimulatorSettings GetValidSimulatorSettings(FilterSetting filter)

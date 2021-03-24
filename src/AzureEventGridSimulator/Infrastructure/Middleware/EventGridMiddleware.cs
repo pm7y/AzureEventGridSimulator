@@ -11,7 +11,6 @@ using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Infrastructure.Middleware
 {
-    // ReSharper disable once ClassNeverInstantiated.Global
     public class EventGridMiddleware
     {
         private readonly RequestDelegate _next;
@@ -21,7 +20,6 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             _next = next;
         }
 
-        // ReSharper disable once UnusedMember.Global
         public async Task InvokeAsync(HttpContext context,
                                       SimulatorSettings simulatorSettings,
                                       SasKeyValidator sasHeaderValidator,
@@ -95,7 +93,6 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
 
             foreach (var evt in events)
             {
-                // ReSharper disable once MethodHasAsyncOverload
                 var eventSize = JsonConvert.SerializeObject(evt, Formatting.None).Length;
 
                 logger.LogTrace("Event is {Bytes} in length", eventSize);

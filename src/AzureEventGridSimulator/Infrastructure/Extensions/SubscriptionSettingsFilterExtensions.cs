@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
@@ -144,7 +143,6 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
             }
         }
 
-        [SuppressMessage("ReSharper", "InvertIf")]
         private static bool TryGetValue(this EventGridEvent gridEvent, string key, out object value)
         {
             var retval = false;

@@ -10,14 +10,20 @@ using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.Integration
+namespace AzureEventGridSimulator.Tests.IntegrationTests
 {
+    /// <summary>
+    /// These test use a WebApplicationFactory based instance of the simulator
+    /// and an HttpClient to send send events to the simulator.
+    /// Note: this is a WIP.
+    /// </summary>
+    [Trait("Category","integration")]
     public class BasicTests
-        : IClassFixture<TestContextFixture>
+        : IClassFixture<IntegrationContextFixture>
     {
-        private readonly TestContextFixture _factory;
+        private readonly IntegrationContextFixture _factory;
 
-        public BasicTests(TestContextFixture factory)
+        public BasicTests(IntegrationContextFixture factory)
         {
             _factory = factory;
         }

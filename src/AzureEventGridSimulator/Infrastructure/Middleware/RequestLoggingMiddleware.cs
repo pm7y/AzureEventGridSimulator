@@ -10,7 +10,6 @@ using Microsoft.Net.Http.Headers;
 
 namespace AzureEventGridSimulator.Infrastructure.Middleware
 {
-    // ReSharper disable once ClassNeverInstantiated.Global
     public class RequestLoggingMiddleware
     {
         private readonly RequestDelegate _next;
@@ -20,7 +19,6 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             _next = next;
         }
 
-        // ReSharper disable once UnusedMember.Global
         public async Task InvokeAsync(HttpContext context,
                                       ILogger<RequestLoggingMiddleware> logger)
         {

@@ -14,8 +14,6 @@ using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Domain.Commands
 {
-    // ReSharper disable once UnusedMember.Global
-    // ReSharper disable once UnusedType.Global
     public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHandler<SendNotificationEventsToSubscriberCommand>
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -99,7 +97,6 @@ namespace AzureEventGridSimulator.Domain.Commands
                 {
                     if (subscription.Filter.AcceptsEvent(evt))
                     {
-                        // ReSharper disable once MethodHasAsyncOverload
                         var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
                         using var content = new StringContent(json, Encoding.UTF8, "application/json");
                         var httpClient = _httpClientFactory.CreateClient();

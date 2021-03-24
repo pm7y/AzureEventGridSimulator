@@ -41,7 +41,6 @@ namespace AzureEventGridSimulator
                        X509Certificate2 certificate = null;
                        if (string.IsNullOrWhiteSpace(cert) == false && string.IsNullOrWhiteSpace(certPass) == false)
                        {
-                           // ReSharper disable once InconsistentLogPropertyNaming
                            Log.Warning("ASPNETCORE_Kestrel__Certificates__Default__Path is defined, using '{ASPNETCORE_Kestrel__Certificates__Default__Path}'", cert);
                            certificate = new X509Certificate2(cert, certPass);
                        }
@@ -166,7 +165,7 @@ namespace AzureEventGridSimulator
         {
             var usingNeedsToBeConfigured = config.GetSection("Serilog").Exists() &&
                                            !config.GetSection("Serilog:Using").Exists();
-            // ReSharper disable once InvertIf
+
             if (usingNeedsToBeConfigured)
             {
                 // Warn the user about the necessity for the serilog using section with .net 5.0.

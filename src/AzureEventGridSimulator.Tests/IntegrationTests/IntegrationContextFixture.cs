@@ -7,10 +7,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.Integration
+namespace AzureEventGridSimulator.Tests.IntegrationTests
 {
-    // ReSharper disable once ClassNeverInstantiated.Global
-    public class TestContextFixture : WebApplicationFactory<Startup>, IAsyncLifetime
+    public class IntegrationContextFixture : WebApplicationFactory<Startup>, IAsyncLifetime
     {
         public Task InitializeAsync()
         {

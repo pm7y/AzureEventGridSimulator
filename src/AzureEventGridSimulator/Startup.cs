@@ -54,8 +54,6 @@ namespace AzureEventGridSimulator
             });
         }
 
-        // ReSharper disable once UnusedMember.Global
-        // ReSharper disable once CA1822
         public static void Configure(IApplicationBuilder app,
                                      IHostApplicationLifetime lifetime,
                                      ILogger<Startup> logger)
