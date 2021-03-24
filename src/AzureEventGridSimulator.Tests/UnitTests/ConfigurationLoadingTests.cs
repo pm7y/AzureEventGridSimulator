@@ -6,6 +6,7 @@ using Xunit;
 
 namespace AzureEventGridSimulator.Tests.Unit
 {
+    [Trait("Category","unit")]
     public class ConfigurationLoadingTests
     {
         [Fact]

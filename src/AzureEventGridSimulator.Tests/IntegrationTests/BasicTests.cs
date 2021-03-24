@@ -17,6 +17,7 @@ namespace AzureEventGridSimulator.Tests.IntegrationTests
     /// and an HttpClient to send send events to the simulator.
     /// Note: this is a WIP.
     /// </summary>
+    [Trait("Category","integration")]
     public class BasicTests
         : IClassFixture<IntegrationContextFixture>
     {
