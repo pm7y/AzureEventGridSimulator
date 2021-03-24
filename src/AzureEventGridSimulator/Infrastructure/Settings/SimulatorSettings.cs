@@ -10,7 +10,6 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
         [JsonProperty(PropertyName = "topics", Required = Required.Always)]
         public TopicSettings[] Topics { get; set; } = Array.Empty<TopicSettings>();
 
-        [SuppressMessage("ReSharper", "ParameterOnlyUsedForPreconditionCheck.Local")]
         public void Validate()
         {
             if (Topics.GroupBy(o => o.Port).Count() != Topics.Length)

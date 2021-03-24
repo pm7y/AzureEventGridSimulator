@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using AzureEventGridSimulator.Infrastructure.Settings;
 
-// ReSharper disable StringLiteralTypo
-
 namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
     internal class PositiveFilterTestCaseContainer : IEnumerable<object[]>

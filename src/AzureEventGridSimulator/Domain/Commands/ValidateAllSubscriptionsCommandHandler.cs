@@ -14,7 +14,6 @@ using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Domain.Commands
 {
-    // ReSharper disable once UnusedType.Global
     public class ValidateAllSubscriptionsCommandHandler : IRequestHandler<ValidateAllSubscriptionsCommand>
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -71,7 +70,6 @@ namespace AzureEventGridSimulator.Domain.Commands
                     }
                 };
 
-                // ReSharper disable once MethodHasAsyncOverload
                 var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
                 using var content = new StringContent(json, Encoding.UTF8, "application/json");
                 using var httpClient = _httpClientFactory.CreateClient();

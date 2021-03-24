@@ -144,7 +144,6 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
             }
         }
 
-        [SuppressMessage("ReSharper", "InvertIf")]
         private static bool TryGetValue(this EventGridEvent gridEvent, string key, out object value)
         {
             var retval = false;
