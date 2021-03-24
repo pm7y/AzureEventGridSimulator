@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Newtonsoft.Json;
 
@@ -9,6 +10,7 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
         [JsonProperty(PropertyName = "topics", Required = Required.Always)]
         public TopicSettings[] Topics { get; set; } = Array.Empty<TopicSettings>();
 
+        [SuppressMessage("ReSharper", "ParameterOnlyUsedForPreconditionCheck.Local")]
         public void Validate()
         {
             if (Topics.GroupBy(o => o.Port).Count() != Topics.Length)
@@ -27,7 +29,8 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
                 throw new InvalidOperationException("Each subscriber must have a unique name.");
             }
 
-            if (Topics.Select(t => t.Name).Concat(Topics.SelectMany(t => t.Subscribers).Select(s => s.Name)).Any(name => string.IsNullOrWhiteSpace(name) || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))))
+            if (Topics.Select(t => t.Name).Concat(Topics.SelectMany(t => t.Subscribers).Select(s => s.Name))
+                      .Any(name => string.IsNullOrWhiteSpace(name) || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))))
             {
                 throw new InvalidOperationException("A topic/subscriber name can only contain letters, numbers, and dashes.");
             }

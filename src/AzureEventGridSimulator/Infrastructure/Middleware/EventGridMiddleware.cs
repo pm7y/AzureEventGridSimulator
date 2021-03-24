@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Infrastructure.Middleware
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class EventGridMiddleware
     {
         private readonly RequestDelegate _next;
@@ -39,7 +40,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             }
 
             // This is the end of the line.
-            await context.Response.ErrorResponse(HttpStatusCode.BadRequest, "Request not supported.", null);
+            await context.WriteErrorResponse(HttpStatusCode.BadRequest, "Request not supported.", null);
         }
 
         private async Task ValidateSubscriptionValidationRequest(HttpContext context)
@@ -48,7 +49,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
 
             if (string.IsNullOrWhiteSpace(id))
             {
-                await context.Response.ErrorResponse(HttpStatusCode.BadRequest, "The request did not contain a validation code.", null);
+                await context.WriteErrorResponse(HttpStatusCode.BadRequest, "The request did not contain a validation code.", null);
                 return;
             }
 
@@ -56,11 +57,11 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
         }
 
         private async Task ValidateNotificationRequest(HttpContext context,
-                                                      SimulatorSettings simulatorSettings,
-                                                      SasKeyValidator sasHeaderValidator,
-                                                      ILogger<EventGridMiddleware> logger)
+                                                       SimulatorSettings simulatorSettings,
+                                                       SasKeyValidator sasHeaderValidator,
+                                                       ILogger logger)
         {
-            var topic = simulatorSettings.Topics.First(t => t.Port == context.Connection.LocalPort);
+            var topic = simulatorSettings.Topics.First(t => t.Port == context.Request.Host.Port);
 
             //
             // Validate the key/ token supplied in the header.
@@ -68,7 +69,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             if (!string.IsNullOrWhiteSpace(topic.Key) &&
                 !sasHeaderValidator.IsValid(context.Request.Headers, topic.Key))
             {
-                await context.Response.ErrorResponse(HttpStatusCode.Unauthorized, "The request did not contain a valid aeg-sas-key or aeg-sas-token.", null);
+                await context.WriteErrorResponse(HttpStatusCode.Unauthorized, "The request did not contain a valid aeg-sas-key or aeg-sas-token.", null);
                 return;
             }
 
@@ -82,13 +83,13 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             const int maximumAllowedOverallMessageSizeInBytes = 1536000;
             const int maximumAllowedEventGridEventSizeInBytes = 66560;
 
-            logger.LogTrace("Message is {Bytes} in length.", requestBody.Length);
+            logger.LogTrace("Message is {Bytes} in length", requestBody.Length);
 
             if (requestBody.Length > maximumAllowedOverallMessageSizeInBytes)
             {
-                logger.LogError("Payload is larger than the allowed maximum.");
+                logger.LogError("Payload is larger than the allowed maximum");
 
-                await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Payload is larger than the allowed maximum.", null);
+                await context.WriteErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Payload is larger than the allowed maximum.", null);
                 return;
             }
 
@@ -97,17 +98,18 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                 // ReSharper disable once MethodHasAsyncOverload
                 var eventSize = JsonConvert.SerializeObject(evt, Formatting.None).Length;
 
-                logger.LogTrace("Event is {Bytes} in length.", eventSize);
+                logger.LogTrace("Event is {Bytes} in length", eventSize);
 
-                if (eventSize > maximumAllowedEventGridEventSizeInBytes)
+                if (eventSize <= maximumAllowedEventGridEventSizeInBytes)
                 {
-                    logger.LogError("Event is larger than the allowed maximum.");
-
-                    await context.Response.ErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Event is larger than the allowed maximum.", null);
-                    return;
+                    continue;
                 }
-            }
 
+                logger.LogError("Event is larger than the allowed maximum");
+
+                await context.WriteErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Event is larger than the allowed maximum.", null);
+                return;
+            }
 
             //
             // Validate the properties of each event.
@@ -120,26 +122,26 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                 }
                 catch (InvalidOperationException ex)
                 {
-                    logger.LogError(ex, "Event was not valid.");
+                    logger.LogError(ex, "Event was not valid");
 
-                    await context.Response.ErrorResponse(HttpStatusCode.BadRequest, ex.Message, null);
+                    await context.WriteErrorResponse(HttpStatusCode.BadRequest, ex.Message, null);
                     return;
                 }
-
             }
 
             await _next(context);
         }
 
-        private bool IsNotificationRequest(HttpContext context)
+        private static bool IsNotificationRequest(HttpContext context)
         {
             return context.Request.Headers.Keys.Any(k => string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)) &&
-                   context.Request.Headers["Content-Type"].Any(v => !string.IsNullOrWhiteSpace(v) && v.IndexOf("application/json", StringComparison.OrdinalIgnoreCase) >= 0) &&
+                   context.Request.Headers["Content-Type"].Any(v => !string.IsNullOrWhiteSpace(v) && v.Contains("application/json", StringComparison.OrdinalIgnoreCase)) &&
                    context.Request.Method == HttpMethods.Post &&
-                   string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase);
+                   (string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(context.Request.Path, "/", StringComparison.OrdinalIgnoreCase));
         }
 
-        private bool IsValidationRequest(HttpContext context)
+        private static bool IsValidationRequest(HttpContext context)
         {
             return context.Request.Method == HttpMethods.Get &&
                    string.Equals(context.Request.Path, "/validate", StringComparison.OrdinalIgnoreCase) &&

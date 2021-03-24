@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Settings;
@@ -11,11 +12,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace AzureEventGridSimulator.Controllers
 {
     [Route("/validate")]
+    [ApiVersion(Constants.SupportedApiVersion)]
     [ApiController]
     public class SubscriptionValidationController : ControllerBase
     {
-        private readonly SimulatorSettings _simulatorSettings;
         private readonly IMediator _mediator;
+        private readonly SimulatorSettings _simulatorSettings;
 
         public SubscriptionValidationController(SimulatorSettings simulatorSettings,
                                                 IMediator mediator)
@@ -27,7 +29,7 @@ namespace AzureEventGridSimulator.Controllers
         [HttpGet]
         public async Task<IActionResult> Get(Guid id)
         {
-            var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Connection.LocalPort);
+            var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
             var isValid = await _mediator.Send(new ValidateSubscriptionCommand(topicSettingsForCurrentRequestPort, id));
 
             if (!isValid)

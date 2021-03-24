@@ -5,11 +5,11 @@ using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
 using Xunit;
 
-namespace UnitTests.Filtering
+namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
     public class AdvancedFilterEventAcceptanceTests
     {
-        private static readonly EventGridEvent GridEvent = new EventGridEvent
+        private static readonly EventGridEvent _gridEvent = new()
         {
             Id = "EventId",
             Data = new { NumberValue = 1, IsTrue = true, Name = "StringValue", DoubleValue = 0.12345d, NumberMaxValue = ulong.MaxValue, SubObject = new { Id = 1, Name = "Test" } },
@@ -27,7 +27,7 @@ namespace UnitTests.Filtering
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new[] { filter } };
 
-            filterConfig.AcceptsEvent(GridEvent).ShouldBeTrue($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate() }");
+            filterConfig.AcceptsEvent(_gridEvent).ShouldBeTrue($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}");
         }
 
         [Theory]
@@ -36,7 +36,7 @@ namespace UnitTests.Filtering
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new[] { filter } };
 
-            filterConfig.AcceptsEvent(GridEvent).ShouldBeFalse($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate() }");
+            filterConfig.AcceptsEvent(_gridEvent).ShouldBeFalse($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}");
         }
 
         [Fact]
@@ -44,8 +44,9 @@ namespace UnitTests.Filtering
         {
             var filterConfig = new FilterSetting
             {
-                AdvancedFilters = new[] {
-                    new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object[]{ 1 } }
+                AdvancedFilters = new[]
+                {
+                    new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object[] { 1 } }
                 }
             };
             var gridEvent = new EventGridEvent { Data = 1 };
@@ -58,7 +59,8 @@ namespace UnitTests.Filtering
         {
             var filterConfig = new FilterSetting
             {
-                AdvancedFilters = new[] {
+                AdvancedFilters = new[]
+                {
                     new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 1 },
                     new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberLessThanOrEquals, Value = 1 }
                 }
@@ -73,7 +75,8 @@ namespace UnitTests.Filtering
         {
             var filterConfig = new FilterSetting
             {
-                AdvancedFilters = new[] {
+                AdvancedFilters = new[]
+                {
                     new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Value = 1 }
                 }
             };

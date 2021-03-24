@@ -28,7 +28,7 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
         public SubscriptionValidationStatus ValidationStatus { get; set; }
 
         [JsonIgnore]
-        public Guid ValidationCode => new Guid(Encoding.UTF8.GetBytes(Endpoint).Reverse().Take(16).ToArray());
+        public Guid ValidationCode => new(Encoding.UTF8.GetBytes(Endpoint).Reverse().Take(16).ToArray());
 
         [JsonIgnore]
         public bool ValidationPeriodExpired => DateTime.UtcNow > _expired;

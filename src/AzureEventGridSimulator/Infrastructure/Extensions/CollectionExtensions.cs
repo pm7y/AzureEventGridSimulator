@@ -15,7 +15,7 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
         {
             toStringFunction ??= t => t.ToString();
 
-            return string.Join(separator, (collection ?? new T[0]).Select(c => toStringFunction(c)));
+            return string.Join(separator, (collection ?? Array.Empty<T>()).Select(c => toStringFunction(c)));
         }
     }
 }

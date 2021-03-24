@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -14,6 +15,7 @@ using Newtonsoft.Json;
 namespace AzureEventGridSimulator.Domain.Commands
 {
     // ReSharper disable once UnusedMember.Global
+    // ReSharper disable once UnusedType.Global
     public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHandler<SendNotificationEventsToSubscriberCommand>
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -72,24 +74,24 @@ namespace AzureEventGridSimulator.Domain.Commands
             return Task.CompletedTask;
         }
 
-        private async Task SendToSubscriber(SubscriptionSettings subscription, EventGridEvent[] events, string topicName)
+        private async Task SendToSubscriber(SubscriptionSettings subscription, IEnumerable<EventGridEvent> events, string topicName)
         {
             try
             {
                 if (subscription.Disabled)
                 {
-                    _logger.LogWarning("Subscription '{SubscriberName}' on topic '{TopicName}' is disabled and so Notification was skipped.", subscription.Name, topicName);
+                    _logger.LogWarning("Subscription '{SubscriberName}' on topic '{TopicName}' is disabled and so Notification was skipped", subscription.Name, topicName);
                     return;
                 }
 
                 if (!subscription.DisableValidation &&
                     subscription.ValidationStatus != SubscriptionValidationStatus.ValidationSuccessful)
                 {
-                    _logger.LogWarning("Subscription '{SubscriberName}' on topic '{TopicName}' can't receive events. It's still pending validation.", subscription.Name, topicName);
+                    _logger.LogWarning("Subscription '{SubscriberName}' on topic '{TopicName}' can't receive events. It's still pending validation", subscription.Name, topicName);
                     return;
                 }
 
-                _logger.LogDebug("Sending to subscriber '{SubscriberName}' on topic '{TopicName}'.", subscription.Name, topicName);
+                _logger.LogDebug("Sending to subscriber '{SubscriberName}' on topic '{TopicName}'", subscription.Name, topicName);
 
                 // "Event Grid sends the events to subscribers in an array that has a single event. This behaviour may change in the future."
                 // https://docs.microsoft.com/en-us/azure/event-grid/event-schema
@@ -101,11 +103,11 @@ namespace AzureEventGridSimulator.Domain.Commands
                         var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
                         using var content = new StringContent(json, Encoding.UTF8, "application/json");
                         var httpClient = _httpClientFactory.CreateClient();
-                        httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
-                        httpClient.DefaultRequestHeaders.Add("aeg-subscription-name", subscription.Name.ToUpperInvariant());
-                        httpClient.DefaultRequestHeaders.Add("aeg-data-version", evt.DataVersion);
-                        httpClient.DefaultRequestHeaders.Add("aeg-metadata-version", evt.MetadataVersion);
-                        httpClient.DefaultRequestHeaders.Add("aeg-delivery-count", "0"); // TODO implement re-tries
+                        httpClient.DefaultRequestHeaders.Add(Constants.AegEventTypeHeader, Constants.NotificationEventType);
+                        httpClient.DefaultRequestHeaders.Add(Constants.AegSubscriptionNameHeader, subscription.Name.ToUpperInvariant());
+                        httpClient.DefaultRequestHeaders.Add(Constants.AegDataVersionHeader, evt.DataVersion);
+                        httpClient.DefaultRequestHeaders.Add(Constants.AegMetadataVersionHeader, evt.MetadataVersion);
+                        httpClient.DefaultRequestHeaders.Add(Constants.AegDeliveryCountHeader, "0"); // TODO implement re-tries
                         httpClient.Timeout = TimeSpan.FromSeconds(60);
 
                         await httpClient.PostAsync(subscription.Endpoint, content)
@@ -113,13 +115,13 @@ namespace AzureEventGridSimulator.Domain.Commands
                     }
                     else
                     {
-                        _logger.LogDebug("Event {EventId} filtered out for subscriber '{SubscriberName}'.", evt.Id, subscription.Name);
+                        _logger.LogDebug("Event {EventId} filtered out for subscriber '{SubscriberName}'", evt.Id, subscription.Name);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send to subscriber '{SubscriberName}'.", subscription.Name);
+                _logger.LogError(ex, "Failed to send to subscriber '{SubscriberName}'", subscription.Name);
             }
         }
 
@@ -127,12 +129,12 @@ namespace AzureEventGridSimulator.Domain.Commands
         {
             if (task.IsCompletedSuccessfully && task.Result.IsSuccessStatusCode)
             {
-                _logger.LogDebug("Event {EventId} sent to subscriber '{SubscriberName}' on topic '{TopicName}' successfully.", evt.Id, subscription.Name, topicName);
+                _logger.LogDebug("Event {EventId} sent to subscriber '{SubscriberName}' on topic '{TopicName}' successfully", evt.Id, subscription.Name, topicName);
             }
             else
             {
                 _logger.LogError(task.Exception?.GetBaseException(),
-                                 "Failed to send event {EventId} to subscriber '{SubscriberName}', '{TaskStatus}', '{Reason}'.",
+                                 "Failed to send event {EventId} to subscriber '{SubscriberName}', '{TaskStatus}', '{Reason}'",
                                  evt.Id,
                                  subscription.Name,
                                  task.Status.ToString(),

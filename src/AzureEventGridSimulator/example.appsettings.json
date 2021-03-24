@@ -5,7 +5,6 @@
       "name": "MyAwesomeTopic",
       "port": 60101,
       "key": "TheLocal+DevelopmentKey=",
-      "disabled": false,
       "subscribers": [
         {
           "name": "LocalAzureFunctionSubscription",
@@ -20,7 +19,7 @@
       "port": 60102,
       "key": "TheLocal+DevelopmentKey=",
       "subscribers": [
-        // There are no subscribers defined yet, so you can send events to this topic but they won't be delivered to anyone
+        
       ]
     },
 
@@ -28,24 +27,42 @@
       "name": "ADisabledTopic",
       "port": 60103,
       "key": "TheLocal+DevelopmentKey=",
-      "disabled": true, // this topic is disabled so it's endpoint won't be created at startup
+      "disabled": true, 
       "subscribers": [
         {
           "name": "LocalWebApiSubscription",
           "endpoint": "https://localhost:5050/api/SomeApi"
         }
       ]
-    }
+    },
 
+    {
+      "name": "RequestCatcherTopic",
+      "port": 60104,
+      "key": "TheLocal+DevelopmentKey=",
+      "subscribers": [
+        {
+          "name": "RequestCatcherSubscription",
+          "endpoint": "https://azureeventgridsimulator.requestcatcher.com",
+          "disableValidation": true
+        }
+      ]
+    }
+    
   ],
   "Serilog": {
     "MinimumLevel": {
       "Default": "Information",
       "Override": {
-        "Microsoft": "Error",
-        "System": "Error"
+        "Microsoft": "Warning",
+        "System": "Warning"
       }
     },
+    "Using": [
+      "Serilog.Sinks.Console",
+      "Serilog.Sinks.File",
+      "Serilog.Sinks.Seq"
+    ],
     "WriteTo": [
       { "Name": "Console" },
       {

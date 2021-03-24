@@ -5,13 +5,13 @@ using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
 using Xunit;
 
-namespace UnitTests.Filtering
+namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
     public class AdvancedFilterValidationTests
     {
-        private SimulatorSettings GetValidSimulatorSettings(AdvancedFilterSetting advancedFilter)
+        private static SimulatorSettings GetValidSimulatorSettings(AdvancedFilterSetting advancedFilter)
         {
-            return new SimulatorSettings
+            return new()
             {
                 Topics = new[]
                 {
@@ -22,10 +22,10 @@ namespace UnitTests.Filtering
                         Port = 12345,
                         Subscribers = new List<SubscriptionSettings>
                         {
-                            new SubscriptionSettings
+                            new()
                             {
                                 Name = "SubscriberName",
-                                Filter = new FilterSetting{ AdvancedFilters = new[]{ advancedFilter } }
+                                Filter = new FilterSetting { AdvancedFilters = new[] { advancedFilter } }
                             }
                         }.ToArray()
                     }
@@ -142,7 +142,11 @@ namespace UnitTests.Filtering
             foreach (AdvancedFilterSetting.OperatorTypeEnum operatorType in Enum.GetValues(typeof(AdvancedFilterSetting.OperatorTypeEnum)))
             {
                 var filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[6], OperatorType = operatorType };
-                if (new[] { AdvancedFilterSetting.OperatorTypeEnum.NumberIn, AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, AdvancedFilterSetting.OperatorTypeEnum.StringIn, AdvancedFilterSetting.OperatorTypeEnum.StringNotIn }.Contains(operatorType))
+                if (new[]
+                {
+                    AdvancedFilterSetting.OperatorTypeEnum.NumberIn, AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, AdvancedFilterSetting.OperatorTypeEnum.StringIn,
+                    AdvancedFilterSetting.OperatorTypeEnum.StringNotIn
+                }.Contains(operatorType))
                 {
                     var exception = Should.Throw<ArgumentOutOfRangeException>(() => GetValidSimulatorSettings(filterConfig).Validate());
 
@@ -169,7 +173,7 @@ namespace UnitTests.Filtering
         [Fact]
         public void TestFilterValidationWithGrandchildKey()
         {
-            // following the announcement here https://azure.microsoft.com/en-us/updates/advanced-filtering-generally-available-in-event-grid/ this should now work 
+            // following the announcement here https://azure.microsoft.com/en-us/updates/advanced-filtering-generally-available-in-event-grid/ this should now work
             Should.NotThrow(() =>
             {
                 var filterConfig = new AdvancedFilterSetting { Key = "Data.Key1.SubKey", Value = "SomeValue" };

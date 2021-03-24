@@ -8,7 +8,7 @@ ECHO REMOVE OUTPUT FOLDER "build-osx-64"
 rd /S /Q "build-osx-64"
 
 ECHO PUBLISHING SOLUTION
-dotnet publish ./AzureEventGridSimulator/AzureEventGridSimulator.csproj -o "../build-osx-64" -v q -c Release --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true -f netcoreapp3.1 -r osx-x64 /nologo
+dotnet publish ./AzureEventGridSimulator/AzureEventGridSimulator.csproj -o "../build-osx-64" -c Release --self-contained true -p:PublishReadyToRun=false -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishSingleFile=false -p:PublishTrimmed=false -p:TrimUnusedDependencies=true -r osx-x64
 
 ECHO DONE!
 pause

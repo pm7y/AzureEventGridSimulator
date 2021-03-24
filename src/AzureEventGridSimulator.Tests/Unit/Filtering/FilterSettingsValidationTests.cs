@@ -4,13 +4,13 @@ using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
 using Xunit;
 
-namespace UnitTests.Filtering
+namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
     public class FilterSettingsValidationTests
     {
-        private SimulatorSettings GetValidSimulatorSettings(FilterSetting filter)
+        private static SimulatorSettings GetValidSimulatorSettings(FilterSetting filter)
         {
-            return new SimulatorSettings
+            return new()
             {
                 Topics = new[]
                 {
@@ -21,7 +21,7 @@ namespace UnitTests.Filtering
                         Port = 12345,
                         Subscribers = new List<SubscriptionSettings>
                         {
-                            new SubscriptionSettings
+                            new()
                             {
                                 Name = "SubscriberName",
                                 Filter = filter
@@ -32,9 +32,9 @@ namespace UnitTests.Filtering
             };
         }
 
-        private AdvancedFilterSetting GetValidAdvancedFilter()
+        private static AdvancedFilterSetting GetValidAdvancedFilter()
         {
-            return new AdvancedFilterSetting
+            return new()
             {
                 Key = "key",
                 OperatorType = AdvancedFilterSetting.OperatorTypeEnum.BoolEquals,

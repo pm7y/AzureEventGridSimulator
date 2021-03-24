@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Commands
 {
-    // ReSharper disable once UnusedMember.Global
+    // ReSharper disable once UnusedType.Global
     public class ValidateSubscriptionCommandHandler : IRequestHandler<ValidateSubscriptionCommand, bool>
     {
         private readonly ILogger<ValidateSubscriptionCommandHandler> _logger;
@@ -26,12 +26,12 @@ namespace AzureEventGridSimulator.Domain.Commands
                 !subscriber.ValidationPeriodExpired)
             {
                 subscriber.ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful;
-                _logger.LogInformation("Subscription {SubscriptionName} on topic {TopicName} was successfully validated.", subscriber.Name, request.Topic.Name);
+                _logger.LogInformation("Subscription {SubscriptionName} on topic {TopicName} was successfully validated", subscriber.Name, request.Topic.Name);
 
                 return Task.FromResult(true);
             }
 
-            _logger.LogWarning("Validation failed for code {ValidationCode} on topic {TopicName}.", request.ValidationCode, request.Topic?.Name);
+            _logger.LogWarning("Validation failed for code {ValidationCode} on topic {TopicName}", request.ValidationCode, request.Topic?.Name);
             return Task.FromResult(false);
         }
     }
