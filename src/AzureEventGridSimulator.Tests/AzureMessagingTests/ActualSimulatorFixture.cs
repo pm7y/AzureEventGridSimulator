@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -34,16 +35,18 @@ namespace AzureEventGridSimulator.Tests.AzureMessagingTests
 
             var isAlive = false;
 
+            var output = new StringBuilder();
             while (!isAlive && !_simulatorProcess.StandardOutput.EndOfStream)
             {
                 var line = await _simulatorProcess.StandardOutput.ReadLineAsync();
+                output.AppendLine(line);
 
                 isAlive = line.Contains("It's Alive");
             }
 
             if (!isAlive)
             {
-                throw new InvalidOperationException("The simulator failed to start successfully!");
+                throw new InvalidOperationException("The simulator failed to start successfully!" + Environment.NewLine + output.ToString());
             }
         }
 
