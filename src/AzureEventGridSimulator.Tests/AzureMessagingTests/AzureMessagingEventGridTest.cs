@@ -15,7 +15,7 @@ namespace AzureEventGridSimulator.Tests.AzureMessagingTests
     /// into Azure.Messaging.EventGrid.
     /// </summary>
     [Collection(nameof(ActualSimulatorFixtureCollection))]
-    [Trait("Category","integration-actual")]
+    [Trait("Category", "integration-actual")]
     public class AzureMessagingEventGridTest
     {
         private readonly ActualSimulatorFixture _actualSimulatorFixture;

@@ -46,7 +46,7 @@ namespace AzureEventGridSimulator.Tests.AzureMessagingTests
 
             if (!isAlive)
             {
-                throw new InvalidOperationException("The simulator failed to start successfully!" + Environment.NewLine + output.ToString());
+                throw new InvalidOperationException("The simulator failed to start successfully!" + Environment.NewLine + output);
             }
         }
 

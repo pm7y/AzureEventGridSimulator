@@ -7,7 +7,7 @@ using Xunit;
 
 namespace AzureEventGridSimulator.Tests.Unit.Filtering
 {
-    [Trait("Category","unit")]
+    [Trait("Category", "unit")]
     public class AdvancedFilterEventAcceptanceTests
     {
         private static readonly EventGridEvent _gridEvent = new()
