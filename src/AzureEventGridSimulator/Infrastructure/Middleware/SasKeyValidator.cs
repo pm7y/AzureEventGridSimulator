@@ -30,7 +30,6 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                     return false;
                 }
 
-                _logger.LogTrace("'aeg-sas-key' header is valid");
                 return true;
             }
 
@@ -44,7 +43,6 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                     return false;
                 }
 
-                _logger.LogTrace("'aeg-sas-token' header is valid");
                 return true;
             }
 
@@ -58,7 +56,6 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
                     return false;
                 }
 
-                _logger.LogTrace("'Authorization: SharedAccessSignature' header is valid");
                 return true;
             }
 

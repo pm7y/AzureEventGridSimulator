@@ -6,7 +6,7 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
     {
         public static string EnvironmentName(this IConfiguration configuration)
         {
-            return configuration["ASPNETCORE_ENVIRONMENT"].Otherwise("Production");
+            return configuration["ENVIRONMENT"].Otherwise("Production");
         }
     }
 }

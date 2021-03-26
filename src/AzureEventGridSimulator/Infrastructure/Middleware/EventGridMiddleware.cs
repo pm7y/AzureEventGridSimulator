@@ -81,8 +81,6 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             const int maximumAllowedOverallMessageSizeInBytes = 1536000;
             const int maximumAllowedEventGridEventSizeInBytes = 66560;
 
-            logger.LogTrace("Message is {Bytes} in length", requestBody.Length);
-
             if (requestBody.Length > maximumAllowedOverallMessageSizeInBytes)
             {
                 logger.LogError("Payload is larger than the allowed maximum");
@@ -94,8 +92,6 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             foreach (var evt in events)
             {
                 var eventSize = JsonConvert.SerializeObject(evt, Formatting.None).Length;
-
-                logger.LogTrace("Event is {Bytes} in length", eventSize);
 
                 if (eventSize <= maximumAllowedEventGridEventSizeInBytes)
                 {
@@ -134,8 +130,7 @@ namespace AzureEventGridSimulator.Infrastructure.Middleware
             return context.Request.Headers.Keys.Any(k => string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)) &&
                    context.Request.Headers["Content-Type"].Any(v => !string.IsNullOrWhiteSpace(v) && v.Contains("application/json", StringComparison.OrdinalIgnoreCase)) &&
                    context.Request.Method == HttpMethods.Post &&
-                   (string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(context.Request.Path, "/", StringComparison.OrdinalIgnoreCase));
+                   string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsValidationRequest(HttpContext context)

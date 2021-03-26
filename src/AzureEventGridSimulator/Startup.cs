@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Infrastructure;
+using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Middleware;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Events;
 using ILogger=Microsoft.Extensions.Logging.ILogger;
 
 namespace AzureEventGridSimulator
@@ -31,10 +33,7 @@ namespace AzureEventGridSimulator
 
         public void ConfigureServices(IServiceCollection services)
         {
-            var settings = new SimulatorSettings();
-            _configuration.Bind(settings);
-            settings.Validate();
-            services.AddSingleton(_ => settings);
+            services.AddSimulatorSettings(_configuration);
 
             services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddHttpClient();
@@ -54,15 +53,19 @@ namespace AzureEventGridSimulator
             });
         }
 
-        public static void Configure(IApplicationBuilder app,
-                                     IHostApplicationLifetime lifetime,
-                                     ILogger<Startup> logger)
+        public void Configure(IApplicationBuilder app,
+                              IHostApplicationLifetime lifetime,
+                              ILogger<Startup> logger)
         {
             lifetime.ApplicationStarted.Register(async () => await Task.CompletedTask.ContinueWith(_ => OnApplicationStarted(app, lifetime, logger)));
 
-            app.UseSerilogRequestLogging();
-            app.UseMiddleware<RequestLoggingMiddleware>();
-            app.UseMiddleware<EventGridMiddleware>();
+            app.UseSerilogRequestLogging(options =>
+            {
+                // Emit debug-level events instead of the defaults
+                options.GetLevel = (httpContext, elapsed, ex) => LogEventLevel.Debug;
+            });
+            //app.UseRequestLoggingMiddleware();
+            app.UseEventGridMiddleware();
             app.UseMvc();
         }
 
