@@ -348,3 +348,5 @@ src/AzureEventGridSimulator/.config/
 
 /src/AzureEventGridSimulator/appsettings.debug.txt
 /**/*/log_*.txt
+RunDockerContainer.bat
+BuildDockerImage.bat
