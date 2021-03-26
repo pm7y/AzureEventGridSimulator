@@ -59,12 +59,7 @@ namespace AzureEventGridSimulator
         {
             lifetime.ApplicationStarted.Register(async () => await Task.CompletedTask.ContinueWith(_ => OnApplicationStarted(app, lifetime, logger)));
 
-            app.UseSerilogRequestLogging(options =>
-            {
-                // Emit debug-level events instead of the defaults
-                options.GetLevel = (httpContext, elapsed, ex) => LogEventLevel.Debug;
-            });
-            //app.UseRequestLoggingMiddleware();
+            app.UseSerilogRequestLogging(options => { options.GetLevel = (httpContext, elapsed, ex) => LogEventLevel.Debug; });
             app.UseEventGridMiddleware();
             app.UseMvc();
         }

@@ -21,9 +21,6 @@ namespace AzureEventGridSimulator
         {
             try
             {
-                // Set up basic Console logger we can use to log to until we've finished loading the full configuration
-                Log.Logger = CreateBasicConsoleLogger();
-
                 // Build it and fire it up
                 CreateWebHostBuilder(args)
                     .Build()
@@ -39,6 +36,18 @@ namespace AzureEventGridSimulator
             }
         }
 
+        private static IWebHostBuilder CreateWebHostBuilder(string[] args)
+        {
+            // Set up basic Console logger we can use to log to until we've finished building everything
+            Log.Logger = CreateBasicConsoleLogger();
+
+            // First thing's first. Build the configuration.
+            var configuration = BuildConfiguration(args);
+
+            // Configure the web host builder
+            return ConfigureWebHost(args, configuration);
+        }
+
         private static ILogger CreateBasicConsoleLogger()
         {
             return new LoggerConfiguration()
@@ -47,15 +56,6 @@ namespace AzureEventGridSimulator
                    .MinimumLevel.Override("System", LogEventLevel.Warning)
                    .WriteTo.Console()
                    .CreateBootstrapLogger();
-        }
-
-        private static IWebHostBuilder CreateWebHostBuilder(string[] args)
-        {
-            // First thing's first. Build the configuration.
-            var configuration = BuildConfiguration(args);
-
-            // Configure the web host builder
-            return ConfigureWebHost(args, configuration);
         }
 
         private static IConfigurationRoot BuildConfiguration(string[] args)
@@ -73,15 +73,20 @@ namespace AzureEventGridSimulator
                           .AddCustomSimulatorConfigFileIfSpecified(environmentAndCommandLineConfiguration)
                           .AddEnvironmentVariablesAndCommandLine(args);
 
-            var config = builder.Build();
-            Log.Verbose(config.GetDebugView());
-            return config;
+            return builder.Build();
         }
 
         private static IWebHostBuilder ConfigureWebHost(string[] args, IConfiguration configuration)
         {
             return WebHost
                    .CreateDefaultBuilder<Startup>(args)
+                   .ConfigureAppConfiguration((_, builder) =>
+                   {
+                       builder.Sources.Clear();
+                       builder.AddConfiguration(configuration);
+
+                       Log.Verbose(builder.Build().GetDebugView().Normalize());
+                   })
                    .ConfigureLogging(builder => { builder.ClearProviders(); })
                    .UseSerilog((context, loggerConfiguration) =>
                    {
@@ -89,24 +94,20 @@ namespace AzureEventGridSimulator
 
                        var hasAtLeastOneLogSinkBeenConfigured = context.Configuration.GetSection("Serilog:WriteTo").GetChildren().ToArray().Any();
 
-                       var logConfig = loggerConfiguration
-                                       .Enrich.FromLogContext()
-                                       .Enrich.WithProperty("MachineName", Environment.MachineName)
-                                       .Enrich.WithProperty("Environment",  context.Configuration.EnvironmentName())
-                                       .Enrich.WithProperty("Application", nameof(AzureEventGridSimulator))
-                                       .Enrich.WithProperty("Version", Assembly.GetExecutingAssembly().GetName().Version)
-                                       // The sensible defaults
-                                       .MinimumLevel.Is(LogEventLevel.Information)
-                                       .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
-                                       .MinimumLevel.Override("System", LogEventLevel.Error)
-                                       .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-                                       // Override defaults from settings if any
-                                       .ReadFrom.Configuration(context.Configuration, "Serilog");
-
-                       if (!hasAtLeastOneLogSinkBeenConfigured)
-                       {
-                           logConfig = logConfig.WriteTo.Console();
-                       }
+                       loggerConfiguration
+                           .Enrich.FromLogContext()
+                           .Enrich.WithProperty("MachineName", Environment.MachineName)
+                           .Enrich.WithProperty("Environment", context.Configuration.EnvironmentName())
+                           .Enrich.WithProperty("Application", nameof(AzureEventGridSimulator))
+                           .Enrich.WithProperty("Version", Assembly.GetExecutingAssembly().GetName().Version)
+                           // The sensible defaults
+                           .MinimumLevel.Is(LogEventLevel.Information)
+                           .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+                           .MinimumLevel.Override("System", LogEventLevel.Error)
+                           .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+                           // Override defaults from settings if any
+                           .ReadFrom.Configuration(context.Configuration, "Serilog")
+                           .WriteTo.Conditional(_ => !hasAtLeastOneLogSinkBeenConfigured, sinkConfiguration => sinkConfiguration.Console());
                    })
                    .UseKestrel(options =>
                    {

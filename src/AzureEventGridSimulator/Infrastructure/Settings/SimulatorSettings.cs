@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings
 {
@@ -11,7 +12,7 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
 
         public void Validate()
         {
-            if (Topics.GroupBy(o => o.Port).Count() != Topics.Length)
+             if (Topics.GroupBy(o => o.Port).Count() != Topics.Length)
             {
                 throw new InvalidOperationException("Each topic must use a unique port.");
             }
@@ -27,10 +28,16 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
                 throw new InvalidOperationException("Each subscriber must have a unique name.");
             }
 
-            if (Topics.Select(t => t.Name).Concat(Topics.SelectMany(t => t.Subscribers).Select(s => s.Name))
+            if (Topics.Select(t => t.Name)
                       .Any(name => string.IsNullOrWhiteSpace(name) || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))))
             {
-                throw new InvalidOperationException("A topic/subscriber name can only contain letters, numbers, and dashes.");
+                throw new InvalidOperationException("A topic name can only contain letters, numbers, and dashes.");
+            }
+
+            if (Topics.SelectMany(t => t.Subscribers).Select(s => s.Name)
+                      .Any(name => string.IsNullOrWhiteSpace(name) || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))))
+            {
+                throw new InvalidOperationException("A subscriber name can only contain letters, numbers, and dashes.");
             }
 
             // validate the filters
