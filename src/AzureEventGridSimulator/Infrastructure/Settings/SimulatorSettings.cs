@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using Newtonsoft.Json;
-using Serilog;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings
 {
