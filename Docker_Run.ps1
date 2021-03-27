@@ -5,7 +5,7 @@ docker run `
         -it `
         --detach `
         --publish 60101:60101 `
-        -v C:\src\AzureEventGridSimulator\docker:/aegs ` # don't understand why the host path apparently can't be relative (it can in the compose file)
+        -v C:\src\AzureEventGridSimulator\docker:/aegs `
         -e ASPNETCORE_ENVIRONMENT=Development `
         -e ASPNETCORE_Kestrel__Certificates__Default__Path=/aegs/azureEventGridSimulator.pfx `
         -e ASPNETCORE_Kestrel__Certificates__Default__Password=Y0urSup3rCrypt1cPa55w0rd! `
