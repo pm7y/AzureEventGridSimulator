@@ -16,7 +16,7 @@ namespace AzureEventGridSimulator.Tests.ActualSimulatorTests
 
         private Process _simulatorProcess;
 
-        public async Task InitializeAsync()
+        public Task InitializeAsync()
         {
             var simulatorDirectory = Directory.GetCurrentDirectory();
             _simulatorExePath = Path.Combine(simulatorDirectory, $"{SimulatorFileName}.exe");
@@ -31,6 +31,8 @@ namespace AzureEventGridSimulator.Tests.ActualSimulatorTests
                 CreateNoWindow = true,
                 Environment = { new KeyValuePair<string, string>("ASPNETCORE_ENVIRONMENT", "Test") }
             });
+
+            return Task.CompletedTask;
         }
 
         public Task DisposeAsync()
