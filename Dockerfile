@@ -24,6 +24,8 @@ WORKDIR /app
 # add tzdata incase we want to set the timezone
 RUN apk add --no-cache tzdata
 
+ENV ASPNETCORE_URLS=
+
 # copy the binary only
 COPY --from=build /artifact/AzureEventGridSimulator .
 
