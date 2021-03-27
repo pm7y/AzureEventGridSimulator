@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   azureventgridsimulator:
-    image: azureeventgridsimulator:latest
+    image: fallenidol/azureeventgridsimulator:latest
     container_name: azureeventgridsimulator
     ports:
       # add a port mapping for each topic in the settings file
