@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.AzureMessagingTests
+namespace AzureEventGridSimulator.Tests.ActualSimulatorTests
 {
     public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
     {
@@ -16,7 +16,7 @@ namespace AzureEventGridSimulator.Tests.AzureMessagingTests
 
         private Process _simulatorProcess;
 
-        public async Task InitializeAsync()
+        public Task InitializeAsync()
         {
             var simulatorDirectory = Directory.GetCurrentDirectory();
             _simulatorExePath = Path.Combine(simulatorDirectory, $"{SimulatorFileName}.exe");
@@ -29,21 +29,10 @@ namespace AzureEventGridSimulator.Tests.AzureMessagingTests
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true,
-                Environment = { new KeyValuePair<string, string>("ASPNETCORE_ENVIRONMENT", "Development") }
+                Environment = { new KeyValuePair<string, string>("ASPNETCORE_ENVIRONMENT", "Test") }
             });
 
-            var isAlive = false;
-
-            while (!isAlive && !_simulatorProcess.StandardOutput.EndOfStream)
-            {
-                var line = await _simulatorProcess.StandardOutput.ReadLineAsync();
-
-                isAlive = line.Contains("It's Alive");
-            }
-
-            if (!isAlive)
-            {
-            }
+            return Task.CompletedTask;
         }
 
         public Task DisposeAsync()

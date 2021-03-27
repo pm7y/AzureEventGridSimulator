@@ -3,75 +3,28 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
-using AzureEventGridSimulator.Infrastructure.Settings;
+using System.Text;
+using AzureEventGridSimulator.Infrastructure.Extensions;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
+using ILogger=Serilog.ILogger;
 
 namespace AzureEventGridSimulator
 {
     public static class Program
     {
-        private static IWebHostBuilder ConfigureWebHost(string[] args, IConfiguration configuration)
-        {
-            return WebHost
-                   .CreateDefaultBuilder<Startup>(args)
-                   .UseConfiguration(configuration)
-                   .ConfigureLogging(builder => { builder.ClearProviders(); })
-                   .UseSerilog()
-                   .UseKestrel(options =>
-                   {
-                       var simulatorSettings = (SimulatorSettings)options.ApplicationServices.GetService(typeof(SimulatorSettings));
-
-                       if (simulatorSettings?.Topics is null)
-                       {
-                           throw new InvalidOperationException("No settings found!");
-                       }
-
-                       var enabledTopics = simulatorSettings.Topics.Where(t => !t.Disabled);
-
-                       var cert = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Certificates__Default__Path");
-                       var certPass = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Certificates__Default__Password");
-
-                       X509Certificate2 certificate = null;
-                       if (string.IsNullOrWhiteSpace(cert) == false && string.IsNullOrWhiteSpace(certPass) == false)
-                       {
-                           Log.Warning("ASPNETCORE_Kestrel__Certificates__Default__Path is defined, using '{ASPNETCORE_Kestrel__Certificates__Default__Path}'", cert);
-                           certificate = new X509Certificate2(cert, certPass);
-                       }
-
-                       options.ConfigureHttpsDefaults(httpsOptions => { httpsOptions.SslProtocols = SslProtocols.Tls12; });
-
-                       foreach (var topics in enabledTopics)
-                       {
-                           if (certificate != null)
-                           {
-                               options.Listen(IPAddress.Any,
-                                              topics.Port,
-                                              listenOptions => listenOptions
-                                                  .UseHttps(httpsOptions => httpsOptions.ServerCertificateSelector = (_, _) => certificate));
-                           }
-                           else
-                           {
-                               // Use the dev cert on localhost. We have to run on https (It's all Microsoft.Azure.EventGrid) supports).
-                               options.ListenLocalhost(topics.Port, listenOptions => listenOptions.UseHttps());
-                           }
-                       }
-                   });
-        }
-
         public static void Main(string[] args)
         {
             try
             {
-                var webHost = CreateWebHostBuilder(args).Build();
-
-                webHost.Run();
+                // Build it and fire it up
+                CreateWebHostBuilder(args)
+                    .Build()
+                    .Run();
             }
             catch (Exception ex)
             {
@@ -85,80 +38,88 @@ namespace AzureEventGridSimulator
 
         private static IWebHostBuilder CreateWebHostBuilder(string[] args)
         {
-            var environmentName = GetHostingEnvironment();
+            // Set up basic Console logger we can use to log to until we've finished building everything
+            Log.Logger = CreateBasicConsoleLogger();
+
+            // First thing's first. Build the configuration.
+            var configuration = BuildConfiguration(args);
+
+            // Configure the web host builder
+            return ConfigureWebHost(args, configuration);
+        }
+
+        private static ILogger CreateBasicConsoleLogger()
+        {
+            return new LoggerConfiguration()
+                   .MinimumLevel.Is(LogEventLevel.Verbose)
+                   .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+                   .MinimumLevel.Override("System", LogEventLevel.Error)
+                   .WriteTo.Console()
+                   .CreateBootstrapLogger();
+        }
+
+        private static IConfigurationRoot BuildConfiguration(string[] args)
+        {
+            var environmentAndCommandLineConfiguration = new ConfigurationBuilder()
+                                                         .AddEnvironmentVariablesAndCommandLine(args)
+                                                         .Build();
+
+            var environmentName = environmentAndCommandLineConfiguration.EnvironmentName();
 
             var builder = new ConfigurationBuilder()
                           .SetBasePath(Directory.GetCurrentDirectory())
                           .AddJsonFile("appsettings.json", true, false)
                           .AddJsonFile($"appsettings.{environmentName}.json", true, false)
-                          .AddEnvironmentVariables()
-                          .AddCommandLine(args);
+                          .AddCustomSimulatorConfigFileIfSpecified(environmentAndCommandLineConfiguration)
+                          .AddEnvironmentVariablesAndCommandLine(args);
 
-            var configFileOverriddenFromCommandLine = builder.Build().GetValue<string>("ConfigFile");
-            if (!string.IsNullOrWhiteSpace(configFileOverriddenFromCommandLine))
-            {
-                // The path to the config file has been passed at the command line
-                // e.g. AzureEventGridSimulator.exe --ConfigFile=/path/to/config.json
-                builder.AddJsonFile(configFileOverriddenFromCommandLine, false, false);
-                Log.Warning("Overriding settings with '{SettingsPath}'", configFileOverriddenFromCommandLine);
-            }
-
-            var config = builder.Build();
-
-            // You can uncomment this to get a dump of the current effective config settings.
-            // System.IO.File.WriteAllText("appsettings.debug.txt", config.GetDebugView());
-
-            CreateLogger(config, environmentName);
-
-            var hostBuilder = ConfigureWebHost(args, config);
-
-            return hostBuilder;
+            return builder.Build();
         }
 
-        private static string GetHostingEnvironment()
+        private static IWebHostBuilder ConfigureWebHost(string[] args, IConfiguration configuration)
         {
-            var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            return WebHost
+                   .CreateDefaultBuilder<Startup>(args)
+                   .ConfigureAppConfiguration((_, builder) =>
+                   {
+                       builder.Sources.Clear();
+                       builder.AddConfiguration(configuration);
+                   })
+                   .ConfigureLogging(builder => { builder.ClearProviders(); })
+                   .UseSerilog((context, loggerConfiguration) =>
+                   {
+                       ShowSerilogUsingWarningIfNecessary(context.Configuration);
 
-            if (string.IsNullOrWhiteSpace(environmentName))
-            {
-                environmentName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
-            }
+                       var hasAtLeastOneLogSinkBeenConfigured = context.Configuration.GetSection("Serilog:WriteTo").GetChildren().ToArray().Any();
 
-            if (string.IsNullOrWhiteSpace(environmentName))
-            {
-                environmentName = "Production";
-            }
+                       loggerConfiguration
+                           .Enrich.FromLogContext()
+                           .Enrich.WithProperty("MachineName", Environment.MachineName)
+                           .Enrich.WithProperty("Environment", context.Configuration.EnvironmentName())
+                           .Enrich.WithProperty("Application", nameof(AzureEventGridSimulator))
+                           .Enrich.WithProperty("Version", Assembly.GetExecutingAssembly().GetName().Version)
+                           // The sensible defaults
+                           .MinimumLevel.Is(LogEventLevel.Information)
+                           .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+                           .MinimumLevel.Override("System", LogEventLevel.Error)
+                           // Override defaults from settings if any
+                           .ReadFrom.Configuration(context.Configuration, "Serilog")
+                           .WriteTo.Conditional(_ => !hasAtLeastOneLogSinkBeenConfigured, sinkConfiguration => sinkConfiguration.Console());
+                   })
+                   .UseKestrel(options =>
+                   {
+                       Log.Verbose(((IConfigurationRoot)configuration).GetDebugView().Normalize());
 
-            return environmentName;
-        }
+                       options.ConfigureSimulatorCertificate();
 
-        private static void CreateLogger(IConfiguration config, string environmentName)
-        {
-            var atLeastOneLogHasBeenConfigured = config.GetSection("Serilog:WriteTo").GetChildren().ToArray().Any();
-
-            var logConfig = new LoggerConfiguration()
-                            .Enrich.FromLogContext()
-                            .Enrich.WithProperty("MachineName", Environment.MachineName)
-                            .Enrich.WithProperty("Environment", environmentName)
-                            .Enrich.WithProperty("Application", nameof(AzureEventGridSimulator))
-                            .Enrich.WithProperty("Version", Assembly.GetExecutingAssembly().GetName().Version)
-                            // The sensible defaults
-                            .MinimumLevel.Is(LogEventLevel.Information)
-                            .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
-                            .MinimumLevel.Override("System", LogEventLevel.Error)
-                            // Override defaults from settings if any
-                            .ReadFrom.Configuration(config, "Serilog");
-
-            if (!atLeastOneLogHasBeenConfigured)
-            {
-                logConfig = logConfig.WriteTo.Console();
-            }
-
-            // Serilog.Debugging.SelfLog.Enable(s => Console.WriteLine($"Serilog Debug -> {s}"));
-
-            Log.Logger = logConfig.CreateLogger();
-
-            ShowSerilogUsingWarningIfNecessary(config);
+                       foreach (var topics in options.ApplicationServices.EnabledTopics())
+                       {
+                           options.Listen(IPAddress.Any,
+                                          topics.Port,
+                                          listenOptions => listenOptions
+                                              .UseHttps());
+                       }
+                   });
         }
 
         private static void ShowSerilogUsingWarningIfNecessary(IConfiguration config)
@@ -170,17 +131,14 @@ namespace AzureEventGridSimulator
             {
                 // Warn the user about the necessity for the serilog using section with .net 5.0.
                 // https://github.com/serilog/serilog-settings-configuration#net-50-single-file-applications
-                Console.WriteLine(@"The Azure Event Grid simulator was unable to start: -" + Environment.NewLine);
-                Console.WriteLine(@"   Serilog with .net 5.0 now requires a 'Using' section.");
-                Console.WriteLine(@"   https://github.com/serilog/serilog-settings-configuration#net-50-single-file-applications" +
-                                  Environment.NewLine);
-                Console.WriteLine(
-                                  @"Please add the following to the Serilog config section and restart: -" + Environment.NewLine);
-                Console.WriteLine(@"   ""Using"": [""Serilog.Sinks.Console"", ""Serilog.Sinks.File"", ""Serilog.Sinks.Seq""]" +
-                                  Environment.NewLine);
+                var msg = new StringBuilder();
 
-                Console.WriteLine(@"Any key to exit...");
-                Console.ReadKey();
+                msg.AppendLine(@"Serilog with .net 5.0 now requires a 'Using' section.");
+                msg.AppendLine("Please add the following to the 'Serilog' config section and restart: -" + Environment.NewLine);
+                msg.AppendLine(@"""Using"": [""Serilog.Sinks.Console"", ""Serilog.Sinks.File"", ""Serilog.Sinks.Seq""]");
+
+                Log.Fatal(msg.ToString());
+
                 Environment.Exit(-1);
             }
         }

@@ -30,7 +30,7 @@ namespace AzureEventGridSimulator.Tests.IntegrationTests
             {
                 configurationBuilder
                     .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("appsettings.tests.json", false, true);
+                    .AddJsonFile("appsettings.test.json", false, true);
             });
 
             builder.ConfigureLogging(logging =>
