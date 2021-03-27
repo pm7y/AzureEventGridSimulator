@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 using Xunit;
 
 namespace AzureEventGridSimulator.Tests.ActualSimulatorTests
@@ -32,22 +33,6 @@ namespace AzureEventGridSimulator.Tests.ActualSimulatorTests
                 CreateNoWindow = true,
                 Environment = { new KeyValuePair<string, string>("ASPNETCORE_ENVIRONMENT", "Test") }
             });
-
-            var isAlive = false;
-
-            var output = new StringBuilder();
-            while (!isAlive && !_simulatorProcess.StandardOutput.EndOfStream)
-            {
-                var line = await _simulatorProcess.StandardOutput.ReadLineAsync();
-                output.AppendLine(line);
-
-                isAlive = line.Contains("It's Alive");
-            }
-
-            if (!isAlive)
-            {
-                throw new InvalidOperationException("The simulator failed to start successfully!" + Environment.NewLine + output);
-            }
         }
 
         public Task DisposeAsync()
