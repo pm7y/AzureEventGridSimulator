@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   azureventgridsimulator:
-    image: fallenidol/azureeventgridsimulator:latest
+    image: pmcilreavy/azureeventgridsimulator:latest
     container_name: azureeventgridsimulator
     ports:
       # add a port mapping for each topic in the settings file
@@ -26,6 +26,10 @@ services:
 
       # if you have many topics/subscribers you could pass them via a configfile
       # - ConfigFile=/aegs/appsettings.docker.json
+
+    env_file:
+      - ./my.env
+
     build:
       context: .
       dockerfile: DockerFile

@@ -1,9 +1,9 @@
-# Note: powershell may throw misleading 'error' message - https://stackoverflow.com/questions/2095088/error-when-calling-3rd-party-executable-from-powershell-when-using-an-ide
-
+# just run a pre-built image
 
 docker run `
         -it `
         --detach `
+        --pull missing `
         --publish 60101:60101 `
         -v C:\src\AzureEventGridSimulator\docker:/aegs `
         -e ASPNETCORE_ENVIRONMENT=Development `
@@ -15,5 +15,4 @@ docker run `
         -e AEGS_Topics__0__subscribers__0__name=RequestCatcherSubscription `
         -e AEGS_Topics__0__subscribers__0__endpoint=https://azureeventgridsimulator.requestcatcher.com/ `
         -e AEGS_Topics__0__subscribers__0__disableValidation=true `
-        --pull missing `
-        fallenidol/azureeventgridsimulator:latest
+        pmcilreavy/azureeventgridsimulator:latest

@@ -350,3 +350,4 @@ src/AzureEventGridSimulator/.config/
 /**/*/log_*.txt
 RunDockerContainer.bat
 BuildDockerImage.bat
+my.env
