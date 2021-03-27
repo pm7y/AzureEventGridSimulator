@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.AzureMessagingTests
+namespace AzureEventGridSimulator.Tests.ActualSimulatorTests
 {
     public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
     {
@@ -30,7 +30,7 @@ namespace AzureEventGridSimulator.Tests.AzureMessagingTests
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true,
-                Environment = { new KeyValuePair<string, string>("ASPNETCORE_ENVIRONMENT", "Development") }
+                Environment = { new KeyValuePair<string, string>("ASPNETCORE_ENVIRONMENT", "Test") }
             });
 
             var isAlive = false;

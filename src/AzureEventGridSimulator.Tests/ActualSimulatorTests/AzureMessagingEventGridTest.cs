@@ -7,7 +7,7 @@ using Azure.Messaging.EventGrid;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.AzureMessagingTests
+namespace AzureEventGridSimulator.Tests.ActualSimulatorTests
 {
     /// <summary>
     /// Simple tests to check that we can send an event via Azure.Messaging.EventGrid library.
@@ -30,7 +30,9 @@ namespace AzureEventGridSimulator.Tests.AzureMessagingTests
         {
             var client = new EventGridPublisherClient(
                                                       new Uri("https://localhost:60101/api/events"),
-                                                      new AzureKeyCredential("TheLocal+DevelopmentKey="));
+                                                      new AzureKeyCredential("TheLocal+DevelopmentKey="),
+                                                      new EventGridPublisherClientOptions
+                                                          { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
 
             var response = await client.SendEventAsync(new EventGridEvent("/the/subject", "The.Event.Type", "v1", new { Id = 1, Foo = "Bar" }));
 
@@ -42,7 +44,9 @@ namespace AzureEventGridSimulator.Tests.AzureMessagingTests
         {
             var client = new EventGridPublisherClient(
                                                       new Uri("https://localhost:60101/api/events"),
-                                                      new AzureKeyCredential("TheLocal+DevelopmentKey="));
+                                                      new AzureKeyCredential("TheLocal+DevelopmentKey="),
+                                                      new EventGridPublisherClientOptions
+                                                          { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
 
             var events = new[]
             {
@@ -79,7 +83,9 @@ namespace AzureEventGridSimulator.Tests.AzureMessagingTests
         {
             var client = new EventGridPublisherClient(
                                                       new Uri("https://localhost:60101/api/events"),
-                                                      new AzureKeyCredential("TheWrongLocal+DevelopmentKey="));
+                                                      new AzureKeyCredential("TheWrongLocal+DevelopmentKey="),
+                                                      new EventGridPublisherClientOptions
+                                                          { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
 
             var exception = await Should.ThrowAsync<RequestFailedException>(async () =>
             {
