@@ -1,0 +1,34 @@
+version: "3.9"
+services:
+  azureventgridsimulator:
+    image: azureeventgridsimulator:latest
+    container_name: azureeventgridsimulator
+    ports:
+      # add a port mapping for each topic in the settings file
+      - "60101:60101"
+    volumes:
+      # map a local folder './docker' to a read-only folder '/aegs' in the container
+      # this allows us to access files (e.g. settings or certificates) from within the container
+      - ./docker:/aegs:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # specify cert details (note: can be generated like so: dotnet dev-certs https --export-path ./docker/azureEventGridSimulator.pfx --password Y0urSup3rCrypt1cPa55w0rd!`
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/aegs/azureEventGridSimulator.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=Y0urSup3rCrypt1cPa55w0rd!
+
+      # configure a topic and it's subscriber
+      - AEGS_Topics__0__name=ExampleTopic
+      - AEGS_Topics__0__port=60101
+      - AEGS_Topics__0__key=TheLocal+DevelopmentKey=
+      - AEGS_Topics__0__subscribers__0__name=RequestCatcherSubscription
+      - AEGS_Topics__0__subscribers__0__endpoint=https://azureeventgridsimulator.requestcatcher.com/
+      - AEGS_Topics__0__subscribers__0__disableValidation=true
+
+      # if you have many topics/subscribers you could pass them via a configfile
+      # - ConfigFile=/aegs/appsettings.docker.json
+    build:
+      context: .
+      dockerfile: DockerFile
+
+volumes:
+  docker:
