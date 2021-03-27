@@ -12,7 +12,7 @@ namespace AzureEventGridSimulator.Infrastructure.Settings
 
         public void Validate()
         {
-             if (Topics.GroupBy(o => o.Port).Count() != Topics.Length)
+            if (Topics.GroupBy(o => o.Port).Count() != Topics.Length)
             {
                 throw new InvalidOperationException("Each topic must use a unique port.");
             }

@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿using System;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,8 +27,7 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions
                     break;
                 case true when !certificatePasswordSpecified:
                     // The certificate file was specified but the password wasn't.
-                    certificate = new X509Certificate2(certificateFile);
-                    break;
+                    throw new InvalidOperationException("A certificate with a password is required.");
             }
 
             options.ConfigureHttpsDefaults(httpsOptions => { httpsOptions.ServerCertificate = certificate; });

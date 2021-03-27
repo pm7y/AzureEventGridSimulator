@@ -52,8 +52,8 @@ namespace AzureEventGridSimulator
         {
             return new LoggerConfiguration()
                    .MinimumLevel.Is(LogEventLevel.Verbose)
-                   .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                   .MinimumLevel.Override("System", LogEventLevel.Warning)
+                   .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+                   .MinimumLevel.Override("System", LogEventLevel.Error)
                    .WriteTo.Console()
                    .CreateBootstrapLogger();
         }
@@ -84,8 +84,6 @@ namespace AzureEventGridSimulator
                    {
                        builder.Sources.Clear();
                        builder.AddConfiguration(configuration);
-
-                       Log.Verbose(builder.Build().GetDebugView().Normalize());
                    })
                    .ConfigureLogging(builder => { builder.ClearProviders(); })
                    .UseSerilog((context, loggerConfiguration) =>
@@ -104,13 +102,14 @@ namespace AzureEventGridSimulator
                            .MinimumLevel.Is(LogEventLevel.Information)
                            .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
                            .MinimumLevel.Override("System", LogEventLevel.Error)
-                           .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
                            // Override defaults from settings if any
                            .ReadFrom.Configuration(context.Configuration, "Serilog")
                            .WriteTo.Conditional(_ => !hasAtLeastOneLogSinkBeenConfigured, sinkConfiguration => sinkConfiguration.Console());
                    })
                    .UseKestrel(options =>
                    {
+                       Log.Verbose(((IConfigurationRoot)configuration).GetDebugView().Normalize());
+
                        options.ConfigureSimulatorCertificate();
 
                        foreach (var topics in options.ApplicationServices.EnabledTopics())
