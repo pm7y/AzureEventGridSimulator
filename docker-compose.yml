@@ -32,7 +32,7 @@ services:
 
     build:
       context: .
-      dockerfile: DockerFile
+      dockerfile: ./Dockerfile
 
 volumes:
   docker:
