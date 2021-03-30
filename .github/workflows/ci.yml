@@ -15,11 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [
-            # macos-latest,
-            # ubuntu-latest,
-            windows-latest,
-          ]
+        os: [macos-latest, ubuntu-latest, windows-latest]
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
@@ -29,33 +25,15 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
 
-      - uses: actions/checkout@v2
       - name: setup dotnet core
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # - name: build
-      #   run: dotnet build
-      #     --configuration ${{ env.CONFIGURATION }}
-      #     --no-incremental
-      #     --nologo
-      #     /p:WarningLevel=4
-      #     /p:TreatWarningsAsErrors=true
-      #     /p:NoWarn=""
-      #     /p:WarningsAsErrors=""
-      #     ${{ env.SOLUTION_PATH }}
+      - name: get the code
+        uses: actions/checkout@v2
 
-      # - name: test
-      #   run: dotnet test
-      #     --configuration ${{ env.CONFIGURATION }}
-      #     --no-restore
-      #     --no-build
-      #     --nologo
-      #     --filter "Category=unit|Category=integration"
-      #     ${{ env.SOLUTION_PATH }}
-
-      - name: test
+      - name: restore, build and test
         run: dotnet test
           --configuration ${{ env.CONFIGURATION }}
           --nologo
