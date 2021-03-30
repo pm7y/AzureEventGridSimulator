@@ -1,0 +1,50 @@
+name: ci
+# Continuous integration action which will fire on any push to any branch.
+
+on:
+  push:
+    branches-ignore:
+      - master
+
+env:
+  DOTNET_VERSION: 5.0.x
+  SOLUTION_PATH: ./src/AzureEventGridSimulator.sln
+  CONFIGURATION: Release
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    steps:
+      - name: log github context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - uses: actions/checkout@v2
+      - name: setup dotnet core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: build
+        run: dotnet build
+          --configuration ${{ env.CONFIGURATION }}
+          --no-incremental
+          --nologo
+          /p:WarningLevel=4
+          /p:TreatWarningsAsErrors=true
+          /p:NoWarn=""
+          /p:WarningsAsErrors=""
+          ${{ env.SOLUTION_PATH }}
+
+      - name: test
+        run: dotnet test
+          --configuration ${{ env.CONFIGURATION }}
+          --no-restore
+          --no-build
+          --nologo
+          --filter "Category=unit|Category=integration"
+          ${{ env.SOLUTION_PATH }}
