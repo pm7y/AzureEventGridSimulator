@@ -1,6 +1,6 @@
 # Azure Event Grid Simulator
 
-[![Build status](https://ci.appveyor.com/api/projects/status/7dhqhfg5lt73chsb?svg=true)](https://ci.appveyor.com/project/fallenidol/azureeventgridsimulator)
+[![CI](https://github.com/pmcilreavy/AzureEventGridSimulator/workflows/ci/badge.svg)](https://github.com/pmcilreavy/AzureEventGridSimulator)
 
 A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library.
 
@@ -115,9 +115,11 @@ or advanced filtering:
 ```
 
 ## Docker
+
 You can use that emulater within the Docker, here example how to use it:
 
 ### dockerfile example
+
 ```
 FROM mcr.microsoft.com/dotnet/sdk:3.1 as build
 WORKDIR /source
@@ -149,17 +151,19 @@ ENTRYPOINT ["AzureEventGridSimulator.exe"]
 ```
 
 #### Docker Build
+
 `docker build -t {TAG_NAME} .`
 
 #### Simple Run command
+
 `docker run -it --rm {TAG_NAME}`
 
 #### Customizable Run command
-Alternatively, you can specify the configuration file, you have to map you config file   
-${PWD} - your current folder   
-C:\temp\ - folder inside the container   
-`docker run -it --rm -v ${PWD}:C:\temp\ {TAG_NAME} --entrypoint AzureEventGridSimulator.exe --ConfigFile=C:\temp\{NAME OF YOUR CONFIGURATION FILE}`
 
+Alternatively, you can specify the configuration file, you have to map you config file  
+${PWD} - your current folder  
+C:\temp\ - folder inside the container  
+`docker run -it --rm -v ${PWD}:C:\temp\ {TAG_NAME} --entrypoint AzureEventGridSimulator.exe --ConfigFile=C:\temp\{NAME OF YOUR CONFIGURATION FILE}`
 
 ## Using the Simulator
 
