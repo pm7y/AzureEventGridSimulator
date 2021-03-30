@@ -1,8 +1,8 @@
 version: "3.9"
 services:
   azureventgridsimulator:
-    image: pmcilreavy/azureeventgridsimulator:latest
-    container_name: azureeventgridsimulator
+    image: azureeventgridsimulator:dev
+    container_name: azureeventgridsimulator-dev
     ports:
       # add a port mapping for each topic in the settings file
       - "60101:60101"
@@ -16,18 +16,24 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/aegs/azureEventGridSimulator.pfx
       - ASPNETCORE_Kestrel__Certificates__Default__Password=Y0urSup3rCrypt1cPa55w0rd!
 
-      # configure a topic and it's subscriber
+      # example of how to configure a topic via environment variables
       - AEGS_Topics__0__name=ExampleTopic
       - AEGS_Topics__0__port=60101
       - AEGS_Topics__0__key=TheLocal+DevelopmentKey=
+      # add 'request catcher' subscriber
       - AEGS_Topics__0__subscribers__0__name=RequestCatcherSubscription
       - AEGS_Topics__0__subscribers__0__endpoint=https://azureeventgridsimulator.requestcatcher.com/
       - AEGS_Topics__0__subscribers__0__disableValidation=true
+      # add an Azure Function subscriber running on localhost (host.docker.internal)
+      - AEGS_Topics__0__subscribers__1__name=AzureFunctionSubscription
+      - AEGS_Topics__0__subscribers__1__endpoint=http://host.docker.internal:7071/runtime/webhooks/EventGrid?functionName=ExampleFunction
+      - AEGS_Topics__0__subscribers__1__disableValidation=true
 
-      # if you have many topics/subscribers you could pass them via a configfile
+      # you could also define topics/subscribers via via a configfile
       # - ConfigFile=/aegs/appsettings.docker.json
 
     env_file:
+      # you can also define environment variables via a file
       - ./my.env
 
     build:
