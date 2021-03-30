@@ -2,7 +2,7 @@ name: ci
 # Continuous integration action which will fire on any push to any branch.
 
 on:
-  push:
+  pull_request:
     branches-ignore:
       - master
 
@@ -17,6 +17,9 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
     steps:
       - name: log github context
         env:
