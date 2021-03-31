@@ -3,7 +3,7 @@ name: release
 
 on:
   release:
-    types: [ created, edited, prereleased, released, published ]
+    types: [created, edited, prereleased, released, published]
 
 env:
   BUILD_NUMBER: ${{ github.event.release.tag_name }}.${{ github.run_number }}
@@ -49,28 +49,28 @@ jobs:
           --filter "Category=unit|Category=integration"
           ${{ env.PROJECT_PATH }}
 
-      # - name: publish
-      #   run: dotnet publish
-      #     --configuration ${{ env.CONFIGURATION }}
-      #     --nologo
-      #     --runtime linux-x64
-      #     --framework  net5.0
-      #     --self-contained true
-      #     /p:BuildNumber=${{ env.BUILD_NUMBER }}
-      #     /p:Version=${{ env.BUILD_NUMBER }}
-      #     /p:PublishReadyToRun=false
-      #     /p:IncludeNativeLibrariesForSelfExtract=true
-      #     /p:PublishSingleFile=true
-      #     /p:PublishTrimmed=true
-      #     /p:TrimUnusedDependencies=true
-      #     --output ${{ env.ARITFACT_PATH }}
-      #     ${{ env.PROJECT_PATH }}
+      - name: publish
+        run: dotnet publish
+          --configuration ${{ env.CONFIGURATION }}
+          --nologo
+          --runtime linux-x64
+          --framework ${{ env.DOTNET_VERSION }}
+          --self-contained true
+          /p:BuildNumber=${{ env.BUILD_NUMBER }}
+          /p:Version=${{ env.BUILD_NUMBER }}
+          /p:PublishReadyToRun=false
+          /p:IncludeNativeLibrariesForSelfExtract=true
+          /p:PublishSingleFile=true
+          /p:PublishTrimmed=true
+          /p:TrimUnusedDependencies=true
+          --output ${{ env.ARITFACT_PATH }}
+          ${{ env.PROJECT_PATH }}
 
-      # - name: upload artifacts
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: artifacts
-      #     path: ${{ env.ARITFACT_PATH }}/*
+      - name: upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: artifacts
+          path: ${{ env.ARITFACT_PATH }}/*
 
       # - name: upload release asset
       #   uses: actions/upload-release-asset@v1
