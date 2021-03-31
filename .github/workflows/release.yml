@@ -14,7 +14,7 @@ env:
   ARITFACT_PATH: ./dist
 
 jobs:
-  build-and-test:
+  release:
     runs-on: ubuntu-latest
 
     env:
@@ -62,7 +62,7 @@ jobs:
           --no-restore
           --no-build
           --nologo
-          --runtime win-x64
+          --runtime linux-x64
           --framework  net5.0
           --self-contained true
           /p:BuildNumber=${{ env.BUILD_NUMBER }}
