@@ -3,7 +3,7 @@ name: release
 
 on:
   release:
-    types: [created, edited, prereleased, released, published]
+    types: [created, edited, published]
 
 env:
   BUILD_NUMBER: ${{ github.event.release.tag_name }}.${{ github.run_number }}
