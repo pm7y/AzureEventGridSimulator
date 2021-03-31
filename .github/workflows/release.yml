@@ -39,7 +39,6 @@ jobs:
           --configuration ${{ env.CONFIGURATION }}
           --nologo
           --runtime linux-x64
-          --framework ${{ env.DOTNET_VERSION }}
           /p:BuildNumber=${{ env.BUILD_NUMBER }}
           /p:Version=${{ env.BUILD_NUMBER }}
           /p:WarningLevel=4
@@ -54,7 +53,6 @@ jobs:
           --configuration ${{ env.CONFIGURATION }}
           --nologo
           --runtime linux-x64
-          --framework ${{ env.DOTNET_VERSION }}
           --self-contained true
           /p:BuildNumber=${{ env.BUILD_NUMBER }}
           /p:Version=${{ env.BUILD_NUMBER }}
