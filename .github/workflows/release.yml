@@ -79,12 +79,12 @@ jobs:
         with:
           files: ${{ env.ARITFACT_PATH }}/
           recursive: true
-          dest: ${{ matrix.runtime }}.${{ env.VERSION_NUMBER }}.zip
+          dest: AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip
 
       - name: release artifacts
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: ${{ matrix.runtime }}.${{ env.VERSION_NUMBER }}.zip
+          files: AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

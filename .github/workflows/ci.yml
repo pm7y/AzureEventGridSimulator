@@ -15,7 +15,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            runtime: win-x64
+          - os: ubuntu-latest
+            runtime: linux-x64
+          - os: macos-latest
+            runtime: osx-x64
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
@@ -36,6 +43,7 @@ jobs:
       - name: restore, build and test
         run: dotnet test
           --configuration ${{ env.CONFIGURATION }}
+          --runtime ${{ matrix.runtime }}
           --nologo
           /p:WarningLevel=4
           /p:TreatWarningsAsErrors=true
