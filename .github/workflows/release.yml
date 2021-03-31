@@ -15,8 +15,10 @@ env:
 
 jobs:
   test-release:
-    runs-on: ubuntu-latest
-
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
@@ -67,15 +69,15 @@ jobs:
       - name: upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: artifacts
+          name: ${{ runner.os }}.zip
           path: ${{ env.ARITFACT_PATH }}/*
 
-      # - name: upload release asset
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ github.event.release.upload_url }}
-      #     asset_path: ${{ env.ARITFACT_PATH }}/
-      #     asset_name: ${{ runner.os }}.${{ env.BUILD_NUMBER }}
-      #     asset_content_type: application/octet-stream
+      - name: upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.ARITFACT_PATH }}/
+          asset_name: ${{ runner.os }}.${{ env.BUILD_NUMBER }}
+          asset_content_type: application/octet-stream
