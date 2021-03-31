@@ -1,0 +1,90 @@
+name: release
+# Release action which will fire when a new release is published.
+
+on:
+  release:
+    types: [created]
+
+env:
+  VERSION_NUMBER: ${{ github.event.release.tag_name }}
+  BUILD_NUMBER: ${{ github.event.release.tag_name }}.${{ github.run_number }}
+  DOTNET_VERSION: 5.0.x
+  SOLUTION_PATH: ./src/AzureEventGridSimulator.sln
+  PROJECT_PATH: ./src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
+  CONFIGURATION: Release
+  ARITFACT_PATH: ./dist
+
+jobs:
+  test-release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            runtime: win-x64
+          - os: ubuntu-latest
+            runtime: linux-x64
+          - os: macos-latest
+            runtime: osx-x64
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+    steps:
+      - name: log github context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - name: setup dotnet core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: get the code
+        uses: actions/checkout@v2
+
+      - name: test
+        run: dotnet test
+          --configuration ${{ env.CONFIGURATION }}
+          --nologo
+          --runtime ${{ matrix.runtime }}
+          /p:BuildNumber=${{ env.BUILD_NUMBER }}
+          /p:Version=${{ env.BUILD_NUMBER }}
+          /p:WarningLevel=4
+          /p:TreatWarningsAsErrors=true
+          /p:NoWarn=""
+          /p:WarningsAsErrors=""
+          --filter "Category=unit|Category=integration"
+          ${{ env.PROJECT_PATH }}
+
+      - name: publish
+        run: dotnet publish
+          --configuration ${{ env.CONFIGURATION }}
+          --nologo
+          --runtime ${{ matrix.runtime }}
+          --self-contained true
+          /p:BuildNumber=${{ env.BUILD_NUMBER }}
+          /p:Version=${{ env.BUILD_NUMBER }}
+          /p:PublishReadyToRun=false
+          /p:IncludeNativeLibrariesForSelfExtract=true
+          /p:PublishSingleFile=true
+          /p:PublishTrimmed=true
+          /p:TrimUnusedDependencies=true
+          --output ${{ env.ARITFACT_PATH }}
+          ${{ env.PROJECT_PATH }}
+
+      - name: zip artifacts
+        uses: papeloto/action-zip@v1
+        with:
+          files: ${{ env.ARITFACT_PATH }}/
+          recursive: true
+          dest: AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip
+
+      - name: release artifacts
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
