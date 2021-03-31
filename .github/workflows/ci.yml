@@ -37,8 +37,6 @@ jobs:
         run: dotnet test
           --configuration ${{ env.CONFIGURATION }}
           --nologo
-          --runtime linux-x64
-          --framework  net5.0
           /p:WarningLevel=4
           /p:TreatWarningsAsErrors=true
           /p:NoWarn=""

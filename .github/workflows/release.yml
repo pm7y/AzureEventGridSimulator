@@ -3,7 +3,7 @@ name: release
 
 on:
   release:
-    types: [created, edited, prereleased, released, published]
+    types: [ created, edited, prereleased, released, published ]
 
 env:
   BUILD_NUMBER: ${{ github.event.release.tag_name }}.${{ github.run_number }}
@@ -14,7 +14,7 @@ env:
   ARITFACT_PATH: ./dist
 
 jobs:
-  release:
+  test-release:
     runs-on: ubuntu-latest
 
     env:
@@ -39,7 +39,7 @@ jobs:
           --configuration ${{ env.CONFIGURATION }}
           --nologo
           --runtime linux-x64
-          --framework  net5.0
+          --framework ${{ env.DOTNET_VERSION }}
           /p:BuildNumber=${{ env.BUILD_NUMBER }}
           /p:Version=${{ env.BUILD_NUMBER }}
           /p:WarningLevel=4
