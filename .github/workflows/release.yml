@@ -6,6 +6,7 @@ on:
     types: [created, edited, published]
 
 env:
+  VERSION_NUMBER: ${{ github.event.release.tag_name }}
   BUILD_NUMBER: ${{ github.event.release.tag_name }}.${{ github.run_number }}
   DOTNET_VERSION: 5.0.x
   SOLUTION_PATH: ./src/AzureEventGridSimulator.sln
@@ -77,12 +78,13 @@ jobs:
         uses: papeloto/action-zip@v1
         with:
           files: ${{ env.ARITFACT_PATH }}/*
-          dest: ${{ matrix.runtime }}.${{ env.BUILD_NUMBER }}.zip
+          recursive: true
+          dest: ${{ matrix.runtime }}.${{ env.VERSION_NUMBER }}.zip
 
       - name: release artifacts
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: ${{ matrix.runtime }}.${{ env.BUILD_NUMBER }}.zip
+          files: ${{ matrix.runtime }}.${{ env.VERSION_NUMBER }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
