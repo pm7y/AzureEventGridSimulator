@@ -77,7 +77,7 @@ jobs:
       - name: zip artifacts
         uses: papeloto/action-zip@v1
         with:
-          files: ${{ env.ARITFACT_PATH }}/*
+          files: ${{ env.ARITFACT_PATH }}/
           recursive: true
           dest: ${{ matrix.runtime }}.${{ env.VERSION_NUMBER }}.zip
 
