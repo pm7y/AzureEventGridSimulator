@@ -34,10 +34,9 @@ jobs:
       - name: get the code
         uses: actions/checkout@v2
 
-      - name: build
-        run: dotnet build
+      - name: test
+        run: dotnet test
           --configuration ${{ env.CONFIGURATION }}
-          --no-incremental
           --nologo
           /p:BuildNumber=${{ env.BUILD_NUMBER }}
           /p:Version=${{ env.BUILD_NUMBER }}
@@ -45,14 +44,6 @@ jobs:
           /p:TreatWarningsAsErrors=true
           /p:NoWarn=""
           /p:WarningsAsErrors=""
-          ${{ env.SOLUTION_PATH }}
-
-      - name: test
-        run: dotnet test
-          --configuration ${{ env.CONFIGURATION }}
-          --no-restore
-          --no-build
-          --nologo
           --filter "Category=unit|Category=integration"
           ${{ env.PROJECT_PATH }}
 
@@ -60,7 +51,6 @@ jobs:
         run: dotnet publish
           --configuration ${{ env.CONFIGURATION }}
           --no-restore
-          --no-build
           --nologo
           --runtime linux-x64
           --framework  net5.0
