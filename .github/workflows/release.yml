@@ -1,0 +1,92 @@
+name: release
+# Release action which will fire when a new release is published.
+
+on:
+  release:
+    types: [published]
+
+env:
+  BUILD_NUMBER: ${{ github.event.release.tag_name }}.${{ github.run_number }}
+  DOTNET_VERSION: 5.0.x
+  SOLUTION_PATH: ./src/AzureEventGridSimulator.sln
+  PROJECT_PATH: ./src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
+  CONFIGURATION: Release
+  ARITFACT_PATH: ./dist
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+    steps:
+      - name: log github context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - name: setup dotnet core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: get the code
+        uses: actions/checkout@v2
+
+      - name: build
+        run: dotnet build
+          --configuration ${{ env.CONFIGURATION }}
+          --no-incremental
+          --nologo
+          /p:BuildNumber=${{ env.BUILD_NUMBER }}
+          /p:Version=${{ env.BUILD_NUMBER }}
+          /p:WarningLevel=4
+          /p:TreatWarningsAsErrors=true
+          /p:NoWarn=""
+          /p:WarningsAsErrors=""
+          ${{ env.SOLUTION_PATH }}
+
+      - name: test
+        run: dotnet test
+          --configuration ${{ env.CONFIGURATION }}
+          --no-restore
+          --no-build
+          --nologo
+          --filter "Category=unit|Category=integration"
+          ${{ env.PROJECT_PATH }}
+
+      - name: publish
+        run: dotnet publish
+          --configuration ${{ env.CONFIGURATION }}
+          --no-restore
+          --no-build
+          --nologo
+          --runtime win-x64
+          --framework  net5.0
+          --self-contained true
+          /p:BuildNumber=${{ env.BUILD_NUMBER }}
+          /p:Version=${{ env.BUILD_NUMBER }}
+          /p:PublishReadyToRun=false
+          /p:IncludeNativeLibrariesForSelfExtract=true
+          /p:PublishSingleFile=true
+          /p:PublishTrimmed=true
+          /p:TrimUnusedDependencies=true
+          --output ${{ env.ARITFACT_PATH }}
+          ${{ env.PROJECT_PATH }}
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: artifacts
+          path: ${{ env.ARITFACT_PATH }}/*
+
+      - name: upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.ARITFACT_PATH }}/
+          asset_name: ${{ runner.os }}.${{ env.BUILD_NUMBER }}
+          asset_content_type: application/octet-stream
