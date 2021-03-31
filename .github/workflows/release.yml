@@ -83,6 +83,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: "${{ env.ARITFACT_PATH }}/${{ matrix.runtime }}.${{ env.BUILD_NUMBER }}.zip"
+          files: ${{ matrix.runtime }}.${{ env.BUILD_NUMBER }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
