@@ -36,19 +36,19 @@ jobs:
       - name: get the code
         uses: actions/checkout@v2
 
-      - name: test
-        run: dotnet test
-          --configuration ${{ env.CONFIGURATION }}
-          --nologo
-          --runtime linux-x64
-          /p:BuildNumber=${{ env.BUILD_NUMBER }}
-          /p:Version=${{ env.BUILD_NUMBER }}
-          /p:WarningLevel=4
-          /p:TreatWarningsAsErrors=true
-          /p:NoWarn=""
-          /p:WarningsAsErrors=""
-          --filter "Category=unit|Category=integration"
-          ${{ env.PROJECT_PATH }}
+      # - name: test
+      #   run: dotnet test
+      #     --configuration ${{ env.CONFIGURATION }}
+      #     --nologo
+      #     --runtime linux-x64
+      #     /p:BuildNumber=${{ env.BUILD_NUMBER }}
+      #     /p:Version=${{ env.BUILD_NUMBER }}
+      #     /p:WarningLevel=4
+      #     /p:TreatWarningsAsErrors=true
+      #     /p:NoWarn=""
+      #     /p:WarningsAsErrors=""
+      #     --filter "Category=unit|Category=integration"
+      #     ${{ env.PROJECT_PATH }}
 
       - name: publish
         run: dotnet publish
@@ -69,7 +69,7 @@ jobs:
       - name: upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ runner.os }}.zip
+          name: ${{ runner.os }}
           path: ${{ env.ARITFACT_PATH }}/*
 
       - name: upload release asset
