@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Text;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
@@ -71,7 +71,14 @@ namespace AzureEventGridSimulator
                           .AddJsonFile("appsettings.json", true, false)
                           .AddJsonFile($"appsettings.{environmentName}.json", true, false)
                           .AddCustomSimulatorConfigFileIfSpecified(environmentAndCommandLineConfiguration)
-                          .AddEnvironmentVariablesAndCommandLine(args);
+                          .AddEnvironmentVariablesAndCommandLine(args)
+                          .AddInMemoryCollection(
+                                                 new Dictionary<string, string>
+                                                 {
+                                                     ["AEGS_Serilog__Using__0"] = "Serilog.Sinks.Console",
+                                                     ["AEGS_Serilog__Using__1"] = "Serilog.Sinks.File",
+                                                     ["AEGS_Serilog__Using__2"] = "Serilog.Sinks.Seq"
+                                                 });
 
             return builder.Build();
         }
@@ -88,8 +95,6 @@ namespace AzureEventGridSimulator
                    .ConfigureLogging(builder => { builder.ClearProviders(); })
                    .UseSerilog((context, loggerConfiguration) =>
                    {
-                       ShowSerilogUsingWarningIfNecessary(context.Configuration);
-
                        var hasAtLeastOneLogSinkBeenConfigured = context.Configuration.GetSection("Serilog:WriteTo").GetChildren().ToArray().Any();
 
                        loggerConfiguration
@@ -120,27 +125,6 @@ namespace AzureEventGridSimulator
                                               .UseHttps());
                        }
                    });
-        }
-
-        private static void ShowSerilogUsingWarningIfNecessary(IConfiguration config)
-        {
-            var usingNeedsToBeConfigured = config.GetSection("Serilog").Exists() &&
-                                           !config.GetSection("Serilog:Using").Exists();
-
-            if (usingNeedsToBeConfigured)
-            {
-                // Warn the user about the necessity for the serilog using section with .net 5.0.
-                // https://github.com/serilog/serilog-settings-configuration#net-50-single-file-applications
-                var msg = new StringBuilder();
-
-                msg.AppendLine(@"Serilog with .net 5.0 now requires a 'Using' section.");
-                msg.AppendLine("Please add the following to the 'Serilog' config section and restart: -" + Environment.NewLine);
-                msg.AppendLine(@"""Using"": [""Serilog.Sinks.Console"", ""Serilog.Sinks.File"", ""Serilog.Sinks.Seq""]");
-
-                Log.Fatal(msg.ToString());
-
-                Environment.Exit(-1);
-            }
         }
     }
 }

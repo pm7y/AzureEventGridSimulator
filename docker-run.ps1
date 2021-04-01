@@ -27,5 +27,6 @@ if ($(docker ps --all --filter="name=$containerName") -like "*$containerName*") 
                 -e AEGS_Topics__0__subscribers__1__name=AzureFunctionSubscription `
                 -e AEGS_Topics__0__subscribers__1__endpoint=http://host.docker.internal:7071/runtime/webhooks/EventGrid?functionName=ExampleFunction `
                 -e AEGS_Topics__0__subscribers__1__disableValidation=true `
+                -e AEGS_Serilog__MinimumLevel__Default=Verbose `
                 $imageName
  }

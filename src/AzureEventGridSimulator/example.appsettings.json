@@ -58,11 +58,6 @@
         "System": "Warning"
       }
     },
-    "Using": [
-      "Serilog.Sinks.Console",
-      "Serilog.Sinks.File",
-      "Serilog.Sinks.Seq"
-    ],
     "WriteTo": [
       { "Name": "Console" },
       {

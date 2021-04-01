@@ -27,7 +27,9 @@ services:
       # add an Azure Function subscriber running on localhost (host.docker.internal)
       - AEGS_Topics__0__subscribers__1__name=AzureFunctionSubscription
       - AEGS_Topics__0__subscribers__1__endpoint=http://host.docker.internal:7071/runtime/webhooks/EventGrid?functionName=ExampleFunction
-      - AEGS_Topics__0__subscribers__1__disableValidation=true
+      - AEGS_Topics__0__subscribers__1__disableValidation=false
+      # logging configuration
+      - AEGS_Serilog__MinimumLevel__Default=Verbose
 
       # you could also define topics/subscribers via via a configfile
       # - ConfigFile=/aegs/appsettings.docker.json
