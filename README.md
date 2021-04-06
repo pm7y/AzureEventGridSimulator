@@ -1,6 +1,10 @@
 # Azure Event Grid Simulator
 
-[![CI](https://github.com/pmcilreavy/AzureEventGridSimulator/workflows/ci/badge.svg)](https://github.com/pmcilreavy/AzureEventGridSimulator)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/pmcilreavy/AzureEventGridSimulator/ci)
+![GitHub contributors](https://img.shields.io/github/contributors-anon/pmcilreavy/AzureEventGridSimulator)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pmcilreavy/AzureEventGridSimulator?label=latest)
+![GitHub all releases](https://img.shields.io/github/downloads/pmcilreavy/AzureEventGridSimulator/total)
+![Docker Pulls](https://img.shields.io/docker/pulls/pmcilreavy/azureeventgridsimulator)
 
 A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library.
 
