@@ -1,4 +1,4 @@
-# start with an sdk enabled ubuntu image so we can build source
+# start with an sdk enabled alpine image so we can build source
 FROM mcr.microsoft.com/dotnet/sdk:5.0-alpine as build
 WORKDIR /source
 

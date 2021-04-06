@@ -10,11 +10,7 @@ A simulator that provides endpoints to mimic the functionality of [Azure Event G
 
 ## Configuration
 
-Topics and their subscribers are configured in the `appsettings.json` file. Alternatively, you can specify the configuration file to use by setting the `ConfigFile` command line argument, e.g.
-
-```
-AzureEventGridSimulator.exe --ConfigFile=/path/to/config.json
-```
+Topics and their subscribers are configured in the `appsettings.json` file. 
 
 You can add multiple topics. Each topic must have a unique port. Each topic can have multiple subscribers.
 An example of one topic with one subscriber is shown below.
@@ -118,56 +114,54 @@ or advanced filtering:
 }
 ```
 
+**Note:** you can also specify the configuration file to use by setting the `ConfigFile` command line argument, e.g.
+
+```
+AzureEventGridSimulator.exe --ConfigFile=/path/to/config.json
+```
+
 ## Docker
 
-You can use that emulater within the Docker, here example how to use it:
+There's a published image available on the [↗ Docker hub](https://hub.docker.com/r/pmcilreavy/azureeventgridsimulator) called `pmcilreavy/azureeventgridsimulator:latest`. 
+The image is not configured with any topics or subscribers. The configuration can be passed in via command line environment variables (as below) or via a json file.
 
-### dockerfile example
+### Docker Run
+
+Here's an example of running a container based on that image and passing in the configuration via environment variables to create 1 topic with 2 subscribers.
+In this example the folder `C:\src\AzureEventGridSimulator\docker` on the host is being shared with the container. **Note:** see the _notes_ section further below on how to create a certificate file.
 
 ```
-FROM mcr.microsoft.com/dotnet/sdk:3.1 as build
-WORKDIR /source
-
-# restores nuget packages
-COPY AzureEventGridSimulator/src/AzureEventGridSimulator/*.csproj .
-RUN dotnet restore
-
-# copy source code
-COPY AzureEventGridSimulator/src/AzureEventGridSimulator .
-
-# builds the source code using the SDK
-RUN dotnet publish -c release -o /app
-
-# runs the deployable on a separate image
-# that is shipped with the .NET Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:3.1
-WORKDIR /app
-COPY --from=build /app .
-
-USER ContainerAdministrator
-# if certificate is needed
-#COPY YOUR_KEY_HERE.pfx .
-#ENV ASPNETCORE_Kestrel__Certificates__Default__Password="YOUR_KEY_PASSWORD_HERE"
-#ENV ASPNETCORE_Kestrel__Certificates__Default__Path="C:\\app\\YOUR_KEY_HERE.pfx"
-ENV ASPNETCORE_ENVIRONMENT=Development
-
-ENTRYPOINT ["AzureEventGridSimulator.exe"]
+docker run `
+        --detach `
+        --publish 60101:60101 `
+        -v C:\src\AzureEventGridSimulator\docker:/aegs `
+        -e ASPNETCORE_ENVIRONMENT=Development `
+        -e ASPNETCORE_Kestrel__Certificates__Default__Path=/aegs/azureEventGridSimulator.pfx `
+        -e ASPNETCORE_Kestrel__Certificates__Default__Password=Y0urSup3rCrypt1cPa55w0rd! `
+        -e TZ=Australia/Brisbane `
+        -e AEGS_Topics__0__name=ExampleTopic `
+        -e AEGS_Topics__0__port=60101 `
+        -e AEGS_Topics__0__key=TheLocal+DevelopmentKey= `
+        -e AEGS_Topics__0__subscribers__0__name=RequestCatcherSubscription `
+        -e AEGS_Topics__0__subscribers__0__endpoint=https://azureeventgridsimulator.requestcatcher.com/ `
+        -e AEGS_Topics__0__subscribers__0__disableValidation=true `
+        -e AEGS_Topics__0__subscribers__1__name=AzureFunctionSubscription `
+        -e AEGS_Topics__0__subscribers__1__endpoint=http://host.docker.internal:7071/runtime/webhooks/EventGrid?functionName=ExampleFunction `
+        -e AEGS_Topics__0__subscribers__1__disableValidation=true `
+        -e AEGS_Serilog__MinimumLevel__Default=Verbose `
+        pmcilreavy/azureeventgridsimulator:latest
 ```
 
-#### Docker Build
+### Docker Compose
 
-`docker build -t {TAG_NAME} .`
+There is a `docker-compose.yml` file in the src folder that you can use (or modify) to build your own Docker image.
 
-#### Simple Run command
-
-`docker run -it --rm {TAG_NAME}`
-
-#### Customizable Run command
-
-Alternatively, you can specify the configuration file, you have to map you config file  
-${PWD} - your current folder  
-C:\temp\ - folder inside the container  
-`docker run -it --rm -v ${PWD}:C:\temp\ {TAG_NAME} --entrypoint AzureEventGridSimulator.exe --ConfigFile=C:\temp\{NAME OF YOUR CONFIGURATION FILE}`
+```
+docker-compose up   --build `
+                    --force-recreate `
+                    --remove-orphans `
+                    --detach
+```
 
 ## Using the Simulator
 
@@ -213,9 +207,17 @@ await client.PublishEventsWithHttpMessagesAsync(
 
 ### HTTPs
 
-Azure Event Grid only accepts connections over https and so the simulator only supports _https_ too. The simulator uses the dotnet development certificate to secure each topic port. You can ensure that this certifcate is installed and trusted by running the following command.
+Azure Event Grid only accepts connections over https and so the simulator only supports _https_ too.
+
+The simulator will attempt to use the dotnet development certificate to secure each topic port. 
+You can ensure that this certificate is installed and trusted by running the following command.
 
 `dotnet dev-certs https --trust`
+
+You can also generate a certificate file (suitable for using with a Docker container) like so.
+
+`dotnet dev-certs https --export-path ./docker/azureEventGridSimulator.pfx --password Y0urSup3rCrypt1cPa55w0rd!`
+
 
 ### Subscribers
 
