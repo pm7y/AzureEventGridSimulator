@@ -44,19 +44,17 @@ jobs:
       - name: get the code
         uses: actions/checkout@v2
 
-      - name: test
+      - name: build and test
         run: dotnet test
           --configuration ${{ env.CONFIGURATION }}
-          --nologo
           --runtime ${{ matrix.runtime }}
-          /p:BuildNumber=${{ env.BUILD_NUMBER }}
-          /p:Version=${{ env.BUILD_NUMBER }}
+          --nologo
           /p:WarningLevel=4
           /p:TreatWarningsAsErrors=true
           /p:NoWarn=""
           /p:WarningsAsErrors=""
           --filter "Category=unit|Category=integration"
-          ${{ env.PROJECT_PATH }}
+          ${{ env.SOLUTION_PATH }}
 
       - name: publish
         run: dotnet publish
