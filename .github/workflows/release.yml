@@ -62,7 +62,6 @@ jobs:
 
       - name: restore
         run: dotnet restore
-          --configuration ${{ env.CONFIGURATION }}
           --force
           --runtime ${{ matrix.runtime }}
           --nologo
