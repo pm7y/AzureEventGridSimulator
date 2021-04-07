@@ -3,7 +3,7 @@ name: release
 
 on:
   release:
-    types: [created]
+    types: [created, edited]
 
 env:
   VERSION_NUMBER: ${{ github.event.release.tag_name }}
@@ -47,6 +47,14 @@ jobs:
       - name: clean
         run: dotnet clean
           --configuration ${{ env.CONFIGURATION }}
+          --nologo
+          ${{ env.SOLUTION_PATH }}
+
+      - name: restore
+        run: dotnet restore
+          --configuration ${{ env.CONFIGURATION }}
+          --force
+          --runtime ${{ matrix.runtime }}
           --nologo
           ${{ env.SOLUTION_PATH }}
 
