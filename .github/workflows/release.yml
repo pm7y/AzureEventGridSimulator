@@ -3,7 +3,7 @@ name: release
 
 on:
   release:
-    types: [created]
+    types: [published]
 
 env:
   VERSION_NUMBER: ${{ github.event.release.tag_name }}
