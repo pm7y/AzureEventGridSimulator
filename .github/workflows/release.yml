@@ -44,23 +44,41 @@ jobs:
       - name: get the code
         uses: actions/checkout@v2
 
-      - name: build and test
-        run: dotnet test
+      - name: clean
+        run: dotnet clean
+          --configuration ${{ env.CONFIGURATION }}
+          --nologo
+          ${{ env.SOLUTION_PATH }}
+
+      - name: build
+        run: dotnet build
           --configuration ${{ env.CONFIGURATION }}
           --runtime ${{ matrix.runtime }}
+          --no-incremental
           --nologo
           /p:WarningLevel=4
           /p:TreatWarningsAsErrors=true
           /p:NoWarn=""
           /p:WarningsAsErrors=""
+          ${{ env.SOLUTION_PATH }}
+
+      - name: test
+        run: dotnet test
+          --configuration ${{ env.CONFIGURATION }}
+          --runtime ${{ matrix.runtime }}
+          --no-restore
+          --no-build
+          --nologo
           --filter "Category=unit|Category=integration"
           ${{ env.SOLUTION_PATH }}
 
       - name: publish
         run: dotnet publish
           --configuration ${{ env.CONFIGURATION }}
-          --nologo
           --runtime ${{ matrix.runtime }}
+          --no-restore
+          --no-build
+          --nologo
           --self-contained true
           /p:BuildNumber=${{ env.BUILD_NUMBER }}
           /p:Version=${{ env.BUILD_NUMBER }}
