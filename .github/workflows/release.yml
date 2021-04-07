@@ -89,7 +89,6 @@ jobs:
           --configuration ${{ env.CONFIGURATION }}
           --runtime ${{ matrix.runtime }}
           --no-restore
-          --no-build
           --nologo
           --self-contained true
           /p:BuildNumber=${{ env.BUILD_NUMBER }}
