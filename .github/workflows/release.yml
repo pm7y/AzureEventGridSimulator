@@ -2,12 +2,22 @@ name: release
 # Release action which will fire when a new release is published.
 
 on:
-  release:
-    types: [created, edited]
+  # release:
+  #   types: [created, edited]
+
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag name e.g. '1.0.1'"
+        required: true
+      home:
+        description: "location"
+        required: false
+        default: "The Octoverse"
 
 env:
-  VERSION_NUMBER: ${{ github.event.release.tag_name }}
-  BUILD_NUMBER: ${{ github.event.release.tag_name }}.${{ github.run_number }}
+  VERSION_NUMBER: ${{ github.event.inputs.tag_name }}
+  BUILD_NUMBER: ${{ github.event.inputs.tag_name }}.${{ github.run_number }}
   DOTNET_VERSION: 5.0.x
   SOLUTION_PATH: ./src/AzureEventGridSimulator.sln
   PROJECT_PATH: ./src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
@@ -107,8 +117,10 @@ jobs:
 
       - name: release artifacts
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        #if: startsWith(github.ref, 'refs/tags/')
         with:
+          name: ${{ env.VERSION_NUMBER }}
+          tag_name: ${{ env.VERSION_NUMBER }}
           files: AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
