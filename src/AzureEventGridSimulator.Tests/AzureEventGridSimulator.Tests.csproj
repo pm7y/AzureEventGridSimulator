@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Messaging.EventGrid" Version="4.7.0" />
+    <PackageReference Include="Azure.Messaging.EventGrid" Version="4.10.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="5.0.9" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
