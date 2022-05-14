@@ -1,5 +1,5 @@
 # start with an sdk enabled alpine image so we can build source
-FROM mcr.microsoft.com/dotnet/sdk:5.0-alpine as build
+FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine as build
 WORKDIR /source
 
 # copy source
@@ -18,7 +18,7 @@ RUN dotnet publish -c release -o /artifact \
     -p:TrimUnusedDependencies=true
 
 # add binary artifact to new runtime-deps only image
-FROM mcr.microsoft.com/dotnet/runtime-deps:5.0-alpine
+FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-alpine
 WORKDIR /app
 
 # add tzdata incase we want to set the timezone

@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: 5.0.x
+  DOTNET_VERSION: 6.0.x
   SOLUTION_PATH: ./src/AzureEventGridSimulator.sln
   CONFIGURATION: Release
 
