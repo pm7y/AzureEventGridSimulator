@@ -2,29 +2,28 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace AzureEventGridSimulator.Infrastructure
+namespace AzureEventGridSimulator.Infrastructure;
+
+public class ValidationIpAddress
 {
-    public class ValidationIpAddress
+    private readonly string _ipAddress;
+
+    public ValidationIpAddress()
     {
-        private readonly string _ipAddress;
+        var hostName = Dns.GetHostName();
+        var addresses = Dns.GetHostAddresses(hostName);
+        _ipAddress = addresses.First(ip => ip.AddressFamily == AddressFamily.InterNetwork &&
+                                           !ip.ToString().StartsWith("172") &&
+                                           !IPAddress.IsLoopback(ip)).ToString();
+    }
 
-        public ValidationIpAddress()
-        {
-            var hostName = Dns.GetHostName();
-            var addresses = Dns.GetHostAddresses(hostName);
-            _ipAddress = addresses.First(ip => ip.AddressFamily == AddressFamily.InterNetwork &&
-                                               !ip.ToString().StartsWith("172") &&
-                                               !IPAddress.IsLoopback(ip)).ToString();
-        }
+    public override string ToString()
+    {
+        return _ipAddress;
+    }
 
-        public override string ToString()
-        {
-            return _ipAddress;
-        }
-
-        public static implicit operator string(ValidationIpAddress d)
-        {
-            return d.ToString();
-        }
+    public static implicit operator string(ValidationIpAddress d)
+    {
+        return d.ToString();
     }
 }

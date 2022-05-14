@@ -9,35 +9,34 @@ using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AzureEventGridSimulator.Controllers
+namespace AzureEventGridSimulator.Controllers;
+
+[Route("/validate")]
+[ApiVersion(Constants.SupportedApiVersion)]
+[ApiController]
+public class SubscriptionValidationController : ControllerBase
 {
-    [Route("/validate")]
-    [ApiVersion(Constants.SupportedApiVersion)]
-    [ApiController]
-    public class SubscriptionValidationController : ControllerBase
+    private readonly IMediator _mediator;
+    private readonly SimulatorSettings _simulatorSettings;
+
+    public SubscriptionValidationController(SimulatorSettings simulatorSettings,
+                                            IMediator mediator)
     {
-        private readonly IMediator _mediator;
-        private readonly SimulatorSettings _simulatorSettings;
+        _simulatorSettings = simulatorSettings;
+        _mediator = mediator;
+    }
 
-        public SubscriptionValidationController(SimulatorSettings simulatorSettings,
-                                                IMediator mediator)
+    [HttpGet]
+    public async Task<IActionResult> Get(Guid id)
+    {
+        var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
+        var isValid = await _mediator.Send(new ValidateSubscriptionCommand(topicSettingsForCurrentRequestPort, id));
+
+        if (!isValid)
         {
-            _simulatorSettings = simulatorSettings;
-            _mediator = mediator;
+            return BadRequest(new ErrorMessage(HttpStatusCode.BadRequest, "The validation code was not correct.", null));
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Get(Guid id)
-        {
-            var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
-            var isValid = await _mediator.Send(new ValidateSubscriptionCommand(topicSettingsForCurrentRequestPort, id));
-
-            if (!isValid)
-            {
-                return BadRequest(new ErrorMessage(HttpStatusCode.BadRequest, "The validation code was not correct.", null));
-            }
-
-            return Ok("Webhook successfully validated as a subscription endpoint");
-        }
+        return Ok("Webhook successfully validated as a subscription endpoint");
     }
 }

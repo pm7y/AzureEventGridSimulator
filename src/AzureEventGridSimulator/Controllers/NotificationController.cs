@@ -9,32 +9,31 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator.Controllers
+namespace AzureEventGridSimulator.Controllers;
+
+[Route("/api/events")]
+[ApiVersion(Constants.SupportedApiVersion)]
+[ApiController]
+public class NotificationController : ControllerBase
 {
-    [Route("/api/events")]
-    [ApiVersion(Constants.SupportedApiVersion)]
-    [ApiController]
-    public class NotificationController : ControllerBase
+    private readonly IMediator _mediator;
+    private readonly SimulatorSettings _simulatorSettings;
+
+    public NotificationController(SimulatorSettings simulatorSettings,
+                                  IMediator mediator)
     {
-        private readonly IMediator _mediator;
-        private readonly SimulatorSettings _simulatorSettings;
+        _mediator = mediator;
+        _simulatorSettings = simulatorSettings;
+    }
 
-        public NotificationController(SimulatorSettings simulatorSettings,
-                                      IMediator mediator)
-        {
-            _mediator = mediator;
-            _simulatorSettings = simulatorSettings;
-        }
+    [HttpPost]
+    public async Task<IActionResult> Post()
+    {
+        var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
+        var eventsFromCurrentRequestBody = JsonConvert.DeserializeObject<EventGridEvent[]>(await HttpContext.RequestBody());
 
-        [HttpPost]
-        public async Task<IActionResult> Post()
-        {
-            var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
-            var eventsFromCurrentRequestBody = JsonConvert.DeserializeObject<EventGridEvent[]>(await HttpContext.RequestBody());
+        await _mediator.Send(new SendNotificationEventsToSubscriberCommand(eventsFromCurrentRequestBody, topicSettingsForCurrentRequestPort));
 
-            await _mediator.Send(new SendNotificationEventsToSubscriberCommand(eventsFromCurrentRequestBody, topicSettingsForCurrentRequestPort));
-
-            return Ok();
-        }
+        return Ok();
     }
 }

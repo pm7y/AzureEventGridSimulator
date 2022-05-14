@@ -4,76 +4,75 @@ using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.Unit.Filtering
+namespace AzureEventGridSimulator.Tests.UnitTests.Filtering;
+
+[Trait("Category", "unit")]
+public class FilterSettingsValidationTests
 {
-    [Trait("Category", "unit")]
-    public class FilterSettingsValidationTests
+    private static SimulatorSettings GetValidSimulatorSettings(FilterSetting filter)
     {
-        private static SimulatorSettings GetValidSimulatorSettings(FilterSetting filter)
+        return new SimulatorSettings
         {
-            return new()
+            Topics = new[]
             {
-                Topics = new[]
+                new TopicSettings
                 {
-                    new TopicSettings
+                    Key = "TopicKey",
+                    Name = "TopicName",
+                    Port = 12345,
+                    Subscribers = new List<SubscriptionSettings>
                     {
-                        Key = "TopicKey",
-                        Name = "TopicName",
-                        Port = 12345,
-                        Subscribers = new List<SubscriptionSettings>
+                        new()
                         {
-                            new()
-                            {
-                                Name = "SubscriberName",
-                                Filter = filter
-                            }
-                        }.ToArray()
-                    }
+                            Name = "SubscriberName",
+                            Filter = filter
+                        }
+                    }.ToArray()
                 }
-            };
-        }
+            }
+        };
+    }
 
-        private static AdvancedFilterSetting GetValidAdvancedFilter()
+    private static AdvancedFilterSetting GetValidAdvancedFilter()
+    {
+        return new AdvancedFilterSetting
         {
-            return new()
-            {
-                Key = "key",
-                OperatorType = AdvancedFilterSetting.OperatorTypeEnum.BoolEquals,
-                Value = true
-            };
-        }
+            Key = "key",
+            OperatorType = AdvancedFilterSetting.OperatorTypeEnum.BoolEquals,
+            Value = true
+        };
+    }
 
-        [Theory]
-        [InlineData(0)]
-        [InlineData(1)]
-        [InlineData(5)]
-        public void TestFilterSettingsValidationWithValidNumberOfAdvancedFilterSettings(byte n)
-        {
-            Should.NotThrow(() =>
-            {
-                var filterConfig = new FilterSetting { AdvancedFilters = new List<AdvancedFilterSetting>() };
-                for (byte i = 0; i < n; i++)
-                {
-                    filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
-                }
-
-                GetValidSimulatorSettings(filterConfig).Validate();
-            });
-        }
-
-        [Fact]
-        public void TestFilterSettingsValidationWithSixAdvancedFilters()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(5)]
+    public void TestFilterSettingsValidationWithValidNumberOfAdvancedFilterSettings(byte n)
+    {
+        Should.NotThrow(() =>
         {
             var filterConfig = new FilterSetting { AdvancedFilters = new List<AdvancedFilterSetting>() };
-            for (var i = 0; i < 6; i++)
+            for (byte i = 0; i < n; i++)
             {
                 filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
             }
 
-            var exception = Should.Throw<ArgumentException>(() => GetValidSimulatorSettings(filterConfig).Validate());
+            GetValidSimulatorSettings(filterConfig).Validate();
+        });
+    }
 
-            exception.ParamName.ShouldBe(nameof(filterConfig.AdvancedFilters));
-            exception.Message.ShouldBe("Advanced filtering is limited to five advanced filters per event grid subscription. (Parameter 'AdvancedFilters')");
+    [Fact]
+    public void TestFilterSettingsValidationWithSixAdvancedFilters()
+    {
+        var filterConfig = new FilterSetting { AdvancedFilters = new List<AdvancedFilterSetting>() };
+        for (var i = 0; i < 6; i++)
+        {
+            filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
         }
+
+        var exception = Should.Throw<ArgumentException>(() => GetValidSimulatorSettings(filterConfig).Validate());
+
+        exception.ParamName.ShouldBe(nameof(filterConfig.AdvancedFilters));
+        exception.Message.ShouldBe("Advanced filtering is limited to five advanced filters per event grid subscription. (Parameter 'AdvancedFilters')");
     }
 }

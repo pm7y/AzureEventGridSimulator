@@ -4,15 +4,15 @@ using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.Unit
+namespace AzureEventGridSimulator.Tests.UnitTests;
+
+[Trait("Category", "unit")]
+public class ConfigurationLoadingTests
 {
-    [Trait("Category", "unit")]
-    public class ConfigurationLoadingTests
+    [Fact]
+    public void TestConfigurationLoad()
     {
-        [Fact]
-        public void TestConfigurationLoad()
-        {
-            const string json = @"
+        const string json = @"
 {
     ""topics"": [{
         ""name"": ""MyAwesomeTopic"",
@@ -47,16 +47,15 @@ namespace AzureEventGridSimulator.Tests.Unit
     }]
 }";
 
-            var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
 
-            settings.ShouldNotBeNull();
-            settings.Topics.ShouldNotBeNull();
-            settings.Topics.ShouldAllBe(t =>
-                                            t.Subscribers.All(s => s.Filter != null) &&
-                                            t.Subscribers.All(s => s.Filter.AdvancedFilters != null)
-                                       );
+        settings.ShouldNotBeNull();
+        settings.Topics.ShouldNotBeNull();
+        settings.Topics.ShouldAllBe(t =>
+                                        t.Subscribers.All(s => s.Filter != null) &&
+                                        t.Subscribers.All(s => s.Filter.AdvancedFilters != null)
+                                   );
 
-            Should.NotThrow(() => { settings.Validate(); });
-        }
+        Should.NotThrow(() => { settings.Validate(); });
     }
 }

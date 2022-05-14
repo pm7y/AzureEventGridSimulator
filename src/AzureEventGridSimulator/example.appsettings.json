@@ -1,6 +1,5 @@
 {
   "topics": [
-
     {
       "name": "MyAwesomeTopic",
       "port": 60101,
@@ -13,21 +12,18 @@
         }
       ]
     },
-
     {
       "name": "ATopicWithNoSubscribers",
       "port": 60102,
       "key": "TheLocal+DevelopmentKey=",
       "subscribers": [
-        
       ]
     },
-
     {
       "name": "ADisabledTopic",
       "port": 60103,
       "key": "TheLocal+DevelopmentKey=",
-      "disabled": true, 
+      "disabled": true,
       "subscribers": [
         {
           "name": "LocalWebApiSubscription",
@@ -35,7 +31,6 @@
         }
       ]
     },
-
     {
       "name": "RequestCatcherTopic",
       "port": 60104,
@@ -48,7 +43,6 @@
         }
       ]
     }
-    
   ],
   "Serilog": {
     "MinimumLevel": {

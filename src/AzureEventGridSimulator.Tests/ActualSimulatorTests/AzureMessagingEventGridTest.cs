@@ -7,93 +7,93 @@ using Azure.Messaging.EventGrid;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.ActualSimulatorTests
+namespace AzureEventGridSimulator.Tests.ActualSimulatorTests;
+
+/// <summary>
+/// Simple tests to check that we can send an event via Azure.Messaging.EventGrid library.
+/// NOTE: These tests require (and automatically start) an actual instance of AzureEventGridSimulator.exe as there is no way to inject an HttpClient (from a WebApplicationFactory)
+/// into Azure.Messaging.EventGrid.
+/// </summary>
+[Collection(nameof(ActualSimulatorFixtureCollection))]
+[Trait("Category", "integration-actual")]
+public class AzureMessagingEventGridTest
 {
-    /// <summary>
-    /// Simple tests to check that we can send an event via Azure.Messaging.EventGrid library.
-    /// NOTE: These tests require (and automatically start) an actual instance of AzureEventGridSimulator.exe as there is no way to inject an HttpClient (from a WebApplicationFactory)
-    /// into Azure.Messaging.EventGrid.
-    /// </summary>
-    [Collection(nameof(ActualSimulatorFixtureCollection))]
-    [Trait("Category", "integration-actual")]
-    public class AzureMessagingEventGridTest
+    // ReSharper disable once NotAccessedField.Local
+    private readonly ActualSimulatorFixture _actualSimulatorFixture;
+
+    public AzureMessagingEventGridTest(ActualSimulatorFixture actualSimulatorFixture)
     {
-        private readonly ActualSimulatorFixture _actualSimulatorFixture;
+        _actualSimulatorFixture = actualSimulatorFixture;
+    }
 
-        public AzureMessagingEventGridTest(ActualSimulatorFixture actualSimulatorFixture)
+    [Fact]
+    public async Task GivenValidEvent_WhenUriContainsNonStandardPort_ThenItShouldBeAccepted()
+    {
+        var client = new EventGridPublisherClient(
+                                                  new Uri("https://localhost:60101/api/events"),
+                                                  new AzureKeyCredential("TheLocal+DevelopmentKey="),
+                                                  new EventGridPublisherClientOptions
+                                                      { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
+
+        var response = await client.SendEventAsync(new EventGridEvent("/the/subject", "The.Event.Type", "v1", new { Id = 1, Foo = "Bar" }));
+
+        response.Status.ShouldBe((int)HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GivenValidEvents_WhenUriContainsNonStandardPort_TheyShouldBeAccepted()
+    {
+        var client = new EventGridPublisherClient(
+                                                  new Uri("https://localhost:60101/api/events"),
+                                                  new AzureKeyCredential("TheLocal+DevelopmentKey="),
+                                                  new EventGridPublisherClientOptions
+                                                      { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
+
+        var events = new[]
         {
-            _actualSimulatorFixture = actualSimulatorFixture;
-        }
+            new EventGridEvent("/the/subject1", "The.Event.Type1", "v1", new { Id = 1, Foo = "Bar" }),
+            new EventGridEvent("/the/subject2", "The.Event.Type2", "v1", new { Id = 2, Foo = "Baz" })
+        };
 
-        [Fact]
-        public async Task GivenValidEvent_WhenUriContainsNonStandardPort_ThenItShouldBeAccepted()
+        var response = await client.SendEventsAsync(events);
+
+        response.Status.ShouldBe((int)HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GivenValidEvent_WhenUriContainsNonExistentPort_ThenItShouldNotBeAccepted()
+    {
+        var client = new EventGridPublisherClient(
+                                                  new Uri("https://localhost:19999/api/events"),
+                                                  new AzureKeyCredential("TheLocal+DevelopmentKey="),
+                                                  new EventGridPublisherClientOptions
+                                                      { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
+
+        var exception = await Should.ThrowAsync<RequestFailedException>(async () =>
         {
-            var client = new EventGridPublisherClient(
-                                                      new Uri("https://localhost:60101/api/events"),
-                                                      new AzureKeyCredential("TheLocal+DevelopmentKey="),
-                                                      new EventGridPublisherClientOptions
-                                                          { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
+            await client.SendEventAsync(new EventGridEvent("/the/subject", "The.Event.Type", "v1",
+                                                           new { Id = 1, Foo = "Bar" }));
+        });
 
-            var response = await client.SendEventAsync(new EventGridEvent("/the/subject", "The.Event.Type", "v1", new { Id = 1, Foo = "Bar" }));
+        exception.Message.ShouldContain("actively refused");
+        exception.Status.ShouldBe(0);
+    }
 
-            response.Status.ShouldBe((int)HttpStatusCode.OK);
-        }
+    [Fact]
+    public async Task GivenValidEvent_WhenKeyIsWrong_ThenItShouldNotBeAccepted()
+    {
+        var client = new EventGridPublisherClient(
+                                                  new Uri("https://localhost:60101/api/events"),
+                                                  new AzureKeyCredential("TheWrongLocal+DevelopmentKey="),
+                                                  new EventGridPublisherClientOptions
+                                                      { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
 
-        [Fact]
-        public async Task GivenValidEvents_WhenUriContainsNonStandardPort_TheyShouldBeAccepted()
+        var exception = await Should.ThrowAsync<RequestFailedException>(async () =>
         {
-            var client = new EventGridPublisherClient(
-                                                      new Uri("https://localhost:60101/api/events"),
-                                                      new AzureKeyCredential("TheLocal+DevelopmentKey="),
-                                                      new EventGridPublisherClientOptions
-                                                          { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
+            await client.SendEventAsync(new EventGridEvent("/the/subject", "The.Event.Type", "v1",
+                                                           new { Id = 1, Foo = "Bar" }));
+        });
 
-            var events = new[]
-            {
-                new EventGridEvent("/the/subject1", "The.Event.Type1", "v1", new { Id = 1, Foo = "Bar" }),
-                new EventGridEvent("/the/subject2", "The.Event.Type2", "v1", new { Id = 2, Foo = "Baz" })
-            };
-
-            var response = await client.SendEventsAsync(events);
-
-            response.Status.ShouldBe((int)HttpStatusCode.OK);
-        }
-
-        [Fact]
-        public async Task GivenValidEvent_WhenUriContainsNonExistentPort_ThenItShouldNotBeAccepted()
-        {
-            var client = new EventGridPublisherClient(
-                                                      new Uri("https://localhost:19999/api/events"),
-                                                      new AzureKeyCredential("TheLocal+DevelopmentKey="),
-                                                      new EventGridPublisherClientOptions
-                                                          { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
-
-            var exception = await Should.ThrowAsync<RequestFailedException>(async () =>
-            {
-                await client.SendEventAsync(new EventGridEvent("/the/subject", "The.Event.Type", "v1",
-                                                               new { Id = 1, Foo = "Bar" }));
-            });
-
-            exception.Message.ShouldContain("actively refused");
-            exception.Status.ShouldBe(0);
-        }
-
-        [Fact]
-        public async Task GivenValidEvent_WhenKeyIsWrong_ThenItShouldNotBeAccepted()
-        {
-            var client = new EventGridPublisherClient(
-                                                      new Uri("https://localhost:60101/api/events"),
-                                                      new AzureKeyCredential("TheWrongLocal+DevelopmentKey="),
-                                                      new EventGridPublisherClientOptions
-                                                          { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
-
-            var exception = await Should.ThrowAsync<RequestFailedException>(async () =>
-            {
-                await client.SendEventAsync(new EventGridEvent("/the/subject", "The.Event.Type", "v1",
-                                                               new { Id = 1, Foo = "Bar" }));
-            });
-
-            exception.Status.ShouldBe((int)HttpStatusCode.Unauthorized);
-        }
+        exception.Status.ShouldBe((int)HttpStatusCode.Unauthorized);
     }
 }

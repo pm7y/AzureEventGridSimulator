@@ -3,34 +3,33 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator.Infrastructure.Settings
+namespace AzureEventGridSimulator.Infrastructure.Settings;
+
+public class SubscriptionSettings
 {
-    public class SubscriptionSettings
-    {
-        private readonly DateTime _expired = DateTime.UtcNow.AddMinutes(5);
+    private readonly DateTime _expired = DateTime.UtcNow.AddMinutes(5);
 
-        [JsonProperty(PropertyName = "name", Required = Required.Always)]
-        public string Name { get; set; }
+    [JsonProperty(PropertyName = "name", Required = Required.Always)]
+    public string Name { get; set; }
 
-        [JsonProperty(PropertyName = "endpoint", Required = Required.Always)]
-        public string Endpoint { get; set; }
+    [JsonProperty(PropertyName = "endpoint", Required = Required.Always)]
+    public string Endpoint { get; set; }
 
-        [JsonProperty(PropertyName = "filter", Required = Required.Default)]
-        public FilterSetting Filter { get; set; }
+    [JsonProperty(PropertyName = "filter", Required = Required.Default)]
+    public FilterSetting Filter { get; set; }
 
-        [JsonProperty(PropertyName = "disableValidation", Required = Required.Default)]
-        public bool DisableValidation { get; set; }
+    [JsonProperty(PropertyName = "disableValidation", Required = Required.Default)]
+    public bool DisableValidation { get; set; }
 
-        [JsonProperty(PropertyName = "disabled", Required = Required.Default)]
-        public bool Disabled { get; set; }
+    [JsonProperty(PropertyName = "disabled", Required = Required.Default)]
+    public bool Disabled { get; set; }
 
-        [JsonIgnore]
-        public SubscriptionValidationStatus ValidationStatus { get; set; }
+    [JsonIgnore]
+    public SubscriptionValidationStatus ValidationStatus { get; set; }
 
-        [JsonIgnore]
-        public Guid ValidationCode => new(Encoding.UTF8.GetBytes(Endpoint).Reverse().Take(16).ToArray());
+    [JsonIgnore]
+    public Guid ValidationCode => new(Encoding.UTF8.GetBytes(Endpoint).Reverse().Take(16).ToArray());
 
-        [JsonIgnore]
-        public bool ValidationPeriodExpired => DateTime.UtcNow > _expired;
-    }
+    [JsonIgnore]
+    public bool ValidationPeriodExpired => DateTime.UtcNow > _expired;
 }
