@@ -6,11 +6,11 @@
 ![GitHub all releases](https://img.shields.io/github/downloads/pmcilreavy/AzureEventGridSimulator/total)
 ![Docker Pulls](https://img.shields.io/docker/pulls/pmcilreavy/azureeventgridsimulator)
 
-A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library.
+A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library. NOTE: Currently only the `EventGrid` event schema is supported. Support for the `CloudEvent` schema may be added at a future date.
 
 ## Configuration
 
-Topics and their subscribers are configured in the `appsettings.json` file. 
+Topics and their subscribers are configured in the `appsettings.json` file.
 
 You can add multiple topics. Each topic must have a unique port. Each topic can have multiple subscribers.
 An example of one topic with one subscriber is shown below.
@@ -122,7 +122,7 @@ AzureEventGridSimulator.exe --ConfigFile=/path/to/config.json
 
 ## Docker
 
-There's a published image available on the [↗ Docker hub](https://hub.docker.com/r/pmcilreavy/azureeventgridsimulator) called `pmcilreavy/azureeventgridsimulator:latest`. 
+There's a published image available on the [↗ Docker hub](https://hub.docker.com/r/pmcilreavy/azureeventgridsimulator) called `pmcilreavy/azureeventgridsimulator:latest`.
 The image is not configured with any topics or subscribers. The configuration can be passed in via command line environment variables (as below) or via a json file.
 
 ### Docker Run
@@ -209,7 +209,7 @@ await client.PublishEventsWithHttpMessagesAsync(
 
 Azure Event Grid only accepts connections over https and so the simulator only supports _https_ too.
 
-The simulator will attempt to use the dotnet development certificate to secure each topic port. 
+The simulator will attempt to use the dotnet development certificate to secure each topic port.
 You can ensure that this certificate is installed and trusted by running the following command.
 
 `dotnet dev-certs https --trust`
@@ -217,7 +217,6 @@ You can ensure that this certificate is installed and trusted by running the fol
 You can also generate a certificate file (suitable for using with a Docker container) like so.
 
 `dotnet dev-certs https --export-path ./docker/azureEventGridSimulator.pfx --password Y0urSup3rCrypt1cPa55w0rd!`
-
 
 ### Subscribers
 
@@ -263,6 +262,7 @@ It posts the payload to https://host:port and drops the query uri. All of the ex
 
 Some features that could be added if there was a need for them: -
 
+- `CloudEvent` schema support.
 - Subscriber retries & dead lettering. https://docs.microsoft.com/en-us/azure/event-grid/delivery-and-retry
 - Certificate configuration in `appsettings.json`.
 - Subscriber token auth
