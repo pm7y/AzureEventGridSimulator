@@ -75,34 +75,50 @@ public class Program
 
     private static async Task OnApplicationStarted(IApplicationBuilder app, IHostApplicationLifetime lifetime)
     {
-        Log.Information("It's Alive !");
-
-        var simulatorSettings = (SimulatorSettings)app.ApplicationServices.GetService(typeof(SimulatorSettings));
-
-        if (simulatorSettings is null)
+        try
         {
-            Log.Fatal("Settings are not found. The application will now exit");
-            lifetime.StopApplication();
-            return;
-        }
+            Log.Verbose("Started");
 
-        if (!simulatorSettings.Topics.Any())
-        {
-            Log.Fatal("There are no configured topics. The application will now exit");
-            lifetime.StopApplication();
-            return;
-        }
+            var simulatorSettings = app.ApplicationServices.GetService<SimulatorSettings>();
 
-        if (simulatorSettings.Topics.All(o => o.Disabled))
-        {
-            Log.Fatal("All of the configured topics are disabled. The application will now exit");
-            lifetime.StopApplication();
-            return;
-        }
+            if (simulatorSettings is null)
+            {
+                Log.Fatal("Settings are not found. The application will now exit");
+                lifetime.StopApplication();
+                return;
+            }
 
-        if (app.ApplicationServices.GetService(typeof(IMediator)) is IMediator mediator)
-        {
+            if (!simulatorSettings.Topics.Any())
+            {
+                Log.Fatal("There are no configured topics. The application will now exit");
+                lifetime.StopApplication();
+                return;
+            }
+
+            if (simulatorSettings.Topics.All(o => o.Disabled))
+            {
+                Log.Fatal("All of the configured topics are disabled. The application will now exit");
+                lifetime.StopApplication();
+                return;
+            }
+
+            var mediator = app.ApplicationServices.GetService<IMediator>();
+
+            if (mediator is null)
+            {
+                Log.Fatal("Required component was not found. The application will now exit");
+                lifetime.StopApplication();
+                return;
+            }
+
             await mediator.Send(new ValidateAllSubscriptionsCommand());
+
+            Log.Information("It's alive !");
+        }
+        catch (Exception e)
+        {
+            Log.Fatal(e, "It died !");
+            lifetime.StopApplication();
         }
     }
 
@@ -160,12 +176,11 @@ public class Program
         builder.Host.ConfigureServices(services =>
         {
             services.AddSimulatorSettings(configuration);
-
             services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddHttpClient();
 
             services.AddScoped<SasKeyValidator>();
-            services.AddSingleton<ValidationIpAddress>();
+            services.AddSingleton<ValidationIpAddressProvider>();
 
             services.AddControllers(options => { options.EnableEndpointRouting = false; })
                     .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; });

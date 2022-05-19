@@ -20,12 +20,12 @@ public class ValidateAllSubscriptionsCommandHandler : IRequestHandler<ValidateAl
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<ValidateAllSubscriptionsCommandHandler> _logger;
     private readonly SimulatorSettings _simulatorSettings;
-    private readonly ValidationIpAddress _validationIpAddress;
+    private readonly ValidationIpAddressProvider _validationIpAddress;
 
     public ValidateAllSubscriptionsCommandHandler(ILogger<ValidateAllSubscriptionsCommandHandler> logger,
                                                   IHttpClientFactory httpClientFactory,
                                                   SimulatorSettings simulatorSettings,
-                                                  ValidationIpAddress validationIpAddress)
+                                                  ValidationIpAddressProvider validationIpAddress)
     {
         _logger = logger;
         _httpClientFactory = httpClientFactory;
