@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
@@ -23,7 +24,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
-using ILogger=Serilog.ILogger;
+using ILogger = Serilog.ILogger;
 
 [assembly: InternalsVisibleTo("AzureEventGridSimulator.Tests")]
 
@@ -31,7 +32,7 @@ namespace AzureEventGridSimulator;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         try
         {
@@ -39,14 +40,12 @@ public class Program
             var app = CreateWebHostBuilder(args)
                 .Build();
 
-            app.Lifetime.ApplicationStarted.Register(() => Task.CompletedTask.ContinueWith(_ => OnApplicationStarted(app, app.Lifetime)));
-
             app.UseSerilogRequestLogging(options => { options.GetLevel = (_, _, _) => LogEventLevel.Debug; });
             app.UseEventGridMiddleware();
             app.UseRouting();
             app.UseEndpoints(e => { e.MapControllers(); });
 
-            app.Run();
+            await StartSimulator(app);
         }
         catch (Exception ex)
         {
@@ -55,6 +54,22 @@ public class Program
         finally
         {
             Log.CloseAndFlush();
+        }
+    }
+
+    public static async Task StartSimulator(WebApplication host, CancellationToken token = default)
+    {
+        try
+        {
+            await host.StartAsync(token)
+                      .ContinueWith(_ => OnApplicationStarted(host, host.Lifetime), token)
+                      .ConfigureAwait(false);
+
+            await host.WaitForShutdownAsync(token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await host.DisposeAsync().ConfigureAwait(false);
         }
     }
 

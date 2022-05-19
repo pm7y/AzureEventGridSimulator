@@ -8,6 +8,7 @@ COPY /src/AzureEventGridSimulator .
 # build source and publish as single file called 'AzureEventGridSimulator'
 RUN dotnet publish -c release -o /artifact \
     -r alpine-x64 \
+    -f net6.0 \
     -v q \
     --nologo \
     --self-contained true \
