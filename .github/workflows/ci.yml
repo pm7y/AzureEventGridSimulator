@@ -58,6 +58,7 @@ jobs:
         run: dotnet build
           --configuration ${{ env.CONFIGURATION }}
           --runtime ${{ matrix.runtime }}
+          --self-contained true
           --no-incremental
           --nologo
           /p:WarningLevel=4
