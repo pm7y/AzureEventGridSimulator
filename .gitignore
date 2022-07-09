@@ -351,3 +351,4 @@ src/AzureEventGridSimulator/.config/
 RunDockerContainer.bat
 BuildDockerImage.bat
 my.env
+.DS_Store

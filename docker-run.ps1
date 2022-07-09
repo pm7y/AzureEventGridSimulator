@@ -13,7 +13,8 @@ if ($(docker ps --all --filter="name=$containerName") -like "*$containerName*") 
                 --detach `
                 --publish 60101:60101 `
                 --name $containerName `
-                -v C:\src\AzureEventGridSimulator\docker:/aegs `
+                -v ${pwd}/docker:/aegs `
+                --platform linux/amd64 `
                 -e ASPNETCORE_ENVIRONMENT=Development `
                 -e ASPNETCORE_Kestrel__Certificates__Default__Path=/aegs/azureEventGridSimulator.pfx `
                 -e ASPNETCORE_Kestrel__Certificates__Default__Password=Y0urSup3rCrypt1cPa55w0rd! `
