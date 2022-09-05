@@ -2,7 +2,9 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Azure.Messaging;
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore.Http;
@@ -32,11 +34,24 @@ public class EventGridMiddleware
             return;
         }
 
+        if (IsCloudEventNotificationRequest(context))
+        {
+            await ValidateNotificationCloudEventRequest(context, simulatorSettings, sasHeaderValidator, logger);
+            return;
+        }
+
         if (IsValidationRequest(context))
         {
             await ValidateSubscriptionValidationRequest(context);
             return;
         }
+
+        //if (IsCloudEventNotificationRequest(context))
+        //{
+        //    await ValidateSubscriptionValidationRequest(context);
+        //    return;
+
+        //}
 
         // This is the end of the line.
         await context.WriteErrorResponse(HttpStatusCode.BadRequest, "Request not supported.", null);
@@ -129,12 +144,97 @@ public class EventGridMiddleware
         await _next(context);
     }
 
+
+    private async Task ValidateNotificationCloudEventRequest(HttpContext context,
+                                               SimulatorSettings simulatorSettings,
+                                               SasKeyValidator sasHeaderValidator,
+                                               ILogger logger)
+    {
+        var topic = simulatorSettings.Topics.First(t => t.Port == context.Request.Host.Port);
+
+        //
+        // Validate the key/ token supplied in the header.
+        //
+        if (!string.IsNullOrWhiteSpace(topic.Key) &&
+            !sasHeaderValidator.IsValid(context.Request.Headers, topic.Key))
+        {
+            await context.WriteErrorResponse(HttpStatusCode.Unauthorized, "The request did not contain a valid aeg-sas-key or aeg-sas-token.", null);
+            return;
+        }
+
+        context.Request.EnableBuffering();
+        var requestBody = await context.RequestBody();
+        var events = JsonConvert.DeserializeObject<CloudEvent[]>(requestBody);
+
+        //
+        // Validate the overall body size and the size of each event.
+        //
+        const int maximumAllowedOverallMessageSizeInBytes = 1536000;
+        const int maximumAllowedEventGridEventSizeInBytes = 66560;
+
+        if (requestBody.Length > maximumAllowedOverallMessageSizeInBytes)
+        {
+            logger.LogError("Payload is larger than the allowed maximum");
+
+            await context.WriteErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Payload is larger than the allowed maximum.", null);
+            return;
+        }
+
+        if (events != null)
+        {
+            foreach (var evt in events)
+            {
+                var eventSize = JsonConvert.SerializeObject(evt, Formatting.None).Length;
+
+                if (eventSize <= maximumAllowedEventGridEventSizeInBytes)
+                {
+                    continue;
+                }
+
+                logger.LogError("Event is larger than the allowed maximum");
+
+                await context.WriteErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Event is larger than the allowed maximum.", null);
+                return;
+            }
+
+            //
+            // Validate the properties of each event.
+            //
+            foreach (var eventGridEvent in events)
+            {
+                try
+                {
+                    CloudEventValidateService.Validate(eventGridEvent);
+
+                }
+                catch (InvalidOperationException ex)
+                {
+                    logger.LogError(ex, "Event was not valid");
+
+                    await context.WriteErrorResponse(HttpStatusCode.BadRequest, ex.Message, null);
+                    return;
+                }
+            }
+        }
+
+        await _next(context);
+    }
+
+
     private static bool IsNotificationRequest(HttpContext context)
     {
         return context.Request.Headers.Keys.Any(k => string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)) &&
                context.Request.Headers["Content-Type"].Any(v => !string.IsNullOrWhiteSpace(v) && v.Contains("application/json", StringComparison.OrdinalIgnoreCase)) &&
                context.Request.Method == HttpMethods.Post &&
                string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsCloudEventNotificationRequest(HttpContext context)
+    {
+        return context.Request.Headers.Keys.Any(k => string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)) &&
+               context.Request.Headers["Content-Type"].Any(v => !string.IsNullOrWhiteSpace(v) && v.Contains("application/json", StringComparison.OrdinalIgnoreCase)) &&
+               context.Request.Method == HttpMethods.Post &&
+               string.Equals(context.Request.Path, "/api/events/cloudevent", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsValidationRequest(HttpContext context)

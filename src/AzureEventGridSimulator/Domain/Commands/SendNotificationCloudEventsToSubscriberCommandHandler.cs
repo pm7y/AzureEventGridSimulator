@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
@@ -15,25 +16,25 @@ using Newtonsoft.Json;
 namespace AzureEventGridSimulator.Domain.Commands;
 
 // ReSharper disable once UnusedMember.Global
-public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHandler<SendNotificationEventsToSubscriberCommand>
+public class SendNotificationCloudEventsToSubscriberCommandHandler : AsyncRequestHandler<SendNotificationCloudEventsToSubscriberCommand>
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
+    private readonly ILogger<SendNotificationCloudEventsToSubscriberCommand> _logger;
 
-    public SendNotificationEventsToSubscriberCommandHandler(IHttpClientFactory httpClientFactory, ILogger<SendNotificationEventsToSubscriberCommandHandler> logger)
+    public SendNotificationCloudEventsToSubscriberCommandHandler(IHttpClientFactory httpClientFactory, ILogger<SendNotificationCloudEventsToSubscriberCommand> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
 
-    protected override Task Handle(SendNotificationEventsToSubscriberCommand request, CancellationToken cancellationToken)
+    protected override Task Handle(SendNotificationCloudEventsToSubscriberCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("{EventCount} event(s) received on topic '{TopicName}'", request.Events.Length, request.Topic.Name);
 
         foreach (var eventGridEvent in request.Events)
         {
-            eventGridEvent.Topic = $"/subscriptions/{Guid.Empty:D}/resourceGroups/eventGridSimulator/providers/Microsoft.EventGrid/topics/{request.Topic.Name}";
-            eventGridEvent.MetadataVersion = "1";
+            //eventGridEvent.Topic = $"/subscriptions/{Guid.Empty:D}/resourceGroups/eventGridSimulator/providers/Microsoft.EventGrid/topics/{request.Topic.Name}";
+            //eventGridEvent.MetadataVersion = "1";
         }
 
         if (!request.Topic.Subscribers.Any())
@@ -73,7 +74,7 @@ public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHand
         return Task.CompletedTask;
     }
 
-    private async Task SendToSubscriber(SubscriptionSettings subscription, IEnumerable<EventGridEvent> events, string topicName)
+    private async Task SendToSubscriber(SubscriptionSettings subscription, IEnumerable<CloudEvent> events, string topicName)
     {
         try
         {
@@ -98,15 +99,13 @@ public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHand
             {
                 if (subscription.Filter.AcceptsEvent(evt))
                 {
-
-                    // write to azurite instead?
                     var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
                     using var content = new StringContent(json, Encoding.UTF8, "application/json");
                     var httpClient = _httpClientFactory.CreateClient();
                     httpClient.DefaultRequestHeaders.Add(Constants.AegEventTypeHeader, Constants.NotificationEventType);
                     httpClient.DefaultRequestHeaders.Add(Constants.AegSubscriptionNameHeader, subscription.Name.ToUpperInvariant());
-                    httpClient.DefaultRequestHeaders.Add(Constants.AegDataVersionHeader, evt.DataVersion);
-                    httpClient.DefaultRequestHeaders.Add(Constants.AegMetadataVersionHeader, evt.MetadataVersion);
+                    //httpClient.DefaultRequestHeaders.Add(Constants.AegDataVersionHeader, evt.DataVersion);
+                    //httpClient.DefaultRequestHeaders.Add(Constants.AegMetadataVersionHeader, evt.MetadataVersion);
                     httpClient.DefaultRequestHeaders.Add(Constants.AegDeliveryCountHeader, "0"); // TODO implement re-tries
                     httpClient.Timeout = TimeSpan.FromSeconds(60);
 
@@ -125,7 +124,7 @@ public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHand
         }
     }
 
-    private void LogResult(Task<HttpResponseMessage> task, EventGridEvent evt, SubscriptionSettings subscription, string topicName)
+    private void LogResult(Task<HttpResponseMessage> task, CloudEvent evt, SubscriptionSettings subscription, string topicName)
     {
         if (task.IsCompletedSuccessfully && task.Result.IsSuccessStatusCode)
         {

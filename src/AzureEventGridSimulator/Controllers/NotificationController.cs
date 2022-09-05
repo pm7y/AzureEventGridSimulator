@@ -1,5 +1,7 @@
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Azure.Messaging;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Domain.Entities;
@@ -30,9 +32,25 @@ public class NotificationController : ControllerBase
     public async Task<IActionResult> Post()
     {
         var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
+
         var eventsFromCurrentRequestBody = JsonConvert.DeserializeObject<EventGridEvent[]>(await HttpContext.RequestBody());
 
         await _mediator.Send(new SendNotificationEventsToSubscriberCommand(eventsFromCurrentRequestBody, topicSettingsForCurrentRequestPort));
+
+        return Ok();
+    }
+
+
+    [Route("cloudevent")]
+    [HttpPost]
+    public async Task<IActionResult> PostCloudEvent()
+    {
+
+        var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
+
+        var eventsFromCurrentRequestBody = JsonConvert.DeserializeObject<CloudEvent[]>(await HttpContext.RequestBody());
+
+        await _mediator.Send(new SendNotificationCloudEventsToSubscriberCommand(eventsFromCurrentRequestBody, topicSettingsForCurrentRequestPort));
 
         return Ok();
     }
