@@ -9,7 +9,7 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
 public static class SubscriptionCloudEventSettingsFilterExtensions
 {
-    public static bool AcceptsEvent(this FilterSetting filter, CloudEvent gridEvent)
+    public static bool AcceptsEvent(this FilterSetting filter, CloudEventGridEvent gridEvent)
     {
         var retVal = filter == null;
 
@@ -38,7 +38,7 @@ public static class SubscriptionCloudEventSettingsFilterExtensions
         return retVal;
     }
 
-    private static bool AcceptsEvent(this AdvancedFilterSetting filter, CloudEvent gridEvent)
+    private static bool AcceptsEvent(this AdvancedFilterSetting filter, CloudEventGridEvent gridEvent)
     {
         var retVal = filter == null;
 
@@ -144,7 +144,7 @@ public static class SubscriptionCloudEventSettingsFilterExtensions
         }
     }
 
-    private static bool TryGetValue(this CloudEvent gridEvent, string key, out object value)
+    private static bool TryGetValue(this CloudEventGridEvent gridEvent, string key, out object value)
     {
         var retval = false;
         value = null;
@@ -173,15 +173,15 @@ public static class SubscriptionCloudEventSettingsFilterExtensions
                 //    value = gridEvent.DataVersion;
                 //    retval = true;
                 //    break;
-                case nameof(gridEvent.Data):
-                    value = gridEvent.Data;
+                case nameof(gridEvent.Data_Base64):
+                    value = gridEvent.Data_Base64;
                     retval = true;
                     break;
                 default:
                     var split = key.Split('.');
-                    if (split[0] == nameof(gridEvent.Data) && gridEvent.Data != null && split.Length > 1)
+                    if (split[0] == nameof(gridEvent.Data_Base64) && gridEvent.Data_Base64 != null && split.Length > 1)
                     {
-                        var tmpValue = gridEvent.Data;
+                        var tmpValue = gridEvent.Data_Base64;
                         for (var i = 0; i < split.Length; i++)
                         {
                             // look for the property on the grid event data object

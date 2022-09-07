@@ -74,7 +74,7 @@ public class SendNotificationCloudEventsToSubscriberCommandHandler : AsyncReques
         return Task.CompletedTask;
     }
 
-    private async Task SendToSubscriber(SubscriptionSettings subscription, IEnumerable<CloudEvent> events, string topicName)
+    private async Task SendToSubscriber(SubscriptionSettings subscription, IEnumerable<CloudEventGridEvent> events, string topicName)
     {
         try
         {
@@ -124,7 +124,7 @@ public class SendNotificationCloudEventsToSubscriberCommandHandler : AsyncReques
         }
     }
 
-    private void LogResult(Task<HttpResponseMessage> task, CloudEvent evt, SubscriptionSettings subscription, string topicName)
+    private void LogResult(Task<HttpResponseMessage> task, CloudEventGridEvent evt, SubscriptionSettings subscription, string topicName)
     {
         if (task.IsCompletedSuccessfully && task.Result.IsSuccessStatusCode)
         {

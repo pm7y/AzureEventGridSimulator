@@ -1,12 +1,13 @@
 ﻿using System;
 using Azure.Messaging;
+using AzureEventGridSimulator.Domain.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Services;
 
 public static class CloudEventValidateService
 {
-    public static void Validate(CloudEvent @event)
+    public static void Validate(CloudEventGridEvent @event)
     {
         if (string.IsNullOrWhiteSpace(@event.Id))
         {

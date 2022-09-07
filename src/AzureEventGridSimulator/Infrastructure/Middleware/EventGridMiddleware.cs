@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -28,6 +29,13 @@ public class EventGridMiddleware
                                   SasKeyValidator sasHeaderValidator,
                                   ILogger<EventGridMiddleware> logger)
     {
+        logger.LogInformation("Headers:");
+        logger.LogInformation(JsonConvert.SerializeObject(context.Request.Headers));
+        logger.LogInformation("Path:");
+        logger.LogInformation(context.Request.Path);
+        logger.LogInformation("Query string: ");
+        logger.LogInformation(JsonConvert.SerializeObject(context.Request.QueryString));
+
         if (IsNotificationRequest(context))
         {
             await ValidateNotificationRequest(context, simulatorSettings, sasHeaderValidator, logger);
@@ -164,7 +172,7 @@ public class EventGridMiddleware
 
         context.Request.EnableBuffering();
         var requestBody = await context.RequestBody();
-        var events = JsonConvert.DeserializeObject<CloudEvent[]>(requestBody);
+        var events = JsonConvert.DeserializeObject<CloudEventGridEvent[]>(requestBody);
 
         //
         // Validate the overall body size and the size of each event.
@@ -232,7 +240,7 @@ public class EventGridMiddleware
     private static bool IsCloudEventNotificationRequest(HttpContext context)
     {
         return context.Request.Headers.Keys.Any(k => string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)) &&
-               context.Request.Headers["Content-Type"].Any(v => !string.IsNullOrWhiteSpace(v) && v.Contains("application/json", StringComparison.OrdinalIgnoreCase)) &&
+               context.Request.Headers["Content-Type"].Any(v => !string.IsNullOrWhiteSpace(v) && (v.Contains("application/json", StringComparison.OrdinalIgnoreCase) || v.Contains("application/cloudevents-batch+json", StringComparison.OrdinalIgnoreCase))) &&
                context.Request.Method == HttpMethods.Post &&
                string.Equals(context.Request.Path, "/api/events/cloudevent", StringComparison.OrdinalIgnoreCase);
     }

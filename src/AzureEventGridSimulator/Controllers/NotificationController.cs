@@ -48,7 +48,7 @@ public class NotificationController : ControllerBase
 
         var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
 
-        var eventsFromCurrentRequestBody = JsonConvert.DeserializeObject<CloudEvent[]>(await HttpContext.RequestBody());
+        var eventsFromCurrentRequestBody = JsonConvert.DeserializeObject<CloudEventGridEvent[]>(await HttpContext.RequestBody());
 
         await _mediator.Send(new SendNotificationCloudEventsToSubscriberCommand(eventsFromCurrentRequestBody, topicSettingsForCurrentRequestPort));
 

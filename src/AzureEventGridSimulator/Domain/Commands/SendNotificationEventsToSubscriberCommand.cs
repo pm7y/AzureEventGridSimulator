@@ -7,7 +7,7 @@ namespace AzureEventGridSimulator.Domain.Commands;
 
 public class SendNotificationCloudEventsToSubscriberCommand : IRequest
 {
-    public SendNotificationCloudEventsToSubscriberCommand(CloudEvent[] events, TopicSettings topic)
+    public SendNotificationCloudEventsToSubscriberCommand(CloudEventGridEvent[] events, TopicSettings topic)
     {
         Events = events;
         Topic = topic;
@@ -15,5 +15,5 @@ public class SendNotificationCloudEventsToSubscriberCommand : IRequest
 
     public TopicSettings Topic { get; }
 
-    public CloudEvent[] Events { get; }
+    public CloudEventGridEvent[] Events { get; }
 }
