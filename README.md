@@ -6,7 +6,7 @@
 ![GitHub all releases](https://img.shields.io/github/downloads/pmcilreavy/AzureEventGridSimulator/total)
 ![Docker Pulls](https://img.shields.io/docker/pulls/pmcilreavy/azureeventgridsimulator)
 
-A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library. NOTE: Currently only the `EventGrid` event schema is supported. Support for the `CloudEvent` schema may be added at a future date.
+A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library. NOTE: Currently only the `EventGrid` event schema is supported.
 
 ## Configuration
 
@@ -163,9 +163,14 @@ docker-compose up   --build `
                     --detach
 ```
 
-## Using the Simulator
+## Using the Simulator 
 
-Once configured and running, requests are `posted` to a topic endpoint. The endpoint of a topic will be in the form: `https://localhost:<configured-port>/api/events?api-version=2018-01-01`.
+Once configured and running, requests are `posted` to a topic endpoint. There are two endpoints, one for each supported schemas.
+
+EventGridEvent (Default) : The endpoint of a topic will be in the form: `https://localhost:<configured-port>/api/events?api-version=2018-01-01`.
+CloudEvent : The endpoint of a topic will be in the form: `https://localhost:<configured-port>/api/events/cloudevent?api-version=2018-01-01`.
+
+
 
 #### cURL Example
 
@@ -262,7 +267,6 @@ It posts the payload to https://host:port and drops the query uri. All of the ex
 
 Some features that could be added if there was a need for them: -
 
-- `CloudEvent` schema support.
 - Subscriber retries & dead lettering. https://docs.microsoft.com/en-us/azure/event-grid/delivery-and-retry
 - Certificate configuration in `appsettings.json`.
 - Subscriber token auth
