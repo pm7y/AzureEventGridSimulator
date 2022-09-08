@@ -38,6 +38,12 @@ public class EventGridMiddleware
             return;
         }
 
+        if (IsHealthRequest(context))
+        {
+            await ValidateHealthRequest(context);
+            return;
+        }
+
         // This is the end of the line.
         await context.WriteErrorResponse(HttpStatusCode.BadRequest, "Request not supported.", null);
     }
@@ -129,6 +135,11 @@ public class EventGridMiddleware
         await _next(context);
     }
 
+    private async Task ValidateHealthRequest(HttpContext context)
+    {
+        await _next(context);
+    }
+
     private static bool IsNotificationRequest(HttpContext context)
     {
         return context.Request.Headers.Keys.Any(k => string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)) &&
@@ -143,5 +154,11 @@ public class EventGridMiddleware
                string.Equals(context.Request.Path, "/validate", StringComparison.OrdinalIgnoreCase) &&
                context.Request.Query.Keys.Any(k => string.Equals(k, "id", StringComparison.OrdinalIgnoreCase)) &&
                Guid.TryParse(context.Request.Query["id"], out _);
+    }
+
+    private static bool IsHealthRequest(HttpContext context)
+    {
+        return context.Request.Method == HttpMethods.Get &&
+            string.Equals(context.Request.Path, "/api/health", StringComparison.OrdinalIgnoreCase);
     }
 }
