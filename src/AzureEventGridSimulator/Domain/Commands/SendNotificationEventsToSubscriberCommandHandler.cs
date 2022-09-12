@@ -99,7 +99,6 @@ public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHand
                 if (subscription.Filter.AcceptsEvent(evt))
                 {
 
-                    // write to azurite instead?
                     var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
                     using var content = new StringContent(json, Encoding.UTF8, "application/json");
                     var httpClient = _httpClientFactory.CreateClient();

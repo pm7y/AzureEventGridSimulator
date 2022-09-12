@@ -205,7 +205,7 @@ public class EventGridMiddleware
             {
                 try
                 {
-                    CloudEventValidateService.Validate(eventGridEvent);
+                    eventGridEvent.Validate();
 
                 }
                 catch (InvalidOperationException ex)

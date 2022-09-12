@@ -32,4 +32,45 @@ public class CloudEventGridEvent
     [DataMember(Name = "subject")]
     [JsonProperty("subject")]
     public string Subject { get; set; }
+
+    public void Validate()
+    {
+        if (string.IsNullOrWhiteSpace(Id))
+        {
+            throw new InvalidOperationException($"Required property '{nameof(Id)}' was not set.");
+        }
+
+        if (string.IsNullOrWhiteSpace(Source))
+        {
+            throw new InvalidOperationException($"Required property '{nameof(Source)}' was not set.");
+        }
+
+        if (string.IsNullOrWhiteSpace(Type))
+        {
+            throw new InvalidOperationException($"Required property '{nameof(Type)}' was not set.");
+        }
+
+        if (string.IsNullOrWhiteSpace(Data_Base64))
+        {
+            throw new InvalidOperationException($"Required property '{nameof(Data_Base64)}' was not set.");
+        }
+
+        if (string.IsNullOrWhiteSpace(DataSchema))
+        {
+            throw new InvalidOperationException($"Required property '{nameof(DataSchema)}' was not set.");
+        }
+
+        if (string.IsNullOrWhiteSpace(DataContentType))
+        {
+            throw new InvalidOperationException($"Required property '{nameof(DataContentType)}' was not set.");
+        }
+        
+        if (string.IsNullOrWhiteSpace(Subject))
+        {
+            throw new InvalidOperationException($"Required property '{nameof(Subject)}' was not set.");
+        }
+
+
+    }
+
 }
