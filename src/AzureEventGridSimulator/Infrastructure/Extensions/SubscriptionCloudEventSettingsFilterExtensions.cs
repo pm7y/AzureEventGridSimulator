@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Azure.Messaging;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Newtonsoft.Json.Linq;
@@ -157,10 +156,6 @@ public static class SubscriptionCloudEventSettingsFilterExtensions
                     value = gridEvent.Id;
                     retval = true;
                     break;
-                //case nameof(gridEvent.Topic):
-                //    value = gridEvent.Topic;
-                //    retval = true;
-                //    break;
                 case nameof(gridEvent.Subject):
                     value = gridEvent.Subject;
                     retval = true;
@@ -169,10 +164,6 @@ public static class SubscriptionCloudEventSettingsFilterExtensions
                     value = gridEvent.Type;
                     retval = true;
                     break;
-                //case nameof(gridEvent.DataVersion):
-                //    value = gridEvent.DataVersion;
-                //    retval = true;
-                //    break;
                 case nameof(gridEvent.Data_Base64):
                     value = gridEvent.Data_Base64;
                     retval = true;

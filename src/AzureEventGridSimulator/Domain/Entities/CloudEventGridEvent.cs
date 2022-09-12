@@ -70,7 +70,6 @@ public class CloudEventGridEvent
             throw new InvalidOperationException($"Required property '{nameof(Subject)}' was not set.");
         }
 
-
     }
 
 }

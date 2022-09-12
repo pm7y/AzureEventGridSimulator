@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Messaging;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
@@ -98,8 +97,6 @@ public class SendNotificationCloudEventsToSubscriberCommandHandler : AsyncReques
                     var httpClient = _httpClientFactory.CreateClient();
                     httpClient.DefaultRequestHeaders.Add(Constants.AegEventTypeHeader, Constants.NotificationEventType);
                     httpClient.DefaultRequestHeaders.Add(Constants.AegSubscriptionNameHeader, subscription.Name.ToUpperInvariant());
-                    //httpClient.DefaultRequestHeaders.Add(Constants.AegDataVersionHeader, evt.DataVersion);
-                    //httpClient.DefaultRequestHeaders.Add(Constants.AegMetadataVersionHeader, evt.MetadataVersion);
                     httpClient.DefaultRequestHeaders.Add(Constants.AegDeliveryCountHeader, "0"); // TODO implement re-tries
                     httpClient.Timeout = TimeSpan.FromSeconds(60);
 

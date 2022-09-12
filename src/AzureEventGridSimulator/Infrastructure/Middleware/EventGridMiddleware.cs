@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Azure.Messaging;
 using AzureEventGridSimulator.Domain.Entities;
-using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore.Http;
@@ -29,13 +26,6 @@ public class EventGridMiddleware
                                   SasKeyValidator sasHeaderValidator,
                                   ILogger<EventGridMiddleware> logger)
     {
-        logger.LogInformation("Headers:");
-        logger.LogInformation(JsonConvert.SerializeObject(context.Request.Headers));
-        logger.LogInformation("Path:");
-        logger.LogInformation(context.Request.Path);
-        logger.LogInformation("Query string: ");
-        logger.LogInformation(JsonConvert.SerializeObject(context.Request.QueryString));
-
         if (IsNotificationRequest(context))
         {
             await ValidateNotificationRequest(context, simulatorSettings, sasHeaderValidator, logger);

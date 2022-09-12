@@ -1,5 +1,4 @@
-﻿using Azure.Messaging;
-using AzureEventGridSimulator.Domain.Entities;
+﻿using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 
