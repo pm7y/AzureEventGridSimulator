@@ -54,13 +54,6 @@ public class EventGridMiddleware
             return;
         }
 
-        //if (IsCloudEventNotificationRequest(context))
-        //{
-        //    await ValidateSubscriptionValidationRequest(context);
-        //    return;
-
-        //}
-
         // This is the end of the line.
         await context.WriteErrorResponse(HttpStatusCode.BadRequest, "Request not supported.", null);
     }

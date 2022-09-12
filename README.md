@@ -51,7 +51,9 @@ An example of one topic with one subscriber is shown below.
 
 #### Subscription Validation
 
-When a subscription is added to Azure Event Grid it first sends a validation event to the subscription endpoint. The validation event contains a `validationCode` which the subscription endpoint must echo back. If this does not occur then Azure Event Grid will not enable the subscription.
+When a subscription is added to Azure Event Grid it first sends a validation event to the subscription endpoint. The validation event contains a `validationCode` which the subscription endpoint must echo back. If this does not occur then Azure Event Grid will not enable the subscription. 
+
+Validation is not supported for the cloudevent schema.
 
 More information about subscription validation can be found at [https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery](https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery).
 
@@ -175,10 +177,10 @@ CloudEvent : The endpoint of a topic will be in the form: `https://localhost:<co
 #### cURL Example
 
 ```bash
-curl -k -H "Content-Type: application/json" -H "aeg-sas-key: TheLocal+DevelopmentKey=" -X POST "https://localhost:60101/api/events?api-version=2018-01-01" -d @Data.json
+curl -k -H "Content-Type: application/json" -H "aeg-sas-key: TheLocal+DevelopmentKey=" -X POST "https://localhost:60101/api/events?api-version=2018-01-01" -d @Event_Grid_Data.json
 ```
 
-_Data.json_
+Event_Grid_Data.json_
 
 ```json
 [
@@ -193,7 +195,23 @@ _Data.json_
     "dataVersion": "1"
   }
 ]
+
 ```
+_CloudEvent_Data.json_
+
+```json
+[{
+    "Data": "some data",
+    "Id": "8727823",
+    "Source": "https://awesomesource.com/somestuff",
+    "Type": "Example.DataType",
+    "Time": "2022-09-06T15:15:36.927736+00:00",
+    "DataSchema": "https://awesomeschema.com/someuri",
+    "DataContentType": "application/json",
+    "Subject": "/example/subject"
+}
+```
+
 
 #### Postman
 

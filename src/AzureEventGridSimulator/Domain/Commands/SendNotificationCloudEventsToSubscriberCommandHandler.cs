@@ -31,12 +31,6 @@ public class SendNotificationCloudEventsToSubscriberCommandHandler : AsyncReques
     {
         _logger.LogInformation("{EventCount} event(s) received on topic '{TopicName}'", request.Events.Length, request.Topic.Name);
 
-        foreach (var eventGridEvent in request.Events)
-        {
-            //eventGridEvent.Topic = $"/subscriptions/{Guid.Empty:D}/resourceGroups/eventGridSimulator/providers/Microsoft.EventGrid/topics/{request.Topic.Name}";
-            //eventGridEvent.MetadataVersion = "1";
-        }
-
         if (!request.Topic.Subscribers.Any())
         {
             _logger.LogWarning("'{TopicName}' has no subscribers so {EventCount} event(s) could not be forwarded", request.Topic.Name, request.Events.Length);
