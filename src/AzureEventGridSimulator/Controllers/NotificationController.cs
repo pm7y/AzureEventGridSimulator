@@ -43,7 +43,6 @@ public class NotificationController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> PostCloudEvent()
     {
-
         var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
 
         var eventsFromCurrentRequestBody = JsonConvert.DeserializeObject<CloudEventGridEvent[]>(await HttpContext.RequestBody());

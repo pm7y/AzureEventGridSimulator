@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Core;
+using Azure.Messaging;
 using Azure.Messaging.EventGrid;
 using Shouldly;
 using Xunit;
+using EventGridEvent = Azure.Messaging.EventGrid.EventGridEvent;
 
 namespace AzureEventGridSimulator.Tests.ActualSimulatorTests;
 
@@ -39,6 +42,42 @@ public class AzureMessagingEventGridTest
 
         response.Status.ShouldBe((int)HttpStatusCode.OK);
     }
+
+
+    [Fact]
+    public async Task GivenValidCloudEvent_WhenUriContainsNonStandardPort_ThenItShouldBeAccepted()
+    {
+        var client = new EventGridPublisherClient(
+                                                  new Uri("https://localhost:60101/api/events/cloudevent"),
+                                                  new AzureKeyCredential("TheLocal+DevelopmentKey="),
+                                                  new EventGridPublisherClientOptions
+                                                      { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
+
+
+
+        //var cloudEvent = new CloudEventGridEvent()
+        //{
+        //    Data_Base64 = "",
+        //    Id = "1232",
+        //    Source = "https://awesomesource.com/somestuff",
+        //    Type = "The.Event.Type",
+        //    Time = DateTimeOffset.UtcNow,
+        //    DataSchema = "https://awesomeschema.com/someuri",
+        //    DataContentType = "application/json",
+        //    Subject = "/the/subject",
+        //};
+
+
+
+        var data = new BinaryData(Encoding.UTF8.GetBytes("##This is treated as binary data##"));
+
+        var myEvent = new CloudEvent("https://awesomesource.com/somestuff", "The.Event.Type", data, "application/cloudevents-batch+json");
+
+        var response = await client.SendEventAsync(myEvent);
+
+        response.Status.ShouldBe((int)HttpStatusCode.OK);
+    }
+
 
     [Fact]
     public async Task GivenValidEvents_WhenUriContainsNonStandardPort_TheyShouldBeAccepted()
