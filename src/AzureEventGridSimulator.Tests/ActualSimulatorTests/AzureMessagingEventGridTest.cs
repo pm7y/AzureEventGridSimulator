@@ -24,6 +24,8 @@ public class AzureMessagingEventGridTest
     // ReSharper disable once NotAccessedField.Local
     private readonly ActualSimulatorFixture _actualSimulatorFixture;
 
+    private BinaryData _data = new BinaryData(Encoding.UTF8.GetBytes("##This is treated as binary data##"));
+
     public AzureMessagingEventGridTest(ActualSimulatorFixture actualSimulatorFixture)
     {
         _actualSimulatorFixture = actualSimulatorFixture;
@@ -53,31 +55,12 @@ public class AzureMessagingEventGridTest
                                                   new EventGridPublisherClientOptions
                                                       { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
 
-
-
-        //var cloudEvent = new CloudEventGridEvent()
-        //{
-        //    Data_Base64 = "",
-        //    Id = "1232",
-        //    Source = "https://awesomesource.com/somestuff",
-        //    Type = "The.Event.Type",
-        //    Time = DateTimeOffset.UtcNow,
-        //    DataSchema = "https://awesomeschema.com/someuri",
-        //    DataContentType = "application/json",
-        //    Subject = "/the/subject",
-        //};
-
-
-
-        var data = new BinaryData(Encoding.UTF8.GetBytes("##This is treated as binary data##"));
-
-        var myEvent = new CloudEvent("https://awesomesource.com/somestuff", "The.Event.Type", data, "application/cloudevents-batch+json");
+        var myEvent = new CloudEvent("https://awesomesource.com/somestuff", "The.Event.Type", _data, "application/json");
 
         var response = await client.SendEventAsync(myEvent);
 
         response.Status.ShouldBe((int)HttpStatusCode.OK);
     }
-
 
     [Fact]
     public async Task GivenValidEvents_WhenUriContainsNonStandardPort_TheyShouldBeAccepted()
@@ -92,6 +75,26 @@ public class AzureMessagingEventGridTest
         {
             new EventGridEvent("/the/subject1", "The.Event.Type1", "v1", new { Id = 1, Foo = "Bar" }),
             new EventGridEvent("/the/subject2", "The.Event.Type2", "v1", new { Id = 2, Foo = "Baz" })
+        };
+
+        var response = await client.SendEventsAsync(events);
+
+        response.Status.ShouldBe((int)HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GivenValidCloudEvents_WhenUriContainsNonStandardPort_TheyShouldBeAccepted()
+    {
+        var client = new EventGridPublisherClient(
+                                                  new Uri("https://localhost:60101/api/events/cloudevent"),
+                                                  new AzureKeyCredential("TheLocal+DevelopmentKey="),
+                                                  new EventGridPublisherClientOptions
+                                                  { Retry = { Mode = RetryMode.Fixed, MaxRetries = 0, NetworkTimeout = TimeSpan.FromSeconds(5) } });
+
+        var events = new[]
+        {
+            new CloudEvent("https://awesomesource.com/somestuff1", "The.Event.Type1", _data, "application/json"),
+            new CloudEvent("https://awesomesource.com/somestuff2", "The.Event.Type2", _data, "application/json")
         };
 
         var response = await client.SendEventsAsync(events);

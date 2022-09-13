@@ -55,21 +55,10 @@ public class CloudEventGridEvent
             throw new InvalidOperationException($"Required property '{nameof(Data_Base64)}' was not set.");
         }
 
-        if (string.IsNullOrWhiteSpace(DataSchema))
-        {
-            throw new InvalidOperationException($"Required property '{nameof(DataSchema)}' was not set.");
-        }
-
         if (string.IsNullOrWhiteSpace(DataContentType))
         {
             throw new InvalidOperationException($"Required property '{nameof(DataContentType)}' was not set.");
         }
-        
-        if (string.IsNullOrWhiteSpace(Subject))
-        {
-            throw new InvalidOperationException($"Required property '{nameof(Subject)}' was not set.");
-        }
-
     }
 
 }
