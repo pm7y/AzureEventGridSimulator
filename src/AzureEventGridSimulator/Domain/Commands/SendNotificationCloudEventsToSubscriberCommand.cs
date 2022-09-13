@@ -4,9 +4,9 @@ using MediatR;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 
-public class SendNotificationCloudEventsToSubscriberCommand : IRequest
+public class SendNotificationEventsToSubscriberCommand : IRequest
 {
-    public SendNotificationCloudEventsToSubscriberCommand(CloudEventGridEvent[] events, TopicSettings topic)
+    public SendNotificationEventsToSubscriberCommand(EventGridEvent[] events, TopicSettings topic)
     {
         Events = events;
         Topic = topic;
@@ -14,5 +14,5 @@ public class SendNotificationCloudEventsToSubscriberCommand : IRequest
 
     public TopicSettings Topic { get; }
 
-    public CloudEventGridEvent[] Events { get; }
+    public EventGridEvent[] Events { get; }
 }

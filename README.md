@@ -6,7 +6,7 @@
 ![GitHub all releases](https://img.shields.io/github/downloads/pmcilreavy/AzureEventGridSimulator/total)
 ![Docker Pulls](https://img.shields.io/docker/pulls/pmcilreavy/azureeventgridsimulator)
 
-A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library. NOTE: Currently only the `EventGrid` event schema is supported. Support for the `CloudEvent` schema may be added at a future date.
+A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library. NOTE: Currently only the `EventGrid` event schema is supported.
 
 ## Configuration
 
@@ -51,7 +51,9 @@ An example of one topic with one subscriber is shown below.
 
 #### Subscription Validation
 
-When a subscription is added to Azure Event Grid it first sends a validation event to the subscription endpoint. The validation event contains a `validationCode` which the subscription endpoint must echo back. If this does not occur then Azure Event Grid will not enable the subscription.
+When a subscription is added to Azure Event Grid it first sends a validation event to the subscription endpoint. The validation event contains a `validationCode` which the subscription endpoint must echo back. If this does not occur then Azure Event Grid will not enable the subscription. 
+
+Validation is not supported for the cloudevent schema.
 
 More information about subscription validation can be found at [https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery](https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery).
 
@@ -163,17 +165,22 @@ docker-compose up   --build `
                     --detach
 ```
 
-## Using the Simulator
+## Using the Simulator 
 
-Once configured and running, requests are `posted` to a topic endpoint. The endpoint of a topic will be in the form: `https://localhost:<configured-port>/api/events?api-version=2018-01-01`.
+Once configured and running, requests are `posted` to a topic endpoint. There are two endpoints, one for each supported schemas.
+
+EventGridEvent (Default) : The endpoint of a topic will be in the form: `https://localhost:<configured-port>/api/events?api-version=2018-01-01`.
+CloudEvent : The endpoint of a topic will be in the form: `https://localhost:<configured-port>/api/events/cloudevent?api-version=2018-01-01`.
+
+
 
 #### cURL Example
 
 ```bash
-curl -k -H "Content-Type: application/json" -H "aeg-sas-key: TheLocal+DevelopmentKey=" -X POST "https://localhost:60101/api/events?api-version=2018-01-01" -d @Data.json
+curl -k -H "Content-Type: application/json" -H "aeg-sas-key: TheLocal+DevelopmentKey=" -X POST "https://localhost:60101/api/events?api-version=2018-01-01" -d @Event_Grid_Data.json
 ```
 
-_Data.json_
+Event_Grid_Data.json_
 
 ```json
 [
@@ -188,7 +195,23 @@ _Data.json_
     "dataVersion": "1"
   }
 ]
+
 ```
+_CloudEvent_Data.json_
+
+```json
+[{
+    "Data": "some data",
+    "Id": "8727823",
+    "Source": "https://awesomesource.com/somestuff",
+    "Type": "Example.DataType",
+    "Time": "2022-09-06T15:15:36.927736+00:00",
+    "DataSchema": "https://awesomeschema.com/someuri",
+    "DataContentType": "application/json",
+    "Subject": "/example/subject"
+}
+```
+
 
 #### Postman
 
@@ -262,7 +285,6 @@ It posts the payload to https://host:port and drops the query uri. All of the ex
 
 Some features that could be added if there was a need for them: -
 
-- `CloudEvent` schema support.
 - Subscriber retries & dead lettering. https://docs.microsoft.com/en-us/azure/event-grid/delivery-and-retry
 - Certificate configuration in `appsettings.json`.
 - Subscriber token auth

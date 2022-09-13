@@ -214,25 +214,25 @@ public class Program
         });
 
         builder.WebHost
-               .ConfigureAppConfiguration((_, configBuilder) =>
-               {
-                   //configBuilder.Sources.Clear();
-                   configBuilder.AddConfiguration(configuration);
-               })
-               .UseKestrel(options =>
-               {
-                   Log.Verbose(((IConfigurationRoot)configuration).GetDebugView().Normalize());
+              .ConfigureAppConfiguration((_, configBuilder) =>
+              {
+                  //configBuilder.Sources.Clear();
+                  configBuilder.AddConfiguration(configuration);
+              })
+              .UseKestrel(options =>
+              {
+                  Log.Verbose(((IConfigurationRoot)configuration).GetDebugView().Normalize());
 
-                   options.ConfigureSimulatorCertificate();
+                  options.ConfigureSimulatorCertificate();
 
-                   foreach (var topics in options.ApplicationServices.EnabledTopics())
-                   {
-                       options.Listen(IPAddress.Any,
-                                      topics.Port,
-                                      listenOptions => listenOptions
-                                          .UseHttps());
-                   }
-               });
+                  foreach (var topics in options.ApplicationServices.EnabledTopics())
+                  {
+                      options.Listen(IPAddress.Any,
+                                     topics.Port,
+                                     listenOptions => listenOptions
+                                         .UseHttps());
+                  }
+              });
 
         return builder;
     }
