@@ -5,20 +5,20 @@ using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace AzureEventGridSimulator.Domain.Commands;
+namespace AzureEventGridSimulator.Domain.Commands.Http;
 
-public class ValidateSubscriptionCommandHandler : IRequestHandler<ValidateSubscriptionCommand, bool>
+public class ValidateHttpSubscriptionCommandHandler : IRequestHandler<ValidateHttpSubscriptionCommand, bool>
 {
-    private readonly ILogger<ValidateSubscriptionCommandHandler> _logger;
+    private readonly ILogger<ValidateHttpSubscriptionCommandHandler> _logger;
 
-    public ValidateSubscriptionCommandHandler(ILogger<ValidateSubscriptionCommandHandler> logger)
+    public ValidateHttpSubscriptionCommandHandler(ILogger<ValidateHttpSubscriptionCommandHandler> logger)
     {
         _logger = logger;
     }
 
-    public Task<bool> Handle(ValidateSubscriptionCommand request, CancellationToken cancellationToken)
+    public Task<bool> Handle(ValidateHttpSubscriptionCommand request, CancellationToken cancellationToken)
     {
-        var subscriber = request.Topic.Subscribers.FirstOrDefault(s => s.ValidationCode == request.ValidationCode);
+        var subscriber = request.Topic.Subscribers.Http.FirstOrDefault(s => s.ValidationCode == request.ValidationCode);
 
         if (subscriber != null &&
             subscriber.ValidationCode == request.ValidationCode &&

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain;
-using AzureEventGridSimulator.Domain.Commands;
+using AzureEventGridSimulator.Domain.Commands.Http;
 using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
@@ -30,7 +30,7 @@ public class SubscriptionValidationController : ControllerBase
     public async Task<IActionResult> Get(Guid id)
     {
         var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t => t.Port == HttpContext.Request.Host.Port);
-        var isValid = await _mediator.Send(new ValidateSubscriptionCommand(topicSettingsForCurrentRequestPort, id));
+        var isValid = await _mediator.Send(new ValidateHttpSubscriptionCommand(topicSettingsForCurrentRequestPort, id));
 
         if (!isValid)
         {

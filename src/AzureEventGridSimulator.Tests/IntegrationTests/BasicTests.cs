@@ -14,7 +14,7 @@ namespace AzureEventGridSimulator.Tests.IntegrationTests;
 
 /// <summary>
 /// These test use a WebApplicationFactory based instance of the simulator
-/// and an HttpClient to send send events to the simulator.
+/// and an HttpClient to send events to the simulator.
 /// Note: this is a WIP.
 /// </summary>
 [Trait("Category", "integration")]

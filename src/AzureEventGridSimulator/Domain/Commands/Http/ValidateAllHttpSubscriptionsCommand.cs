@@ -2,6 +2,6 @@
 
 namespace AzureEventGridSimulator.Domain.Commands;
 
-public class ValidateAllSubscriptionsCommand : IRequest
+public class ValidateAllHttpSubscriptionsCommand : IRequest
 {
 }
