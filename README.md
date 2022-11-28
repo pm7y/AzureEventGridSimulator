@@ -22,13 +22,15 @@ An example of one topic with one subscriber is shown below.
       "name": "MyAwesomeTopic",
       "port": 60101,
       "key": "TheLocal+DevelopmentKey=",
-      "subscribers": [
-        {
-          "name": "LocalAzureFunctionSubscription",
-          "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb",
-          "disableValidation": true
-        }
-      ]
+      "subscribers": {
+        "http": [
+          {
+            "name": "LocalAzureFunctionSubscription",
+            "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb",
+            "disableValidation": true
+          }
+        ]
+      }
     }
   ]
 }
@@ -71,15 +73,17 @@ Extending the example above to include a basic filter which will only deliver ev
       "name": "MyAwesomeTopic",
       "port": 60101,
       "key": "TheLocal+DevelopmentKey=",
-      "subscribers": [
-        {
-          "name": "LocalAzureFunctionSubscription",
-          "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb",
-          "filter": {
-            "includedEventTypes": ["my.eventType"]
+      "subscribers": 
+        "http": [
+          {
+            "name": "LocalAzureFunctionSubscription",
+            "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb",
+            "filter": {
+              "includedEventTypes": ["my.eventType"]
+            }
           }
-        }
-      ]
+        ]
+      }
     }
   ]
 }

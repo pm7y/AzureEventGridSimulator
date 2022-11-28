@@ -12,17 +12,17 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace AzureEventGridSimulator.Domain.Commands;
+namespace AzureEventGridSimulator.Domain.Commands.Http;
 
 // ReSharper disable once UnusedMember.Global
-public class ValidateAllSubscriptionsCommandHandler : IRequestHandler<ValidateAllSubscriptionsCommand>
+public class ValidateAllHttpSubscriptionsCommandHandler : IRequestHandler<ValidateAllHttpSubscriptionsCommand>
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<ValidateAllSubscriptionsCommandHandler> _logger;
+    private readonly ILogger<ValidateAllHttpSubscriptionsCommandHandler> _logger;
     private readonly SimulatorSettings _simulatorSettings;
     private readonly ValidationIpAddressProvider _validationIpAddress;
 
-    public ValidateAllSubscriptionsCommandHandler(ILogger<ValidateAllSubscriptionsCommandHandler> logger,
+    public ValidateAllHttpSubscriptionsCommandHandler(ILogger<ValidateAllHttpSubscriptionsCommandHandler> logger,
                                                   IHttpClientFactory httpClientFactory,
                                                   SimulatorSettings simulatorSettings,
                                                   ValidationIpAddressProvider validationIpAddress)
@@ -33,12 +33,12 @@ public class ValidateAllSubscriptionsCommandHandler : IRequestHandler<ValidateAl
         _validationIpAddress = validationIpAddress;
     }
 
-    public async Task<Unit> Handle(ValidateAllSubscriptionsCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(ValidateAllHttpSubscriptionsCommand request, CancellationToken cancellationToken)
     {
         foreach (var enabledTopic in _simulatorSettings.Topics
                                                        .Where(o => !o.Disabled))
         {
-            foreach (var subscriber in enabledTopic.Subscribers
+            foreach (var subscriber in enabledTopic.Subscribers.Http
                                                    .Where(o => !o.DisableValidation && !o.Disabled))
             {
                 await ValidateSubscription(enabledTopic, subscriber);
@@ -48,7 +48,7 @@ public class ValidateAllSubscriptionsCommandHandler : IRequestHandler<ValidateAl
         return Unit.Value;
     }
 
-    private async Task ValidateSubscription(TopicSettings topic, SubscriptionSettings subscription)
+    private async Task ValidateSubscription(TopicSettings topic, HttpSubscriptionSettings subscription)
     {
         var validationUrl = $"https://{_validationIpAddress}:{topic.Port}/validate?id={subscription.ValidationCode}";
 

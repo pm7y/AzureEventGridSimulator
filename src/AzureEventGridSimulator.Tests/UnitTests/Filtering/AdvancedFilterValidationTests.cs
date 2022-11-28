@@ -21,14 +21,17 @@ public class AdvancedFilterValidationTests
                     Key = "TopicKey",
                     Name = "TopicName",
                     Port = 12345,
-                    Subscribers = new List<SubscriptionSettings>
-                    {
-                        new()
-                        {
-                            Name = "SubscriberName",
-                            Filter = new FilterSetting { AdvancedFilters = new[] { advancedFilter } }
-                        }
-                    }.ToArray()
+                    Subscribers = new SubscriberSettings{
+
+                        Http = new List<HttpSubscriptionSettings>
+                            {
+                                new()
+                                {
+                                    Name = "SubscriberName",
+                                    Filter = new FilterSetting { AdvancedFilters = new[] { advancedFilter } }
+                                }
+                            }.ToArray()
+                    }
                 }
             }
         };

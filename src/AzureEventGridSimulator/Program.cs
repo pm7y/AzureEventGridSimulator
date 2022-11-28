@@ -111,7 +111,7 @@ public class Program
                 return;
             }
 
-            await mediator.Send(new ValidateAllSubscriptionsCommand());
+            await mediator.Send(new ValidateAllHttpSubscriptionsCommand());
 
             Log.Information("It's alive !");
         }

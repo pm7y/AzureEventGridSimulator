@@ -20,14 +20,16 @@ public class FilterSettingsValidationTests
                     Key = "TopicKey",
                     Name = "TopicName",
                     Port = 12345,
-                    Subscribers = new List<SubscriptionSettings>
-                    {
-                        new()
-                        {
-                            Name = "SubscriberName",
-                            Filter = filter
-                        }
-                    }.ToArray()
+                    Subscribers = new SubscriberSettings{
+                        Http = new List<HttpSubscriptionSettings>
+                            {
+                                new()
+                                {
+                                    Name = "SubscriberName",
+                                    Filter = filter
+                                }
+                            }.ToArray()
+                    }
                 }
             }
         };
