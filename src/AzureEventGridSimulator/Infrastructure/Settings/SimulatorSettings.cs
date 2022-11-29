@@ -39,6 +39,12 @@ public class SimulatorSettings
             throw new InvalidOperationException("A subscriber name can only contain letters, numbers, and dashes.");
         }
 
+        // validate topics
+        foreach (var topic in Topics)
+        {
+            topic.Validate();
+        }
+
         // validate the filters
         foreach (var filter in Topics.Where(t => t.Subscribers.AllSubscriptions.Any()).SelectMany(t => t.Subscribers.AllSubscriptions.Where(s => s.Filter != null).Select(s => s.Filter)))
         {

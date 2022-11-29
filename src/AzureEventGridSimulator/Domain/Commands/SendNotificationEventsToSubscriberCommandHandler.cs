@@ -24,8 +24,14 @@ public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHand
         _logger = logger;
     }
 
-    protected override Task Handle(SendNotificationEventsToSubscriberCommand request, CancellationToken cancellationToken)
+    protected override async Task Handle(SendNotificationEventsToSubscriberCommand request, CancellationToken cancellationToken)
     {
+        Task SendAsync<T>(T[] subscriptions)
+            where T : BaseSubscriptionSettings
+        {
+            return Task.WhenAll(subscriptions.Select(subscription => _mediator.Send(new SendNotificationEventsToSpecializedSubscriberCommand<T>(subscription, request.Events, request.Topic.Name), cancellationToken)));
+        }
+
         _logger.LogInformation("{EventCount} event(s) received on topic '{TopicName}'", request.Events.Length, request.Topic.Name);
 
         foreach (var eventGridEvent in request.Events)
@@ -59,15 +65,10 @@ public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHand
             }
             else
             {
-                foreach (var subscription in request.Topic.Subscribers.Http)
-                {
-#pragma warning disable 4014
-                    _mediator.Send(new SendNotificationEventsToSpecializedSubscriberCommand<HttpSubscriptionSettings>(subscription, request.Events, request.Topic.Name));
-#pragma warning restore 4014
-                }
+                await Task.WhenAll(
+                    SendAsync(request.Topic.Subscribers.Http),
+                    SendAsync(request.Topic.Subscribers.ServiceBus));
             }
         }
-
-        return Task.CompletedTask;
     }
 }

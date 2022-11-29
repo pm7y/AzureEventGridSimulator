@@ -18,4 +18,9 @@ public class TopicSettings
 
     [JsonProperty(PropertyName = "subscribers", Required = Required.Default)]
     public SubscriberSettings Subscribers { get; set; } = new SubscriberSettings();
+
+    internal void Validate()
+    {
+        Subscribers.Validate();
+    }
 }
