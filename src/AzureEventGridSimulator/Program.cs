@@ -43,7 +43,7 @@ public class Program
             app.UseSerilogRequestLogging(options => { options.GetLevel = (_, _, _) => LogEventLevel.Debug; });
             app.UseEventGridMiddleware();
             app.UseRouting();
-            app.UseEndpoints(e => { _ = e.MapControllers(); });
+            app.MapControllers();
 
             await StartSimulator(app);
         }
@@ -53,7 +53,7 @@ public class Program
         }
         finally
         {
-            Log.CloseAndFlush();
+            await Log.CloseAndFlushAsync();
         }
     }
 
@@ -173,24 +173,21 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Host.ConfigureServices(services =>
+        builder.Services.AddSimulatorSettings(configuration);
+        builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
+        builder.Services.AddHttpClient();
+
+        builder.Services.AddScoped<SasKeyValidator>();
+        builder.Services.AddSingleton<ValidationIpAddressProvider>();
+
+        builder.Services.AddControllers(options => { options.EnableEndpointRouting = false; })
+               .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; });
+
+        builder.Services.AddApiVersioning(config =>
         {
-            services.AddSimulatorSettings(configuration);
-            services.AddMediatR(Assembly.GetExecutingAssembly());
-            services.AddHttpClient();
-
-            services.AddScoped<SasKeyValidator>();
-            services.AddSingleton<ValidationIpAddressProvider>();
-
-            services.AddControllers(options => { options.EnableEndpointRouting = false; })
-                    .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; });
-
-            services.AddApiVersioning(config =>
-            {
-                config.DefaultApiVersion = new ApiVersion(DateTime.Parse(Constants.SupportedApiVersion, new ApiVersionFormatProvider()));
-                config.AssumeDefaultVersionWhenUnspecified = true;
-                config.ReportApiVersions = true;
-            });
+            config.DefaultApiVersion = new ApiVersion(DateTime.Parse(Constants.SupportedApiVersion, new ApiVersionFormatProvider()));
+            config.AssumeDefaultVersionWhenUnspecified = true;
+            config.ReportApiVersions = true;
         });
 
         builder.Logging.ClearProviders();
@@ -213,25 +210,21 @@ public class Program
                 .WriteTo.Conditional(_ => !hasAtLeastOneLogSinkBeenConfigured, sinkConfiguration => sinkConfiguration.Console());
         });
 
-        builder.WebHost
-               .ConfigureAppConfiguration((_, configBuilder) =>
-               {
-                   configBuilder.AddConfiguration(configuration);
-               })
-               .UseKestrel(options =>
-               {
-                   Log.Verbose(((IConfigurationRoot)configuration).GetDebugView().Normalize());
+        builder.Configuration.AddConfiguration(configuration);
+        builder.WebHost.UseKestrel(options =>
+        {
+            Log.Verbose(((IConfigurationRoot)configuration).GetDebugView().Normalize());
 
-                   options.ConfigureSimulatorCertificate();
+            options.ConfigureSimulatorCertificate();
 
-                   foreach (var topics in options.ApplicationServices.EnabledTopics())
-                   {
-                       options.Listen(IPAddress.Any,
-                                      topics.Port,
-                                      listenOptions => listenOptions
-                                          .UseHttps());
-                   }
-               });
+            foreach (var topics in options.ApplicationServices.EnabledTopics())
+            {
+                options.Listen(IPAddress.Any,
+                               topics.Port,
+                               listenOptions => listenOptions
+                                   .UseHttps());
+            }
+        });
 
         return builder;
     }
