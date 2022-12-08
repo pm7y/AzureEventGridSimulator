@@ -1,5 +1,5 @@
 # start with an sdk enabled alpine image so we can build source
-FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine as build
+FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine as build
 WORKDIR /source
 
 # copy source
@@ -8,7 +8,7 @@ COPY /src/AzureEventGridSimulator .
 # build source and publish as single file called 'AzureEventGridSimulator'
 RUN dotnet publish -c release -o /artifact \
     -r alpine-x64 \
-    -f net6.0 \
+    -f net7.0 \
     -v q \
     --nologo \
     --self-contained true \

@@ -43,7 +43,7 @@ public class Program
             app.UseSerilogRequestLogging(options => { options.GetLevel = (_, _, _) => LogEventLevel.Debug; });
             app.UseEventGridMiddleware();
             app.UseRouting();
-            app.UseEndpoints(e => { e.MapControllers(); });
+            app.UseEndpoints(e => { _ = e.MapControllers(); });
 
             await StartSimulator(app);
         }
@@ -193,7 +193,7 @@ public class Program
             });
         });
 
-        builder.Host.ConfigureLogging(loggingBuilder => { loggingBuilder.ClearProviders(); });
+        builder.Logging.ClearProviders();
         builder.Host.UseSerilog((context, loggerConfiguration) =>
         {
             var hasAtLeastOneLogSinkBeenConfigured = context.Configuration.GetSection("Serilog:WriteTo").GetChildren().ToArray().Any();
@@ -216,7 +216,6 @@ public class Program
         builder.WebHost
                .ConfigureAppConfiguration((_, configBuilder) =>
                {
-                   //configBuilder.Sources.Clear();
                    configBuilder.AddConfiguration(configuration);
                })
                .UseKestrel(options =>
