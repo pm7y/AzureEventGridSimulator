@@ -32,7 +32,7 @@ services:
       - AEGS_Serilog__MinimumLevel__Default=Verbose
 
       # you could also define topics/subscribers via via a configfile
-      # - ConfigFile=/aegs/appsettings.docker.json
+      # - AEGS_ConfigFile=/aegs/appsettings.docker.json
 
     env_file:
       # you can also define environment variables via a file
