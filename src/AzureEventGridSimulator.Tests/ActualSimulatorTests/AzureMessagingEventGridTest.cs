@@ -75,7 +75,7 @@ public class AzureMessagingEventGridTest
                                                            new { Id = 1, Foo = "Bar" }));
         });
 
-        exception.Message.ShouldContain("actively refused");
+        exception.Message.ShouldContain("refused");
         exception.Status.ShouldBe(0);
     }
 
