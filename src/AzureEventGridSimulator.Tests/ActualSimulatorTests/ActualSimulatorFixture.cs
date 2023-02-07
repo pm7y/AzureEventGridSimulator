@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -16,10 +17,11 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
 
     private Process _simulatorProcess;
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
         var simulatorDirectory = Directory.GetCurrentDirectory();
-        _simulatorExePath = Path.Combine(simulatorDirectory, $"{SimulatorFileName}.exe");
+        var executable = Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location);
+        _simulatorExePath = Path.Combine(simulatorDirectory, executable);
 
         KillExistingSimulators();
 
@@ -32,7 +34,7 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
             Environment = { new KeyValuePair<string, string>("ASPNETCORE_ENVIRONMENT", "Test") }
         });
 
-        return Task.CompletedTask;
+        await Task.Delay(1000);
     }
 
     public Task DisposeAsync()
