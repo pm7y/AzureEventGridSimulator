@@ -1,4 +1,6 @@
-﻿using System;
+﻿namespace AzureEventGridSimulator.Tests.UnitTests;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using AzureEventGridSimulator.Domain.Commands;
@@ -6,14 +8,11 @@ using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
 using Xunit;
-using BrokerPropertyKeys = AzureEventGridSimulator.Domain.Commands.SendNotificationEventsToAzureServiceBusSubscriberCommandHandler.BrokerPropertyKeys;
-using Property = AzureEventGridSimulator.Infrastructure.Settings.AzureServiceBusSubscriptionSettings.Property;
-using PropertyType = AzureEventGridSimulator.Infrastructure.Settings.AzureServiceBusSubscriptionSettings.PropertyType;
-
-namespace AzureEventGridSimulator.Tests.UnitTests;
+using static AzureEventGridSimulator.Infrastructure.Settings.AzureServiceBusSubscriptionSettings;
+using BrokerPropertyKeys = Domain.Commands.SendNotificationEventsToAzureServiceBusSubscriberCommandHandler<Domain.Entities.IEvent>.BrokerPropertyKeys;
 
 [Trait("Category", "unit")]
-public static class SendNotificationEventsToAzureServiceBusSubscriberCommandHandlerTests
+public static class SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandlerTests
 {
     public class CreateMessageTests
     {
@@ -61,7 +60,8 @@ public static class SendNotificationEventsToAzureServiceBusSubscriberCommandHand
                     { propertyName, new Property(PropertyType.Dynamic, "data.DynamicValue") }
                 });
 
-            var actual = SendNotificationEventsToAzureServiceBusSubscriberCommandHandler.CreateMessage(subscription, evt);
+            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null);
+            var actual = target.CreateMessage(subscription, evt);
 
             Assert.True(actual.BrokerProperties.ContainsKey(propertyName));
             actual.BrokerProperties[propertyName].ShouldBe(payload.DynamicValue);
@@ -85,7 +85,8 @@ public static class SendNotificationEventsToAzureServiceBusSubscriberCommandHand
                     { propertyName, new Property(PropertyType.Static, staticValue) }
                 });
 
-            var actual = SendNotificationEventsToAzureServiceBusSubscriberCommandHandler.CreateMessage(subscription, evt);
+            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null);
+            var actual = target.CreateMessage(subscription, evt);
 
             Assert.True(actual.BrokerProperties.ContainsKey(propertyName));
             actual.BrokerProperties[propertyName].ShouldBe(staticValue);
@@ -108,7 +109,8 @@ public static class SendNotificationEventsToAzureServiceBusSubscriberCommandHand
                     { propertyName, new Property(PropertyType.Dynamic, "data.DynamicValue") }
                 });
 
-            var actual = SendNotificationEventsToAzureServiceBusSubscriberCommandHandler.CreateMessage(subscription, evt);
+            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null);
+            var actual = target.CreateMessage(subscription, evt);
 
             Assert.True(actual.UserProperties.ContainsKey(propertyName));
             actual.UserProperties[propertyName].ShouldBe(payload.DynamicValue);
@@ -132,7 +134,8 @@ public static class SendNotificationEventsToAzureServiceBusSubscriberCommandHand
                     { propertyName, new Property(PropertyType.Static, staticValue) }
                 });
 
-            var actual = SendNotificationEventsToAzureServiceBusSubscriberCommandHandler.CreateMessage(subscription, evt);
+            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null);
+            var actual = target.CreateMessage(subscription, evt);
 
             Assert.True(actual.UserProperties.ContainsKey(propertyName));
             actual.UserProperties[propertyName].ShouldBe(staticValue);
@@ -148,7 +151,9 @@ public static class SendNotificationEventsToAzureServiceBusSubscriberCommandHand
                     { BrokerPropertyKeys.MessageId, new Property(PropertyType.Static, "Value") }
                 });
 
-            Assert.Throws<InvalidOperationException>(() => SendNotificationEventsToAzureServiceBusSubscriberCommandHandler.CreateMessage(subscription, evt));
+            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null);
+
+            Assert.Throws<InvalidOperationException>(() => target.CreateMessage(subscription, evt));
         }
 
         private static AzureServiceBusSubscriptionSettings SubscriptionStub(

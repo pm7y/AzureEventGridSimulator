@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
@@ -25,5 +26,15 @@ public static class HttpContextExtensions
         context.Response.StatusCode = (int)statusCode;
 
         await context.Response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
+    }
+
+    public static TopicSettings GetTopic(this HttpContext context)
+    {
+        return context.Features.Get<TopicSettings>();
+    }
+
+    public static void SetTopic(this HttpContext context, TopicSettings topic)
+    {
+        context.Features.Set(topic);
     }
 }

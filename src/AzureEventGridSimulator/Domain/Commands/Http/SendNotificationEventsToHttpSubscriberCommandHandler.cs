@@ -1,6 +1,7 @@
-﻿using System;
+﻿namespace AzureEventGridSimulator.Domain.Commands;
+
+using System;
 using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Entities;
@@ -8,23 +9,21 @@ using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-
-namespace AzureEventGridSimulator.Domain.Commands;
 
 // ReSharper disable once UnusedMember.Global
-public class SendNotificationEventsToHttpSubscriberCommandHandler : AsyncRequestHandler<SendNotificationEventsToSpecializedSubscriberCommand<HttpSubscriptionSettings>>
+public abstract class SendNotificationEventsToHttpSubscriberCommandHandler<TEvent> : AsyncRequestHandler<SendNotificationEventsToSpecializedSubscriberCommand<HttpSubscriptionSettings, TEvent>>
+    where TEvent : IEvent
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger _logger;
 
-    public SendNotificationEventsToHttpSubscriberCommandHandler(IHttpClientFactory httpClientFactory, ILogger<SendNotificationEventsToHttpSubscriberCommandHandler> logger)
+    public SendNotificationEventsToHttpSubscriberCommandHandler(ILogger logger, IHttpClientFactory httpClientFactory)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
 
-    protected override async Task Handle(SendNotificationEventsToSpecializedSubscriberCommand<HttpSubscriptionSettings> request, CancellationToken cancellationToken)
+    protected override async Task Handle(SendNotificationEventsToSpecializedSubscriberCommand<HttpSubscriptionSettings, TEvent> request, CancellationToken cancellationToken)
     {
         try
         {
@@ -49,16 +48,8 @@ public class SendNotificationEventsToHttpSubscriberCommandHandler : AsyncRequest
             {
                 if (request.Subscription.Filter.AcceptsEvent(evt))
                 {
-                    var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
-                    using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var content = GetContent(request.Subscription, evt);
                     var httpClient = _httpClientFactory.CreateClient();
-                    httpClient.DefaultRequestHeaders.Add(Constants.AegEventTypeHeader, Constants.NotificationEventType);
-                    httpClient.DefaultRequestHeaders.Add(Constants.AegSubscriptionNameHeader, request.Subscription.Name.ToUpperInvariant());
-                    httpClient.DefaultRequestHeaders.Add(Constants.AegDataVersionHeader, evt.DataVersion);
-                    httpClient.DefaultRequestHeaders.Add(Constants.AegMetadataVersionHeader, evt.MetadataVersion);
-                    httpClient.DefaultRequestHeaders.Add(Constants.AegDeliveryCountHeader, "0"); // TODO implement re-tries
-                    httpClient.Timeout = TimeSpan.FromSeconds(60);
-
                     await httpClient.PostAsync(request.Subscription.Endpoint, content)
                                     .ContinueWith(t => LogResult(t, evt, request.Subscription, request.TopicName));
                 }
@@ -74,7 +65,9 @@ public class SendNotificationEventsToHttpSubscriberCommandHandler : AsyncRequest
         }
     }
 
-    private void LogResult(Task<HttpResponseMessage> task, EventGridEvent evt, HttpSubscriptionSettings subscription, string topicName)
+    protected abstract HttpContent GetContent(HttpSubscriptionSettings settings, TEvent evt);
+
+    private void LogResult(Task<HttpResponseMessage> task, TEvent evt, HttpSubscriptionSettings subscription, string topicName)
     {
         if (task.IsCompletedSuccessfully && task.Result.IsSuccessStatusCode)
         {

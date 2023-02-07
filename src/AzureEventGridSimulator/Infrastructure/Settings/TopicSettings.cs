@@ -13,6 +13,9 @@ public class TopicSettings
     [JsonProperty(PropertyName = "port", Required = Required.Always)]
     public int Port { get; set; }
 
+    [JsonProperty(PropertyName = "type", Required = Required.Always)]
+    public EventType Type { get; set; }
+
     [JsonProperty(PropertyName = "disabled", Required = Required.Default)]
     public bool Disabled { get; set; }
 

@@ -1,10 +1,10 @@
-﻿using System;
+﻿namespace AzureEventGridSimulator.Tests.UnitTests.Filtering.CloudEvent;
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AzureEventGridSimulator.Infrastructure.Settings;
-
-namespace AzureEventGridSimulator.Tests.UnitTests.Filtering;
 
 internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
 {
@@ -12,9 +12,8 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
     {
         var list = new List<object[]>();
         list.AddRange(GetNegativeIdFilterConfigurations().Select(c => new object[] { c }));
-        list.AddRange(GetNegativeTopicFilterConfigurations().Select(c => new object[] { c }));
         list.AddRange(GetNegativeSubjectFilterConfigurations().Select(c => new object[] { c }));
-        list.AddRange(GetNegativeEventTypeFilterConfigurations().Select(c => new object[] { c }));
+        list.AddRange(GetNegativeTypeFilterConfigurations().Select(c => new object[] { c }));
         list.AddRange(GetNegativeDataVersionFilterConfigurations().Select(c => new object[] { c }));
         list.AddRange(GetNegativeEventDataFilterConfigurations().Select(c => new object[] { c }));
         list.AddRange(GetNegativeEventIdFilterConfigurations().Select(c => new object[] { c }));
@@ -53,19 +52,6 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
         };
     }
 
-    private static IEnumerable<AdvancedFilterSetting> GetNegativeTopicFilterConfigurations()
-    {
-        return new[]
-        {
-            new AdvancedFilterSetting { Key = "Topic", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith, Value = "HE" },
-            new AdvancedFilterSetting { Key = "Topic", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith, Value = "he_" },
-            new AdvancedFilterSetting { Key = "Topic", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringContains, Value = "everest" },
-            new AdvancedFilterSetting { Key = "Topic", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith, Value = "123" },
-            new AdvancedFilterSetting { Key = "Topic", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = new object[] { "_event_" } },
-            new AdvancedFilterSetting { Key = "Topic", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringNotIn, Values = new object[] { "THE_EVENT_TOPIC" } }
-        };
-    }
-
     private static IEnumerable<AdvancedFilterSetting> GetNegativeSubjectFilterConfigurations()
     {
         return new[]
@@ -79,18 +65,18 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
         };
     }
 
-    private static IEnumerable<AdvancedFilterSetting> GetNegativeEventTypeFilterConfigurations()
+    private static IEnumerable<AdvancedFilterSetting> GetNegativeTypeFilterConfigurations()
     {
         return new[]
         {
-            new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith, Value = "his" },
-            new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith, Value = "hIs" },
-            new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringContains, Value = ".." },
-            new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith, Value = "EVENTTYPE" },
-            new AdvancedFilterSetting { Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = Array.Empty<object>() },
+            new AdvancedFilterSetting { Key = "Type", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith, Value = "his" },
+            new AdvancedFilterSetting { Key = "Type", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith, Value = "hIs" },
+            new AdvancedFilterSetting { Key = "Type", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringContains, Value = ".." },
+            new AdvancedFilterSetting { Key = "Type", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith, Value = "EVENTTYPE" },
+            new AdvancedFilterSetting { Key = "Type", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = Array.Empty<object>() },
             new AdvancedFilterSetting
             {
-                Key = "EventType", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringNotIn,
+                Key = "Type", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringNotIn,
                 Values = new object[] { "Not-the-right-type", "this.is.a.test.event.type" }
             }
         };
@@ -149,10 +135,8 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object[] { long.MaxValue } },
             new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberLessThanOrEquals, Value = long.MaxValue },
             new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberLessThan, Value = ulong.MaxValue },
-            new AdvancedFilterSetting
-                { Key = "Data.NumberMaxValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, Values = new object[] { ulong.MaxValue } },
-            new AdvancedFilterSetting
-                { Key = "Data.SubObject.Name", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = new object[] { "Testing", "does", "not", "exist" } },
+            new AdvancedFilterSetting { Key = "Data.NumberMaxValue", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, Values = new object[] { ulong.MaxValue } },
+            new AdvancedFilterSetting { Key = "Data.SubObject.Name", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.StringIn, Values = new object[] { "Testing", "does", "not", "exist" } },
             new AdvancedFilterSetting { Key = "Data.SubObject.Id", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object[] { 10, 11, 12 } }
         };
     }

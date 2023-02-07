@@ -1,19 +1,19 @@
-﻿using AzureEventGridSimulator.Domain.Entities;
+﻿namespace AzureEventGridSimulator.Tests.UnitTests.Filtering;
+
+using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.UnitTests.Filtering;
-
-[Trait("Category", "unit")]
-public class SimpleFilterEventAcceptanceTests
+public abstract class BaseSimpleFilterEventAcceptanceTests<T>
+    where T : IEvent, new()
 {
     [Fact]
     public void TestDefaultFilterSettingsAcceptsDefaultGridEvent()
     {
         var filterConfig = new FilterSetting();
-        var gridEvent = new EventGridEvent();
+        var gridEvent = new T();
 
         filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
     }
@@ -25,7 +25,7 @@ public class SimpleFilterEventAcceptanceTests
     public void TestEventTypeFilteringSuccess(string[] includedEventTypes)
     {
         var filterConfig = new FilterSetting { IncludedEventTypes = includedEventTypes };
-        var gridEvent = new EventGridEvent { EventType = "This.is.a.test" };
+        var gridEvent = new T { EventType = "This.is.a.test" };
 
         filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
     }
@@ -40,7 +40,7 @@ public class SimpleFilterEventAcceptanceTests
     public void TestEventTypeFilteringFailure(string[] includedEventTypes)
     {
         var filterConfig = new FilterSetting { IncludedEventTypes = includedEventTypes };
-        var gridEvent = new EventGridEvent { EventType = "This.is.a.test" };
+        var gridEvent = new T { EventType = "This.is.a.test" };
 
         filterConfig.AcceptsEvent(gridEvent).ShouldBeFalse();
     }
@@ -68,7 +68,7 @@ public class SimpleFilterEventAcceptanceTests
     public void TestSubjectFilteringSuccess(string beginsWith, string endsWith, bool caseSensitive)
     {
         var filterConfig = new FilterSetting { SubjectBeginsWith = beginsWith, SubjectEndsWith = endsWith, IsSubjectCaseSensitive = caseSensitive };
-        var gridEvent = new EventGridEvent { Subject = "This_Is_A_Test_Subject" };
+        var gridEvent = new T { Subject = "This_Is_A_Test_Subject" };
 
         filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
     }
@@ -90,7 +90,7 @@ public class SimpleFilterEventAcceptanceTests
     public void TestSubjectFilteringFailure(string beginsWith, string endsWith, bool caseSensitive)
     {
         var filterConfig = new FilterSetting { SubjectBeginsWith = beginsWith, SubjectEndsWith = endsWith, IsSubjectCaseSensitive = caseSensitive };
-        var gridEvent = new EventGridEvent { Subject = "This_Is_A_Test_Subject" };
+        var gridEvent = new T { Subject = "This_Is_A_Test_Subject" };
 
         filterConfig.AcceptsEvent(gridEvent).ShouldBeFalse();
     }

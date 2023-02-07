@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace AzureEventGridSimulator.Infrastructure.Settings;
+
+using System;
 using System.Linq;
 using Newtonsoft.Json;
-
-namespace AzureEventGridSimulator.Infrastructure.Settings;
 
 public class SubscriberSettings
 {
@@ -13,7 +12,7 @@ public class SubscriberSettings
     [JsonProperty(PropertyName = "serviceBus", Required = Required.Default)]
     public AzureServiceBusSubscriptionSettings[] ServiceBus { get; set; } = Array.Empty<AzureServiceBusSubscriptionSettings>();
 
-    internal IEnumerable<BaseSubscriptionSettings> AllSubscriptions => Http.Cast<BaseSubscriptionSettings>().Union(ServiceBus);
+    internal BaseSubscriptionSettings[] AllSubscriptions => Http.Cast<BaseSubscriptionSettings>().Union(ServiceBus).ToArray();
 
     internal void Validate()
     {

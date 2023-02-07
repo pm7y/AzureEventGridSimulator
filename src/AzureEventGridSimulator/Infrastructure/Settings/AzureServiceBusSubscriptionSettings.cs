@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using BrokerPropertyKeys = AzureEventGridSimulator.Domain.Commands.SendNotificationEventsToAzureServiceBusSubscriberCommandHandler.BrokerPropertyKeys;
+using static AzureEventGridSimulator.Domain.Commands.SendNotificationEventsToAzureServiceBusSubscriberCommandHandler<AzureEventGridSimulator.Domain.Entities.EventGridEvent>;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
 

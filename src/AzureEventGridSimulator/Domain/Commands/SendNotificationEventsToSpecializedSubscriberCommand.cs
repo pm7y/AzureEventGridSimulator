@@ -4,17 +4,17 @@ using MediatR;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 
-public class SendNotificationEventsToSpecializedSubscriberCommand<T> : IRequest
-    where T : BaseSubscriptionSettings
+public class SendNotificationEventsToSpecializedSubscriberCommand<TSubscription, TEvent> : IRequest
+    where TSubscription : BaseSubscriptionSettings
 {
-    public SendNotificationEventsToSpecializedSubscriberCommand(T subscription, EventGridEvent[] events, string topicName)
+    public SendNotificationEventsToSpecializedSubscriberCommand(TSubscription subscription, TEvent[] events, string topicName)
     {
         Subscription = subscription;
         Events = events;
         TopicName = topicName;
     }
 
-    public T Subscription { get; }
+    public TSubscription Subscription { get; }
     public string TopicName { get; }
-    public EventGridEvent[] Events { get; }
+    public TEvent[] Events { get; }
 }
