@@ -1,25 +1,29 @@
-﻿using System;
+﻿namespace AzureEventGridSimulator.Tests.UnitTests.Filtering.CloudEvent;
+
+using System;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.UnitTests.Filtering;
-
 [Trait("Category", "unit")]
+[Trait("Type", "CloudEvent")]
 public class AdvancedFilterEventAcceptanceTests
 {
-    private static readonly EventGridEvent _gridEvent = new()
+    private static readonly CloudEvent _gridEvent = new()
     {
         Id = "EventId",
-        Data = new { NumberValue = 1, IsTrue = true, Name = "StringValue", DoubleValue = 0.12345d, NumberMaxValue = ulong.MaxValue, SubObject = new { Id = 1, Name = "Test" } },
-        DataVersion = "5.0",
-        EventTime = DateTime.UtcNow.ToString("O"),
-        EventType = "this.is.a.test.event.type",
-        MetadataVersion = "2.3.4",
+        SpecVersion = "1.0",
+        Source = "",
+        Type = "this.is.a.test.event.type",
+        DataContentType = "this.is.a.data.content.type",
+        DataSchema = "this.is.a.data.schema",
         Subject = "TheEventSubject",
-        Topic = "THE_EVENT_TOPIC"
+        Time = DateTime.UtcNow.ToString("O"),
+        Data = new { NumberValue = 1, IsTrue = true, Name = "StringValue", DoubleValue = 0.12345d, NumberMaxValue = ulong.MaxValue, SubObject = new { Id = 1, Name = "Test" } },
+        DataBase64 = "",
+        ExtensionAttributes = { { "ExtensionAttrib", "this.is.an.extension.attribute" } }
     };
 
     [Theory]

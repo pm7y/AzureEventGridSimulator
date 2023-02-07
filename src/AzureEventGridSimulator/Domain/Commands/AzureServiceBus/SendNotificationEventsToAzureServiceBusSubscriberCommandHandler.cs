@@ -1,10 +1,13 @@
-﻿using System;
+﻿namespace AzureEventGridSimulator.Domain.Commands;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -13,24 +16,22 @@ using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace AzureEventGridSimulator.Domain.Commands;
-
 // ReSharper disable once UnusedMember.Global
-public class SendNotificationEventsToAzureServiceBusSubscriberCommandHandler : AsyncRequestHandler<SendNotificationEventsToSpecializedSubscriberCommand<AzureServiceBusSubscriptionSettings>>
+public abstract class SendNotificationEventsToAzureServiceBusSubscriberCommandHandler<TEvent> : AsyncRequestHandler<SendNotificationEventsToSpecializedSubscriberCommand<AzureServiceBusSubscriptionSettings, TEvent>>
+    where TEvent : IEvent
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger _logger;
 
-    public SendNotificationEventsToAzureServiceBusSubscriberCommandHandler(IHttpClientFactory httpClientFactory, ILogger<SendNotificationEventsToAzureServiceBusSubscriberCommandHandler> logger)
+    public SendNotificationEventsToAzureServiceBusSubscriberCommandHandler(ILogger logger, IHttpClientFactory httpClientFactory)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
 
-    protected override async Task Handle(SendNotificationEventsToSpecializedSubscriberCommand<AzureServiceBusSubscriptionSettings> request, CancellationToken cancellationToken)
+    protected override async Task Handle(SendNotificationEventsToSpecializedSubscriberCommand<AzureServiceBusSubscriptionSettings, TEvent> request, CancellationToken cancellationToken)
     {
         try
         {
@@ -58,7 +59,7 @@ public class SendNotificationEventsToAzureServiceBusSubscriberCommandHandler : A
                     CreateMessage(request.Subscription, evt)
                 };
 
-                var json = JsonConvert.SerializeObject(messages, Formatting.Indented);
+                var json = JsonSerializer.Serialize(messages, new JsonSerializerOptions { WriteIndented = true });
                 using var content = new StringContent(json, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.microsoft.servicebus.json");
 
@@ -78,14 +79,15 @@ public class SendNotificationEventsToAzureServiceBusSubscriberCommandHandler : A
         }
     }
 
-    public static Message CreateMessage(AzureServiceBusSubscriptionSettings subscription, EventGridEvent evt)
+    internal Message CreateMessage(AzureServiceBusSubscriptionSettings subscription, TEvent evt)
     {
-        var obj = JObject.FromObject(evt);
         var msg = new Message
         {
-            Body = obj.ToString()
+            Body = JsonSerializer.Serialize(evt)
         };
 
+        // System.Text.Json currently does not have support for JsonPath. Fall back to Newtonsoft.
+        var obj = JObject.FromObject(evt);
         foreach (var property in subscription.Properties)
         {
             var value = property.Value.PropertyType switch
@@ -133,15 +135,11 @@ public class SendNotificationEventsToAzureServiceBusSubscriberCommandHandler : A
             }
         }
 
-        // set event properties
-        msg.UserProperties[Constants.AegEventTypeHeader] = Constants.NotificationEventType;
-        msg.UserProperties[Constants.AegSubscriptionNameHeader] = subscription.Name.ToUpperInvariant();
-        msg.UserProperties[Constants.AegDataVersionHeader] = evt.DataVersion;
-        msg.UserProperties[Constants.AegMetadataVersionHeader] = evt.MetadataVersion;
-        msg.UserProperties[Constants.AegDeliveryCountHeader] = "0";
-
+        AddAegProperties(ref msg, subscription, evt);
         return msg;
     }
+
+    protected abstract void AddAegProperties(ref Message message, AzureServiceBusSubscriptionSettings subscription, TEvent evt);
 
     private static string CreateToken(string resourceUri, string keyName, string key)
     {
@@ -156,7 +154,7 @@ public class SendNotificationEventsToAzureServiceBusSubscriberCommandHandler : A
         return sasToken;
     }
 
-    private void LogResult(Task<HttpResponseMessage> task, EventGridEvent evt, AzureServiceBusSubscriptionSettings subscription, string topicName)
+    private void LogResult(Task<HttpResponseMessage> task, TEvent evt, AzureServiceBusSubscriptionSettings subscription, string topicName)
     {
         if (task.IsCompletedSuccessfully && task.Result.IsSuccessStatusCode)
         {
@@ -201,13 +199,13 @@ public class SendNotificationEventsToAzureServiceBusSubscriberCommandHandler : A
 
     public sealed class Message
     {
-        [JsonProperty("Body")]
+        [JsonPropertyName("Body")]
         public string Body { get; set; }
 
-        [JsonProperty("BrokerProperties")]
+        [JsonPropertyName("BrokerProperties")]
         public Dictionary<string, string> BrokerProperties { get; set; } = new Dictionary<string, string>();
 
-        [JsonProperty("UserProperties")]
+        [JsonPropertyName("UserProperties")]
         public Dictionary<string, string> UserProperties { get; set; } = new Dictionary<string, string>();
     }
 }

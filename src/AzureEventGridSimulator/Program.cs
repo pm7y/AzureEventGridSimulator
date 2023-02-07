@@ -9,9 +9,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
+using AzureEventGridSimulator.Domain.Converters;
 using AzureEventGridSimulator.Infrastructure;
+using AzureEventGridSimulator.Infrastructure.Authentication;
 using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Infrastructure.Filters;
 using AzureEventGridSimulator.Infrastructure.Middleware;
+using AzureEventGridSimulator.Infrastructure.ModelBinders;
+using AzureEventGridSimulator.Infrastructure.Options;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
@@ -41,8 +46,9 @@ public class Program
                 .Build();
 
             app.UseSerilogRequestLogging(options => { options.GetLevel = (_, _, _) => LogEventLevel.Debug; });
-            app.UseEventGridMiddleware();
+            app.UseNotFoundMiddleware();
             app.UseRouting();
+            app.UseAuthorization();
             app.MapControllers();
 
             await StartSimulator(app);
@@ -127,11 +133,8 @@ public class Program
         // Set up basic Console logger we can use to log to until we've finished building everything
         Log.Logger = CreateBasicConsoleLogger();
 
-        // First thing's first. Build the configuration.
-        var configuration = BuildConfiguration(args);
-
         // Configure the web host builder
-        return ConfigureWebHost(args, configuration);
+        return ConfigureWebHost(args);
     }
 
     private static ILogger CreateBasicConsoleLogger()
@@ -141,47 +144,38 @@ public class Program
                .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
                .MinimumLevel.Override("System", LogEventLevel.Error)
                .WriteTo.Console()
-               .CreateBootstrapLogger();
+               .CreateLogger();
     }
 
-    private static IConfigurationRoot BuildConfiguration(string[] args)
-    {
-        var environmentAndCommandLineConfiguration = new ConfigurationBuilder()
-                                                     .AddEnvironmentVariablesAndCommandLine(args)
-                                                     .Build();
-
-        var environmentName = environmentAndCommandLineConfiguration.EnvironmentName();
-
-        var builder = new ConfigurationBuilder()
-                      .SetBasePath(Directory.GetCurrentDirectory())
-                      .AddJsonFile("appsettings.json", true, false)
-                      .AddJsonFile($"appsettings.{environmentName}.json", true, false)
-                      .AddCustomSimulatorConfigFileIfSpecified(environmentAndCommandLineConfiguration)
-                      .AddEnvironmentVariablesAndCommandLine(args)
-                      .AddInMemoryCollection(
-                                             new Dictionary<string, string>
-                                             {
-                                                 ["AEGS_Serilog__Using__0"] = "Serilog.Sinks.Console",
-                                                 ["AEGS_Serilog__Using__1"] = "Serilog.Sinks.File",
-                                                 ["AEGS_Serilog__Using__2"] = "Serilog.Sinks.Seq"
-                                             });
-
-        return builder.Build();
-    }
-
-    private static WebApplicationBuilder ConfigureWebHost(string[] args, IConfiguration configuration)
+    private static WebApplicationBuilder ConfigureWebHost(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddSimulatorSettings(configuration);
+        builder.Services.AddSimulatorSettings();
         builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
         builder.Services.AddHttpClient();
+        builder.Services.AddAuthentication("SAS")
+            .AddScheme<SasAuthenticationOptions, SasAuthenticationHandler>("SAS", null);
 
-        builder.Services.AddScoped<SasKeyValidator>();
+        builder.Services.AddScoped<MaxContentLengthAttribute>();
+        builder.Services.AddScoped<NotFoundMiddleware>();
+        builder.Services.AddScoped<TopicMiddleware>();
         builder.Services.AddSingleton<ValidationIpAddressProvider>();
 
-        builder.Services.AddControllers(options => { options.EnableEndpointRouting = false; })
-               .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; });
+        builder.Services.AddSingleton<EventGridEventConverter>();
+        builder.Services.AddSingleton<CloudEventConverter>();
+        builder.Services.AddSingleton<HttpContextFeaturesModelBinderProvider>();
+
+        builder.Services.AddSingleton<ConfigureApiBehaviorOptions>();
+        builder.Services.AddSingleton<ConfigureJsonOptions>();
+        builder.Services.AddSingleton<ConfigureMvcOptions>();
+
+        builder.Services.ConfigureOptions<ConfigureMvcOptions>();
+        builder.Services.ConfigureOptions<ConfigureJsonOptions>();
+        builder.Services.AddControllers();
+
+        // must be after AddControllers();
+        builder.Services.ConfigureOptions<ConfigureApiBehaviorOptions>();
 
         builder.Services.AddApiVersioning(config =>
         {
@@ -210,10 +204,12 @@ public class Program
                 .WriteTo.Conditional(_ => !hasAtLeastOneLogSinkBeenConfigured, sinkConfiguration => sinkConfiguration.Console());
         });
 
-        builder.Configuration.AddConfiguration(configuration);
-        builder.WebHost.UseKestrel(options =>
+        builder.AddConfiguration(args);
+        builder.AddTopicRouting();
+
+        builder.WebHost.UseKestrel((context, options) =>
         {
-            Log.Verbose(((IConfigurationRoot)configuration).GetDebugView().Normalize());
+            Log.Verbose(((IConfigurationRoot)context.Configuration).GetDebugView().Normalize());
 
             options.ConfigureSimulatorCertificate();
 

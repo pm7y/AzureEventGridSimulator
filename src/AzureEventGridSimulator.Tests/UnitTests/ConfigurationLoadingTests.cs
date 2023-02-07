@@ -18,6 +18,7 @@ public class ConfigurationLoadingTests
                 ""name"": ""MyAwesomeTopic"",
                 ""port"": 60101,
                 ""key"": ""TheLocal+DevelopmentKey="",
+                ""type"": ""EventGridEvent"",
                 ""subscribers"": {
                     ""http"": [{
                         ""name"": ""LocalAzureFunctionSubscription"",
@@ -64,6 +65,7 @@ public class ConfigurationLoadingTests
                 ""name"":""ATopicWithNoSubscribers"",
                 ""port"":60102,
                 ""key"":""TheLocal+DevelopmentKey="",
+                ""type"": ""CloudEvent"",
                 ""subscribers"": {}
             }]
         }";

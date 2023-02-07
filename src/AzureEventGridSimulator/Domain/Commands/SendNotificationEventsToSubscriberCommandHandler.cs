@@ -1,44 +1,38 @@
-﻿using System;
+﻿namespace AzureEventGridSimulator.Domain.Commands;
+
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace AzureEventGridSimulator.Domain.Commands;
-
 // ReSharper disable once UnusedMember.Global
-public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHandler<SendNotificationEventsToSubscriberCommand>
+public abstract class SendNotificationEventsToSubscriberCommandHandler<TEvent> : AsyncRequestHandler<SendNotificationEventsToSubscriberCommand<TEvent>>
+    where TEvent : IEvent
 {
     private readonly IMediator _mediator;
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
+    private readonly ILogger _logger;
 
-    public SendNotificationEventsToSubscriberCommandHandler(IMediator mediator, IHttpClientFactory httpClientFactory, ILogger<SendNotificationEventsToSubscriberCommandHandler> logger)
+    protected SendNotificationEventsToSubscriberCommandHandler(ILogger logger, IMediator mediator)
     {
         _mediator = mediator;
-        _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
 
-    protected override async Task Handle(SendNotificationEventsToSubscriberCommand request, CancellationToken cancellationToken)
+    protected override async Task Handle(SendNotificationEventsToSubscriberCommand<TEvent> request, CancellationToken cancellationToken)
     {
-        Task SendAsync<T>(T[] subscriptions)
-            where T : BaseSubscriptionSettings
+        Task SendAsync<TSubscription>(TSubscription[] subscriptions)
+            where TSubscription : BaseSubscriptionSettings
         {
-            return Task.WhenAll(subscriptions.Select(subscription => _mediator.Send(new SendNotificationEventsToSpecializedSubscriberCommand<T>(subscription, request.Events, request.Topic.Name), cancellationToken)));
+            return Task.WhenAll(subscriptions.Select(subscription => _mediator.Send(new SendNotificationEventsToSpecializedSubscriberCommand<TSubscription, TEvent>(subscription, request.Events, request.Topic.Name), cancellationToken)));
         }
 
         _logger.LogInformation("{EventCount} event(s) received on topic '{TopicName}'", request.Events.Length, request.Topic.Name);
 
-        foreach (var eventGridEvent in request.Events)
-        {
-            eventGridEvent.Topic = $"/subscriptions/{Guid.Empty:D}/resourceGroups/eventGridSimulator/providers/Microsoft.EventGrid/topics/{request.Topic.Name}";
-            eventGridEvent.MetadataVersion = "1";
-        }
+        Prepare(request.Topic, request.Events);
 
         if (!request.Topic.Subscribers.AllSubscriptions.Any())
         {
@@ -71,4 +65,6 @@ public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHand
             }
         }
     }
+
+    protected abstract void Prepare(TopicSettings topic, TEvent[] events);
 }

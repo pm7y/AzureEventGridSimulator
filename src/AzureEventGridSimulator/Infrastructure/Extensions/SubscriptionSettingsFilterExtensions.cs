@@ -1,14 +1,13 @@
-﻿using System;
+﻿namespace AzureEventGridSimulator.Infrastructure.Extensions;
+
+using System;
 using System.Linq;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using Newtonsoft.Json.Linq;
-
-namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
 public static class SubscriptionSettingsFilterExtensions
 {
-    public static bool AcceptsEvent(this FilterSetting filter, EventGridEvent gridEvent)
+    public static bool AcceptsEvent(this FilterSetting filter, IEvent gridEvent)
     {
         var retVal = filter == null;
 
@@ -37,7 +36,7 @@ public static class SubscriptionSettingsFilterExtensions
         return retVal;
     }
 
-    private static bool AcceptsEvent(this AdvancedFilterSetting filter, EventGridEvent gridEvent)
+    private static bool AcceptsEvent(this AdvancedFilterSetting filter, IEvent gridEvent)
     {
         var retVal = filter == null;
 
@@ -76,37 +75,37 @@ public static class SubscriptionSettingsFilterExtensions
                 retVal = Try(() => Convert.ToBoolean(value) == Convert.ToBoolean(filter.Value));
                 break;
             case AdvancedFilterSetting.OperatorTypeEnum.StringContains:
-            {
-                // a string cannot be considered to contain null or and empty string
-                var valueAsString = value as string;
-                var filterValueAsString = filter.Value as string;
+                {
+                    // a string cannot be considered to contain null or and empty string
+                    var valueAsString = value as string;
+                    var filterValueAsString = filter.Value as string;
 
-                retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
-                                   !string.IsNullOrEmpty(valueAsString) &&
-                                   valueAsString.Contains(filterValueAsString, StringComparison.OrdinalIgnoreCase));
-            }
+                    retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
+                                       !string.IsNullOrEmpty(valueAsString) &&
+                                       valueAsString.Contains(filterValueAsString, StringComparison.OrdinalIgnoreCase));
+                }
                 break;
             case AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith:
-            {
-                // null or empty values cannot be considered to be the beginning character of a string
-                var valueAsString = value as string;
-                var filterValueAsString = filter.Value as string;
+                {
+                    // null or empty values cannot be considered to be the beginning character of a string
+                    var valueAsString = value as string;
+                    var filterValueAsString = filter.Value as string;
 
-                retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
-                                   !string.IsNullOrEmpty(valueAsString) &&
-                                   valueAsString.StartsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
-            }
+                    retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
+                                       !string.IsNullOrEmpty(valueAsString) &&
+                                       valueAsString.StartsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
+                }
                 break;
             case AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith:
-            {
-                // null or empty values cannot be considered to be the end character of a string
-                var valueAsString = value as string;
-                var filterValueAsString = filter.Value as string;
+                {
+                    // null or empty values cannot be considered to be the end character of a string
+                    var valueAsString = value as string;
+                    var filterValueAsString = filter.Value as string;
 
-                retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
-                                   !string.IsNullOrEmpty(valueAsString) &&
-                                   valueAsString.EndsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
-            }
+                    retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
+                                       !string.IsNullOrEmpty(valueAsString) &&
+                                       valueAsString.EndsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
+                }
                 break;
             case AdvancedFilterSetting.OperatorTypeEnum.StringIn:
                 retVal = Try(() => (filter.Values ?? Array.Empty<object>()).Select(v => Convert.ToString(v)?.ToUpper()).Contains(Convert.ToString(value)?.ToUpper()));
@@ -141,65 +140,5 @@ public static class SubscriptionSettingsFilterExtensions
         {
             return valueOnException;
         }
-    }
-
-    private static bool TryGetValue(this EventGridEvent gridEvent, string key, out object value)
-    {
-        var retval = false;
-        value = null;
-
-        if (!string.IsNullOrWhiteSpace(key))
-        {
-            switch (key)
-            {
-                case nameof(gridEvent.Id):
-                    value = gridEvent.Id;
-                    retval = true;
-                    break;
-                case nameof(gridEvent.Topic):
-                    value = gridEvent.Topic;
-                    retval = true;
-                    break;
-                case nameof(gridEvent.Subject):
-                    value = gridEvent.Subject;
-                    retval = true;
-                    break;
-                case nameof(gridEvent.EventType):
-                    value = gridEvent.EventType;
-                    retval = true;
-                    break;
-                case nameof(gridEvent.DataVersion):
-                    value = gridEvent.DataVersion;
-                    retval = true;
-                    break;
-                case nameof(gridEvent.Data):
-                    value = gridEvent.Data;
-                    retval = true;
-                    break;
-                default:
-                    var split = key.Split('.');
-                    if (split[0] == nameof(gridEvent.Data) && gridEvent.Data != null && split.Length > 1)
-                    {
-                        var tmpValue = gridEvent.Data;
-                        for (var i = 0; i < split.Length; i++)
-                        {
-                            // look for the property on the grid event data object
-                            if (tmpValue != null && JObject.FromObject(tmpValue).TryGetValue(split[i], out var dataValue))
-                            {
-                                tmpValue = dataValue.ToObject<object>();
-                                if (i == split.Length - 1)
-                                {
-                                    retval = true;
-                                    value = tmpValue;
-                                }
-                            }
-                        }
-                    }
-
-                    break;
-            }
-        }
-
-        return retval;
     }
 }

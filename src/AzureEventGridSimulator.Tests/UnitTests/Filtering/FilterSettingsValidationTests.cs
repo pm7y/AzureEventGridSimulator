@@ -67,7 +67,7 @@ public class FilterSettingsValidationTests
     public void TestFilterSettingsValidationWithSixAdvancedFilters()
     {
         var filterConfig = new FilterSetting { AdvancedFilters = new List<AdvancedFilterSetting>() };
-        for (var i = 0; i < 6; i++)
+        for (var i = 0; i < 26; i++)
         {
             filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
         }
@@ -75,6 +75,6 @@ public class FilterSettingsValidationTests
         var exception = Should.Throw<ArgumentException>(() => GetValidSimulatorSettings(filterConfig).Validate());
 
         exception.ParamName.ShouldBe(nameof(filterConfig.AdvancedFilters));
-        exception.Message.ShouldBe("Advanced filtering is limited to five advanced filters per event grid subscription. (Parameter 'AdvancedFilters')");
+        exception.Message.ShouldBe("Advanced filtering is limited to twenty-five advanced filters per event grid subscription. (Parameter 'AdvancedFilters')");
     }
 }

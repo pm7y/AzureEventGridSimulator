@@ -12,8 +12,8 @@ A simulator that provides endpoints to mimic the functionality of [Azure Event G
 
 Topics and their subscribers are configured in the `appsettings.json` file.
 
-You can add multiple topics. Each topic must have a unique port. Each topic can have multiple subscribers.
-An example of one topic with one subscriber is shown below.
+You can add multiple topics. Each topic must have a unique port. Each topic can have multiple subscribers. Each topic can support EventGridEvents or CloudEvent schemas.
+An example of one topic with support for an EventGridEvent schema and with one HTTP endpoint subscriber is shown below.
 
 ```json
 {
@@ -22,6 +22,7 @@ An example of one topic with one subscriber is shown below.
       "name": "MyAwesomeTopic",
       "port": 60101,
       "key": "TheLocal+DevelopmentKey=",
+      "type": "EventGridEvent",
       "subscribers": {
         "http": [
           {
@@ -41,9 +42,14 @@ An example of one topic with one subscriber is shown below.
 - `name`: The name of the topic. It can only contain letters, numbers, and dashes.
 - `port`: The port to use for the topic endpoint. The topic will listen on `https://0.0.0.0:{port}/`.
 - `key`: The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place.
+- `type`: The event schema for the topic. Both EventGridEvent (https://learn.microsoft.com/en-us/azure/event-grid/event-schema) and CloudSchema (https://learn.microsoft.com/en-us/azure/event-grid/cloud-event-schema) schemas are supported.
 - `subscribers`: The subscriptions for this topic.
 
 ### Subscriber Settings
+
+Two subscriber classifications are supported - HTTP endpoints and Azure Service Bus.
+
+#### HTTP
 
 - `name`: The name of the subscriber. It can only contain letters, numbers, and dashes.
 - `endpoint`: The subscription endpoint url. Events received by topic will be sent to this address.
@@ -51,13 +57,51 @@ An example of one topic with one subscriber is shown below.
   - `false` (the default) subscription validation will be attempted each time the simulator starts.
   - `true` to disable subscription validation.
 
-#### Subscription Validation
+##### Subscription Validation
 
 When a subscription is added to Azure Event Grid it first sends a validation event to the subscription endpoint. The validation event contains a `validationCode` which the subscription endpoint must echo back. If this does not occur then Azure Event Grid will not enable the subscription.
 
 More information about subscription validation can be found at [https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery](https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery).
 
 The Azure Event Grid Simualator will mimick this validation behaviour at start up but it can be disabled using the `disableValidation` setting (above).
+
+#### Azure Service Bus
+
+- `name`: The name of the subscriber. It can only contain letters, numbers, and dashes.
+- `sharedAccessKeyName`: The shared access policy name.
+- `sharedAccessKey`: The shared access policy key.
+- `topic`: Destination topic/queue name.
+- `disableValidation`:
+  - `false` (the default) subscription validation will be attempted each time the simulator starts.
+  - `true` to disable subscription validation.
+- `properties`: Define headers that are included with the request sent to the destination.
+
+##### Delivery Properties
+
+Define headers that are included with the request sent to the destination.
+
+- element: User property name.
+- `type`: `dynamic` or `static`.
+- `value`: JsonPath property selection.
+
+Extending the example above to include two user properties (`message` and `eTag`). `message` will always have the value of `hello world` and `eTag` will use the value of the `eTag` property in the event's data payload.
+
+```json
+{
+  "properties": [
+    {
+      "message": {
+          "type": "static",
+          "value" : "Hello world"
+      },
+      "eTag": {
+          "type": "dynamic",
+          "value": "data.eTag"
+      }
+    }
+  ]
+}
+```
 
 #### Filtering Events
 
@@ -266,7 +310,6 @@ It posts the payload to https://host:port and drops the query uri. All of the ex
 
 Some features that could be added if there was a need for them: -
 
-- `CloudEvent` schema support.
 - Subscriber retries & dead lettering. https://docs.microsoft.com/en-us/azure/event-grid/delivery-and-retry
 - Certificate configuration in `appsettings.json`.
 - Subscriber token auth
