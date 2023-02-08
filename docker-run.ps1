@@ -1,7 +1,10 @@
 # run a container from an existing image
 
-$imageName="pmcilreavy/azureeventgridsimulator:latest";
-$containerName="azureeventgridsimulator-offical";
+$imageName="pmcilreavy/azureeventgridsimulator";
+$containerName="azureeventgridsimulator-official";
+
+# Build and push to docker hub
+#docker buildx build --push --no-cache --platform linux/arm64,linux/amd64 --tag pmcilreavy/azureeventgridsimulator:3.0.3 --tag pmcilreavy/azureeventgridsimulator:latest .
 
 if ($(docker ps --all --filter="name=$containerName") -like "*$containerName*") {
         # the container already exists to just (re)-start it
@@ -14,7 +17,6 @@ if ($(docker ps --all --filter="name=$containerName") -like "*$containerName*") 
                 --publish 60101:60101 `
                 --name $containerName `
                 -v ${pwd}/docker:/aegs `
-                --platform linux/amd64 `
                 -e ASPNETCORE_ENVIRONMENT=Development `
                 -e ASPNETCORE_Kestrel__Certificates__Default__Path=/aegs/azureEventGridSimulator.pfx `
                 -e ASPNETCORE_Kestrel__Certificates__Default__Password=Y0urSup3rCrypt1cPa55w0rd! `
