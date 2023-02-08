@@ -59,7 +59,7 @@ public abstract class SendNotificationEventsToAzureServiceBusSubscriberCommandHa
                     CreateMessage(request.Subscription, evt)
                 };
 
-                var json = JsonSerializer.Serialize(messages, new JsonSerializerOptions { WriteIndented = true });
+                var json = System.Text.Json.JsonSerializer.Serialize(messages, new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
                 using var content = new StringContent(json, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.microsoft.servicebus.json");
 
@@ -83,18 +83,18 @@ public abstract class SendNotificationEventsToAzureServiceBusSubscriberCommandHa
     {
         var msg = new Message
         {
-            Body = JsonSerializer.Serialize(evt)
+            Body = System.Text.Json.JsonSerializer.Serialize(evt, new JsonSerializerOptions())
         };
 
         // System.Text.Json currently does not have support for JsonPath. Fall back to Newtonsoft.
-        var obj = JObject.FromObject(evt);
+        var obj = JObject.Parse(msg.Body);
         foreach (var property in subscription.Properties)
         {
-            var value = property.Value.PropertyType switch
+            var value = property.Value.Type switch
             {
                 AzureServiceBusSubscriptionSettings.PropertyType.Static => property.Value.Value,
                 AzureServiceBusSubscriptionSettings.PropertyType.Dynamic => obj.SelectToken(property.Value.Value),
-                _ => throw new NotImplementedException($"Unsupported property type '{property.Value.PropertyType}'")
+                _ => throw new NotImplementedException($"Unsupported property type '{property.Value.Type}'")
             };
 
             if (value == null || value.Type == JTokenType.Null)
@@ -104,9 +104,9 @@ public abstract class SendNotificationEventsToAzureServiceBusSubscriberCommandHa
 
             if (BrokerPropertyKeys.AllKeys.Contains(property.Key))
             {
-                if (property.Key == BrokerPropertyKeys.MessageId && property.Value.PropertyType == AzureServiceBusSubscriptionSettings.PropertyType.Static)
+                if (property.Key == BrokerPropertyKeys.MessageId && property.Value.Type == AzureServiceBusSubscriptionSettings.PropertyType.Static)
                 {
-                    throw new InvalidOperationException($"'{property.Value.PropertyType}' is unsupported for property '{BrokerPropertyKeys.MessageId}'");
+                    throw new InvalidOperationException($"'{property.Value.Type}' is unsupported for property '{BrokerPropertyKeys.MessageId}'");
                 }
 
                 msg.BrokerProperties ??= new Dictionary<string, string>();

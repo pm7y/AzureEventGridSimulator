@@ -54,7 +54,7 @@ public class AzureServiceBusSubscriptionSettings : BaseSubscriptionSettings
             throw new InvalidOperationException($"{Name}: 'topic' is invalid. The length must be at least 3 and at most 63 characters. It can contain only letters, numbers, hyphens \"-\" and must start with a letter and end with a letter or number.");
         }
 
-        if (Properties.TryGetValue(BrokerPropertyKeys.MessageId, out var property) && property.PropertyType == PropertyType.Static)
+        if (Properties.TryGetValue(BrokerPropertyKeys.MessageId, out var property) && property.Type == PropertyType.Static)
         {
             // https://learn.microsoft.com/en-us/azure/event-grid/delivery-properties
             throw new InvalidOperationException($"{Name}: {BrokerPropertyKeys.MessageId} only supports dynamic values.");
@@ -65,26 +65,40 @@ public class AzureServiceBusSubscriptionSettings : BaseSubscriptionSettings
             // https://learn.microsoft.com/en-us/azure/event-grid/delivery-properties
             throw new InvalidOperationException($"{Name}: Either {BrokerPropertyKeys.MessageId} or {BrokerPropertyKeys.SessionId} can be set, but not both.");
         }
+
+        foreach (var propertyValue in Properties.Values)
+        {
+            propertyValue.Validate();
+        }
     }
 
     public class Property
     {
         public Property()
         {
+            Type = PropertyType.Static;
         }
 
         public Property(PropertyType propertyType, string value)
         {
-            PropertyType = propertyType;
+            Type = propertyType;
             Value = value;
         }
 
         [JsonProperty(PropertyName = "type", Required = Required.Always)]
         [JsonConverter(typeof(StringEnumConverter))]
-        public PropertyType PropertyType { get; set; }
+        public PropertyType Type { get; set; }
 
         [JsonProperty(PropertyName = "value", Required = Required.Always)]
         public string Value { get; set; }
+
+        internal void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(Value))
+            {
+                throw new InvalidOperationException("'value' is required");
+            }
+        }
     }
 
     public enum PropertyType

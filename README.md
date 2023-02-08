@@ -88,18 +88,17 @@ Extending the example above to include two user properties (`message` and `eTag`
 
 ```json
 {
-  "properties": [
+  "properties":
     {
-      "message": {
-          "type": "static",
-          "value" : "Hello world"
-      },
-      "eTag": {
-          "type": "dynamic",
-          "value": "data.eTag"
-      }
+        "message": {
+            "type": "static",
+            "value" : "Hello world"
+        },
+        "eTag": {
+            "type": "dynamic",
+            "value": "data.eTag"
+        }
     }
-  ]
 }
 ```
 

@@ -53,29 +53,31 @@
       "name": "ATopicThatPushesToAnAzureServiceBus",
       "port": 60105,
       "key": "TheLocal+DevelopmentKey=",
-      "serviceBus": [
-        {
-          "name": "SVB",
-          "namespace": "azure-service-bus-namespace",
-          "sharedAccessKeyName": "RootManageSharedAccessKey",
-          "sharedAccessKey": "VGhlcmUgaXMgbm90aGluZyB0byBzZWUgaGVyZS4uLg==",
-          "topic": "sample-topic",
-          "properties": {
-            "MessageId": {
-              "type": "dynamic",
-              "value": "Id"
-            },
-            "Label": {
-              "type": "dynamic",
-              "value": "Subject"
-            },
-            "CustomProperty": {
-              "type": "static",
-              "value": "Custom property value"
+      "subscribers": {
+        "serviceBus": [
+          {
+            "name": "SVB",
+            "namespace": "azure-service-bus-namespace",
+            "sharedAccessKeyName": "RootManageSharedAccessKey",
+            "sharedAccessKey": "ServiceBusSharedKey==",
+            "topic": "sample-topic",
+            "properties": {
+              "MessageId": {
+                "type": "dynamic",
+                "value": "Id"
+              },
+              "Label": {
+                "type": "dynamic",
+                "value": "Subject"
+              },
+              "CustomProperty": {
+                "type": "static",
+                "value": "Custom property value"
+              }
             }
           }
-        }
-      ]
+        ]
+      }
     }
   ],
   "Serilog": {

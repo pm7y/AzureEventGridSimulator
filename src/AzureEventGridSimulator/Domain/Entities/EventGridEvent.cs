@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -46,54 +47,64 @@ public class EventGridEvent : IEvent
     /// Gets or sets an unique identifier for the event.
     /// </summary>
     [DataMember(Name = EventGridEventConstants.Id)]
+    [JsonPropertyName(EventGridEventConstants.Id)]
     public string Id { get; set; }
 
     /// <summary>
     /// Gets or sets a resource path relative to the topic path.
     /// </summary>
     [DataMember(Name = EventGridEventConstants.Subject)]
+    [JsonPropertyName(EventGridEventConstants.Subject)]
     public string Subject { get; set; }
 
     /// <summary>
     /// Gets or sets event data specific to the event type.
     /// </summary>
     [DataMember(Name = EventGridEventConstants.Data)]
+    [JsonPropertyName(EventGridEventConstants.Data)]
     public object Data { get; set; }
 
     /// <summary>
     /// Gets or sets the type of the event that occurred.
     /// </summary>
     [DataMember(Name = EventGridEventConstants.EventType)]
+    [JsonPropertyName(EventGridEventConstants.EventType)]
     public string EventType { get; set; }
 
     /// <summary>
     /// Gets or sets the time (in UTC) the event was generated.
     /// </summary>
     [DataMember(Name = EventGridEventConstants.EventTime)]
+    [JsonPropertyName(EventGridEventConstants.EventTime)]
     public string EventTime { get; set; }
 
-    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Text.Json.Serialization.JsonIgnore]
     private DateTime EventTimeParsed => DateTime.Parse(EventTime);
 
-    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Text.Json.Serialization.JsonIgnore]
     private bool EventTimeIsValid => DateTime.TryParse(EventTime, out _);
 
     /// <summary>
     /// Gets or sets the schema version of the data object.
     /// </summary>
     [DataMember(Name = EventGridEventConstants.DataVersion)]
+    [JsonPropertyName(EventGridEventConstants.DataVersion)]
     public string DataVersion { get; set; }
 
     /// <summary>
     /// Gets the schema version of the event metadata.
     /// </summary>
     [DataMember(Name = EventGridEventConstants.MetadataVersion)]
+    [JsonPropertyName(EventGridEventConstants.MetadataVersion)]
     public string MetadataVersion { get; set; }
 
     /// <summary>
     /// Gets or sets the resource path of the event source.
     /// </summary>
     [DataMember(Name = EventGridEventConstants.Topic)]
+    [JsonPropertyName(EventGridEventConstants.Topic)]
     public string Topic { get; set; }
 
     public bool TryGetValue(string key, out object value)

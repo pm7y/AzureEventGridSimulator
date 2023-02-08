@@ -10,6 +10,7 @@
     using System.Runtime.Serialization;
     using System.Runtime.Serialization.DataContracts;
     using System.Text.Json;
+    using System.Text.Json.Serialization;
     using System.Text.RegularExpressions;
     using AzureEventGridSimulator.Domain.Converters;
     using Newtonsoft.Json.Linq;
@@ -43,37 +44,47 @@
         }
 
         [DataMember(Name = CloudEventConstants.Id)]
+        [JsonPropertyName(CloudEventConstants.Id)]
         [Required(ErrorMessage = "The Id property must be specified in each CloudEvent.")]
         public string Id { get; set; }
 
         [DataMember(Name = CloudEventConstants.SpecVersion)]
+        [JsonPropertyName(CloudEventConstants.SpecVersion)]
         [RegularExpression("^1.0$", ErrorMessage = "This type only supports specversion '1.0'.")]
         public string SpecVersion { get; set; }
 
         [DataMember(Name = CloudEventConstants.Source)]
+        [JsonPropertyName(CloudEventConstants.Source)]
         [Required(ErrorMessage = "The source property must be specified in each CloudEvent.")]
         public string Source { get; set; }
 
         [DataMember(Name = CloudEventConstants.Type)]
+        [JsonPropertyName(CloudEventConstants.Type)]
         [Required(ErrorMessage = "The type property must be specified in each CloudEvent.")]
         public string Type { get; set; }
 
         [DataMember(Name = CloudEventConstants.DataContentType)]
+        [JsonPropertyName(CloudEventConstants.DataContentType)]
         public string DataContentType { get; set; }
 
         [DataMember(Name = CloudEventConstants.DataSchema)]
+        [JsonPropertyName(CloudEventConstants.DataSchema)]
         public string DataSchema { get; set; }
 
         [DataMember(Name = CloudEventConstants.Subject)]
+        [JsonPropertyName(CloudEventConstants.Subject)]
         public string Subject { get; set; }
 
         [DataMember(Name = CloudEventConstants.Time)]
+        [JsonPropertyName(CloudEventConstants.Time)]
         public string Time { get; set; }
 
         [DataMember(Name = CloudEventConstants.Data)]
+        [JsonPropertyName(CloudEventConstants.Data)]
         public object Data { get; set; }
 
         [DataMember(Name = CloudEventConstants.DataBase64)]
+        [JsonPropertyName(CloudEventConstants.DataBase64)]
         public string DataBase64 { get; set; }
 
         public IDictionary<string, object> ExtensionAttributes { get; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);

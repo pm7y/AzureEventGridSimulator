@@ -14,7 +14,7 @@ public class TopicSettings
     public int Port { get; set; }
 
     [JsonProperty(PropertyName = "type", Required = Required.Always)]
-    public EventType Type { get; set; }
+    public EventType Type { get; set; } = EventType.EventGridEvent;
 
     [JsonProperty(PropertyName = "disabled", Required = Required.Default)]
     public bool Disabled { get; set; }
