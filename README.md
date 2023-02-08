@@ -1,6 +1,6 @@
 # Azure Event Grid Simulator
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/pmcilreavy/AzureEventGridSimulator/ci)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/pmcilreavy/AzureEventGridSimulator/ci.yml)
 ![GitHub contributors](https://img.shields.io/github/contributors-anon/pmcilreavy/AzureEventGridSimulator)
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pmcilreavy/AzureEventGridSimulator?label=latest)
 ![GitHub all releases](https://img.shields.io/github/downloads/pmcilreavy/AzureEventGridSimulator/total)
