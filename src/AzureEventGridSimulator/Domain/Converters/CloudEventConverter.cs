@@ -77,11 +77,11 @@ internal class CloudEventConverter : JsonConverter<CloudEvent>
             case JsonValueKind.String:
                 return element.GetString();
             case JsonValueKind.Number:
-                if (element.TryGetInt32(out int intValue))
+                if (element.TryGetInt32(out var intValue))
                 {
                     return intValue;
                 }
-                if (element.TryGetInt64(out long longValue))
+                if (element.TryGetInt64(out var longValue))
                 {
                     return longValue;
                 }
@@ -94,15 +94,15 @@ internal class CloudEventConverter : JsonConverter<CloudEvent>
             case JsonValueKind.Null:
                 return null;
             case JsonValueKind.Object:
-                var dictionary = new Dictionary<string, object?>();
-                foreach (JsonProperty jsonProperty in element.EnumerateObject())
+                var dictionary = new Dictionary<string, object>();
+                foreach (var jsonProperty in element.EnumerateObject())
                 {
                     dictionary.Add(jsonProperty.Name, GetObject(jsonProperty.Value));
                 }
                 return dictionary;
             case JsonValueKind.Array:
-                var list = new List<object?>();
-                foreach (JsonElement item in element.EnumerateArray())
+                var list = new List<object>();
+                foreach (var item in element.EnumerateArray())
                 {
                     list.Add(GetObject(item));
                 }

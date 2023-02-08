@@ -50,10 +50,17 @@
       }
     },
     {
-      "name": "ATopicThatPushesToAnAzureServiceBus",
+      "name": "ATopicThatPushesToBothRequestCatcherAndAzureServiceBus",
       "port": 60105,
       "key": "TheLocal+DevelopmentKey=",
       "subscribers": {
+        "http": [
+          {
+            "name": "RequestCatcherSubscription",
+            "endpoint": "https://azureeventgridsimulator.requestcatcher.com",
+            "disableValidation": true
+          }
+        ],
         "serviceBus": [
           {
             "name": "SVB",
