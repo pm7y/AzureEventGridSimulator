@@ -1,5 +1,5 @@
 # start with an sdk enabled alpine image so we can build source
-FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine as build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:7.0-alpine as build
 WORKDIR /source
 
 # copy source
@@ -7,7 +7,7 @@ COPY /src/AzureEventGridSimulator .
 
 # build source and publish as single file called 'AzureEventGridSimulator'
 RUN dotnet publish -c release -o /artifact \
-    -r alpine-x64 \
+    #-r alpine-x64 \
     -f net7.0 \
     -v q \
     --nologo \
@@ -19,7 +19,7 @@ RUN dotnet publish -c release -o /artifact \
     -p:TrimUnusedDependencies=true
 
 # add binary artifact to new runtime-deps only image
-FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-alpine
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/runtime-deps:7.0-alpine
 WORKDIR /app
 
 # add tzdata incase we want to set the timezone
