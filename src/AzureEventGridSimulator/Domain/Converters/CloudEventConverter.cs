@@ -164,7 +164,7 @@ public class CloudEventConverter : EventConverter<CloudEvent>
         }
     }
 
-    private static void WriteObjectValue(Utf8JsonWriter writer, object? value)
+    private static void WriteObjectValue(Utf8JsonWriter writer, object value)
     {
         switch (value)
         {
