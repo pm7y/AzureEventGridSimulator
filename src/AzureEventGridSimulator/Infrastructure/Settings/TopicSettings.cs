@@ -1,5 +1,4 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
 
@@ -14,9 +13,17 @@ public class TopicSettings
     [JsonProperty(PropertyName = "port", Required = Required.Always)]
     public int Port { get; set; }
 
+    [JsonProperty(PropertyName = "type", Required = Required.Always)]
+    public EventType Type { get; set; } = EventType.EventGridEvent;
+
     [JsonProperty(PropertyName = "disabled", Required = Required.Default)]
     public bool Disabled { get; set; }
 
     [JsonProperty(PropertyName = "subscribers", Required = Required.Default)]
-    public SubscriptionSettings[] Subscribers { get; set; } = Array.Empty<SubscriptionSettings>();
+    public SubscriberSettings Subscribers { get; set; } = new SubscriberSettings();
+
+    internal void Validate()
+    {
+        Subscribers.Validate();
+    }
 }

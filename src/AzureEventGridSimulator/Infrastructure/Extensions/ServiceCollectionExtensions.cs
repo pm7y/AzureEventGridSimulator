@@ -6,12 +6,17 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddSimulatorSettings(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddSimulatorSettings(this IServiceCollection services)
     {
-        var settings = new SimulatorSettings();
-        configuration.Bind(settings);
-        settings.Validate();
-        services.AddSingleton(_ => settings);
+        services.AddSingleton(
+            sp =>
+            {
+                var settings = new SimulatorSettings();
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                configuration.Bind(settings);
+                settings.Validate();
+                return settings;
+            });
 
         return services;
     }

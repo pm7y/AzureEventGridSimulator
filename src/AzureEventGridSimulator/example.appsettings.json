@@ -4,13 +4,15 @@
       "name": "MyAwesomeTopic",
       "port": 60101,
       "key": "TheLocal+DevelopmentKey=",
-      "subscribers": [
-        {
-          "name": "LocalAzureFunctionSubscription",
-          "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=ExampleFunction",
-          "disableValidation": true
-        }
-      ]
+      "subscribers": {
+        "http": [
+          {
+            "name": "LocalAzureFunctionSubscription",
+            "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=ExampleFunction",
+            "disableValidation": true
+          }
+        ]
+      }
     },
     {
       "name": "ATopicWithNoSubscribers",
@@ -24,24 +26,65 @@
       "port": 60103,
       "key": "TheLocal+DevelopmentKey=",
       "disabled": true,
-      "subscribers": [
-        {
-          "name": "LocalWebApiSubscription",
-          "endpoint": "https://localhost:5050/api/SomeApi"
-        }
-      ]
+      "subscribers": {
+        "http": [
+          {
+            "name": "LocalWebApiSubscription",
+            "endpoint": "https://localhost:5050/api/SomeApi"
+          }
+        ]
+      }
     },
     {
       "name": "RequestCatcherTopic",
       "port": 60104,
       "key": "TheLocal+DevelopmentKey=",
-      "subscribers": [
-        {
-          "name": "RequestCatcherSubscription",
-          "endpoint": "https://azureeventgridsimulator.requestcatcher.com",
-          "disableValidation": true
-        }
-      ]
+      "subscribers": {
+        "http": [
+          {
+            "name": "RequestCatcherSubscription",
+            "endpoint": "https://azureeventgridsimulator.requestcatcher.com",
+            "disableValidation": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "ATopicThatPushesToBothRequestCatcherAndAzureServiceBus",
+      "port": 60105,
+      "key": "TheLocal+DevelopmentKey=",
+      "subscribers": {
+        "http": [
+          {
+            "name": "RequestCatcherSubscription",
+            "endpoint": "https://azureeventgridsimulator.requestcatcher.com",
+            "disableValidation": true
+          }
+        ],
+        "serviceBus": [
+          {
+            "name": "SVB",
+            "namespace": "azure-service-bus-namespace",
+            "sharedAccessKeyName": "RootManageSharedAccessKey",
+            "sharedAccessKey": "ServiceBusSharedKey==",
+            "topic": "sample-topic",
+            "properties": {
+              "MessageId": {
+                "type": "dynamic",
+                "value": "Id"
+              },
+              "Label": {
+                "type": "dynamic",
+                "value": "Subject"
+              },
+              "CustomProperty": {
+                "type": "static",
+                "value": "Custom property value"
+              }
+            }
+          }
+        ]
+      }
     }
   ],
   "Serilog": {

@@ -2,11 +2,11 @@
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 
-namespace AzureEventGridSimulator.Domain.Commands;
+namespace AzureEventGridSimulator.Domain.Commands.Http;
 
-public class ValidateSubscriptionCommand : IRequest<bool>
+public class ValidateHttpSubscriptionCommand : IRequest<bool>
 {
-    public ValidateSubscriptionCommand(TopicSettings topic, Guid validationCode)
+    public ValidateHttpSubscriptionCommand(TopicSettings topic, Guid validationCode)
     {
         ValidationCode = validationCode;
         Topic = topic;
