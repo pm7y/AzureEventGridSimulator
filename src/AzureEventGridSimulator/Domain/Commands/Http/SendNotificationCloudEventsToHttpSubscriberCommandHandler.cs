@@ -4,22 +4,23 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AzureEventGridSimulator.Domain.Converters;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.Extensions.Logging;
 
 public class SendNotificationCloudEventsToHttpSubscriberCommandHandler : SendNotificationEventsToHttpSubscriberCommandHandler<CloudEvent>
 {
-    private static readonly JsonSerializerOptions _options;
+    private readonly JsonSerializerOptions _options;
 
-    static SendNotificationCloudEventsToHttpSubscriberCommandHandler()
-    {
-        _options = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
-    }
-
-    public SendNotificationCloudEventsToHttpSubscriberCommandHandler(ILogger<SendNotificationEventGridEventsToHttpSubscriberCommandHandler> logger, IHttpClientFactory httpClientFactory)
+    public SendNotificationCloudEventsToHttpSubscriberCommandHandler(
+        ILogger<SendNotificationEventGridEventsToHttpSubscriberCommandHandler> logger,
+        IHttpClientFactory httpClientFactory,
+        EventConverter<CloudEvent> cloudEventConverter)
         : base(logger, httpClientFactory)
     {
+        _options = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+        _options.Converters.Add(cloudEventConverter);
     }
 
     protected override HttpContent GetContent(HttpSubscriptionSettings settings, CloudEvent evt)

@@ -12,6 +12,7 @@ using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Domain.Converters;
 using AzureEventGridSimulator.Tests.IntegrationTests.Infrastrucure;
+using Newtonsoft.Json.Linq;
 using RichardSzalay.MockHttp;
 using Shouldly;
 using Xunit;
@@ -106,14 +107,17 @@ public class AzureMessagingEventGridTest : IClassFixture<IntegrationContextFixtu
     [Fact]
     public async Task GivenAnEvent_WhenPublished_ThenItShouldBeBroadcastToServiceBus()
     {
-        var messages = Array.Empty<SendNotificationEventsToAzureServiceBusSubscriberCommandHandler<Domain.Entities.IEvent>.Message>();
+        var messages = Array.Empty<ServiceBusMessage<Domain.Entities.CloudEvent>>();
 
         _context.MockHttp.Expect(HttpMethod.Post, "https://cloudeventnamespace.servicebus.windows.net/CloudEvent-Topic/messages")
             .WithHeaders("content-type", "application/vnd.microsoft.servicebus.json")
             .Respond(
                 async req =>
                 {
-                    messages = await JsonSerializer.DeserializeAsync<SendNotificationEventsToAzureServiceBusSubscriberCommandHandler<Domain.Entities.IEvent>.Message[]>(req.Content.ReadAsStream());
+                    var options = new JsonSerializerOptions();
+                    options.Converters.Add(new ServiceBusMessageConverter<Domain.Entities.CloudEvent>(new CloudEventConverter()));
+
+                    messages = await JsonSerializer.DeserializeAsync<ServiceBusMessage<Domain.Entities.CloudEvent>[]>(req.Content.ReadAsStream(), options);
                     return new HttpResponseMessage(HttpStatusCode.OK);
                 });
 
@@ -139,5 +143,89 @@ public class AzureMessagingEventGridTest : IClassFixture<IntegrationContextFixtu
 
         Assert.Single(messages);
         messages[0].UserProperties.ShouldBeEquivalentTo(expectedUserProperties);
+    }
+
+    [Fact]
+    public async Task GivenAnEvent_WhenPhublishedToHttpSubscriber_ThenItShouldBeSerialized()
+    {
+        var ev = new CloudEvent("subject", "event\"Type", new { Blah = 1, Date = DateTimeOffset.Now })
+        {
+            Time = DateTimeOffset.UtcNow
+        };
+
+        ev.ExtensionAttributes.Add("sample", "SampleValue");
+
+        var expected = JToken.Parse(JsonSerializer.Serialize(ev));
+        JToken actual = null;
+
+        _context.MockHttp.Expect(HttpMethod.Post, "http://http.cloudevent/")
+            .WithHeaders("content-type", "application/cloudevents+json")
+            .Respond(async req =>
+            {
+                actual = JToken.Parse(await req.Content.ReadAsStringAsync());
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            });
+
+        var client = _context.CreateCloudEventPublisherClient();
+        var response = await client.SendEventAsync(ev);
+
+        response.Status.ShouldBe((int)HttpStatusCode.OK);
+        actual.ShouldNotBeNull();
+        JToken.DeepEquals(expected, actual).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task GivenAnEvent_WhenPhublishedToServivceBusSubscriber_ThenItShouldBeSerialized()
+    {
+        var expected = JToken.Parse(@"
+[{
+        ""Body"": {
+            ""id"": ""1619251d-e0be-43e6-868c-f2457875a416"",
+            ""source"": ""subject"",
+            ""type"": ""event\u0022Type"",
+            ""data"": {
+                ""Blah"": 1,
+                ""Date"": ""2023-02-24T08:23:12\u002B00:00""
+            },
+            ""time"": ""2023-02-24T08:25:32+00:00"",
+            ""specversion"": ""1.0"",
+            ""sample"": ""SampleValue""
+        },
+        ""BrokerProperties"": {
+            ""MessageId"": ""1619251d-e0be-43e6-868c-f2457875a416""
+        },
+        ""UserProperties"": {
+            ""aeg-event-type"": ""Notification"",
+            ""aeg-subscription-name"": ""CLOUDEVENTAZURESERVICEBUSSUBSCRIBER"",
+            ""aeg-data-version"": """",
+            ""aeg-metadata-version"": ""1"",
+            ""aeg-delivery-count"": ""0""
+        }
+    }
+]");
+
+        var ev = new CloudEvent("subject", "event\"Type", new { Blah = 1, Date = new DateTimeOffset(2023, 2, 24, 8, 23, 12, TimeSpan.Zero) })
+        {
+            Id = "1619251d-e0be-43e6-868c-f2457875a416",
+            Time = new DateTimeOffset(2023, 2, 24, 8, 25, 32, TimeSpan.Zero)
+        };
+
+        ev.ExtensionAttributes.Add("sample", "SampleValue");
+
+        JToken actual = null;
+        _context.MockHttp.Expect(HttpMethod.Post, "https://cloudeventnamespace.servicebus.windows.net/CloudEvent-Topic/messages")
+            .WithHeaders("content-type", "application/vnd.microsoft.servicebus.json")
+            .Respond(async req =>
+            {
+                actual = JToken.Parse(await req.Content.ReadAsStringAsync());
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            });
+
+        var client = _context.CreateCloudEventPublisherClient();
+        var response = await client.SendEventAsync(ev);
+
+        response.Status.ShouldBe((int)HttpStatusCode.OK);
+        actual.ShouldNotBeNull();
+        JToken.DeepEquals(expected, actual).ShouldBeTrue();
     }
 }

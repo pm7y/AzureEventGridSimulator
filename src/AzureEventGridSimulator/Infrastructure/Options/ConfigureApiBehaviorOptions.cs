@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using AzureEventGridSimulator.Domain.Converters;
+using AzureEventGridSimulator.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -13,11 +14,9 @@ public sealed class ConfigureApiBehaviorOptions : IConfigureOptions<ApiBehaviorO
 
     static ConfigureApiBehaviorOptions()
     {
-        // TODO: this needs a cleaner solution
         _errorCodes = new Dictionary<string, HttpStatusCode>()
         {
-            { CloudEventConverter.MaximumAllowedEventGridEventSizeErrorMesage, HttpStatusCode.RequestEntityTooLarge },
-            //{ EventGridEventConverter.MaximumAllowedEventGridEventSizeErrorMesage, HttpStatusCode.RequestEntityTooLarge },
+            { EventConverter<EventGridEvent>.MaximumAllowedEventGridEventSizeErrorMesage, HttpStatusCode.RequestEntityTooLarge },
         };
     }
 

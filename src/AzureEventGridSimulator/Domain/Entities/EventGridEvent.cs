@@ -64,6 +64,8 @@ public class EventGridEvent : IEvent
     [JsonPropertyName(EventGridEventConstants.Data)]
     public object Data { get; set; }
 
+    internal BinaryData RawData { get; set; }
+
     /// <summary>
     /// Gets or sets the type of the event that occurred.
     /// </summary>
@@ -80,11 +82,11 @@ public class EventGridEvent : IEvent
 
     [Newtonsoft.Json.JsonIgnore]
     [System.Text.Json.Serialization.JsonIgnore]
-    private DateTime EventTimeParsed => DateTime.Parse(EventTime);
+    internal DateTime EventTimeParsed => DateTime.Parse(EventTime);
 
     [Newtonsoft.Json.JsonIgnore]
     [System.Text.Json.Serialization.JsonIgnore]
-    private bool EventTimeIsValid => DateTime.TryParse(EventTime, out _);
+    internal bool EventTimeIsValid => DateTime.TryParse(EventTime, out _);
 
     /// <summary>
     /// Gets or sets the schema version of the data object.

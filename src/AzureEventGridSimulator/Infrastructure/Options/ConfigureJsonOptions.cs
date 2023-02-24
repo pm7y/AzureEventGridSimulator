@@ -1,17 +1,18 @@
 ﻿namespace AzureEventGridSimulator.Infrastructure.Options;
 
 using AzureEventGridSimulator.Domain.Converters;
+using AzureEventGridSimulator.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 internal sealed class ConfigureJsonOptions : IConfigureOptions<JsonOptions>
 {
-    private readonly EventGridEventConverter _eventGridEventConverter;
-    private readonly CloudEventConverter _cloudEventConverter;
+    private readonly EventConverter<EventGridEvent> _eventGridEventConverter;
+    private readonly EventConverter<CloudEvent> _cloudEventConverter;
 
     public ConfigureJsonOptions(
-        EventGridEventConverter eventGridEventConverter,
-        CloudEventConverter cloudEventConverter)
+        EventConverter<EventGridEvent> eventGridEventConverter,
+        EventConverter<CloudEvent> cloudEventConverter)
     {
         _eventGridEventConverter = eventGridEventConverter;
         _cloudEventConverter = cloudEventConverter;

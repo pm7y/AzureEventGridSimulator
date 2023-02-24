@@ -2,45 +2,50 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Entities;
-using AzureEventGridSimulator.Infrastructure.Extensions;
 
-internal class CloudEventConverter : JsonConverter<CloudEvent>
+public class CloudEventConverter : EventConverter<CloudEvent>
 {
-    public static readonly string MaximumAllowedEventGridEventSizeErrorMesage = $"The maximum size for the JSON content({MaximumAllowedEventGridEventSizeInBytes}) has been exceeded.";
-
-    private const int MaximumAllowedEventGridEventSizeInBytes = 1049600;
     private static readonly IReadOnlyDictionary<string, Action<CloudEvent, JsonElement>> _propertyMap;
 
     static CloudEventConverter()
     {
         _propertyMap = new Dictionary<string, Action<CloudEvent, JsonElement>>
         {
-            [CloudEventConstants.SpecVersion] = (ege, elem) => ege.SpecVersion = elem.GetString(),
-            [CloudEventConstants.Id] = (ege, elem) => ege.Id = elem.GetString(),
-            [CloudEventConstants.Source] = (ege, elem) => ege.Source = elem.GetString(),
-            [CloudEventConstants.Type] = (ege, elem) => ege.Type = elem.GetString(),
-            [CloudEventConstants.DataContentType] = (ege, elem) => ege.DataContentType = elem.ToString(),
-            [CloudEventConstants.DataSchema] = (ege, elem) => ege.DataSchema = elem.ToString(),
-            [CloudEventConstants.Subject] = (ege, elem) => ege.Subject = elem.GetString(),
-            [CloudEventConstants.Time] = (ege, elem) => ege.Time = elem.GetDateTimeOffset("O").ToUniversalTime().ToString(),
-            [CloudEventConstants.Data] = (ege, elem) => ege.Data = elem.Clone(),
-            [CloudEventConstants.DataBase64] = (ege, elem) => ege.DataBase64 = elem.GetString()
+            [CloudEventConstants.SpecVersion] = (ce, elem) => ce.SpecVersion = elem.GetString(),
+            [CloudEventConstants.Id] = (ce, elem) => ce.Id = elem.GetString(),
+            [CloudEventConstants.Source] = (ce, elem) => ce.Source = elem.GetString(),
+            [CloudEventConstants.Type] = (ce, elem) => ce.Type = elem.GetString(),
+            [CloudEventConstants.DataContentType] = (ce, elem) => ce.DataContentType = elem.GetString(),
+            [CloudEventConstants.DataSchema] = (ce, elem) => ce.DataSchema = elem.ToString(),
+            [CloudEventConstants.Subject] = (ce, elem) => ce.Subject = elem.GetString(),
+            [CloudEventConstants.Time] = (ce, elem) => ce.Time = elem.GetString(),
+            [CloudEventConstants.Data] =
+                (ce, elem) =>
+                {
+                    ce.RawData = new BinaryData(elem);
+                    ce.DataFormat = CloudEventDataFormat.Json;
+                    ce.Data = elem.Clone();
+                },
+            [CloudEventConstants.DataBase64] =
+                (ce, elem) =>
+                {
+                    if (elem.ValueKind == JsonValueKind.Null)
+                    {
+                        return;
+                    }
+
+                    BinaryData.FromBytes(elem.GetBytesFromBase64());
+                    ce.DataFormat = CloudEventDataFormat.Binary;
+                }
         };
     }
 
-    public override CloudEvent Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override CloudEvent Read(JsonElement rootElement)
     {
-        Debug.Assert(typeToConvert == typeof(CloudEvent));
-
-        var start = reader.TokenStartIndex;
-
-        var requestDocument = JsonDocument.ParseValue(ref reader);
         var target = new CloudEvent();
-        foreach (var property in requestDocument.RootElement.EnumerateObject())
+        foreach (var property in rootElement.EnumerateObject())
         {
             if (_propertyMap.TryGetValue(property.Name, out var value))
             {
@@ -52,22 +57,69 @@ internal class CloudEventConverter : JsonConverter<CloudEvent>
             }
         }
 
-        var end = reader.TokenStartIndex;
-        var length = end - start;
-
-        if (length > MaximumAllowedEventGridEventSizeInBytes)
-        {
-            throw new JsonException(MaximumAllowedEventGridEventSizeErrorMesage);
-        }
-
-        target.Validate();
-
         return target;
     }
 
     public override void Write(Utf8JsonWriter writer, CloudEvent value, JsonSerializerOptions options)
     {
-        throw new NotImplementedException();
+        writer.WriteStartObject();
+
+        // These properties are required and thus assumed to be populated.
+        // It is possible for them to be null if a CloudEvent was created by using Parse and passing
+        // strict = false. However, we still will write the properties.
+        writer.WritePropertyName(CloudEventConstants.Id);
+        writer.WriteStringValue(value.Id);
+        writer.WritePropertyName(CloudEventConstants.Source);
+        writer.WriteStringValue(value.Source);
+        writer.WritePropertyName(CloudEventConstants.Type);
+        writer.WriteStringValue(value.Type);
+
+        if (value.RawData != null)
+        {
+            switch (value.DataFormat)
+            {
+                case CloudEventDataFormat.Binary:
+                    writer.WritePropertyName(CloudEventConstants.DataBase64);
+                    writer.WriteBase64StringValue(value.RawData.ToArray());
+                    break;
+                case CloudEventDataFormat.Json:
+                    using (var doc = JsonDocument.Parse(value.RawData.ToMemory()))
+                    {
+                        writer.WritePropertyName(CloudEventConstants.Data);
+                        doc.RootElement.WriteTo(writer);
+                        break;
+                    }
+            }
+        }
+        if (!string.IsNullOrWhiteSpace(value.Time))
+        {
+            writer.WritePropertyName(CloudEventConstants.Time);
+            // unable to write an un-escaped string; need to parse and write as DateTimeOffset (https://github.com/dotnet/runtime/issues/28567)
+            writer.WriteStringValue(DateTimeOffset.Parse(value.Time));
+        }
+        writer.WritePropertyName(CloudEventConstants.SpecVersion);
+        writer.WriteStringValue(value.SpecVersion);
+        if (value.DataSchema != null)
+        {
+            writer.WritePropertyName(CloudEventConstants.DataSchema);
+            writer.WriteStringValue(value.DataSchema);
+        }
+        if (value.DataContentType != null)
+        {
+            writer.WritePropertyName(CloudEventConstants.DataContentType);
+            writer.WriteStringValue(value.DataContentType);
+        }
+        if (value.Subject != null)
+        {
+            writer.WritePropertyName(CloudEventConstants.Subject);
+            writer.WriteStringValue(value.Subject);
+        }
+        foreach (var item in value.ExtensionAttributes)
+        {
+            writer.WritePropertyName(item.Key);
+            WriteObjectValue(writer, item.Value);
+        }
+        writer.WriteEndObject();
     }
 
     private static object GetObject(in JsonElement element)
@@ -109,6 +161,63 @@ internal class CloudEventConverter : JsonConverter<CloudEvent>
                 return list.ToArray();
             default:
                 throw new NotSupportedException("Not supported value kind " + element.ValueKind);
+        }
+    }
+
+    private static void WriteObjectValue(Utf8JsonWriter writer, object? value)
+    {
+        switch (value)
+        {
+            case null:
+                writer.WriteNullValue();
+                break;
+            case byte[] bytes:
+                writer.WriteStringValue(Convert.ToBase64String(bytes));
+                break;
+            case ReadOnlyMemory<byte> rom:
+                writer.WriteStringValue(Convert.ToBase64String(rom.ToArray()));
+                break;
+            case int i:
+                writer.WriteNumberValue(i);
+                break;
+            case string s:
+                writer.WriteStringValue(s);
+                break;
+            case bool b:
+                writer.WriteBooleanValue(b);
+                break;
+            case Guid g:
+                writer.WriteStringValue(g);
+                break;
+            case Uri u:
+                writer.WriteStringValue(u.ToString());
+                break;
+            case DateTimeOffset dateTimeOffset:
+                writer.WriteStringValue(dateTimeOffset);
+                break;
+            case DateTime dateTime:
+                writer.WriteStringValue(dateTime);
+                break;
+            case IEnumerable<KeyValuePair<string, object>> enumerable:
+                writer.WriteStartObject();
+                foreach (var pair in enumerable)
+                {
+                    writer.WritePropertyName(pair.Key);
+                    WriteObjectValue(writer, pair.Value);
+                }
+                writer.WriteEndObject();
+                break;
+            case IEnumerable<object> objectEnumerable:
+                writer.WriteStartArray();
+                foreach (var item in objectEnumerable)
+                {
+                    WriteObjectValue(writer, item);
+                }
+                writer.WriteEndArray();
+                break;
+
+            default:
+                throw new NotSupportedException("Not supported type " + value.GetType());
         }
     }
 }

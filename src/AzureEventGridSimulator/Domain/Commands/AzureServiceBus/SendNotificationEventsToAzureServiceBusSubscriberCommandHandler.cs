@@ -1,4 +1,5 @@
 ﻿namespace AzureEventGridSimulator.Domain.Commands;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,11 +12,13 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using AzureEventGridSimulator.Domain.Converters;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 
 // ReSharper disable once UnusedMember.Global
@@ -23,12 +26,19 @@ public abstract class SendNotificationEventsToAzureServiceBusSubscriberCommandHa
     where TEvent : IEvent
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ServiceBusMessageConverter<TEvent> _serviceBusMessageConverter;
     private readonly ILogger _logger;
+    private readonly JsonSerializerOptions _jsonSerializerOptions;
 
-    public SendNotificationEventsToAzureServiceBusSubscriberCommandHandler(ILogger logger, IHttpClientFactory httpClientFactory)
+    public SendNotificationEventsToAzureServiceBusSubscriberCommandHandler(ILogger logger, IHttpClientFactory httpClientFactory, ServiceBusMessageConverter<TEvent> serviceBusMessageConverter)
     {
         _httpClientFactory = httpClientFactory;
+        _serviceBusMessageConverter = serviceBusMessageConverter;
         _logger = logger;
+
+        _jsonSerializerOptions = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+        _jsonSerializerOptions.Converters.Add(_serviceBusMessageConverter);
+        _jsonSerializerOptions.Converters.Add(_serviceBusMessageConverter.EventConverter);
     }
 
     protected override async Task Handle(SendNotificationEventsToSpecializedSubscriberCommand<AzureServiceBusSubscriptionSettings, TEvent> request, CancellationToken cancellationToken)
@@ -59,7 +69,7 @@ public abstract class SendNotificationEventsToAzureServiceBusSubscriberCommandHa
                     CreateMessage(request.Subscription, evt)
                 };
 
-                var json = System.Text.Json.JsonSerializer.Serialize(messages, new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
+                var json = JsonSerializer.Serialize(messages, _jsonSerializerOptions);
                 using var content = new StringContent(json, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.microsoft.servicebus.json");
 
@@ -79,15 +89,16 @@ public abstract class SendNotificationEventsToAzureServiceBusSubscriberCommandHa
         }
     }
 
-    internal Message CreateMessage(AzureServiceBusSubscriptionSettings subscription, TEvent evt)
+    internal ServiceBusMessage<TEvent> CreateMessage(AzureServiceBusSubscriptionSettings subscription, TEvent evt)
     {
-        var msg = new Message
+        var msg = new ServiceBusMessage<TEvent>
         {
-            Body = System.Text.Json.JsonSerializer.Serialize(evt, new JsonSerializerOptions())
+            Body = evt
         };
 
         // System.Text.Json currently does not have support for JsonPath. Fall back to Newtonsoft.
-        var obj = JObject.Parse(msg.Body);
+        var json = JsonSerializer.Serialize(evt, _jsonSerializerOptions);
+        var obj = JObject.Parse(json);
         foreach (var property in subscription.Properties)
         {
             var value = property.Value.Type switch
@@ -139,7 +150,12 @@ public abstract class SendNotificationEventsToAzureServiceBusSubscriberCommandHa
         return msg;
     }
 
-    protected abstract void AddAegProperties(ref Message message, AzureServiceBusSubscriptionSettings subscription, TEvent evt);
+    protected abstract void AddAegProperties(ref ServiceBusMessage<TEvent> message, AzureServiceBusSubscriptionSettings subscription, TEvent evt);
+
+    protected virtual BinaryData SerializeMessage(TEvent evt)
+    {
+        return new BinaryData(JsonSerializer.Serialize(evt, new JsonSerializerOptions()));
+    }
 
     private static string CreateToken(string resourceUri, string keyName, string key)
     {
@@ -195,17 +211,5 @@ public abstract class SendNotificationEventsToAzureServiceBusSubscriberCommandHa
             To,
             ViaPartitionKey
         };
-    }
-
-    public sealed class Message
-    {
-        [JsonPropertyName("Body")]
-        public string Body { get; set; }
-
-        [JsonPropertyName("BrokerProperties")]
-        public Dictionary<string, string> BrokerProperties { get; set; } = new Dictionary<string, string>();
-
-        [JsonPropertyName("UserProperties")]
-        public Dictionary<string, string> UserProperties { get; set; } = new Dictionary<string, string>();
     }
 }

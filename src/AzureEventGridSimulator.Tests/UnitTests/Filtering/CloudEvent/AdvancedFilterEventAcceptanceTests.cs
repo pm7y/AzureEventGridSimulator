@@ -11,6 +11,20 @@ using Xunit;
 [Trait("Type", "CloudEvent")]
 public class AdvancedFilterEventAcceptanceTests
 {
+    private static readonly object _payload = new
+    {
+        NumberValue = 1,
+        IsTrue = true,
+        Name = "StringValue",
+        DoubleValue = 0.12345d,
+        NumberMaxValue = ulong.MaxValue,
+        SubObject = new
+        {
+            Id = 1,
+            Name = "Test"
+        }
+    };
+
     private static readonly CloudEvent _gridEvent = new()
     {
         Id = "EventId",
@@ -20,9 +34,10 @@ public class AdvancedFilterEventAcceptanceTests
         DataContentType = "this.is.a.data.content.type",
         DataSchema = "this.is.a.data.schema",
         Subject = "TheEventSubject",
-        Time = DateTime.UtcNow.ToString("O"),
-        Data = new { NumberValue = 1, IsTrue = true, Name = "StringValue", DoubleValue = 0.12345d, NumberMaxValue = ulong.MaxValue, SubObject = new { Id = 1, Name = "Test" } },
-        DataBase64 = "",
+        Time = DateTimeOffset.UtcNow.ToString(),
+        Data = _payload,
+        RawData = new BinaryData(_payload),
+        DataFormat = CloudEventDataFormat.Json,
         ExtensionAttributes = { { "ExtensionAttrib", "this.is.an.extension.attribute" } }
     };
 

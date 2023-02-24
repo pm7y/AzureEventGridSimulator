@@ -7,4 +7,5 @@ public interface IEvent
     string EventType { get; set; }
 
     bool TryGetValue(string key, out object value);
+    void Validate();
 }

@@ -2,17 +2,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 
-internal class EventGridEventConverter : JsonConverter<EventGridEvent>
+internal class EventGridEventConverter : EventConverter<EventGridEvent>
 {
-    public static readonly string MaximumAllowedEventGridEventSizeErrorMesage = $"The maximum size for the JSON content({MaximumAllowedEventGridEventSizeInBytes}) has been exceeded.";
-
-    private const int MaximumAllowedEventGridEventSizeInBytes = 1049600;
     private static readonly IReadOnlyDictionary<string, Action<EventGridEvent, JsonElement>> _propertyMap;
 
     static EventGridEventConverter()
@@ -22,7 +17,12 @@ internal class EventGridEventConverter : JsonConverter<EventGridEvent>
             [EventGridEventConstants.Id] = (ege, elem) => ege.Id = elem.GetString(),
             [EventGridEventConstants.Topic] = (ege, elem) => ege.Topic = elem.GetString(),
             [EventGridEventConstants.Subject] = (ege, elem) => ege.Subject = elem.GetString(),
-            [EventGridEventConstants.Data] = (ege, elem) => ege.Data = elem.Clone(),
+            [EventGridEventConstants.Data] =
+                (ege, elem) =>
+                {
+                    ege.Data = elem.Clone();
+                    ege.RawData = new BinaryData(elem);
+                },
             [EventGridEventConstants.EventType] = (ege, elem) => ege.EventType = elem.GetString(),
             [EventGridEventConstants.EventTime] = (ege, elem) => ege.EventTime = elem.GetDateTimeOffset("O").ToUniversalTime().ToString(),
             [EventGridEventConstants.MetadataVersion] = (ege, elem) => ege.MetadataVersion = elem.GetString(),
@@ -30,15 +30,10 @@ internal class EventGridEventConverter : JsonConverter<EventGridEvent>
         };
     }
 
-    public override EventGridEvent Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override EventGridEvent Read(JsonElement rootElement)
     {
-        Debug.Assert(typeToConvert == typeof(EventGridEvent));
-
-        var start = reader.TokenStartIndex;
-
-        var requestDocument = JsonDocument.ParseValue(ref reader);
         var target = new EventGridEvent();
-        foreach (var property in requestDocument.RootElement.EnumerateObject())
+        foreach (var property in rootElement.EnumerateObject())
         {
             if (_propertyMap.TryGetValue(property.Name, out var value))
             {
@@ -46,21 +41,43 @@ internal class EventGridEventConverter : JsonConverter<EventGridEvent>
             }
         }
 
-        var end = reader.TokenStartIndex;
-        var length = end - start;
-
-        if (length > MaximumAllowedEventGridEventSizeInBytes)
-        {
-            throw new JsonException(MaximumAllowedEventGridEventSizeErrorMesage);
-        }
-
-        target.Validate();
-
         return target;
     }
 
     public override void Write(Utf8JsonWriter writer, EventGridEvent value, JsonSerializerOptions options)
     {
-        throw new NotImplementedException();
+        writer.WriteStartObject();
+
+        writer.WritePropertyName(EventGridEventConstants.Topic);
+        writer.WriteStringValue(value.Topic);
+
+        writer.WritePropertyName(EventGridEventConstants.Subject);
+        writer.WriteStringValue(value.Subject);
+
+        writer.WritePropertyName(EventGridEventConstants.EventType);
+        writer.WriteStringValue(value.EventType);
+
+        if (value.EventTimeIsValid)
+        {
+            writer.WritePropertyName(EventGridEventConstants.EventTime);
+            writer.WriteStringValue(value.EventTimeParsed);
+        }
+
+        writer.WritePropertyName(EventGridEventConstants.Id);
+        writer.WriteStringValue(value.Id);
+
+        using (var doc = JsonDocument.Parse(value.RawData.ToMemory()))
+        {
+            writer.WritePropertyName(EventGridEventConstants.Data);
+            doc.RootElement.WriteTo(writer);
+        }
+
+        writer.WritePropertyName(EventGridEventConstants.DataVersion);
+        writer.WriteStringValue(value.DataVersion);
+
+        writer.WritePropertyName(EventGridEventConstants.MetadataVersion);
+        writer.WriteStringValue(value.MetadataVersion);
+
+        writer.WriteEndObject();
     }
 }

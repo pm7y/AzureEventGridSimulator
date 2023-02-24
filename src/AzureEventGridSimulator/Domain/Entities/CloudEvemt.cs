@@ -13,6 +13,7 @@
     using System.Text.Json.Serialization;
     using System.Text.RegularExpressions;
     using AzureEventGridSimulator.Domain.Converters;
+    using AzureEventGridSimulator.Infrastructure.Validation;
     using Newtonsoft.Json.Linq;
 
     [TypeConverter(typeof(CloudEventConverter))]
@@ -77,15 +78,14 @@
 
         [DataMember(Name = CloudEventConstants.Time)]
         [JsonPropertyName(CloudEventConstants.Time)]
+        [IsDateTimeOffsetValidation]
         public string Time { get; set; }
 
-        [DataMember(Name = CloudEventConstants.Data)]
-        [JsonPropertyName(CloudEventConstants.Data)]
         public object Data { get; set; }
 
-        [DataMember(Name = CloudEventConstants.DataBase64)]
-        [JsonPropertyName(CloudEventConstants.DataBase64)]
-        public string DataBase64 { get; set; }
+        public BinaryData RawData { get; set; }
+
+        internal CloudEventDataFormat DataFormat { get; set; }
 
         public IDictionary<string, object> ExtensionAttributes { get; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
@@ -134,7 +134,7 @@
             return ExtensionAttributes.TryGetValue(key.ToLower(), out value);
         }
 
-        internal void Validate()
+        public void Validate()
         {
             foreach (var property in GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty))
             {
@@ -171,5 +171,11 @@
         public const string Time = "time";
         public const string Data = "data";
         public const string DataBase64 = "data_base64";
+    }
+
+    internal enum CloudEventDataFormat
+    {
+        Binary,
+        Json
     }
 }

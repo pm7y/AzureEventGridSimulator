@@ -3,7 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Commands;
+using AzureEventGridSimulator.Domain.Converters;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
@@ -60,7 +62,7 @@ public static class SendNotificationEventGridEventsToAzureServiceBusSubscriberCo
                     { propertyName, new Property(PropertyType.Dynamic, "data.DynamicValue") }
                 });
 
-            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null);
+            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null, new ServiceBusMessageConverter<EventGridEvent>(new EventGridEventConverter()));
             var actual = target.CreateMessage(subscription, evt);
 
             Assert.True(actual.BrokerProperties.ContainsKey(propertyName));
@@ -85,7 +87,7 @@ public static class SendNotificationEventGridEventsToAzureServiceBusSubscriberCo
                     { propertyName, new Property(PropertyType.Static, staticValue) }
                 });
 
-            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null);
+            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null, new ServiceBusMessageConverter<EventGridEvent>(new EventGridEventConverter()));
             var actual = target.CreateMessage(subscription, evt);
 
             Assert.True(actual.BrokerProperties.ContainsKey(propertyName));
@@ -109,7 +111,7 @@ public static class SendNotificationEventGridEventsToAzureServiceBusSubscriberCo
                     { propertyName, new Property(PropertyType.Dynamic, "data.DynamicValue") }
                 });
 
-            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null);
+            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null, new ServiceBusMessageConverter<EventGridEvent>(new EventGridEventConverter()));
             var actual = target.CreateMessage(subscription, evt);
 
             Assert.True(actual.UserProperties.ContainsKey(propertyName));
@@ -134,7 +136,7 @@ public static class SendNotificationEventGridEventsToAzureServiceBusSubscriberCo
                     { propertyName, new Property(PropertyType.Static, staticValue) }
                 });
 
-            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null);
+            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null, new ServiceBusMessageConverter<EventGridEvent>(new EventGridEventConverter()));
             var actual = target.CreateMessage(subscription, evt);
 
             Assert.True(actual.UserProperties.ContainsKey(propertyName));
@@ -151,7 +153,7 @@ public static class SendNotificationEventGridEventsToAzureServiceBusSubscriberCo
                     { BrokerPropertyKeys.MessageId, new Property(PropertyType.Static, "Value") }
                 });
 
-            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null);
+            var target = new SendNotificationEventGridEventsToAzureServiceBusSubscriberCommandHandler(null, null, new ServiceBusMessageConverter<EventGridEvent>(new EventGridEventConverter()));
 
             Assert.Throws<InvalidOperationException>(() => target.CreateMessage(subscription, evt));
         }
@@ -194,7 +196,8 @@ public static class SendNotificationEventGridEventsToAzureServiceBusSubscriberCo
                 DataVersion = dataVersion,
                 MetadataVersion = metaDataVersion,
                 Topic = topic,
-                Data = data
+                Data = data,
+                RawData = new BinaryData(JsonSerializer.Serialize(data))
             };
         }
     }

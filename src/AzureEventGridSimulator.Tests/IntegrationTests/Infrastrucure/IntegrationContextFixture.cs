@@ -1,6 +1,7 @@
 ﻿namespace AzureEventGridSimulator.Tests.IntegrationTests.Infrastrucure;
 
 using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Azure;
@@ -17,6 +18,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RichardSzalay.MockHttp;
 using Xunit;
+using Xunit.Abstractions;
 
 public class IntegrationContextFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
@@ -122,7 +124,9 @@ public class IntegrationContextFixture : WebApplicationFactory<Program>, IAsyncL
                                               {
                                                   Mode = RetryMode.Fixed,
                                                   MaxRetries = 0,
-                                                  NetworkTimeout = TimeSpan.FromSeconds(5)
+                                                  NetworkTimeout = Debugger.IsAttached
+                                                    ? TimeSpan.FromSeconds(60)
+                                                    : TimeSpan.FromSeconds(5)
                                               },
                                               Transport = new HttpClientTransport(CreateClient())
                                           });

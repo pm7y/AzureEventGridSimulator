@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Domain.Converters;
+using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Authentication;
 using AzureEventGridSimulator.Infrastructure.Extensions;
@@ -162,8 +163,10 @@ public class Program
         builder.Services.AddScoped<TopicMiddleware>();
         builder.Services.AddSingleton<ValidationIpAddressProvider>();
 
-        builder.Services.AddSingleton<EventGridEventConverter>();
-        builder.Services.AddSingleton<CloudEventConverter>();
+        builder.Services.AddSingleton<EventConverter<EventGridEvent>, EventGridEventConverter>();
+        builder.Services.AddSingleton<EventConverter<CloudEvent>, CloudEventConverter>();
+        builder.Services.AddSingleton<ServiceBusMessageConverter<CloudEvent>>();
+        builder.Services.AddSingleton<ServiceBusMessageConverter<EventGridEvent>>();
         builder.Services.AddSingleton<HttpContextFeaturesModelBinderProvider>();
 
         builder.Services.AddSingleton<ConfigureApiBehaviorOptions>();
