@@ -8,6 +8,7 @@ COPY /src/AzureEventGridSimulator .
 # build source and publish as single file called 'AzureEventGridSimulator'
 RUN dotnet publish -c release -o /artifact \
     #-r alpine-x64 \
+    #-r osx.13-arm64 \
     -f net7.0 \
     -v q \
     --nologo \
@@ -15,8 +16,8 @@ RUN dotnet publish -c release -o /artifact \
     -p:PublishReadyToRun=false \
     -p:IncludeNativeLibrariesForSelfExtract=true \
     -p:PublishSingleFile=true \
-    -p:PublishTrimmed=true \
-    -p:TrimUnusedDependencies=true
+    -p:PublishTrimmed=true 
+    #-p:TrimUnusedDependencies=true
 
 # add binary artifact to new runtime-deps only image
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/runtime-deps:7.0-alpine
