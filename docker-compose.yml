@@ -12,7 +12,8 @@ services:
       - ./docker:/aegs:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      # specify cert details (note: can be generated like so: dotnet dev-certs https --export-path ./docker/azureEventGridSimulator.pfx --password Y0urSup3rCrypt1cPa55w0rd!`
+      # specify cert details note: can be generated like so: 
+      # dotnet dev-certs https --export-path ./docker/azureEventGridSimulator.pfx --password Y0urSup3rCrypt1cPa55w0rd!
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/aegs/azureEventGridSimulator.pfx
       - ASPNETCORE_Kestrel__Certificates__Default__Password=Y0urSup3rCrypt1cPa55w0rd!
 
@@ -34,9 +35,9 @@ services:
       # you could also define topics/subscribers via via a configfile
       # - AEGS_ConfigFile=/aegs/appsettings.docker.json
 
-    env_file:
+    #env_file:
       # you can also define environment variables via a file
-      - ./my.env
+      #- ./my.env
 
     build:
       context: .

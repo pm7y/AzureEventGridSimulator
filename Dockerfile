@@ -20,11 +20,11 @@ RUN dotnet publish -c release -o /artifact \
     -p:PublishReadyToRun=false \
     -p:IncludeNativeLibrariesForSelfExtract=true \
     -p:PublishSingleFile=true \
-    -p:PublishTrimmed=true \
+    -p:PublishTrimmed=false \
     -p:TrimUnusedDependencies=false
 
 # add binary artifact to new runtime-deps only image
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/runtime-deps:7.0-alpine
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/runtime-deps:7.0-alpine
 WORKDIR /app
 
 # add tzdata incase we want to set the timezone

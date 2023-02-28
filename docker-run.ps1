@@ -1,10 +1,12 @@
 # run a container from an existing image
 
-$imageName="pmcilreavy/azureeventgridsimulator";
+$imageName="pmcilreavy/azureeventgridsimulator:latest";
 $containerName="azureeventgridsimulator-official";
 
 # Build and push to docker hub
+#docker buildx create --use
 #docker buildx build --push --no-cache --platform linux/arm64,linux/amd64 --tag pmcilreavy/azureeventgridsimulator:3.0.3 --tag pmcilreavy/azureeventgridsimulator:latest .
+#docker buildx build --push --no-cache --platform linux/arm64,linux/amd64 --tag pmcilreavy/azureeventgridsimulator:dev .
 
 if ($(docker ps --all --filter="name=$containerName") -like "*$containerName*") {
         # the container already exists to just (re)-start it
