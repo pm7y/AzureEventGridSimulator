@@ -15,7 +15,7 @@ using Newtonsoft.Json;
 namespace AzureEventGridSimulator.Domain.Commands;
 
 // ReSharper disable once UnusedMember.Global
-public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHandler<SendNotificationEventsToSubscriberCommand>
+public class SendNotificationEventsToSubscriberCommandHandler : IRequestHandler<SendNotificationEventsToSubscriberCommand>
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
@@ -26,7 +26,7 @@ public class SendNotificationEventsToSubscriberCommandHandler : AsyncRequestHand
         _logger = logger;
     }
 
-    protected override Task Handle(SendNotificationEventsToSubscriberCommand request, CancellationToken cancellationToken)
+    public Task Handle(SendNotificationEventsToSubscriberCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("{EventCount} event(s) received on topic '{TopicName}'", request.Events.Length, request.Topic.Name);
 

@@ -33,7 +33,7 @@ public class ValidateAllSubscriptionsCommandHandler : IRequestHandler<ValidateAl
         _validationIpAddress = validationIpAddress;
     }
 
-    public async Task<Unit> Handle(ValidateAllSubscriptionsCommand request, CancellationToken cancellationToken)
+    public async Task Handle(ValidateAllSubscriptionsCommand request, CancellationToken cancellationToken)
     {
         foreach (var enabledTopic in _simulatorSettings.Topics
                                                        .Where(o => !o.Disabled))
@@ -44,8 +44,6 @@ public class ValidateAllSubscriptionsCommandHandler : IRequestHandler<ValidateAl
                 await ValidateSubscription(enabledTopic, subscriber);
             }
         }
-
-        return Unit.Value;
     }
 
     private async Task ValidateSubscription(TopicSettings topic, SubscriptionSettings subscription)

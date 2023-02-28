@@ -174,7 +174,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddSimulatorSettings(configuration);
-        builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
+        builder.Services.AddMediatR(o=> o.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
         builder.Services.AddHttpClient();
 
         builder.Services.AddScoped<SasKeyValidator>();
