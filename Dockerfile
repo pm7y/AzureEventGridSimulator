@@ -20,8 +20,8 @@ RUN dotnet publish -c release -o /artifact \
     -p:PublishReadyToRun=false \
     -p:IncludeNativeLibrariesForSelfExtract=true \
     -p:PublishSingleFile=true \
-    -p:PublishTrimmed=false \
-    -p:TrimUnusedDependencies=false
+    -p:PublishTrimmed=true \
+    -p:TrimUnusedDependencies=true
 
 # add binary artifact to new runtime-deps only image
 FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/runtime-deps:7.0-alpine
