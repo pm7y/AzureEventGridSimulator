@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -175,7 +176,14 @@ public class Program
 
         builder.Services.AddSimulatorSettings(configuration);
         builder.Services.AddMediatR(o=> o.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
-        builder.Services.AddHttpClient();
+        var httpClientBuilder = builder.Services.AddHttpClient(string.Empty);
+        if (configuration.GetValue<bool>("DisableSslCertificatesValidation"))
+        {
+            httpClientBuilder.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            });
+        }
 
         builder.Services.AddScoped<SasKeyValidator>();
         builder.Services.AddSingleton<ValidationIpAddressProvider>();
