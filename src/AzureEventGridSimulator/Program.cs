@@ -206,13 +206,14 @@ public class Program
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
                 .MinimumLevel.Override("System", LogEventLevel.Error)
                 // Override defaults from settings if any
-                .ReadFrom.Configuration(context.Configuration, "Serilog")
+                .ReadFrom.Configuration(context.Configuration)
                 .WriteTo.Conditional(_ => !hasAtLeastOneLogSinkBeenConfigured, sinkConfiguration => sinkConfiguration.Console());
         });
 
         builder.Configuration.AddConfiguration(configuration);
         builder.WebHost.UseKestrel(options =>
         {
+            // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
             Log.Verbose(((IConfigurationRoot)configuration).GetDebugView().Normalize());
 
             options.ConfigureSimulatorCertificate();
