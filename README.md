@@ -49,6 +49,10 @@ An example of one topic with one subscriber is shown below.
   - `false` (the default) subscription validation will be attempted each time the simulator starts.
   - `true` to disable subscription validation.
 
+### App Settings
+
+- `dangerousAcceptAnyServerCertificateValidator`: Set to `true` to accept any server certificate. This is useful when testing with self signed certificates.
+
 #### Subscription Validation
 
 When a subscription is added to Azure Event Grid it first sends a validation event to the subscription endpoint. The validation event contains a `validationCode` which the subscription endpoint must echo back. If this does not occur then Azure Event Grid will not enable the subscription.
