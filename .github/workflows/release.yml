@@ -110,7 +110,7 @@ jobs:
           dest: AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip
 
       - name: release artifacts
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: ${{ env.VERSION_NUMBER }}
           tag_name: ${{ env.VERSION_NUMBER }}
