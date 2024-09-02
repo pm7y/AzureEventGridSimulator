@@ -48,7 +48,7 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: get the code
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v4.1.7
 
       - name: clean
         run: dotnet clean
