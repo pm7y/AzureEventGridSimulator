@@ -54,68 +54,68 @@ public static class SubscriptionSettingsFilterExtensions
 
         switch (filter.OperatorType)
         {
-            case AdvancedFilterSetting.OperatorTypeEnum.NumberGreaterThan:
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberGreaterThan:
                 retVal = Try(() => value.ToNumber() > filter.Value.ToNumber());
                 break;
-            case AdvancedFilterSetting.OperatorTypeEnum.NumberGreaterThanOrEquals:
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberGreaterThanOrEquals:
                 retVal = Try(() => value.ToNumber() >= filter.Value.ToNumber());
                 break;
-            case AdvancedFilterSetting.OperatorTypeEnum.NumberLessThan:
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberLessThan:
                 retVal = Try(() => value.ToNumber() < filter.Value.ToNumber());
                 break;
-            case AdvancedFilterSetting.OperatorTypeEnum.NumberLessThanOrEquals:
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberLessThanOrEquals:
                 retVal = Try(() => value.ToNumber() <= filter.Value.ToNumber());
                 break;
-            case AdvancedFilterSetting.OperatorTypeEnum.NumberIn:
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn:
                 retVal = Try(() => (filter.Values ?? Array.Empty<object>()).Select(v => v.ToNumber()).Contains(value.ToNumber()));
                 break;
-            case AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn:
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotIn:
                 retVal = Try(() => !(filter.Values ?? Array.Empty<object>()).Select(v => v.ToNumber()).Contains(value.ToNumber()));
                 break;
-            case AdvancedFilterSetting.OperatorTypeEnum.BoolEquals:
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.BoolEquals:
                 retVal = Try(() => Convert.ToBoolean(value) == Convert.ToBoolean(filter.Value));
                 break;
-            case AdvancedFilterSetting.OperatorTypeEnum.StringContains:
-            {
-                // a string cannot be considered to contain null or and empty string
-                var valueAsString = value as string;
-                var filterValueAsString = filter.Value as string;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains:
+                {
+                    var valueAsString = value as string;
+                    retVal = Try(() =>
+                                     (filter.Values ?? Array.Empty<object>()).OfType<string>()
+                                                                             .Where(o => !string.IsNullOrEmpty(o) && !string.IsNullOrEmpty(valueAsString))
+                                                                             .Any(o => valueAsString.Contains(o, StringComparison.OrdinalIgnoreCase))
+                                );
+                }
+                break;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith:
+                {
+                    var valueAsString = value as string;
+                    retVal = Try(() =>
+                                     (filter.Values ?? Array.Empty<object>()).OfType<string>()
+                                                                             .Where(o => !string.IsNullOrEmpty(o) && !string.IsNullOrEmpty(valueAsString))
+                                                                             .Any(o => valueAsString.StartsWith(o, StringComparison.OrdinalIgnoreCase))
+                                );
+                }
+                break;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith:
+                {
+                    // null or empty values cannot be considered to be the end character of a string
+                    var valueAsString = value as string;
+                    var filterValueAsString = filter.Value as string;
 
-                retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
-                                   !string.IsNullOrEmpty(valueAsString) &&
-                                   valueAsString.Contains(filterValueAsString, StringComparison.OrdinalIgnoreCase));
-            }
+                    retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
+                                       !string.IsNullOrEmpty(valueAsString) &&
+                                       valueAsString.EndsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
+                }
                 break;
-            case AdvancedFilterSetting.OperatorTypeEnum.StringBeginsWith:
-            {
-                // null or empty values cannot be considered to be the beginning character of a string
-                var valueAsString = value as string;
-                var filterValueAsString = filter.Value as string;
-
-                retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
-                                   !string.IsNullOrEmpty(valueAsString) &&
-                                   valueAsString.StartsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
-            }
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.StringIn:
+                retVal = Try(() =>
+                                 (filter.Values ?? Array.Empty<object>()).Select(v => Convert.ToString(v)?.ToUpper()).Contains(Convert.ToString(value)?.ToUpper())
+                                 );
                 break;
-            case AdvancedFilterSetting.OperatorTypeEnum.StringEndsWith:
-            {
-                // null or empty values cannot be considered to be the end character of a string
-                var valueAsString = value as string;
-                var filterValueAsString = filter.Value as string;
-
-                retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
-                                   !string.IsNullOrEmpty(valueAsString) &&
-                                   valueAsString.EndsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
-            }
-                break;
-            case AdvancedFilterSetting.OperatorTypeEnum.StringIn:
-                retVal = Try(() => (filter.Values ?? Array.Empty<object>()).Select(v => Convert.ToString(v)?.ToUpper()).Contains(Convert.ToString(value)?.ToUpper()));
-                break;
-            case AdvancedFilterSetting.OperatorTypeEnum.StringNotIn:
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn:
                 retVal = Try(() => !(filter.Values ?? Array.Empty<object>()).Select(v => Convert.ToString(v)?.ToUpper()).Contains(Convert.ToString(value)?.ToUpper()));
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(AdvancedFilterSetting.OperatorTypeEnum), "Unknown filter operator");
+                throw new ArgumentOutOfRangeException(nameof(AdvancedFilterSetting.AdvancedFilterOperatorType), "Unknown filter operator");
         }
 
         return retVal;
@@ -148,56 +148,61 @@ public static class SubscriptionSettingsFilterExtensions
         var retval = false;
         value = null;
 
-        if (!string.IsNullOrWhiteSpace(key))
+        if (string.IsNullOrWhiteSpace(key))
         {
-            switch (key)
-            {
-                case nameof(gridEvent.Id):
-                    value = gridEvent.Id;
-                    retval = true;
-                    break;
-                case nameof(gridEvent.Topic):
-                    value = gridEvent.Topic;
-                    retval = true;
-                    break;
-                case nameof(gridEvent.Subject):
-                    value = gridEvent.Subject;
-                    retval = true;
-                    break;
-                case nameof(gridEvent.EventType):
-                    value = gridEvent.EventType;
-                    retval = true;
-                    break;
-                case nameof(gridEvent.DataVersion):
-                    value = gridEvent.DataVersion;
-                    retval = true;
-                    break;
-                case nameof(gridEvent.Data):
-                    value = gridEvent.Data;
-                    retval = true;
-                    break;
-                default:
-                    var split = key.Split('.');
-                    if (split[0] == nameof(gridEvent.Data) && gridEvent.Data != null && split.Length > 1)
-                    {
-                        var tmpValue = gridEvent.Data;
-                        for (var i = 0; i < split.Length; i++)
-                        {
-                            // look for the property on the grid event data object
-                            if (tmpValue != null && JObject.FromObject(tmpValue).TryGetValue(split[i], out var dataValue))
-                            {
-                                tmpValue = dataValue.ToObject<object>();
-                                if (i == split.Length - 1)
-                                {
-                                    retval = true;
-                                    value = tmpValue;
-                                }
-                            }
-                        }
-                    }
+            return retval;
+        }
 
+        switch (key)
+        {
+            case nameof(gridEvent.Id):
+                value = gridEvent.Id;
+                retval = true;
+                break;
+            case nameof(gridEvent.Topic):
+                value = gridEvent.Topic;
+                retval = true;
+                break;
+            case nameof(gridEvent.Subject):
+                value = gridEvent.Subject;
+                retval = true;
+                break;
+            case nameof(gridEvent.EventType):
+                value = gridEvent.EventType;
+                retval = true;
+                break;
+            case nameof(gridEvent.DataVersion):
+                value = gridEvent.DataVersion;
+                retval = true;
+                break;
+            case nameof(gridEvent.Data):
+                value = gridEvent.Data;
+                retval = true;
+                break;
+            default:
+                var split = key.Split('.');
+                if (split[0] != nameof(gridEvent.Data) || gridEvent.Data == null || split.Length <= 1)
+                {
                     break;
-            }
+                }
+                var tmpValue = gridEvent.Data;
+                for (var i = 0; i < split.Length; i++)
+                {
+                    // look for the property on the grid event data object
+                    if (tmpValue == null || !JObject.FromObject(tmpValue).TryGetValue(split[i], out var dataValue))
+                    {
+                        continue;
+                    }
+                    tmpValue = dataValue.ToObject<object>();
+                    if (i == split.Length - 1)
+                    {
+                        retval = true;
+                        value = tmpValue;
+                    }
+                }
+
+                break;
+
         }
 
         return retval;

@@ -8,7 +8,7 @@ namespace AzureEventGridSimulator.Infrastructure.Settings;
 
 public class AdvancedFilterSetting
 {
-    public enum OperatorTypeEnum
+    public enum AdvancedFilterOperatorType
     {
         NumberGreaterThan,
         NumberGreaterThanOrEquals,
@@ -25,7 +25,7 @@ public class AdvancedFilterSetting
     }
 
     [JsonProperty(PropertyName = "operatorType", Required = Required.Always)]
-    public OperatorTypeEnum OperatorType { get; set; }
+    public AdvancedFilterOperatorType OperatorType { get; set; }
 
     [JsonProperty(PropertyName = "key", Required = Required.Always)]
     public string Key { get; set; }
@@ -60,7 +60,7 @@ public class AdvancedFilterSetting
             throw new ArgumentOutOfRangeException(nameof(Values), $"Advanced filtering limits strings to {maxStringLength} characters per string value");
         }
 
-        if (new[] { OperatorTypeEnum.NumberIn, OperatorTypeEnum.NumberNotIn, OperatorTypeEnum.StringIn, OperatorTypeEnum.StringNotIn }.Contains(OperatorType) &&
+        if (new[] { AdvancedFilterOperatorType.NumberIn, AdvancedFilterOperatorType.NumberNotIn, AdvancedFilterOperatorType.StringIn, AdvancedFilterOperatorType.StringNotIn }.Contains(OperatorType) &&
             Values?.Count > 5)
         {
             throw new ArgumentOutOfRangeException(nameof(OperatorType), "Advanced filtering limits filters to five values for in and not in operators");

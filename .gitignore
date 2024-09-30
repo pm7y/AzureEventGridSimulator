@@ -351,3 +351,5 @@ RunDockerContainer.bat
 BuildDockerImage.bat
 my.env
 .DS_Store
+.sonarqube
+.scannerwork

@@ -7,7 +7,7 @@ namespace AzureEventGridSimulator.Infrastructure;
 
 public class ValidationIpAddressProvider
 {
-    private static string _ipAddress;
+    private string _ipAddress;
     private static readonly object _lock = new();
 
     public string Create()
