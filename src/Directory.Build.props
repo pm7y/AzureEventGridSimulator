@@ -14,12 +14,13 @@
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
-  <Target Name="CSharpier" BeforeTargets="BeforeBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+  <Target Name="CSharpier" BeforeTargets="BeforeBuild" Condition="'$(DesignTimeBuild)' != 'true' And '$(MSBuildProjectName)' == 'AzureEventGridSimulator'">
     <Exec
       Command="dotnet tool restore"
       WorkingDirectory="$(MSBuildThisFileDirectory).."
       StandardOutputImportance="low"
       StandardErrorImportance="low"
+      ContinueOnError="true"
     />
     <Exec
       Command="dotnet tool run csharpier format src"
