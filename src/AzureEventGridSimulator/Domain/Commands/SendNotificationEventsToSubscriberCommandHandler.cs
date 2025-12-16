@@ -6,11 +6,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 
@@ -19,22 +19,25 @@ public class SendNotificationEventsToSubscriberCommandHandler : IRequestHandler<
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
+    private readonly EventSchemaFormatterFactory _formatterFactory;
 
-    public SendNotificationEventsToSubscriberCommandHandler(IHttpClientFactory httpClientFactory, ILogger<SendNotificationEventsToSubscriberCommandHandler> logger)
+    public SendNotificationEventsToSubscriberCommandHandler(
+        IHttpClientFactory httpClientFactory,
+        ILogger<SendNotificationEventsToSubscriberCommandHandler> logger,
+        EventSchemaFormatterFactory formatterFactory)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _formatterFactory = formatterFactory;
     }
 
     public Task Handle(SendNotificationEventsToSubscriberCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("{EventCount} event(s) received on topic '{TopicName}'", request.Events.Length, request.Topic.Name);
+        _logger.LogInformation("{EventCount} event(s) received on topic '{TopicName}' (Schema: {Schema})",
+            request.Events.Length, request.Topic.Name, request.InputSchema);
 
-        foreach (var eventGridEvent in request.Events)
-        {
-            eventGridEvent.Topic = $"/subscriptions/{Guid.Empty:D}/resourceGroups/eventGridSimulator/providers/Microsoft.EventGrid/topics/{request.Topic.Name}";
-            eventGridEvent.MetadataVersion = "1";
-        }
+        // Enrich events with topic information
+        EnrichEvents(request.Events, request.Topic.Name);
 
         if (!request.Topic.Subscribers.Any())
         {
@@ -64,7 +67,7 @@ public class SendNotificationEventsToSubscriberCommandHandler : IRequestHandler<
                 foreach (var subscription in request.Topic.Subscribers)
                 {
 #pragma warning disable 4014
-                    SendToSubscriber(subscription, request.Events, request.Topic.Name);
+                    SendToSubscriber(subscription, request.Events, request.Topic, request.InputSchema);
 #pragma warning restore 4014
                 }
             }
@@ -73,24 +76,63 @@ public class SendNotificationEventsToSubscriberCommandHandler : IRequestHandler<
         return Task.CompletedTask;
     }
 
-    private async Task SendToSubscriber(SubscriptionSettings subscription, IEnumerable<EventGridEvent> events, string topicName)
+    private void EnrichEvents(SimulatorEvent[] events, string topicName)
+    {
+        var topicPath = $"/subscriptions/{Guid.Empty:D}/resourceGroups/eventGridSimulator/providers/Microsoft.EventGrid/topics/{topicName}";
+
+        foreach (var evt in events)
+        {
+            if (evt.Schema == EventSchema.EventGridSchema && evt.EventGridEvent != null)
+            {
+                evt.EventGridEvent.Topic = topicPath;
+                evt.EventGridEvent.MetadataVersion = "1";
+            }
+            else if (evt.Schema == EventSchema.CloudEventV1_0 && evt.CloudEvent != null)
+            {
+                // CloudEvents use 'source' which is already set
+                // Optionally set it to the topic path if not already set
+                if (string.IsNullOrEmpty(evt.CloudEvent.Source))
+                {
+                    evt.CloudEvent.Source = topicPath;
+                }
+            }
+        }
+    }
+
+    private async Task SendToSubscriber(SubscriptionSettings subscription, IEnumerable<SimulatorEvent> events, TopicSettings topic, EventSchema inputSchema)
     {
         try
         {
             if (subscription.Disabled)
             {
-                _logger.LogWarning("Subscription '{SubscriberName}' on topic '{TopicName}' is disabled and so Notification was skipped", subscription.Name, topicName);
+                _logger.LogWarning("Subscription '{SubscriberName}' on topic '{TopicName}' is disabled and so Notification was skipped", subscription.Name, topic.Name);
                 return;
             }
 
             if (!subscription.DisableValidation &&
                 subscription.ValidationStatus != SubscriptionValidationStatus.ValidationSuccessful)
             {
-                _logger.LogWarning("Subscription '{SubscriberName}' on topic '{TopicName}' can't receive events. It's still pending validation", subscription.Name, topicName);
+                _logger.LogWarning("Subscription '{SubscriberName}' on topic '{TopicName}' can't receive events. It's still pending validation", subscription.Name, topic.Name);
                 return;
             }
 
-            _logger.LogDebug("Sending to subscriber '{SubscriberName}' on topic '{TopicName}'", subscription.Name, topicName);
+            _logger.LogDebug("Sending to subscriber '{SubscriberName}' on topic '{TopicName}'", subscription.Name, topic.Name);
+
+            // Determine the delivery schema: subscriber override > topic output > input schema
+            var deliverySchema = subscription.DeliverySchema ?? topic.OutputSchema ?? inputSchema;
+
+            // IMPORTANT: Azure Event Grid does NOT support CloudEvents input -> Event Grid output conversion
+            // This simulator allows it for testing flexibility, but logs a warning
+            if (inputSchema == EventSchema.CloudEventV1_0 && deliverySchema == EventSchema.EventGridSchema)
+            {
+                _logger.LogWarning(
+                    "CloudEvents input to Event Grid output conversion is NOT supported by Azure Event Grid. " +
+                    "Subscriber '{SubscriberName}' on topic '{TopicName}' has incompatible schema configuration. " +
+                    "This will work in the simulator but will fail with actual Azure Event Grid.",
+                    subscription.Name, topic.Name);
+            }
+
+            var formatter = _formatterFactory.GetFormatter(deliverySchema);
 
             // "Event Grid sends the events to subscribers in an array that has a single event. This behaviour may change in the future."
             // https://docs.microsoft.com/en-us/azure/event-grid/event-schema
@@ -98,18 +140,34 @@ public class SendNotificationEventsToSubscriberCommandHandler : IRequestHandler<
             {
                 if (subscription.Filter.AcceptsEvent(evt))
                 {
-                    var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
-                    using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var json = formatter.Serialize(evt);
+                    var contentType = formatter.ContentType;
+
+                    using var content = new StringContent(json, Encoding.UTF8, contentType);
                     var httpClient = _httpClientFactory.CreateClient();
+
+                    // Add standard Event Grid headers
                     httpClient.DefaultRequestHeaders.Add(Constants.AegEventTypeHeader, Constants.NotificationEventType);
                     httpClient.DefaultRequestHeaders.Add(Constants.AegSubscriptionNameHeader, subscription.Name.ToUpperInvariant());
-                    httpClient.DefaultRequestHeaders.Add(Constants.AegDataVersionHeader, evt.DataVersion);
-                    httpClient.DefaultRequestHeaders.Add(Constants.AegMetadataVersionHeader, evt.MetadataVersion);
                     httpClient.DefaultRequestHeaders.Add(Constants.AegDeliveryCountHeader, "0"); // TODO implement re-tries
+
+                    // Add schema-specific headers
+                    if (deliverySchema == EventSchema.EventGridSchema)
+                    {
+                        httpClient.DefaultRequestHeaders.Add(Constants.AegDataVersionHeader, evt.DataVersion ?? "");
+                        httpClient.DefaultRequestHeaders.Add(Constants.AegMetadataVersionHeader, "1");
+                    }
+
+                    // Add any additional headers from the formatter
+                    foreach (var header in formatter.GetHeaders(evt))
+                    {
+                        httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                    }
+
                     httpClient.Timeout = TimeSpan.FromSeconds(60);
 
                     await httpClient.PostAsync(subscription.Endpoint, content)
-                                    .ContinueWith(t => LogResult(t, evt, subscription, topicName));
+                                    .ContinueWith(t => LogResult(t, evt, subscription, topic.Name));
                 }
                 else
                 {
@@ -123,7 +181,7 @@ public class SendNotificationEventsToSubscriberCommandHandler : IRequestHandler<
         }
     }
 
-    private void LogResult(Task<HttpResponseMessage> task, EventGridEvent evt, SubscriptionSettings subscription, string topicName)
+    private void LogResult(Task<HttpResponseMessage> task, SimulatorEvent evt, SubscriptionSettings subscription, string topicName)
     {
         if (task.IsCompletedSuccessfully && task.Result.IsSuccessStatusCode)
         {

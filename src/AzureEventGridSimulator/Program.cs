@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
+using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Middleware;
@@ -176,6 +177,15 @@ public class Program
 
         builder.Services.AddSimulatorSettings(configuration);
         builder.Services.AddMediatR(o=> o.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+
+        // Register event schema services
+        builder.Services.AddScoped<EventSchemaDetector>();
+        builder.Services.AddScoped<EventGridSchemaParser>();
+        builder.Services.AddScoped<CloudEventSchemaParser>();
+        builder.Services.AddScoped<EventSchemaParserFactory>();
+        builder.Services.AddScoped<EventGridSchemaFormatter>();
+        builder.Services.AddScoped<CloudEventSchemaFormatter>();
+        builder.Services.AddScoped<EventSchemaFormatterFactory>();
 
         var httpClientBuilder = builder.Services.AddHttpClient(nameof(AzureEventGridSimulator));
         if (configuration.GetValue<bool>("dangerousAcceptAnyServerCertificateValidator"))

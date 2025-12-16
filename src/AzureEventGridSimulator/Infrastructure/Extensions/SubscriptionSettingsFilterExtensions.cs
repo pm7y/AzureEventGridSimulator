@@ -8,6 +8,45 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
 public static class SubscriptionSettingsFilterExtensions
 {
+    /// <summary>
+    /// Checks if the filter accepts a SimulatorEvent (schema-agnostic).
+    /// </summary>
+    public static bool AcceptsEvent(this FilterSetting filter, SimulatorEvent simulatorEvent)
+    {
+        if (filter == null)
+        {
+            return true;
+        }
+
+        // Extract common properties from SimulatorEvent
+        var eventType = simulatorEvent.EventType;
+        var subject = simulatorEvent.Subject ?? "";
+        var data = simulatorEvent.Data;
+
+        // Check event type filter
+        var retVal = filter.IncludedEventTypes == null
+                     || filter.IncludedEventTypes.Contains("All")
+                     || filter.IncludedEventTypes.Contains(eventType);
+
+        // Check subject begins with filter
+        retVal = retVal
+                 && (string.IsNullOrWhiteSpace(filter.SubjectBeginsWith)
+                     || subject.StartsWith(filter.SubjectBeginsWith, filter.IsSubjectCaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase));
+
+        // Check subject ends with filter
+        retVal = retVal
+                 && (string.IsNullOrWhiteSpace(filter.SubjectEndsWith)
+                     || subject.EndsWith(filter.SubjectEndsWith, filter.IsSubjectCaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase));
+
+        // Check advanced filters
+        retVal = retVal && (filter.AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>()).All(af => af.AcceptsEvent(simulatorEvent));
+
+        return retVal;
+    }
+
+    /// <summary>
+    /// Checks if the filter accepts an EventGridEvent (legacy support).
+    /// </summary>
     public static bool AcceptsEvent(this FilterSetting filter, EventGridEvent gridEvent)
     {
         var retVal = filter == null;
@@ -37,6 +76,22 @@ public static class SubscriptionSettingsFilterExtensions
         return retVal;
     }
 
+    private static bool AcceptsEvent(this AdvancedFilterSetting filter, SimulatorEvent simulatorEvent)
+    {
+        if (filter == null)
+        {
+            return true;
+        }
+
+        // filter is not null
+        if (!simulatorEvent.TryGetValue(filter.Key, out var value))
+        {
+            return false;
+        }
+
+        return EvaluateAdvancedFilter(filter, value);
+    }
+
     private static bool AcceptsEvent(this AdvancedFilterSetting filter, EventGridEvent gridEvent)
     {
         var retVal = filter == null;
@@ -51,6 +106,13 @@ public static class SubscriptionSettingsFilterExtensions
         {
             return false;
         }
+
+        return EvaluateAdvancedFilter(filter, value);
+    }
+
+    private static bool EvaluateAdvancedFilter(AdvancedFilterSetting filter, object value)
+    {
+        bool retVal;
 
         switch (filter.OperatorType)
         {
@@ -120,6 +182,72 @@ public static class SubscriptionSettingsFilterExtensions
         }
 
         return retVal;
+    }
+
+    private static bool TryGetValue(this SimulatorEvent simulatorEvent, string key, out object value)
+    {
+        value = null;
+
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return false;
+        }
+
+        // Map common property names to SimulatorEvent accessors
+        switch (key)
+        {
+            case "Id":
+            case "id":
+                value = simulatorEvent.Id;
+                return true;
+            case "Topic":
+            case "topic":
+            case "Source":
+            case "source":
+                value = simulatorEvent.Source;
+                return true;
+            case "Subject":
+            case "subject":
+                value = simulatorEvent.Subject;
+                return true;
+            case "EventType":
+            case "eventType":
+            case "Type":
+            case "type":
+                value = simulatorEvent.EventType;
+                return true;
+            case "DataVersion":
+            case "dataVersion":
+            case "DataSchema":
+            case "dataschema":
+                value = simulatorEvent.DataVersion;
+                return true;
+            case "Data":
+            case "data":
+                value = simulatorEvent.Data;
+                return true;
+            default:
+                // Handle nested data properties (e.g., "Data.propertyName")
+                var split = key.Split('.');
+                if ((split[0] == "Data" || split[0] == "data") && simulatorEvent.Data != null && split.Length > 1)
+                {
+                    var tmpValue = simulatorEvent.Data;
+                    for (var i = 1; i < split.Length; i++)
+                    {
+                        if (tmpValue == null || !JObject.FromObject(tmpValue).TryGetValue(split[i], out var dataValue))
+                        {
+                            return false;
+                        }
+                        tmpValue = dataValue.ToObject<object>();
+                    }
+                    if (tmpValue != null)
+                    {
+                        value = tmpValue;
+                        return true;
+                    }
+                }
+                return false;
+        }
     }
 
     private static double ToNumber(this object value)

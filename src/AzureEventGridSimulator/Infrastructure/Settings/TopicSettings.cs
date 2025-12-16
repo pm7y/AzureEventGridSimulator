@@ -1,5 +1,7 @@
 ﻿using System;
+using AzureEventGridSimulator.Domain.Entities;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
 
@@ -19,4 +21,20 @@ public class TopicSettings
 
     [JsonProperty(PropertyName = "subscribers", Required = Required.Default)]
     public SubscriptionSettings[] Subscribers { get; set; } = Array.Empty<SubscriptionSettings>();
+
+    /// <summary>
+    /// Gets or sets the expected input schema for events published to this topic.
+    /// If null, the schema is auto-detected from the request.
+    /// </summary>
+    [JsonProperty(PropertyName = "inputSchema", Required = Required.Default)]
+    [JsonConverter(typeof(StringEnumConverter))]
+    public EventSchema? InputSchema { get; set; }
+
+    /// <summary>
+    /// Gets or sets the output schema for events delivered to subscribers.
+    /// If null, events are delivered in the same schema they were received in.
+    /// </summary>
+    [JsonProperty(PropertyName = "outputSchema", Required = Required.Default)]
+    [JsonConverter(typeof(StringEnumConverter))]
+    public EventSchema? OutputSchema { get; set; }
 }
