@@ -6,6 +6,7 @@ using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using MediatR;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 

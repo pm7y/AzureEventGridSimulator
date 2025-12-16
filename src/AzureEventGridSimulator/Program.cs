@@ -18,7 +18,7 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Versioning;
+using Asp.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -193,12 +193,12 @@ public class Program
         builder.Services.AddControllers(options => { options.EnableEndpointRouting = false; })
                .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; });
 
-        builder.Services.AddApiVersioning(config =>
+        builder.Services.AddApiVersioning(options =>
         {
-            config.DefaultApiVersion = new ApiVersion(DateTime.Parse(Constants.SupportedApiVersion, new ApiVersionFormatProvider()));
-            config.AssumeDefaultVersionWhenUnspecified = true;
-            config.ReportApiVersions = true;
-        });
+            options.DefaultApiVersion = new ApiVersion(DateOnly.Parse(Constants.SupportedApiVersion));
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+        }).AddMvc();
 
         builder.Logging.ClearProviders();
         builder.Host.UseSerilog((context, loggerConfiguration) =>

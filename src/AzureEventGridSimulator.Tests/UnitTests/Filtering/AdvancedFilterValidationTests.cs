@@ -129,7 +129,7 @@ public class AdvancedFilterValidationTests
     {
         Should.NotThrow(() =>
         {
-            foreach (AdvancedFilterSetting.OperatorTypeEnum operatorType in Enum.GetValues(typeof(AdvancedFilterSetting.OperatorTypeEnum)))
+            foreach (AdvancedFilterSetting.AdvancedFilterOperatorType operatorType in Enum.GetValues(typeof(AdvancedFilterSetting.AdvancedFilterOperatorType)))
             {
                 var filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[5], OperatorType = operatorType };
                 GetValidSimulatorSettings(filterConfig).Validate();
@@ -140,13 +140,13 @@ public class AdvancedFilterValidationTests
     [Fact]
     public void TestFilterValidationWithSixValues()
     {
-        foreach (AdvancedFilterSetting.OperatorTypeEnum operatorType in Enum.GetValues(typeof(AdvancedFilterSetting.OperatorTypeEnum)))
+        foreach (AdvancedFilterSetting.AdvancedFilterOperatorType operatorType in Enum.GetValues(typeof(AdvancedFilterSetting.AdvancedFilterOperatorType)))
         {
             var filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[6], OperatorType = operatorType };
             if (new[]
                 {
-                    AdvancedFilterSetting.OperatorTypeEnum.NumberIn, AdvancedFilterSetting.OperatorTypeEnum.NumberNotIn, AdvancedFilterSetting.OperatorTypeEnum.StringIn,
-                    AdvancedFilterSetting.OperatorTypeEnum.StringNotIn
+                    AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn, AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotIn, AdvancedFilterSetting.AdvancedFilterOperatorType.StringIn,
+                    AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn
                 }.Contains(operatorType))
             {
                 var exception = Should.Throw<ArgumentOutOfRangeException>(() => GetValidSimulatorSettings(filterConfig).Validate());

@@ -14,7 +14,7 @@ on:
 env:
   VERSION_NUMBER: ${{ github.event.inputs.tag_name }}
   BUILD_NUMBER: ${{ github.event.inputs.tag_name }}.${{ github.run_number }}
-  DOTNET_VERSION: 7.0.x
+  DOTNET_VERSION: 10.0.x
   SOLUTION_PATH: ./src/AzureEventGridSimulator.sln
   PROJECT_PATH: ./src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
   CONFIGURATION: Release
@@ -32,7 +32,7 @@ jobs:
           - os: ubuntu-latest
             runtime: linux-x64
           - os: macos-latest
-            runtime: osx-x64
+            runtime: osx-arm64
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1

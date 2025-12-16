@@ -47,7 +47,7 @@ public class AdvancedFilterEventAcceptanceTests
         {
             AdvancedFilters = new[]
             {
-                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Values = new object[] { 1 } }
+                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn, Values = new object[] { 1 } }
             }
         };
         var gridEvent = new EventGridEvent { Data = 1 };
@@ -62,8 +62,8 @@ public class AdvancedFilterEventAcceptanceTests
         {
             AdvancedFilters = new[]
             {
-                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberGreaterThanOrEquals, Value = 1 },
-                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberLessThanOrEquals, Value = 1 }
+                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberGreaterThanOrEquals, Value = 1 },
+                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberLessThanOrEquals, Value = 1 }
             }
         };
         var gridEvent = new EventGridEvent { Data = 1 };
@@ -78,7 +78,7 @@ public class AdvancedFilterEventAcceptanceTests
         {
             AdvancedFilters = new[]
             {
-                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.OperatorTypeEnum.NumberIn, Value = 1 }
+                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn, Value = 1 }
             }
         };
         var gridEvent = new EventGridEvent { Data = 1 };

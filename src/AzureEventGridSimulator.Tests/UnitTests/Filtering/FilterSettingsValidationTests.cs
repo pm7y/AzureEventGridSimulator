@@ -38,7 +38,7 @@ public class FilterSettingsValidationTests
         return new AdvancedFilterSetting
         {
             Key = "key",
-            OperatorType = AdvancedFilterSetting.OperatorTypeEnum.BoolEquals,
+            OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.BoolEquals,
             Value = true
         };
     }
