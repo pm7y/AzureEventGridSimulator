@@ -78,11 +78,11 @@ public static class SubscriptionSettingsFilterExtensions
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains:
                 {
                     var valueAsString = value as string;
-                    retVal = Try(() =>
-                                     (filter.Values ?? Array.Empty<object>()).OfType<string>()
-                                                                             .Where(o => !string.IsNullOrEmpty(o) && !string.IsNullOrEmpty(valueAsString))
-                                                                             .Any(o => valueAsString.Contains(o, StringComparison.OrdinalIgnoreCase))
-                                );
+                    var filterValueAsString = filter.Value as string;
+
+                    retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
+                                       !string.IsNullOrEmpty(valueAsString) &&
+                                       valueAsString.Contains(filterValueAsString, StringComparison.OrdinalIgnoreCase));
                 }
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith:
