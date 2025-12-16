@@ -20,7 +20,7 @@ public static class HttpContextExtensions
     {
         var error = new ErrorMessage(statusCode, errorMessage, code);
 
-        context.Response.Headers.Add(HeaderNames.ContentType, "application/json");
+        context.Response.Headers[HeaderNames.ContentType] = "application/json";
 
         context.Response.StatusCode = (int)statusCode;
 
