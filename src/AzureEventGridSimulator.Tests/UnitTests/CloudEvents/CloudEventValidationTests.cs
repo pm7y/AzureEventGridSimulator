@@ -16,7 +16,7 @@ public class CloudEventValidationTests
             SpecVersion = "1.0",
             Type = "com.example.test",
             Source = "/test/source",
-            Id = "test-id-123"
+            Id = "test-id-123",
         };
 
         Should.NotThrow(() => cloudEvent.Validate());
@@ -35,7 +35,7 @@ public class CloudEventValidationTests
             Subject = "/test/subject",
             DataContentType = "application/json",
             DataSchema = "https://example.com/schema",
-            Data = new { Property = "Value" }
+            Data = new { Property = "Value" },
         };
 
         Should.NotThrow(() => cloudEvent.Validate());
@@ -48,7 +48,7 @@ public class CloudEventValidationTests
         {
             Type = "com.example.test",
             Source = "/test/source",
-            Id = "test-id-123"
+            Id = "test-id-123",
         };
 
         var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
@@ -63,7 +63,7 @@ public class CloudEventValidationTests
             SpecVersion = "0.3",
             Type = "com.example.test",
             Source = "/test/source",
-            Id = "test-id-123"
+            Id = "test-id-123",
         };
 
         var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
@@ -77,7 +77,7 @@ public class CloudEventValidationTests
         {
             SpecVersion = "1.0",
             Source = "/test/source",
-            Id = "test-id-123"
+            Id = "test-id-123",
         };
 
         var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
@@ -91,7 +91,7 @@ public class CloudEventValidationTests
         {
             SpecVersion = "1.0",
             Type = "com.example.test",
-            Id = "test-id-123"
+            Id = "test-id-123",
         };
 
         var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
@@ -105,7 +105,7 @@ public class CloudEventValidationTests
         {
             SpecVersion = "1.0",
             Type = "com.example.test",
-            Source = "/test/source"
+            Source = "/test/source",
         };
 
         var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
@@ -121,7 +121,7 @@ public class CloudEventValidationTests
             Type = "com.example.test",
             Source = "/test/source",
             Id = "test-id-123",
-            Time = "not-a-valid-timestamp"
+            Time = "not-a-valid-timestamp",
         };
 
         var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
@@ -138,7 +138,7 @@ public class CloudEventValidationTests
             Source = "/test/source",
             Id = "test-id-123",
             Data = new { Property = "Value" },
-            DataBase64 = "SGVsbG8gV29ybGQ="
+            DataBase64 = "SGVsbG8gV29ybGQ=",
         };
 
         var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());

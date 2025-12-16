@@ -19,7 +19,7 @@ public class CloudEventSchemaFormatterTests
             SpecVersion = "1.0",
             Type = "com.example.test",
             Source = "/test/source",
-            Id = "test-id-123"
+            Id = "test-id-123",
         };
 
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
@@ -46,7 +46,7 @@ public class CloudEventSchemaFormatterTests
             Id = "test-id-123",
             Subject = "/test/subject",
             Time = "2025-01-15T10:30:00Z",
-            Data = new { Property = "Value" }
+            Data = new { Property = "Value" },
         };
 
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
@@ -70,7 +70,7 @@ public class CloudEventSchemaFormatterTests
             EventType = "Test.Event.Type",
             EventTime = "2025-01-15T10:30:00Z",
             Data = new { Property = "Value" },
-            Topic = "/test/topic"
+            Topic = "/test/topic",
         };
 
         var simulatorEvent = SimulatorEvent.FromEventGridEvent(eventGridEvent);

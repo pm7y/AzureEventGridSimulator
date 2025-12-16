@@ -55,8 +55,10 @@ public class CloudEventSchemaParser : IEventSchemaParser
             Type = GetHeaderValue(headers, Constants.CeTypeHeader),
             Time = GetHeaderValue(headers, Constants.CeTimeHeader),
             Subject = GetHeaderValue(headers, Constants.CeSubjectHeader),
-            DataContentType = GetHeaderValue(headers, Constants.CeDataContentTypeHeader) ?? context.Request.ContentType,
-            DataSchema = GetHeaderValue(headers, Constants.CeDataSchemaHeader)
+            DataContentType =
+                GetHeaderValue(headers, Constants.CeDataContentTypeHeader)
+                ?? context.Request.ContentType,
+            DataSchema = GetHeaderValue(headers, Constants.CeDataSchemaHeader),
         };
 
         // Parse the body as data
@@ -138,7 +140,10 @@ public class CloudEventSchemaParser : IEventSchemaParser
         }
         catch (JsonException ex)
         {
-            throw new InvalidOperationException($"Failed to parse CloudEvents batch: {ex.Message}", ex);
+            throw new InvalidOperationException(
+                $"Failed to parse CloudEvents batch: {ex.Message}",
+                ex
+            );
         }
 
         if (events == null || events.Length == 0)

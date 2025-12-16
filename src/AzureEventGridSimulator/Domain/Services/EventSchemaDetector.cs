@@ -44,8 +44,8 @@ public class EventSchemaDetector
         }
 
         // Check for CloudEvents JSON content type (use base types for detection)
-        return contentType.Contains(Constants.CloudEventsContentTypeBase) ||
-               contentType.Contains(Constants.CloudEventsBatchContentTypeBase);
+        return contentType.Contains(Constants.CloudEventsContentTypeBase)
+            || contentType.Contains(Constants.CloudEventsBatchContentTypeBase);
     }
 
     /// <summary>
@@ -57,10 +57,10 @@ public class EventSchemaDetector
         var headers = context.Request.Headers;
 
         // Binary mode requires the four required CloudEvents headers
-        return headers.ContainsKey(Constants.CeSpecVersionHeader) &&
-               headers.ContainsKey(Constants.CeIdHeader) &&
-               headers.ContainsKey(Constants.CeSourceHeader) &&
-               headers.ContainsKey(Constants.CeTypeHeader);
+        return headers.ContainsKey(Constants.CeSpecVersionHeader)
+            && headers.ContainsKey(Constants.CeIdHeader)
+            && headers.ContainsKey(Constants.CeSourceHeader)
+            && headers.ContainsKey(Constants.CeTypeHeader);
     }
 
     /// <summary>
@@ -85,7 +85,7 @@ public class EventSchemaDetector
     public bool IsBatchMode(HttpContext context)
     {
         var contentType = context.Request.ContentType;
-        return !string.IsNullOrEmpty(contentType) &&
-               contentType.Contains(Constants.CloudEventsBatchContentTypeBase);
+        return !string.IsNullOrEmpty(contentType)
+            && contentType.Contains(Constants.CloudEventsBatchContentTypeBase);
     }
 }

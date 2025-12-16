@@ -67,7 +67,12 @@ public class SimpleFilterEventAcceptanceTests
     [InlineData(null, "_SUBJECT", false)]
     public void TestSubjectFilteringSuccess(string beginsWith, string endsWith, bool caseSensitive)
     {
-        var filterConfig = new FilterSetting { SubjectBeginsWith = beginsWith, SubjectEndsWith = endsWith, IsSubjectCaseSensitive = caseSensitive };
+        var filterConfig = new FilterSetting
+        {
+            SubjectBeginsWith = beginsWith,
+            SubjectEndsWith = endsWith,
+            IsSubjectCaseSensitive = caseSensitive,
+        };
         var gridEvent = new EventGridEvent { Subject = "This_Is_A_Test_Subject" };
 
         filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
@@ -89,7 +94,12 @@ public class SimpleFilterEventAcceptanceTests
     [InlineData(null, "_SUBJECT", true)]
     public void TestSubjectFilteringFailure(string beginsWith, string endsWith, bool caseSensitive)
     {
-        var filterConfig = new FilterSetting { SubjectBeginsWith = beginsWith, SubjectEndsWith = endsWith, IsSubjectCaseSensitive = caseSensitive };
+        var filterConfig = new FilterSetting
+        {
+            SubjectBeginsWith = beginsWith,
+            SubjectEndsWith = endsWith,
+            IsSubjectCaseSensitive = caseSensitive,
+        };
         var gridEvent = new EventGridEvent { Subject = "This_Is_A_Test_Subject" };
 
         filterConfig.AcceptsEvent(gridEvent).ShouldBeFalse();

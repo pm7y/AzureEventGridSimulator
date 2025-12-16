@@ -19,7 +19,7 @@ public class SimulatorEventTests
             EventTime = "2025-01-15T10:30:00Z",
             Data = new { Property = "Value" },
             DataVersion = "1.0",
-            Topic = "/test/topic"
+            Topic = "/test/topic",
         };
 
         var simulatorEvent = SimulatorEvent.FromEventGridEvent(eventGridEvent);
@@ -46,7 +46,7 @@ public class SimulatorEventTests
             Data = new { Property = "Value" },
             DataSchema = "https://example.com/schema",
             Source = "/test/source",
-            SpecVersion = "1.0"
+            SpecVersion = "1.0",
         };
 
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
@@ -69,7 +69,7 @@ public class SimulatorEventTests
             Id = "event-789",
             Type = "com.example.test",
             Source = "/test/source",
-            SpecVersion = "1.0"
+            SpecVersion = "1.0",
         };
 
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
@@ -85,7 +85,7 @@ public class SimulatorEventTests
             Id = "event-123",
             Subject = "/test/subject",
             EventType = "Test.Event.Type",
-            EventTime = "2025-01-15T10:30:00Z"
+            EventTime = "2025-01-15T10:30:00Z",
         };
 
         var simulatorEvent = SimulatorEvent.FromEventGridEvent(eventGridEvent);
@@ -101,7 +101,7 @@ public class SimulatorEventTests
             Id = "event-456",
             Type = "com.example.test",
             Source = "/test/source",
-            SpecVersion = "1.0"
+            SpecVersion = "1.0",
         };
 
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
@@ -117,7 +117,7 @@ public class SimulatorEventTests
             Id = "event-456",
             Type = "com.example.test",
             // Missing Source
-            SpecVersion = "1.0"
+            SpecVersion = "1.0",
         };
 
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);

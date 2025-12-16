@@ -35,5 +35,6 @@ public static class Constants
 
     // CloudEvents Content Types with charset (for output per Azure spec)
     public const string CloudEventsContentType = "application/cloudevents+json; charset=utf-8";
-    public const string CloudEventsBatchContentType = "application/cloudevents-batch+json; charset=utf-8";
+    public const string CloudEventsBatchContentType =
+        "application/cloudevents-batch+json; charset=utf-8";
 }

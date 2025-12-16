@@ -23,7 +23,7 @@ public class EventGridSchemaFormatterTests
             Data = new { Property = "Value" },
             DataVersion = "1.0",
             Topic = "/test/topic",
-            MetadataVersion = "1"
+            MetadataVersion = "1",
         };
 
         var simulatorEvent = SimulatorEvent.FromEventGridEvent(eventGridEvent);
@@ -52,7 +52,7 @@ public class EventGridSchemaFormatterTests
             Id = "test-id-123",
             Subject = "/test/subject",
             Time = "2025-01-15T10:30:00Z",
-            Data = new { Property = "Value" }
+            Data = new { Property = "Value" },
         };
 
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
@@ -77,7 +77,7 @@ public class EventGridSchemaFormatterTests
             SpecVersion = "1.0",
             Type = "com.example.test",
             Source = "/test/source",
-            Id = "test-id-123"
+            Id = "test-id-123",
         };
 
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);

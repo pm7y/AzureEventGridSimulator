@@ -19,7 +19,7 @@ public class SimulatorEventFilterTests
             Type = "com.example.test",
             Source = "/test/source",
             Id = "test-id",
-            Subject = "/test/subject"
+            Subject = "/test/subject",
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 
@@ -35,7 +35,7 @@ public class SimulatorEventFilterTests
             SpecVersion = "1.0",
             Type = "com.example.test",
             Source = "/test/source",
-            Id = "test-id"
+            Id = "test-id",
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 
@@ -51,7 +51,7 @@ public class SimulatorEventFilterTests
             SpecVersion = "1.0",
             Type = "com.example.test",
             Source = "/test/source",
-            Id = "test-id"
+            Id = "test-id",
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 
@@ -68,7 +68,7 @@ public class SimulatorEventFilterTests
             Type = "com.example.test",
             Source = "/test/source",
             Id = "test-id",
-            Subject = "/test/subject/path"
+            Subject = "/test/subject/path",
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 
@@ -85,7 +85,7 @@ public class SimulatorEventFilterTests
             Type = "com.example.test",
             Source = "/test/source",
             Id = "test-id",
-            Subject = "/test/subject/path"
+            Subject = "/test/subject/path",
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 
@@ -101,7 +101,7 @@ public class SimulatorEventFilterTests
             SpecVersion = "1.0",
             Type = "com.example.test",
             Source = "/test/source",
-            Id = "test-id"
+            Id = "test-id",
             // No Subject - should fall back to Source
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
@@ -118,7 +118,7 @@ public class SimulatorEventFilterTests
             SpecVersion = "1.0",
             Type = "any.event.type",
             Source = "/test/source",
-            Id = "test-id"
+            Id = "test-id",
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 
@@ -132,7 +132,7 @@ public class SimulatorEventFilterTests
         {
             IncludedEventTypes = new[] { "com.example.test" },
             SubjectBeginsWith = "/test/",
-            SubjectEndsWith = "/path"
+            SubjectEndsWith = "/path",
         };
         var cloudEvent = new CloudEvent
         {
@@ -140,7 +140,7 @@ public class SimulatorEventFilterTests
             Type = "com.example.test",
             Source = "/test/source",
             Id = "test-id",
-            Subject = "/test/subject/path"
+            Subject = "/test/subject/path",
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 
@@ -153,7 +153,7 @@ public class SimulatorEventFilterTests
         var filter = new FilterSetting
         {
             IncludedEventTypes = new[] { "com.example.test" },
-            SubjectBeginsWith = "/wrong/"
+            SubjectBeginsWith = "/wrong/",
         };
         var cloudEvent = new CloudEvent
         {
@@ -161,7 +161,7 @@ public class SimulatorEventFilterTests
             Type = "com.example.test",
             Source = "/test/source",
             Id = "test-id",
-            Subject = "/test/subject/path"
+            Subject = "/test/subject/path",
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 
@@ -177,7 +177,7 @@ public class SimulatorEventFilterTests
             SpecVersion = "1.0",
             Type = "com.example.test",
             Source = "/test/source",
-            Id = "test-id"
+            Id = "test-id",
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 

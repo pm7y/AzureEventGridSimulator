@@ -13,4 +13,18 @@
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
+
+  <Target Name="CSharpier" BeforeTargets="BeforeBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec
+      Command="dotnet tool restore"
+      WorkingDirectory="$(MSBuildThisFileDirectory).."
+      StandardOutputImportance="low"
+      StandardErrorImportance="low"
+    />
+    <Exec
+      Command="dotnet tool run csharpier format src"
+      WorkingDirectory="$(MSBuildThisFileDirectory).."
+      StandardOutputImportance="low"
+    />
+  </Target>
 </Project>

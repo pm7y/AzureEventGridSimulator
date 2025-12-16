@@ -8,7 +8,9 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
 public static class KestrelServerOptionsExtensions
 {
-    public static KestrelServerOptions ConfigureSimulatorCertificate(this KestrelServerOptions options)
+    public static KestrelServerOptions ConfigureSimulatorCertificate(
+        this KestrelServerOptions options
+    )
     {
         var configuration = options.ApplicationServices.GetService<IConfiguration>();
 
@@ -22,7 +24,10 @@ public static class KestrelServerOptionsExtensions
         if (certificateFileSpecified && certificatePasswordSpecified)
         {
             // The certificate file and password was specified.
-            certificate = X509CertificateLoader.LoadPkcs12FromFile(certificateFile, certificatePassword);
+            certificate = X509CertificateLoader.LoadPkcs12FromFile(
+                certificateFile,
+                certificatePassword
+            );
         }
         else if (certificateFileSpecified && !certificatePasswordSpecified)
         {
@@ -30,7 +35,10 @@ public static class KestrelServerOptionsExtensions
             throw new InvalidOperationException("A certificate with a password is required.");
         }
 
-        options.ConfigureHttpsDefaults(httpsOptions => { httpsOptions.ServerCertificate = certificate; });
+        options.ConfigureHttpsDefaults(httpsOptions =>
+        {
+            httpsOptions.ServerCertificate = certificate;
+        });
 
         return options;
     }

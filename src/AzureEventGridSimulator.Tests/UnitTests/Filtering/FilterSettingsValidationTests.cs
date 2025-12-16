@@ -22,14 +22,10 @@ public class FilterSettingsValidationTests
                     Port = 12345,
                     Subscribers = new List<SubscriptionSettings>
                     {
-                        new()
-                        {
-                            Name = "SubscriberName",
-                            Filter = filter
-                        }
-                    }.ToArray()
-                }
-            }
+                        new() { Name = "SubscriberName", Filter = filter },
+                    }.ToArray(),
+                },
+            },
         };
     }
 
@@ -39,7 +35,7 @@ public class FilterSettingsValidationTests
         {
             Key = "key",
             OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.BoolEquals,
-            Value = true
+            Value = true,
         };
     }
 
@@ -51,7 +47,10 @@ public class FilterSettingsValidationTests
     {
         Should.NotThrow(() =>
         {
-            var filterConfig = new FilterSetting { AdvancedFilters = new List<AdvancedFilterSetting>() };
+            var filterConfig = new FilterSetting
+            {
+                AdvancedFilters = new List<AdvancedFilterSetting>(),
+            };
             for (byte i = 0; i < n; i++)
             {
                 filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
@@ -64,15 +63,22 @@ public class FilterSettingsValidationTests
     [Fact]
     public void TestFilterSettingsValidationWithSixAdvancedFilters()
     {
-        var filterConfig = new FilterSetting { AdvancedFilters = new List<AdvancedFilterSetting>() };
+        var filterConfig = new FilterSetting
+        {
+            AdvancedFilters = new List<AdvancedFilterSetting>(),
+        };
         for (var i = 0; i < 6; i++)
         {
             filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
         }
 
-        var exception = Should.Throw<ArgumentException>(() => GetValidSimulatorSettings(filterConfig).Validate());
+        var exception = Should.Throw<ArgumentException>(() =>
+            GetValidSimulatorSettings(filterConfig).Validate()
+        );
 
         exception.ParamName.ShouldBe(nameof(filterConfig.AdvancedFilters));
-        exception.Message.ShouldBe("Advanced filtering is limited to five advanced filters per event grid subscription. (Parameter 'AdvancedFilters')");
+        exception.Message.ShouldBe(
+            "Advanced filtering is limited to five advanced filters per event grid subscription. (Parameter 'AdvancedFilters')"
+        );
     }
 }

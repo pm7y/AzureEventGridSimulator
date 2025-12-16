@@ -27,20 +27,22 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     {
         var cloudEvent = ConvertToCloudEvent(evt);
         // Azure Event Grid sends events "in an array that has a single event"
-        return JsonConvert.SerializeObject(new[] { cloudEvent }, Formatting.None, new JsonSerializerSettings
-        {
-            NullValueHandling = NullValueHandling.Ignore
-        });
+        return JsonConvert.SerializeObject(
+            new[] { cloudEvent },
+            Formatting.None,
+            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }
+        );
     }
 
     /// <inheritdoc />
     public string SerializeArray(IEnumerable<SimulatorEvent> events)
     {
         var cloudEvents = events.Select(ConvertToCloudEvent).ToArray();
-        return JsonConvert.SerializeObject(cloudEvents, Formatting.None, new JsonSerializerSettings
-        {
-            NullValueHandling = NullValueHandling.Ignore
-        });
+        return JsonConvert.SerializeObject(
+            cloudEvents,
+            Formatting.None,
+            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }
+        );
     }
 
     /// <inheritdoc />
@@ -68,7 +70,9 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
             return ConvertEventGridToCloudEvent(evt.EventGridEvent);
         }
 
-        throw new InvalidOperationException($"Cannot convert event with schema {evt.Schema} to CloudEvents format.");
+        throw new InvalidOperationException(
+            $"Cannot convert event with schema {evt.Schema} to CloudEvents format."
+        );
     }
 
     /// <summary>
@@ -86,7 +90,7 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
             Subject = eventGridEvent.Subject,
             DataContentType = "application/json",
             DataSchema = ConvertDataVersionToSchema(eventGridEvent.DataVersion),
-            Data = eventGridEvent.Data
+            Data = eventGridEvent.Data,
         };
     }
 

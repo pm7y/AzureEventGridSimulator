@@ -327,6 +327,19 @@ Typically an event grid topic endpoint url is like so: _https://topic-name.locat
 
 It posts the payload to https://host:port and drops the query uri. All of the existing simulator/ emulator projects I found don't support https and use a the query uri to distinguish between the topics. This isn't compatible with the `Microsoft.Azure.EventGrid` client.
 
+## Development
+
+### Code Formatting
+
+This project uses [CSharpier](https://csharpier.com/) for code formatting. CSharpier runs automatically on every build, so your code will be formatted before compilation.
+
+To manually format the code:
+
+```bash
+dotnet tool restore
+dotnet csharpier format src
+```
+
 ## Future Development
 
 Some features that could be added if there was a need for them: -

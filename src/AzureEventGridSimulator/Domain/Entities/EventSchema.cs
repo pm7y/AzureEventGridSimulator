@@ -13,5 +13,5 @@ public enum EventSchema
     /// <summary>
     /// CloudEvents v1.0 schema.
     /// </summary>
-    CloudEventV1_0
+    CloudEventV1_0,
 }

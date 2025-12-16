@@ -30,7 +30,10 @@ public class EventGridSchemaParser : IEventSchemaParser
         }
         catch (JsonException ex)
         {
-            throw new InvalidOperationException($"Failed to parse Event Grid events: {ex.Message}", ex);
+            throw new InvalidOperationException(
+                $"Failed to parse Event Grid events: {ex.Message}",
+                ex
+            );
         }
 
         if (events == null || events.Length == 0)

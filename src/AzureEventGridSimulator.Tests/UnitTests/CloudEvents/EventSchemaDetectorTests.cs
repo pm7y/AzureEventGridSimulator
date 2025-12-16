@@ -128,8 +128,7 @@ public class EventSchemaDetectorTests
 
     private static HttpContext CreateHttpContext(string contentType)
     {
-        var context = new DefaultHttpContext();
-        context.Request.ContentType = contentType;
+        var context = new DefaultHttpContext { Request = { ContentType = contentType } };
         return context;
     }
 

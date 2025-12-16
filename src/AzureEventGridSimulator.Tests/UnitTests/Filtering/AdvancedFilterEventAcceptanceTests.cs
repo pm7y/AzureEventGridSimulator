@@ -13,13 +13,21 @@ public class AdvancedFilterEventAcceptanceTests
     private static readonly EventGridEvent _gridEvent = new()
     {
         Id = "EventId",
-        Data = new { NumberValue = 1, IsTrue = true, Name = "StringValue", DoubleValue = 0.12345d, NumberMaxValue = ulong.MaxValue, SubObject = new { Id = 1, Name = "Test" } },
+        Data = new
+        {
+            NumberValue = 1,
+            IsTrue = true,
+            Name = "StringValue",
+            DoubleValue = 0.12345d,
+            NumberMaxValue = ulong.MaxValue,
+            SubObject = new { Id = 1, Name = "Test" },
+        },
         DataVersion = "5.0",
         EventTime = DateTime.UtcNow.ToString("O"),
         EventType = "this.is.a.test.event.type",
         MetadataVersion = "2.3.4",
         Subject = "TheEventSubject",
-        Topic = "THE_EVENT_TOPIC"
+        Topic = "THE_EVENT_TOPIC",
     };
 
     [Theory]
@@ -28,7 +36,11 @@ public class AdvancedFilterEventAcceptanceTests
     {
         var filterConfig = new FilterSetting { AdvancedFilters = new[] { filter } };
 
-        filterConfig.AcceptsEvent(_gridEvent).ShouldBeTrue($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}");
+        filterConfig
+            .AcceptsEvent(_gridEvent)
+            .ShouldBeTrue(
+                $"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}"
+            );
     }
 
     [Theory]
@@ -37,7 +49,11 @@ public class AdvancedFilterEventAcceptanceTests
     {
         var filterConfig = new FilterSetting { AdvancedFilters = new[] { filter } };
 
-        filterConfig.AcceptsEvent(_gridEvent).ShouldBeFalse($"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}");
+        filterConfig
+            .AcceptsEvent(_gridEvent)
+            .ShouldBeFalse(
+                $"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}"
+            );
     }
 
     [Fact]
@@ -47,8 +63,13 @@ public class AdvancedFilterEventAcceptanceTests
         {
             AdvancedFilters = new[]
             {
-                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn, Values = new object[] { 1 } }
-            }
+                new AdvancedFilterSetting
+                {
+                    Key = "Data",
+                    OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn,
+                    Values = new object[] { 1 },
+                },
+            },
         };
         var gridEvent = new EventGridEvent { Data = 1 };
 
@@ -62,9 +83,23 @@ public class AdvancedFilterEventAcceptanceTests
         {
             AdvancedFilters = new[]
             {
-                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberGreaterThanOrEquals, Value = 1 },
-                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberLessThanOrEquals, Value = 1 }
-            }
+                new AdvancedFilterSetting
+                {
+                    Key = "Data",
+                    OperatorType = AdvancedFilterSetting
+                        .AdvancedFilterOperatorType
+                        .NumberGreaterThanOrEquals,
+                    Value = 1,
+                },
+                new AdvancedFilterSetting
+                {
+                    Key = "Data",
+                    OperatorType = AdvancedFilterSetting
+                        .AdvancedFilterOperatorType
+                        .NumberLessThanOrEquals,
+                    Value = 1,
+                },
+            },
         };
         var gridEvent = new EventGridEvent { Data = 1 };
 
@@ -78,8 +113,13 @@ public class AdvancedFilterEventAcceptanceTests
         {
             AdvancedFilters = new[]
             {
-                new AdvancedFilterSetting { Key = "Data", OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn, Value = 1 }
-            }
+                new AdvancedFilterSetting
+                {
+                    Key = "Data",
+                    OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn,
+                    Value = 1,
+                },
+            },
         };
         var gridEvent = new EventGridEvent { Data = 1 };
 

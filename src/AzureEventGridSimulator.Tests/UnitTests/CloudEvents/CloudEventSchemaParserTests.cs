@@ -116,7 +116,8 @@ public class CloudEventSchemaParserTests
     public void GivenStructuredModeRequest_WhenParsed_ThenCloudEventCreatedFromBody()
     {
         var context = CreateStructuredModeContext();
-        var requestBody = @"{
+        var requestBody =
+            @"{
             ""specversion"": ""1.0"",
             ""type"": ""com.example.test"",
             ""source"": ""/test/source"",
@@ -137,7 +138,8 @@ public class CloudEventSchemaParserTests
     public void GivenStructuredModeRequestWithOptionalFields_WhenParsed_ThenAllFieldsPopulated()
     {
         var context = CreateStructuredModeContext();
-        var requestBody = @"{
+        var requestBody =
+            @"{
             ""specversion"": ""1.0"",
             ""type"": ""com.example.test"",
             ""source"": ""/test/source"",
@@ -163,7 +165,8 @@ public class CloudEventSchemaParserTests
     public void GivenStructuredModeRequestWithArrayOfOne_WhenParsed_ThenSingleEventReturned()
     {
         var context = CreateStructuredModeContext();
-        var requestBody = @"[{
+        var requestBody =
+            @"[{
             ""specversion"": ""1.0"",
             ""type"": ""com.example.test"",
             ""source"": ""/test/source"",
@@ -182,7 +185,9 @@ public class CloudEventSchemaParserTests
         var context = CreateStructuredModeContext();
         var requestBody = "";
 
-        var exception = Should.Throw<InvalidOperationException>(() => _parser.Parse(context, requestBody));
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            _parser.Parse(context, requestBody)
+        );
         exception.Message.ShouldContain("empty");
     }
 
@@ -192,7 +197,9 @@ public class CloudEventSchemaParserTests
         var context = CreateStructuredModeContext();
         var requestBody = "{ invalid json }";
 
-        var exception = Should.Throw<InvalidOperationException>(() => _parser.Parse(context, requestBody));
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            _parser.Parse(context, requestBody)
+        );
         exception.Message.ShouldContain("parse");
     }
 
@@ -202,7 +209,9 @@ public class CloudEventSchemaParserTests
         var context = CreateStructuredModeContext();
         var requestBody = "[]";
 
-        var exception = Should.Throw<InvalidOperationException>(() => _parser.Parse(context, requestBody));
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            _parser.Parse(context, requestBody)
+        );
         exception.Message.ShouldContain("No events");
     }
 
@@ -210,7 +219,8 @@ public class CloudEventSchemaParserTests
     public void GivenBatchModeRequest_WhenParsed_ThenMultipleEventsReturned()
     {
         var context = CreateBatchModeContext();
-        var requestBody = @"[
+        var requestBody =
+            @"[
             {
                 ""specversion"": ""1.0"",
                 ""type"": ""com.example.test1"",
@@ -238,7 +248,8 @@ public class CloudEventSchemaParserTests
     public void GivenBatchModeRequestWithSingleEvent_WhenParsed_ThenSingleEventReturned()
     {
         var context = CreateBatchModeContext();
-        var requestBody = @"[{
+        var requestBody =
+            @"[{
             ""specversion"": ""1.0"",
             ""type"": ""com.example.test"",
             ""source"": ""/test/source"",
@@ -257,7 +268,9 @@ public class CloudEventSchemaParserTests
         var context = CreateBatchModeContext();
         var requestBody = "";
 
-        var exception = Should.Throw<InvalidOperationException>(() => _parser.Parse(context, requestBody));
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            _parser.Parse(context, requestBody)
+        );
         exception.Message.ShouldContain("empty");
     }
 
@@ -267,7 +280,9 @@ public class CloudEventSchemaParserTests
         var context = CreateBatchModeContext();
         var requestBody = "[]";
 
-        var exception = Should.Throw<InvalidOperationException>(() => _parser.Parse(context, requestBody));
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            _parser.Parse(context, requestBody)
+        );
         exception.Message.ShouldContain("No events");
     }
 
@@ -277,7 +292,9 @@ public class CloudEventSchemaParserTests
         var context = CreateBatchModeContext();
         var requestBody = "[{ invalid }]";
 
-        var exception = Should.Throw<InvalidOperationException>(() => _parser.Parse(context, requestBody));
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            _parser.Parse(context, requestBody)
+        );
         exception.Message.ShouldContain("parse");
     }
 
@@ -286,13 +303,15 @@ public class CloudEventSchemaParserTests
     {
         var events = new[]
         {
-            SimulatorEvent.FromCloudEvent(new CloudEvent
-            {
-                SpecVersion = "1.0",
-                Type = "com.example.test",
-                Source = "/test/source",
-                Id = "test-id"
-            })
+            SimulatorEvent.FromCloudEvent(
+                new CloudEvent
+                {
+                    SpecVersion = "1.0",
+                    Type = "com.example.test",
+                    Source = "/test/source",
+                    Id = "test-id",
+                }
+            ),
         };
 
         Should.NotThrow(() => _parser.Validate(events));
@@ -303,11 +322,13 @@ public class CloudEventSchemaParserTests
     {
         var events = new[]
         {
-            SimulatorEvent.FromCloudEvent(new CloudEvent
-            {
-                // Missing required fields
-                SpecVersion = "1.0"
-            })
+            SimulatorEvent.FromCloudEvent(
+                new CloudEvent
+                {
+                    // Missing required fields
+                    SpecVersion = "1.0",
+                }
+            ),
         };
 
         Should.Throw<InvalidOperationException>(() => _parser.Validate(events));
@@ -321,38 +342,62 @@ public class CloudEventSchemaParserTests
         string time = null,
         string subject = null,
         string dataContentType = null,
-        string dataSchema = null)
+        string dataSchema = null
+    )
     {
-        var context = new DefaultHttpContext();
-        context.Request.ContentType = "application/json";
-        context.Request.Headers[Constants.CeSpecVersionHeader] = specVersion;
-        context.Request.Headers[Constants.CeTypeHeader] = type;
-        context.Request.Headers[Constants.CeSourceHeader] = source;
-        context.Request.Headers[Constants.CeIdHeader] = id;
+        var context = new DefaultHttpContext
+        {
+            Request =
+            {
+                ContentType = "application/json",
+                Headers =
+                {
+                    [Constants.CeSpecVersionHeader] = specVersion,
+                    [Constants.CeTypeHeader] = type,
+                    [Constants.CeSourceHeader] = source,
+                    [Constants.CeIdHeader] = id,
+                },
+            },
+        };
 
         if (time != null)
+        {
             context.Request.Headers[Constants.CeTimeHeader] = time;
+        }
+
         if (subject != null)
+        {
             context.Request.Headers[Constants.CeSubjectHeader] = subject;
+        }
+
         if (dataContentType != null)
+        {
             context.Request.Headers[Constants.CeDataContentTypeHeader] = dataContentType;
+        }
+
         if (dataSchema != null)
+        {
             context.Request.Headers[Constants.CeDataSchemaHeader] = dataSchema;
+        }
 
         return context;
     }
 
     private static HttpContext CreateStructuredModeContext()
     {
-        var context = new DefaultHttpContext();
-        context.Request.ContentType = "application/cloudevents+json";
+        var context = new DefaultHttpContext
+        {
+            Request = { ContentType = "application/cloudevents+json" },
+        };
         return context;
     }
 
     private static HttpContext CreateBatchModeContext()
     {
-        var context = new DefaultHttpContext();
-        context.Request.ContentType = "application/cloudevents-batch+json";
+        var context = new DefaultHttpContext
+        {
+            Request = { ContentType = "application/cloudevents-batch+json" },
+        };
         return context;
     }
 }

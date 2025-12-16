@@ -16,7 +16,12 @@ public static class HttpContextExtensions
         return await reader.ReadToEndAsync();
     }
 
-    public static async Task WriteErrorResponse(this HttpContext context, HttpStatusCode statusCode, string errorMessage, string code)
+    public static async Task WriteErrorResponse(
+        this HttpContext context,
+        HttpStatusCode statusCode,
+        string errorMessage,
+        string code
+    )
     {
         var error = new ErrorMessage(statusCode, errorMessage, code);
 

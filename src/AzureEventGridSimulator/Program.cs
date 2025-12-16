@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Asp.Versioning;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Domain.Services;
@@ -19,7 +20,6 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Asp.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -39,10 +39,12 @@ public class Program
         try
         {
             // Build it and fire it up
-            var app = CreateWebHostBuilder(args)
-                .Build();
+            var app = CreateWebHostBuilder(args).Build();
 
-            app.UseSerilogRequestLogging(options => { options.GetLevel = (_, _, _) => LogEventLevel.Debug; });
+            app.UseSerilogRequestLogging(options =>
+            {
+                options.GetLevel = (_, _, _) => LogEventLevel.Debug;
+            });
             app.UseEventGridMiddleware();
             app.UseRouting();
             app.MapControllers();
@@ -64,8 +66,8 @@ public class Program
         try
         {
             await host.StartAsync(token)
-                      .ContinueWith(_ => OnApplicationStarted(host, host.Lifetime), token)
-                      .ConfigureAwait(false);
+                .ContinueWith(_ => OnApplicationStarted(host, host.Lifetime), token)
+                .ConfigureAwait(false);
 
             await host.WaitForShutdownAsync(token).ConfigureAwait(false);
         }
@@ -75,7 +77,10 @@ public class Program
         }
     }
 
-    private static async Task OnApplicationStarted(IApplicationBuilder app, IHostApplicationLifetime lifetime)
+    private static async Task OnApplicationStarted(
+        IApplicationBuilder app,
+        IHostApplicationLifetime lifetime
+    )
     {
         try
         {
@@ -99,7 +104,9 @@ public class Program
 
             if (simulatorSettings.Topics.All(o => o.Disabled))
             {
-                Log.Fatal("All of the configured topics are disabled. The application will now exit");
+                Log.Fatal(
+                    "All of the configured topics are disabled. The application will now exit"
+                );
                 lifetime.StopApplication();
                 return;
             }
@@ -139,44 +146,50 @@ public class Program
     private static ILogger CreateBasicConsoleLogger()
     {
         return new LoggerConfiguration()
-               .MinimumLevel.Is(LogEventLevel.Verbose)
-               .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
-               .MinimumLevel.Override("System", LogEventLevel.Error)
-               .WriteTo.Console()
-               .CreateBootstrapLogger();
+            .MinimumLevel.Is(LogEventLevel.Verbose)
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+            .MinimumLevel.Override("System", LogEventLevel.Error)
+            .WriteTo.Console()
+            .CreateBootstrapLogger();
     }
 
     private static IConfigurationRoot BuildConfiguration(string[] args)
     {
         var environmentAndCommandLineConfiguration = new ConfigurationBuilder()
-                                                     .AddEnvironmentVariablesAndCommandLine(args)
-                                                     .Build();
+            .AddEnvironmentVariablesAndCommandLine(args)
+            .Build();
 
         var environmentName = environmentAndCommandLineConfiguration.EnvironmentName();
 
         var builder = new ConfigurationBuilder()
-                      .SetBasePath(Directory.GetCurrentDirectory())
-                      .AddJsonFile("appsettings.json", true, false)
-                      .AddJsonFile($"appsettings.{environmentName}.json", true, false)
-                      .AddCustomSimulatorConfigFileIfSpecified(environmentAndCommandLineConfiguration)
-                      .AddEnvironmentVariablesAndCommandLine(args)
-                      .AddInMemoryCollection(
-                                             new Dictionary<string, string>
-                                             {
-                                                 ["AEGS_Serilog__Using__0"] = "Serilog.Sinks.Console",
-                                                 ["AEGS_Serilog__Using__1"] = "Serilog.Sinks.File",
-                                                 ["AEGS_Serilog__Using__2"] = "Serilog.Sinks.Seq"
-                                             });
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", true, false)
+            .AddJsonFile($"appsettings.{environmentName}.json", true, false)
+            .AddCustomSimulatorConfigFileIfSpecified(environmentAndCommandLineConfiguration)
+            .AddEnvironmentVariablesAndCommandLine(args)
+            .AddInMemoryCollection(
+                new Dictionary<string, string>
+                {
+                    ["AEGS_Serilog__Using__0"] = "Serilog.Sinks.Console",
+                    ["AEGS_Serilog__Using__1"] = "Serilog.Sinks.File",
+                    ["AEGS_Serilog__Using__2"] = "Serilog.Sinks.Seq",
+                }
+            );
 
         return builder.Build();
     }
 
-    private static WebApplicationBuilder ConfigureWebHost(string[] args, IConfiguration configuration)
+    private static WebApplicationBuilder ConfigureWebHost(
+        string[] args,
+        IConfiguration configuration
+    )
     {
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddSimulatorSettings(configuration);
-        builder.Services.AddMediatR(o=> o.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+        builder.Services.AddMediatR(o =>
+            o.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly())
+        );
 
         // Register event schema services
         builder.Services.AddScoped<EventSchemaDetector>();
@@ -190,45 +203,73 @@ public class Program
         var httpClientBuilder = builder.Services.AddHttpClient(nameof(AzureEventGridSimulator));
         if (configuration.GetValue<bool>("dangerousAcceptAnyServerCertificateValidator"))
         {
-            Log.Warning("DangerousAcceptAnyServerCertificateValidator is enabled. This should only be used for testing purposes");
-            httpClientBuilder.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-            });
+            Log.Warning(
+                "DangerousAcceptAnyServerCertificateValidator is enabled. This should only be used for testing purposes"
+            );
+            httpClientBuilder.ConfigurePrimaryHttpMessageHandler(() =>
+                new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback =
+                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+                }
+            );
         }
 
         builder.Services.AddScoped<SasKeyValidator>();
         builder.Services.AddSingleton<ValidationIpAddressProvider>();
 
-        builder.Services.AddControllers(options => { options.EnableEndpointRouting = false; })
-               .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; });
+        builder
+            .Services.AddControllers(options =>
+            {
+                options.EnableEndpointRouting = false;
+            })
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.WriteIndented = true;
+            });
 
-        builder.Services.AddApiVersioning(options =>
-        {
-            options.DefaultApiVersion = new ApiVersion(DateOnly.Parse(Constants.SupportedApiVersion));
-            options.AssumeDefaultVersionWhenUnspecified = true;
-            options.ReportApiVersions = true;
-        }).AddMvc();
+        builder
+            .Services.AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(
+                    DateOnly.Parse(Constants.SupportedApiVersion)
+                );
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ReportApiVersions = true;
+            })
+            .AddMvc();
 
         builder.Logging.ClearProviders();
-        builder.Host.UseSerilog((context, loggerConfiguration) =>
-        {
-            var hasAtLeastOneLogSinkBeenConfigured = context.Configuration.GetSection("Serilog:WriteTo").GetChildren().ToArray().Any();
+        builder.Host.UseSerilog(
+            (context, loggerConfiguration) =>
+            {
+                var hasAtLeastOneLogSinkBeenConfigured = context
+                    .Configuration.GetSection("Serilog:WriteTo")
+                    .GetChildren()
+                    .ToArray()
+                    .Any();
 
-            loggerConfiguration
-                .Enrich.FromLogContext()
-                .Enrich.WithProperty("MachineName", Environment.MachineName)
-                .Enrich.WithProperty("Environment", context.Configuration.EnvironmentName())
-                .Enrich.WithProperty("Application", nameof(AzureEventGridSimulator))
-                .Enrich.WithProperty("Version", Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown")
-                // The sensible defaults
-                .MinimumLevel.Is(LogEventLevel.Information)
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
-                .MinimumLevel.Override("System", LogEventLevel.Error)
-                // Override defaults from settings if any
-                .ReadFrom.Configuration(context.Configuration)
-                .WriteTo.Conditional(_ => !hasAtLeastOneLogSinkBeenConfigured, sinkConfiguration => sinkConfiguration.Console());
-        });
+                loggerConfiguration
+                    .Enrich.FromLogContext()
+                    .Enrich.WithProperty("MachineName", Environment.MachineName)
+                    .Enrich.WithProperty("Environment", context.Configuration.EnvironmentName())
+                    .Enrich.WithProperty("Application", nameof(AzureEventGridSimulator))
+                    .Enrich.WithProperty(
+                        "Version",
+                        Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown"
+                    )
+                    // The sensible defaults
+                    .MinimumLevel.Is(LogEventLevel.Information)
+                    .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+                    .MinimumLevel.Override("System", LogEventLevel.Error)
+                    // Override defaults from settings if any
+                    .ReadFrom.Configuration(context.Configuration)
+                    .WriteTo.Conditional(
+                        _ => !hasAtLeastOneLogSinkBeenConfigured,
+                        sinkConfiguration => sinkConfiguration.Console()
+                    );
+            }
+        );
 
         builder.Configuration.AddConfiguration(configuration);
         builder.WebHost.UseKestrel(options =>
@@ -240,10 +281,11 @@ public class Program
 
             foreach (var topics in options.ApplicationServices.EnabledTopics())
             {
-                options.Listen(IPAddress.Any,
-                               topics.Port,
-                               listenOptions => listenOptions
-                                   .UseHttps());
+                options.Listen(
+                    IPAddress.Any,
+                    topics.Port,
+                    listenOptions => listenOptions.UseHttps()
+                );
             }
         });
 

@@ -25,7 +25,10 @@ public class FilterSetting
     {
         if (AdvancedFilters?.Count > 5)
         {
-            throw new ArgumentOutOfRangeException(nameof(AdvancedFilters), "Advanced filtering is limited to five advanced filters per event grid subscription.");
+            throw new ArgumentOutOfRangeException(
+                nameof(AdvancedFilters),
+                "Advanced filtering is limited to five advanced filters per event grid subscription."
+            );
         }
 
         foreach (var advancedFilter in AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>())

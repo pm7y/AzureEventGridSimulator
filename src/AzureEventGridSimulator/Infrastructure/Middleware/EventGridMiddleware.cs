@@ -23,16 +23,25 @@ public class EventGridMiddleware
     }
 
     // ReSharper disable once UnusedMember.Global
-    public async Task InvokeAsync(HttpContext context,
-                                  SimulatorSettings simulatorSettings,
-                                  SasKeyValidator sasHeaderValidator,
-                                  EventSchemaDetector schemaDetector,
-                                  EventSchemaParserFactory parserFactory,
-                                  ILogger<EventGridMiddleware> logger)
+    public async Task InvokeAsync(
+        HttpContext context,
+        SimulatorSettings simulatorSettings,
+        SasKeyValidator sasHeaderValidator,
+        EventSchemaDetector schemaDetector,
+        EventSchemaParserFactory parserFactory,
+        ILogger<EventGridMiddleware> logger
+    )
     {
         if (IsNotificationRequest(context))
         {
-            await ValidateNotificationRequest(context, simulatorSettings, sasHeaderValidator, schemaDetector, parserFactory, logger);
+            await ValidateNotificationRequest(
+                context,
+                simulatorSettings,
+                sasHeaderValidator,
+                schemaDetector,
+                parserFactory,
+                logger
+            );
             return;
         }
 
@@ -58,29 +67,41 @@ public class EventGridMiddleware
 
         if (string.IsNullOrWhiteSpace(id))
         {
-            await context.WriteErrorResponse(HttpStatusCode.BadRequest, "The request did not contain a validation code.", null);
+            await context.WriteErrorResponse(
+                HttpStatusCode.BadRequest,
+                "The request did not contain a validation code.",
+                null
+            );
             return;
         }
 
         await _next(context);
     }
 
-    private async Task ValidateNotificationRequest(HttpContext context,
-                                                   SimulatorSettings simulatorSettings,
-                                                   SasKeyValidator sasHeaderValidator,
-                                                   EventSchemaDetector schemaDetector,
-                                                   EventSchemaParserFactory parserFactory,
-                                                   ILogger logger)
+    private async Task ValidateNotificationRequest(
+        HttpContext context,
+        SimulatorSettings simulatorSettings,
+        SasKeyValidator sasHeaderValidator,
+        EventSchemaDetector schemaDetector,
+        EventSchemaParserFactory parserFactory,
+        ILogger logger
+    )
     {
         var topic = simulatorSettings.Topics.First(t => t.Port == context.Request.Host.Port);
 
         //
         // Validate the key/ token supplied in the header.
         //
-        if (!string.IsNullOrWhiteSpace(topic.Key) &&
-            !sasHeaderValidator.IsValid(context.Request.Headers, topic.Key))
+        if (
+            !string.IsNullOrWhiteSpace(topic.Key)
+            && !sasHeaderValidator.IsValid(context.Request.Headers, topic.Key)
+        )
         {
-            await context.WriteErrorResponse(HttpStatusCode.Unauthorized, "The request did not contain a valid aeg-sas-key or aeg-sas-token.", null);
+            await context.WriteErrorResponse(
+                HttpStatusCode.Unauthorized,
+                "The request did not contain a valid aeg-sas-key or aeg-sas-token.",
+                null
+            );
             return;
         }
 
@@ -97,7 +118,11 @@ public class EventGridMiddleware
         {
             logger.LogError("Payload is larger than the allowed maximum");
 
-            await context.WriteErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Payload is larger than the allowed maximum.", null);
+            await context.WriteErrorResponse(
+                HttpStatusCode.RequestEntityTooLarge,
+                "Payload is larger than the allowed maximum.",
+                null
+            );
             return;
         }
 
@@ -121,7 +146,11 @@ public class EventGridMiddleware
 
         if (events == null || events.Length == 0)
         {
-            await context.WriteErrorResponse(HttpStatusCode.BadRequest, "No events found in the request body.", null);
+            await context.WriteErrorResponse(
+                HttpStatusCode.BadRequest,
+                "No events found in the request body.",
+                null
+            );
             return;
         }
 
@@ -130,15 +159,20 @@ public class EventGridMiddleware
         //
         foreach (var evt in events)
         {
-            var eventSize = evt.Schema == EventSchema.EventGridSchema
-                ? JsonConvert.SerializeObject(evt.EventGridEvent, Formatting.None).Length
-                : JsonConvert.SerializeObject(evt.CloudEvent, Formatting.None).Length;
+            var eventSize =
+                evt.Schema == EventSchema.EventGridSchema
+                    ? JsonConvert.SerializeObject(evt.EventGridEvent, Formatting.None).Length
+                    : JsonConvert.SerializeObject(evt.CloudEvent, Formatting.None).Length;
 
             if (eventSize > maximumAllowedEventSizeInBytes)
             {
                 logger.LogError("Event is larger than the allowed maximum");
 
-                await context.WriteErrorResponse(HttpStatusCode.RequestEntityTooLarge, "Event is larger than the allowed maximum.", null);
+                await context.WriteErrorResponse(
+                    HttpStatusCode.RequestEntityTooLarge,
+                    "Event is larger than the allowed maximum.",
+                    null
+                );
                 return;
             }
         }
@@ -172,8 +206,14 @@ public class EventGridMiddleware
 
     private static bool IsNotificationRequest(HttpContext context)
     {
-        if (context.Request.Method != HttpMethods.Post ||
-            !string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase))
+        if (
+            context.Request.Method != HttpMethods.Post
+            || !string.Equals(
+                context.Request.Path,
+                "/api/events",
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
         {
             return false;
         }
@@ -184,7 +224,11 @@ public class EventGridMiddleware
             return true;
         }
 
-        if (!context.Request.Headers.Keys.Any(k => string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)))
+        if (
+            !context.Request.Headers.Keys.Any(k =>
+                string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)
+            )
+        )
         {
             return false;
         }
@@ -196,31 +240,43 @@ public class EventGridMiddleware
         }
 
         // Accept EventGrid format (application/json) or CloudEvents format (use base types for detection)
-        return contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase) ||
-               contentType.Contains(Constants.CloudEventsContentTypeBase, StringComparison.OrdinalIgnoreCase) ||
-               contentType.Contains(Constants.CloudEventsBatchContentTypeBase, StringComparison.OrdinalIgnoreCase);
+        return contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase)
+            || contentType.Contains(
+                Constants.CloudEventsContentTypeBase,
+                StringComparison.OrdinalIgnoreCase
+            )
+            || contentType.Contains(
+                Constants.CloudEventsBatchContentTypeBase,
+                StringComparison.OrdinalIgnoreCase
+            );
     }
 
     private static bool IsCloudEventsBinaryMode(HttpContext context)
     {
         var headers = context.Request.Headers;
-        return headers.ContainsKey(Constants.CeSpecVersionHeader) &&
-               headers.ContainsKey(Constants.CeIdHeader) &&
-               headers.ContainsKey(Constants.CeSourceHeader) &&
-               headers.ContainsKey(Constants.CeTypeHeader);
+        return headers.ContainsKey(Constants.CeSpecVersionHeader)
+            && headers.ContainsKey(Constants.CeIdHeader)
+            && headers.ContainsKey(Constants.CeSourceHeader)
+            && headers.ContainsKey(Constants.CeTypeHeader);
     }
 
     private static bool IsValidationRequest(HttpContext context)
     {
-        return context.Request.Method == HttpMethods.Get &&
-               string.Equals(context.Request.Path, "/validate", StringComparison.OrdinalIgnoreCase) &&
-               context.Request.Query.Keys.Any(k => string.Equals(k, "id", StringComparison.OrdinalIgnoreCase)) &&
-               Guid.TryParse(context.Request.Query["id"], out _);
+        return context.Request.Method == HttpMethods.Get
+            && string.Equals(context.Request.Path, "/validate", StringComparison.OrdinalIgnoreCase)
+            && context.Request.Query.Keys.Any(k =>
+                string.Equals(k, "id", StringComparison.OrdinalIgnoreCase)
+            )
+            && Guid.TryParse(context.Request.Query["id"], out _);
     }
 
     private static bool IsHealthRequest(HttpContext context)
     {
-        return context.Request.Method == HttpMethods.Get &&
-            string.Equals(context.Request.Path, "/api/health", StringComparison.OrdinalIgnoreCase);
+        return context.Request.Method == HttpMethods.Get
+            && string.Equals(
+                context.Request.Path,
+                "/api/health",
+                StringComparison.OrdinalIgnoreCase
+            );
     }
 }

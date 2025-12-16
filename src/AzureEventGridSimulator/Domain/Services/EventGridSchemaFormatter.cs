@@ -55,7 +55,9 @@ public class EventGridSchemaFormatter : IEventSchemaFormatter
             return ConvertCloudEventToEventGrid(evt.CloudEvent);
         }
 
-        throw new InvalidOperationException($"Cannot convert event with schema {evt.Schema} to Event Grid format.");
+        throw new InvalidOperationException(
+            $"Cannot convert event with schema {evt.Schema} to Event Grid format."
+        );
     }
 
     /// <summary>
@@ -72,7 +74,7 @@ public class EventGridSchemaFormatter : IEventSchemaFormatter
             Data = cloudEvent.Data,
             DataVersion = ExtractDataVersion(cloudEvent.DataSchema),
             Topic = cloudEvent.Source,
-            MetadataVersion = "1"
+            MetadataVersion = "1",
         };
     }
 

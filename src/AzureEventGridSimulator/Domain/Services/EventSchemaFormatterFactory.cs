@@ -13,7 +13,8 @@ public class EventSchemaFormatterFactory
 
     public EventSchemaFormatterFactory(
         EventGridSchemaFormatter eventGridFormatter,
-        CloudEventSchemaFormatter cloudEventFormatter)
+        CloudEventSchemaFormatter cloudEventFormatter
+    )
     {
         _eventGridFormatter = eventGridFormatter;
         _cloudEventFormatter = cloudEventFormatter;
@@ -30,7 +31,11 @@ public class EventSchemaFormatterFactory
         {
             EventSchema.EventGridSchema => _eventGridFormatter,
             EventSchema.CloudEventV1_0 => _cloudEventFormatter,
-            _ => throw new ArgumentOutOfRangeException(nameof(schema), schema, "Unknown event schema")
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(schema),
+                schema,
+                "Unknown event schema"
+            ),
         };
     }
 }

@@ -99,12 +99,16 @@ public class CloudEvent
         // Required: specversion
         if (string.IsNullOrWhiteSpace(SpecVersion))
         {
-            throw new InvalidOperationException($"Required property '{nameof(SpecVersion)}' was not set.");
+            throw new InvalidOperationException(
+                $"Required property '{nameof(SpecVersion)}' was not set."
+            );
         }
 
         if (SpecVersion != "1.0")
         {
-            throw new InvalidOperationException($"Property '{nameof(SpecVersion)}' must be '1.0', but was '{SpecVersion}'.");
+            throw new InvalidOperationException(
+                $"Property '{nameof(SpecVersion)}' must be '1.0', but was '{SpecVersion}'."
+            );
         }
 
         // Required: type
@@ -116,7 +120,9 @@ public class CloudEvent
         // Required: source
         if (string.IsNullOrWhiteSpace(Source))
         {
-            throw new InvalidOperationException($"Required property '{nameof(Source)}' was not set.");
+            throw new InvalidOperationException(
+                $"Required property '{nameof(Source)}' was not set."
+            );
         }
 
         // Required: id
@@ -130,12 +136,16 @@ public class CloudEvent
         {
             if (!TimeIsValid)
             {
-                throw new InvalidOperationException($"Property '{nameof(Time)}' was not a valid RFC 3339 timestamp.");
+                throw new InvalidOperationException(
+                    $"Property '{nameof(Time)}' was not a valid RFC 3339 timestamp."
+                );
             }
 
             if (TimeParsed.HasValue && TimeParsed.Value.Kind == DateTimeKind.Unspecified)
             {
-                throw new InvalidOperationException($"Property '{nameof(Time)}' must include timezone information.");
+                throw new InvalidOperationException(
+                    $"Property '{nameof(Time)}' must include timezone information."
+                );
             }
         }
 
@@ -144,14 +154,18 @@ public class CloudEvent
         {
             if (!Uri.TryCreate(DataSchema, UriKind.RelativeOrAbsolute, out _))
             {
-                throw new InvalidOperationException($"Property '{nameof(DataSchema)}' must be a valid URI.");
+                throw new InvalidOperationException(
+                    $"Property '{nameof(DataSchema)}' must be a valid URI."
+                );
             }
         }
 
         // data and data_base64 are mutually exclusive
         if (Data != null && !string.IsNullOrEmpty(DataBase64))
         {
-            throw new InvalidOperationException("Properties 'data' and 'data_base64' are mutually exclusive.");
+            throw new InvalidOperationException(
+                "Properties 'data' and 'data_base64' are mutually exclusive."
+            );
         }
     }
 }

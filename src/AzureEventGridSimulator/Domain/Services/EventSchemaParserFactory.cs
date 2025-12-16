@@ -13,7 +13,8 @@ public class EventSchemaParserFactory
 
     public EventSchemaParserFactory(
         EventGridSchemaParser eventGridParser,
-        CloudEventSchemaParser cloudEventParser)
+        CloudEventSchemaParser cloudEventParser
+    )
     {
         _eventGridParser = eventGridParser;
         _cloudEventParser = cloudEventParser;
@@ -30,7 +31,11 @@ public class EventSchemaParserFactory
         {
             EventSchema.EventGridSchema => _eventGridParser,
             EventSchema.CloudEventV1_0 => _cloudEventParser,
-            _ => throw new ArgumentOutOfRangeException(nameof(schema), schema, "Unknown event schema")
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(schema),
+                schema,
+                "Unknown event schema"
+            ),
         };
     }
 }

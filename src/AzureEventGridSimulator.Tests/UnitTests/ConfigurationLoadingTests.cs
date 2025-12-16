@@ -12,7 +12,8 @@ public class ConfigurationLoadingTests
     [Fact]
     public void TestConfigurationLoad()
     {
-        const string json = @"
+        const string json =
+            @"
 {
     ""topics"": [{
         ""name"": ""MyAwesomeTopic"",
@@ -52,10 +53,13 @@ public class ConfigurationLoadingTests
         settings.ShouldNotBeNull();
         settings.Topics.ShouldNotBeNull();
         settings.Topics.ShouldAllBe(t =>
-                                        t.Subscribers.All(s => s.Filter != null) &&
-                                        t.Subscribers.All(s => s.Filter.AdvancedFilters != null)
-                                   );
+            t.Subscribers.All(s => s.Filter != null)
+            && t.Subscribers.All(s => s.Filter.AdvancedFilters != null)
+        );
 
-        Should.NotThrow(() => { settings.Validate(); });
+        Should.NotThrow(() =>
+        {
+            settings.Validate();
+        });
     }
 }

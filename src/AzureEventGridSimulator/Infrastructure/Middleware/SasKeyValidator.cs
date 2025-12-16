@@ -21,8 +21,11 @@ public class SasKeyValidator
 
     public bool IsValid(IHeaderDictionary requestHeaders, string topicKey)
     {
-        if (requestHeaders
-            .Any(h => string.Equals(Constants.AegSasKeyHeader, h.Key, StringComparison.OrdinalIgnoreCase)))
+        if (
+            requestHeaders.Any(h =>
+                string.Equals(Constants.AegSasKeyHeader, h.Key, StringComparison.OrdinalIgnoreCase)
+            )
+        )
         {
             if (!string.Equals(requestHeaders[Constants.AegSasKeyHeader], topicKey))
             {
@@ -33,8 +36,15 @@ public class SasKeyValidator
             return true;
         }
 
-        if (requestHeaders
-            .Any(h => string.Equals(Constants.AegSasTokenHeader, h.Key, StringComparison.OrdinalIgnoreCase)))
+        if (
+            requestHeaders.Any(h =>
+                string.Equals(
+                    Constants.AegSasTokenHeader,
+                    h.Key,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+        )
         {
             var token = requestHeaders[Constants.AegSasTokenHeader].First();
             if (!TokenIsValid(token, topicKey))
@@ -46,13 +56,21 @@ public class SasKeyValidator
             return true;
         }
 
-        if (requestHeaders
-            .Any(h => string.Equals(HeaderNames.Authorization, h.Key, StringComparison.OrdinalIgnoreCase)))
+        if (
+            requestHeaders.Any(h =>
+                string.Equals(HeaderNames.Authorization, h.Key, StringComparison.OrdinalIgnoreCase)
+            )
+        )
         {
             var token = requestHeaders[HeaderNames.Authorization].ToString();
-            if (token.StartsWith(Constants.SasAuthorizationType) && !TokenIsValid(token.Replace(Constants.SasAuthorizationType, "").Trim(), topicKey))
+            if (
+                token.StartsWith(Constants.SasAuthorizationType)
+                && !TokenIsValid(token.Replace(Constants.SasAuthorizationType, "").Trim(), topicKey)
+            )
             {
-                _logger.LogError("'Authorization: SharedAccessSignature' value did not match the expected value!");
+                _logger.LogError(
+                    "'Authorization: SharedAccessSignature' value did not match the expected value!"
+                );
                 return false;
             }
 
@@ -69,8 +87,10 @@ public class SasKeyValidator
         var decodedExpiration = HttpUtility.UrlDecode(query["e"], Encoding.UTF8);
         var encodedSignature = query["s"];
 
-        if (!DateTime.TryParse(decodedExpiration, out var tokenExpiryDateTime) ||
-            tokenExpiryDateTime.ToUniversalTime() <= DateTime.UtcNow)
+        if (
+            !DateTime.TryParse(decodedExpiration, out var tokenExpiryDateTime)
+            || tokenExpiryDateTime.ToUniversalTime() <= DateTime.UtcNow
+        )
         {
             return false;
         }
@@ -81,7 +101,9 @@ public class SasKeyValidator
         var unsignedSas = $"r={encodedResource}&e={encodedExpiration}";
 
         using var hmac = new HMACSHA256(Convert.FromBase64String(key));
-        var signature = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(unsignedSas)));
+        var signature = Convert.ToBase64String(
+            hmac.ComputeHash(Encoding.UTF8.GetBytes(unsignedSas))
+        );
         var encodedComputedSignature = HttpUtility.UrlEncode(signature);
 
         if (encodedSignature == signature)
@@ -89,7 +111,11 @@ public class SasKeyValidator
             return true;
         }
 
-        _logger.LogWarning("{ExpectedSignature} != {MessageSignature}", encodedComputedSignature, signature);
+        _logger.LogWarning(
+            "{ExpectedSignature} != {MessageSignature}",
+            encodedComputedSignature,
+            signature
+        );
 
         return false;
     }

@@ -6,7 +6,11 @@ namespace AzureEventGridSimulator.Domain.Commands;
 
 public class SendNotificationEventsToSubscriberCommand : IRequest
 {
-    public SendNotificationEventsToSubscriberCommand(SimulatorEvent[] events, TopicSettings topic, EventSchema inputSchema)
+    public SendNotificationEventsToSubscriberCommand(
+        SimulatorEvent[] events,
+        TopicSettings topic,
+        EventSchema inputSchema
+    )
     {
         Events = events;
         Topic = topic;
