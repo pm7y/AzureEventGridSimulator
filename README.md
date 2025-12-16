@@ -36,22 +36,26 @@ An example of one topic with one subscriber is shown below.
 
 ### Topic Settings
 
-- `name`: The name of the topic. It can only contain letters, numbers, and dashes.
-- `port`: The port to use for the topic endpoint. The topic will listen on `https://0.0.0.0:{port}/`.
-- `key`: The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place.
-- `subscribers`: The subscriptions for this topic.
+| Setting | Description |
+|---------|-------------|
+| `name` | The name of the topic. It can only contain letters, numbers, and dashes. |
+| `port` | The port to use for the topic endpoint. The topic will listen on `https://0.0.0.0:{port}/`. |
+| `key` | The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place. |
+| `subscribers` | The subscriptions for this topic. |
 
 ### Subscriber Settings
 
-- `name`: The name of the subscriber. It can only contain letters, numbers, and dashes.
-- `endpoint`: The subscription endpoint url. Events received by topic will be sent to this address.
-- `disableValidation`:
-  - `false` (the default) subscription validation will be attempted each time the simulator starts.
-  - `true` to disable subscription validation.
+| Setting | Description |
+|---------|-------------|
+| `name` | The name of the subscriber. It can only contain letters, numbers, and dashes. |
+| `endpoint` | The subscription endpoint url. Events received by topic will be sent to this address. |
+| `disableValidation` | Set to `true` to disable subscription validation. Default is `false`, which means subscription validation will be attempted each time the simulator starts. |
 
 ### App Settings
 
-- `dangerousAcceptAnyServerCertificateValidator`: Set to `true` to accept any server certificate. This is useful when testing with self signed certificates.
+| Setting | Description |
+|---------|-------------|
+| `dangerousAcceptAnyServerCertificateValidator` | Set to `true` to accept any server certificate. Useful when testing with self-signed certificates. |
 
 #### Subscription Validation
 
