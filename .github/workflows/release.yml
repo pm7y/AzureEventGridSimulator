@@ -1,31 +1,41 @@
-name: release
-# Release action which will fire when a new release is published.
+name: Release
 
 on:
-  # release:
-  #   types: [created, edited]
+  release:
+    types: [published]
 
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Release tag name e.g. '1.0.1'"
+        description: "Release tag name (e.g., '1.0.1')"
         required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
 
 env:
-  VERSION_NUMBER: ${{ github.event.inputs.tag_name }}
-  BUILD_NUMBER: ${{ github.event.inputs.tag_name }}.${{ github.run_number }}
-  DOTNET_VERSION: 10.0.x
+  VERSION_NUMBER: ${{ github.event.inputs.tag_name || github.event.release.tag_name }}
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  DOTNET_NOLOGO: "true"
   SOLUTION_PATH: ./src/AzureEventGridSimulator.sln
   PROJECT_PATH: ./src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
   CONFIGURATION: Release
-  ARITFACT_PATH: ./dist
+  ARTIFACT_PATH: ./dist
 
 jobs:
-  test-release:
+  build-test-publish:
+    name: Build (${{ matrix.runtime }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
         include:
           - os: windows-latest
             runtime: win-x64
@@ -33,87 +43,78 @@ jobs:
             runtime: linux-x64
           - os: macos-latest
             runtime: osx-arm64
-    env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: 1
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-    steps:
-      - name: log github context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
 
-      - name: setup dotnet core
-        uses: actions/setup-dotnet@v4.0.1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "**/*.csproj"
 
-      - name: get the code
-        uses: actions/checkout@v4.1.7
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.SOLUTION_PATH }} --runtime ${{ matrix.runtime }}
 
-      - name: clean
-        run: dotnet clean
-          --configuration ${{ env.CONFIGURATION }}
-          --nologo
-          ${{ env.SOLUTION_PATH }}
-
-      - name: restore
-        run: dotnet restore
-          --runtime ${{ matrix.runtime }}
-          --nologo
-          ${{ env.SOLUTION_PATH }}
-
-      - name: build
-        run: dotnet build
+      - name: Build
+        run: >-
+          dotnet build ${{ env.SOLUTION_PATH }}
           --configuration ${{ env.CONFIGURATION }}
           --runtime ${{ matrix.runtime }}
-          --self-contained false
+          --no-restore
           --no-incremental
-          --nologo
           /p:WarningLevel=4
           /p:TreatWarningsAsErrors=true
-          /p:NoWarn=""
-          /p:WarningsAsErrors=""
-          ${{ env.SOLUTION_PATH }}
 
-      - name: test
-        run: dotnet test
+      - name: Test
+        run: >-
+          dotnet test ${{ env.SOLUTION_PATH }}
           --configuration ${{ env.CONFIGURATION }}
           --runtime ${{ matrix.runtime }}
-          --no-restore
           --no-build
-          --nologo
+          --verbosity normal
           --filter "Category=unit|Category=integration"
-          ${{ env.SOLUTION_PATH }}
 
-      - name: publish
-        run: dotnet publish
+      - name: Publish
+        run: >-
+          dotnet publish ${{ env.PROJECT_PATH }}
           --configuration ${{ env.CONFIGURATION }}
           --runtime ${{ matrix.runtime }}
           --no-restore
-          --nologo
           --self-contained true
-          /p:BuildNumber=${{ env.BUILD_NUMBER }}
-          /p:Version=${{ env.BUILD_NUMBER }}
+          /p:Version=${{ env.VERSION_NUMBER }}
           /p:PublishReadyToRun=false
-          /p:IncludeNativeLibrariesForSelfExtract=true
           /p:PublishSingleFile=true
           /p:PublishTrimmed=true
-          /p:TrimUnusedDependencies=true
-          --output ${{ env.ARITFACT_PATH }}
-          ${{ env.PROJECT_PATH }}
+          /p:IncludeNativeLibrariesForSelfExtract=true
+          --output ${{ env.ARTIFACT_PATH }}
 
-      - name: zip artifacts
-        uses: papeloto/action-zip@v1
-        with:
-          files: ${{ env.ARITFACT_PATH }}/
-          recursive: true
-          dest: AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip
+      - name: Create archive (Linux/macOS)
+        if: runner.os != 'Windows'
+        working-directory: ${{ env.ARTIFACT_PATH }}
+        run: |
+          zip -r ../AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip .
+          cd ..
+          sha256sum AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip > AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip.sha256
 
-      - name: release artifacts
+      - name: Create archive (Windows)
+        if: runner.os == 'Windows'
+        working-directory: ${{ env.ARTIFACT_PATH }}
+        shell: pwsh
+        run: |
+          Compress-Archive -Path * -DestinationPath ../AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip
+          cd ..
+          $hash = (Get-FileHash -Algorithm SHA256 AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip).Hash.ToLower()
+          "$hash  AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip" | Out-File -Encoding utf8 AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip.sha256
+
+      - name: Upload release artifacts
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ env.VERSION_NUMBER }}
           tag_name: ${{ env.VERSION_NUMBER }}
-          files: AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip
+            AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip.sha256
+          fail_on_unmatched_files: true
