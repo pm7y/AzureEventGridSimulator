@@ -43,6 +43,7 @@ public class FilterSettingsValidationTests
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(5)]
+    [InlineData(25)]
     public void TestFilterSettingsValidationWithValidNumberOfAdvancedFilterSettings(byte n)
     {
         Should.NotThrow(() =>
@@ -61,13 +62,14 @@ public class FilterSettingsValidationTests
     }
 
     [Fact]
-    public void TestFilterSettingsValidationWithSixAdvancedFilters()
+    public void TestFilterSettingsValidationWithTooManyAdvancedFilters()
     {
         var filterConfig = new FilterSetting
         {
             AdvancedFilters = new List<AdvancedFilterSetting>(),
         };
-        for (var i = 0; i < 6; i++)
+        // Azure Event Grid allows up to 25 filters, so 26 should fail
+        for (var i = 0; i < 26; i++)
         {
             filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
         }
@@ -78,7 +80,7 @@ public class FilterSettingsValidationTests
 
         exception.ParamName.ShouldBe(nameof(filterConfig.AdvancedFilters));
         exception.Message.ShouldBe(
-            "Advanced filtering is limited to five advanced filters per event grid subscription. (Parameter 'AdvancedFilters')"
+            "Advanced filtering is limited to 25 advanced filters per event grid subscription. (Parameter 'AdvancedFilters')"
         );
     }
 }

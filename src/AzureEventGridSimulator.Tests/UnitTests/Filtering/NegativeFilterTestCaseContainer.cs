@@ -86,25 +86,37 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith,
-                Value = "b",
+                Values = new[] { "b" },
             },
             new AdvancedFilterSetting
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith,
-                Value = string.Empty,
+                Values = new[] { string.Empty },
             },
             new AdvancedFilterSetting
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith,
-                Value = null,
+                Values = null,
             },
             new AdvancedFilterSetting
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith,
-                Value = "B",
+                Values = Array.Empty<object>(),
+            },
+            new AdvancedFilterSetting
+            {
+                Key = "Id",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith,
+                Values = new[] { "B" },
+            },
+            new AdvancedFilterSetting
+            {
+                Key = "Id",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith,
+                Values = new[] { "nomatch1", "nomatch2" }, // test multiple values - none should match
             },
             new AdvancedFilterSetting
             {
@@ -171,7 +183,7 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "Topic",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith,
-                Value = "123",
+                Values = new[] { "123" },
             },
             new AdvancedFilterSetting
             {
@@ -214,7 +226,7 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "Subject",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith,
-                Value = "sub",
+                Values = new[] { "sub" },
             },
             new AdvancedFilterSetting
             {
@@ -257,7 +269,7 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "EventType",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith,
-                Value = "EVENTTYPE",
+                Values = new[] { "EVENTTYPE" },
             },
             new AdvancedFilterSetting
             {
@@ -294,7 +306,7 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "DataVersion",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith,
-                Value = "7",
+                Values = new[] { "7" },
             },
             new AdvancedFilterSetting
             {
@@ -551,6 +563,82 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
                 Key = "Data.SubObject.Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn,
                 Values = new object[] { 10, 11, 12 },
+            },
+            // New operators: StringNotContains - should NOT match when value DOES contain a filter value
+            new AdvancedFilterSetting
+            {
+                Key = "Data.Name",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotContains,
+                Values = new[] { "String" }, // "StringValue" contains "String"
+            },
+            new AdvancedFilterSetting
+            {
+                Key = "Data.Name",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotContains,
+                Values = new[] { "VALUE" }, // case insensitive, "StringValue" contains "VALUE"
+            },
+            // StringNotBeginsWith - should NOT match when value DOES begin with a filter value
+            new AdvancedFilterSetting
+            {
+                Key = "Data.Name",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotBeginsWith,
+                Values = new[] { "String" }, // "StringValue" begins with "String"
+            },
+            new AdvancedFilterSetting
+            {
+                Key = "Data.Name",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotBeginsWith,
+                Values = new[] { "STRING" }, // case insensitive
+            },
+            // StringNotEndsWith - should NOT match when value DOES end with a filter value
+            new AdvancedFilterSetting
+            {
+                Key = "Data.Name",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotEndsWith,
+                Values = new[] { "Value" }, // "StringValue" ends with "Value"
+            },
+            new AdvancedFilterSetting
+            {
+                Key = "Data.Name",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotEndsWith,
+                Values = new[] { "VALUE" }, // case insensitive
+            },
+            // NumberInRange - should NOT match when value is NOT within any range
+            new AdvancedFilterSetting
+            {
+                Key = "Data.NumberValue",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberInRange,
+                Values = new object[] { new object[] { 5, 10 } }, // 1 is not within [5, 10]
+            },
+            new AdvancedFilterSetting
+            {
+                Key = "Data.NumberValue",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberInRange,
+                Values = new object[] { new object[] { 2, 5 }, new object[] { 10, 20 } }, // 1 is not within either range
+            },
+            // NumberNotInRange - should NOT match when value IS within a range
+            new AdvancedFilterSetting
+            {
+                Key = "Data.NumberValue",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotInRange,
+                Values = new object[] { new object[] { 0, 2 } }, // 1 IS within [0, 2]
+            },
+            // IsNullOrUndefined - should NOT match when key exists and has a non-null value
+            new AdvancedFilterSetting
+            {
+                Key = "Data.Name",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined,
+            },
+            new AdvancedFilterSetting
+            {
+                Key = "Data.NumberValue",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined,
+            },
+            // IsNotNull - should NOT match when key does NOT exist
+            new AdvancedFilterSetting
+            {
+                Key = "Data.NonExistentKey",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull,
             },
         };
     }
