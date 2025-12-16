@@ -334,6 +334,43 @@ public class CloudEventSchemaParserTests
         Should.Throw<InvalidOperationException>(() => _parser.Validate(events));
     }
 
+    [Fact]
+    public void GivenBinaryModeRequestWithPercentEncodedHeaders_WhenParsed_ThenValuesAreDecoded()
+    {
+        // CloudEvents HTTP binding requires percent-encoding for spaces and non-ASCII characters
+        var context = CreateBinaryModeContextWithRawHeaders(
+            specVersion: "1.0",
+            type: "com.example.test",
+            source: "/test/source%20with%20spaces", // Space encoded as %20
+            id: "test-id-123",
+            subject: "Euro%20%E2%82%AC" // "Euro €" percent-encoded
+        );
+        var requestBody = "{\"Property\": \"Value\"}";
+
+        var events = _parser.Parse(context, requestBody);
+
+        events.ShouldHaveSingleItem();
+        events[0].CloudEvent.Source.ShouldBe("/test/source with spaces");
+        events[0].CloudEvent.Subject.ShouldBe("Euro €");
+    }
+
+    [Fact]
+    public void GivenBinaryModeRequestWithNonEncodedHeaders_WhenParsed_ThenValuesPassThrough()
+    {
+        var context = CreateBinaryModeContext(
+            specVersion: "1.0",
+            type: "com.example.test",
+            source: "/test/source",
+            id: "test-id-123"
+        );
+        var requestBody = "{\"Property\": \"Value\"}";
+
+        var events = _parser.Parse(context, requestBody);
+
+        events.ShouldHaveSingleItem();
+        events[0].CloudEvent.Source.ShouldBe("/test/source");
+    }
+
     private static HttpContext CreateBinaryModeContext(
         string specVersion,
         string type,
@@ -398,6 +435,37 @@ public class CloudEventSchemaParserTests
         {
             Request = { ContentType = "application/cloudevents-batch+json" },
         };
+        return context;
+    }
+
+    private static HttpContext CreateBinaryModeContextWithRawHeaders(
+        string specVersion,
+        string type,
+        string source,
+        string id,
+        string subject = null
+    )
+    {
+        var context = new DefaultHttpContext
+        {
+            Request =
+            {
+                ContentType = "application/json",
+                Headers =
+                {
+                    [Constants.CeSpecVersionHeader] = specVersion,
+                    [Constants.CeTypeHeader] = type,
+                    [Constants.CeSourceHeader] = source,
+                    [Constants.CeIdHeader] = id,
+                },
+            },
+        };
+
+        if (subject != null)
+        {
+            context.Request.Headers[Constants.CeSubjectHeader] = subject;
+        }
+
         return context;
     }
 }

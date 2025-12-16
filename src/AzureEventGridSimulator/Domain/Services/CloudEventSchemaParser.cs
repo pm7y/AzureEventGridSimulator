@@ -163,8 +163,32 @@ public class CloudEventSchemaParser : IEventSchemaParser
         }
     }
 
+    /// <summary>
+    /// Gets and decodes a header value, handling percent-encoding per CloudEvents HTTP binding spec.
+    /// </summary>
     private static string GetHeaderValue(IHeaderDictionary headers, string headerName)
     {
-        return headers.TryGetValue(headerName, out var values) ? values.FirstOrDefault() : null;
+        if (!headers.TryGetValue(headerName, out var values))
+        {
+            return null;
+        }
+
+        var value = values.FirstOrDefault();
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        // CloudEvents HTTP Protocol Binding requires percent-encoding for certain characters
+        // in header values (spaces, non-ASCII, etc.). We need to decode them.
+        try
+        {
+            return Uri.UnescapeDataString(value);
+        }
+        catch (UriFormatException)
+        {
+            // If decoding fails, return the original value
+            return value;
+        }
     }
 }

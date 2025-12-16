@@ -144,4 +144,25 @@ public class CloudEventValidationTests
         var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
         exception.Message.ShouldContain("mutually exclusive");
     }
+
+    [Theory]
+    [InlineData("/relative/path")]
+    [InlineData("https://example.com/absolute")]
+    [InlineData("urn:uuid:6e8bc430-9c3a-11d9-9669-0800200c9a66")]
+    [InlineData("/")]
+    [InlineData("//authority/path")]
+    public void GivenCloudEventWithValidUriReferenceSource_WhenValidated_ThenNoExceptionThrown(
+        string source
+    )
+    {
+        var cloudEvent = new CloudEvent
+        {
+            SpecVersion = "1.0",
+            Type = "com.example.test",
+            Source = source,
+            Id = "test-id-123",
+        };
+
+        Should.NotThrow(() => cloudEvent.Validate());
+    }
 }

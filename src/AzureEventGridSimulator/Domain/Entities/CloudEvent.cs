@@ -117,11 +117,18 @@ public class CloudEvent
             throw new InvalidOperationException($"Required property '{nameof(Type)}' was not set.");
         }
 
-        // Required: source
+        // Required: source - must be a non-empty URI-reference per CloudEvents spec
         if (string.IsNullOrWhiteSpace(Source))
         {
             throw new InvalidOperationException(
                 $"Required property '{nameof(Source)}' was not set."
+            );
+        }
+
+        if (!Uri.TryCreate(Source, UriKind.RelativeOrAbsolute, out _))
+        {
+            throw new InvalidOperationException(
+                $"Property '{nameof(Source)}' must be a valid URI-reference."
             );
         }
 
