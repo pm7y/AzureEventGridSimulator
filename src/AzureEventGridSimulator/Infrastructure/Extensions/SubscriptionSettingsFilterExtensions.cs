@@ -78,23 +78,24 @@ public static class SubscriptionSettingsFilterExtensions
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains:
                 {
                     var valueAsString = value as string;
-                    var filterValueAsString = filter.Value as string;
-
-                    retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
-                                       !string.IsNullOrEmpty(valueAsString) &&
-                                       valueAsString.Contains(filterValueAsString, StringComparison.OrdinalIgnoreCase));
+                    retVal = Try(() => !string.IsNullOrEmpty(valueAsString) &&
+                                       (filter.Values ?? Array.Empty<object>())
+                                           .Select(v => Convert.ToString(v))
+                                           .Where(v => !string.IsNullOrEmpty(v))
+                                           .Any(filterValue => valueAsString.Contains(filterValue, StringComparison.OrdinalIgnoreCase)));
                 }
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith:
                 {
                     // null or empty values cannot be considered to be the start character of a string
                     var valueAsString = value as string;
-                    var filterValueAsString = filter.Value as string;
-
-                    retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
-                                       !string.IsNullOrEmpty(valueAsString) &&
-                                       valueAsString.StartsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
+                    retVal = Try(() => !string.IsNullOrEmpty(valueAsString) &&
+                                       (filter.Values ?? Array.Empty<object>())
+                                           .Select(v => Convert.ToString(v))
+                                           .Where(v => !string.IsNullOrEmpty(v))
+                                           .Any(filterValue => valueAsString.StartsWith(filterValue, StringComparison.OrdinalIgnoreCase)));
                 }
+                break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith:
                 {
                     // null or empty values cannot be considered to be the end character of a string
