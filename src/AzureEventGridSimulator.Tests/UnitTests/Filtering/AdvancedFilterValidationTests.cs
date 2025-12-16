@@ -127,14 +127,14 @@ public class AdvancedFilterValidationTests
     [Fact]
     public void TestFilterValidationWithFiveValues()
     {
-        Should.NotThrow((Action)(() =>
+        Should.NotThrow(() =>
         {
             foreach (AdvancedFilterSetting.AdvancedFilterOperatorType operatorType in Enum.GetValues(typeof(AdvancedFilterSetting.AdvancedFilterOperatorType)))
             {
                 var filterConfig = new AdvancedFilterSetting { Key = "Data", Values = new object[5], OperatorType = operatorType };
                 GetValidSimulatorSettings(filterConfig).Validate();
             }
-        }));
+        });
     }
 
     [Fact]
