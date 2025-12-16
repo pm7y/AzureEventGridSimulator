@@ -14,7 +14,11 @@
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
-  <Target Name="CSharpier" BeforeTargets="BeforeBuild" Condition="'$(DesignTimeBuild)' != 'true' And '$(MSBuildProjectName)' == 'AzureEventGridSimulator'">
+  <Target
+    Name="CSharpier"
+    BeforeTargets="BeforeBuild"
+    Condition="'$(DesignTimeBuild)' != 'true' And '$(MSBuildProjectName)' == 'AzureEventGridSimulator'"
+  >
     <Exec
       Command="dotnet tool restore"
       WorkingDirectory="$(MSBuildThisFileDirectory).."
