@@ -87,14 +87,14 @@ public static class SubscriptionSettingsFilterExtensions
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith:
                 {
+                    // null or empty values cannot be considered to be the start character of a string
                     var valueAsString = value as string;
-                    retVal = Try(() =>
-                                     (filter.Values ?? Array.Empty<object>()).OfType<string>()
-                                                                             .Where(o => !string.IsNullOrEmpty(o) && !string.IsNullOrEmpty(valueAsString))
-                                                                             .Any(o => valueAsString.StartsWith(o, StringComparison.OrdinalIgnoreCase))
-                                );
+                    var filterValueAsString = filter.Value as string;
+
+                    retVal = Try(() => !string.IsNullOrEmpty(filterValueAsString) &&
+                                       !string.IsNullOrEmpty(valueAsString) &&
+                                       valueAsString.StartsWith(filterValueAsString, StringComparison.OrdinalIgnoreCase));
                 }
-                break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith:
                 {
                     // null or empty values cannot be considered to be the end character of a string
