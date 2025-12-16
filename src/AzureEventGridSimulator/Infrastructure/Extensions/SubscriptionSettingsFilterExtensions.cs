@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
@@ -128,10 +129,22 @@ public static class SubscriptionSettingsFilterExtensions
             return true;
         }
 
-        // filter is not null
-        if (!simulatorEvent.TryGetValue(filter.Key, out var value))
+        var keyExists = simulatorEvent.TryGetValue(filter.Key, out var value);
+        var valueIsNull = keyExists && value == null;
+
+        // Handle null check operators specially - they evaluate based on key existence
+        switch (filter.OperatorType)
         {
-            return false;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
+                return !keyExists || valueIsNull;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
+                return keyExists && !valueIsNull;
+        }
+
+        // For "Not" operators, return true when key doesn't exist (per Azure docs)
+        if (!keyExists)
+        {
+            return IsNegationOperator(filter.OperatorType);
         }
 
         return EvaluateAdvancedFilter(filter, value);
@@ -139,20 +152,43 @@ public static class SubscriptionSettingsFilterExtensions
 
     private static bool AcceptsEvent(this AdvancedFilterSetting filter, EventGridEvent gridEvent)
     {
-        var retVal = filter == null;
-
-        if (retVal)
+        if (filter == null)
         {
             return true;
         }
 
-        // filter is not null
-        if (!gridEvent.TryGetValue(filter.Key, out var value))
+        var keyExists = gridEvent.TryGetValue(filter.Key, out var value);
+        var valueIsNull = keyExists && value == null;
+
+        // Handle null check operators specially - they evaluate based on key existence
+        switch (filter.OperatorType)
         {
-            return false;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
+                return !keyExists || valueIsNull;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
+                return keyExists && !valueIsNull;
+        }
+
+        // For "Not" operators, return true when key doesn't exist (per Azure docs)
+        if (!keyExists)
+        {
+            return IsNegationOperator(filter.OperatorType);
         }
 
         return EvaluateAdvancedFilter(filter, value);
+    }
+
+    private static bool IsNegationOperator(
+        AdvancedFilterSetting.AdvancedFilterOperatorType operatorType
+    )
+    {
+        return operatorType
+            is AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotIn
+                or AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotInRange
+                or AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn
+                or AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotContains
+                or AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotBeginsWith
+                or AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotEndsWith;
     }
 
     private static bool EvaluateAdvancedFilter(AdvancedFilterSetting filter, object value)
@@ -229,15 +265,17 @@ public static class SubscriptionSettingsFilterExtensions
                 {
                     // null or empty values cannot be considered to be the end character of a string
                     var valueAsString = value as string;
-                    var filterValueAsString = filter.Value as string;
-
                     retVal = Try(() =>
-                        !string.IsNullOrEmpty(filterValueAsString)
-                        && !string.IsNullOrEmpty(valueAsString)
-                        && valueAsString.EndsWith(
-                            filterValueAsString,
-                            StringComparison.OrdinalIgnoreCase
-                        )
+                        !string.IsNullOrEmpty(valueAsString)
+                        && (filter.Values ?? Array.Empty<object>())
+                            .Select(v => Convert.ToString(v))
+                            .Where(v => !string.IsNullOrEmpty(v))
+                            .Any(filterValue =>
+                                valueAsString.EndsWith(
+                                    filterValue,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            )
                     );
                 }
                 break;
@@ -254,6 +292,71 @@ public static class SubscriptionSettingsFilterExtensions
                         .Select(v => Convert.ToString(v)?.ToUpper())
                         .Contains(Convert.ToString(value)?.ToUpper())
                 );
+                break;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberInRange:
+                retVal = Try(() => IsNumberInRanges(value.ToNumber(), filter.Values));
+                break;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotInRange:
+                retVal = Try(() => !IsNumberInRanges(value.ToNumber(), filter.Values));
+                break;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotContains:
+                {
+                    var valueAsString = value as string;
+                    retVal = Try(() =>
+                        string.IsNullOrEmpty(valueAsString)
+                        || !(filter.Values ?? Array.Empty<object>())
+                            .Select(v => Convert.ToString(v))
+                            .Where(v => !string.IsNullOrEmpty(v))
+                            .Any(filterValue =>
+                                valueAsString.Contains(
+                                    filterValue,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            )
+                    );
+                }
+                break;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotBeginsWith:
+                {
+                    var valueAsString = value as string;
+                    retVal = Try(() =>
+                        string.IsNullOrEmpty(valueAsString)
+                        || !(filter.Values ?? Array.Empty<object>())
+                            .Select(v => Convert.ToString(v))
+                            .Where(v => !string.IsNullOrEmpty(v))
+                            .Any(filterValue =>
+                                valueAsString.StartsWith(
+                                    filterValue,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            )
+                    );
+                }
+                break;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotEndsWith:
+                {
+                    var valueAsString = value as string;
+                    retVal = Try(() =>
+                        string.IsNullOrEmpty(valueAsString)
+                        || !(filter.Values ?? Array.Empty<object>())
+                            .Select(v => Convert.ToString(v))
+                            .Where(v => !string.IsNullOrEmpty(v))
+                            .Any(filterValue =>
+                                valueAsString.EndsWith(
+                                    filterValue,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            )
+                    );
+                }
+                break;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
+                // These are handled in AcceptsEvent before calling EvaluateAdvancedFilter
+                // If we get here, the key exists and has a non-null value
+                retVal =
+                    filter.OperatorType
+                    == AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull;
                 break;
             default:
                 throw new ArgumentOutOfRangeException(
@@ -367,6 +470,56 @@ public static class SubscriptionSettingsFilterExtensions
         {
             return valueOnException;
         }
+    }
+
+    /// <summary>
+    /// Checks if a number is within any of the specified ranges.
+    /// Ranges are specified as arrays or JArrays like [[min1, max1], [min2, max2]] in the Values collection.
+    /// </summary>
+    private static bool IsNumberInRanges(double value, ICollection<object> ranges)
+    {
+        if (ranges == null || ranges.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (var range in ranges)
+        {
+            double min,
+                max;
+
+            // Handle JArray (from JSON deserialization)
+            if (range is JArray jArray && jArray.Count >= 2)
+            {
+                min = jArray[0].ToObject<double>();
+                max = jArray[1].ToObject<double>();
+            }
+            // Handle object array
+            else if (range is object[] objArray && objArray.Length >= 2)
+            {
+                min = Convert.ToDouble(objArray[0]);
+                max = Convert.ToDouble(objArray[1]);
+            }
+            // Handle IList<object>
+            else if (range is IList<object> list && list.Count >= 2)
+            {
+                min = Convert.ToDouble(list[0]);
+                max = Convert.ToDouble(list[1]);
+            }
+            else
+            {
+                // Skip invalid range format
+                continue;
+            }
+
+            // Check if value is within this range (inclusive)
+            if (value >= min && value <= max)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool TryGetValue(this EventGridEvent gridEvent, string key, out object value)

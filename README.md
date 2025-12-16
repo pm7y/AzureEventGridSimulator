@@ -125,6 +125,36 @@ or advanced filtering:
 }
 ```
 
+#### Advanced Filter Operators
+
+Each advanced filter requires an `operatorType`, a `key` (the event property to filter on), and either a `value`, `values`, or no value property depending on the operator type. Up to 25 advanced filters can be configured per subscription.
+
+| Operator | Property | Description |
+|----------|----------|-------------|
+| `NumberGreaterThan` | `value` | Event value must be greater than the specified number |
+| `NumberGreaterThanOrEquals` | `value` | Event value must be greater than or equal to the specified number |
+| `NumberLessThan` | `value` | Event value must be less than the specified number |
+| `NumberLessThanOrEquals` | `value` | Event value must be less than or equal to the specified number |
+| `NumberIn` | `values` | Event value must match one of the specified numbers (max 5 values) |
+| `NumberNotIn` | `values` | Event value must not match any of the specified numbers (max 5 values) |
+| `NumberInRange` | `values` | Event value must be within one of the specified ranges (e.g., `[[0, 10], [20, 30]]`) |
+| `NumberNotInRange` | `values` | Event value must not be within any of the specified ranges |
+| `BoolEquals` | `value` | Event value must equal the specified boolean |
+| `StringContains` | `values` | Event value must contain at least one of the specified strings |
+| `StringNotContains` | `values` | Event value must not contain any of the specified strings |
+| `StringBeginsWith` | `values` | Event value must begin with at least one of the specified strings |
+| `StringNotBeginsWith` | `values` | Event value must not begin with any of the specified strings |
+| `StringEndsWith` | `values` | Event value must end with at least one of the specified strings |
+| `StringNotEndsWith` | `values` | Event value must not end with any of the specified strings |
+| `StringIn` | `values` | Event value must match one of the specified strings (max 5 values) |
+| `StringNotIn` | `values` | Event value must not match any of the specified strings (max 5 values) |
+| `IsNullOrUndefined` | _(none)_ | Key must be null or not exist |
+| `IsNotNull` | _(none)_ | Key must exist and have a non-null value |
+
+**Note:** The `key` property supports nested data properties using dot notation, e.g., `Data.MyProperty` or `Data.Nested.Value`.
+
+**Note:** String comparisons in advanced filters are case-insensitive. "Not" operators (`StringNotIn`, `NumberNotIn`, etc.) return `true` when the key doesn't exist.
+
 **Note:** you can also specify the configuration file to use by setting the `ConfigFile` command line argument, e.g.
 
 ```
