@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -191,9 +192,9 @@ public class SendNotificationEventsToSubscriberCommandHandler
                 if (subscription.Filter.AcceptsEvent(evt))
                 {
                     var json = formatter.Serialize(evt);
-                    var contentType = formatter.ContentType;
 
-                    using var content = new StringContent(json, Encoding.UTF8, contentType);
+                    using var content = new StringContent(json, Encoding.UTF8);
+                    content.Headers.ContentType = MediaTypeHeaderValue.Parse(formatter.ContentType);
                     var httpClient = _httpClientFactory.CreateClient();
 
                     // Add standard Event Grid headers
