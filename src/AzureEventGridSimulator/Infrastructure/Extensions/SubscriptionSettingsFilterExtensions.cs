@@ -186,19 +186,20 @@ public static class SubscriptionSettingsFilterExtensions
                     break;
                 }
                 var tmpValue = gridEvent.Data;
-                for (var i = 0; i < split.Length; i++)
+                for (var i = 1; i < split.Length; i++)
                 {
                     // look for the property on the grid event data object
                     if (tmpValue == null || !JObject.FromObject(tmpValue).TryGetValue(split[i], out var dataValue))
                     {
-                        continue;
+                        tmpValue = null;
+                        break;
                     }
                     tmpValue = dataValue.ToObject<object>();
-                    if (i == split.Length - 1)
-                    {
-                        retval = true;
-                        value = tmpValue;
-                    }
+                }
+                if (tmpValue != null)
+                {
+                    retval = true;
+                    value = tmpValue;
                 }
 
                 break;
