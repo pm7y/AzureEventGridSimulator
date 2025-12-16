@@ -239,7 +239,7 @@ If you want to skip the validation then set the `Key` to _null_ in `appsettings.
 
 ### Size Validation
 
-Azure Event Grid imposes certain size limits to the overall message body and to the each individual event. The overall message body must be <= 1Mb and each individual event must be <= 64Kb. _These are the advertised size limits. My testing has shown that the actual limits are 1.5Mb and 65Kb._
+Azure Event Grid imposes certain size limits to the overall message body and to the each individual event. The overall message body and each individual event must be <= 1048576 bytes (1 Mb). _These are the advertised size limits. My testing has shown that the actual limits are 1536000 bytes (1.5 Mb) for the overall message body and 1049600 bytes (1 Mb) for each individual event._
 
 ### Message Validation
 
