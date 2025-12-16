@@ -26,12 +26,14 @@ public class IntegrationContextFixture : WebApplicationFactory<Program>, IAsyncL
     {
         builder.UseEnvironment(Environments.Development);
 
-        builder.ConfigureAppConfiguration((_, configurationBuilder) =>
-        {
-            configurationBuilder
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.test.json", false, true);
-        });
+        builder.ConfigureAppConfiguration(
+            (_, configurationBuilder) =>
+            {
+                configurationBuilder
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.test.json", false, true);
+            }
+        );
 
         builder.ConfigureLogging(logging =>
         {

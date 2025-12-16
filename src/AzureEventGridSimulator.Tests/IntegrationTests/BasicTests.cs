@@ -18,8 +18,7 @@ namespace AzureEventGridSimulator.Tests.IntegrationTests;
 /// Note: this is a WIP.
 /// </summary>
 [Trait("Category", "integration")]
-public class BasicTests
-    : IClassFixture<IntegrationContextFixture>
+public class BasicTests : IClassFixture<IntegrationContextFixture>
 {
     private readonly IntegrationContextFixture _factory;
 
@@ -32,13 +31,18 @@ public class BasicTests
     public async Task GivenAValidEvent_WhenPublished_ThenItShouldBeAccepted()
     {
         // Arrange
-        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost:60101")
-        });
+        var client = _factory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                BaseAddress = new Uri("https://localhost:60101"),
+            }
+        );
 
         client.DefaultRequestHeaders.Add(Constants.AegSasKeyHeader, "TheLocal+DevelopmentKey=");
-        client.DefaultRequestHeaders.Add(Constants.AegEventTypeHeader, Constants.NotificationEventType);
+        client.DefaultRequestHeaders.Add(
+            Constants.AegEventTypeHeader,
+            Constants.NotificationEventType
+        );
 
         var testEvent = new EventGridEvent("subject", "eventType", "1.0", new { Blah = 1 });
         var json = JsonConvert.SerializeObject(new[] { testEvent }, Formatting.Indented);
@@ -56,10 +60,12 @@ public class BasicTests
     public async Task GivenAHealthRequest_ThenItShouldRespondWithOk()
     {
         // Arrange
-        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost:60101")
-        });
+        var client = _factory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                BaseAddress = new Uri("https://localhost:60101"),
+            }
+        );
 
         // Act
         var response = await client.GetAsync("/api/health");

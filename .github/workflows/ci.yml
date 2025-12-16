@@ -1,21 +1,39 @@
-name: ci
-# Continuous integration action which will fire on any push to a branch that is part of a pull request.
+name: CI
 
 on:
+  push:
+    branches: [master, main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
   pull_request:
-    types: [opened, synchronize, reopened]
-
+    branches: [master, main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 env:
-  DOTNET_VERSION: 10.0.x
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  DOTNET_NOLOGO: "true"
   SOLUTION_PATH: ./src/AzureEventGridSimulator.sln
   CONFIGURATION: Release
 
 jobs:
   build-and-test:
+    name: Build & Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
         include:
@@ -25,54 +43,45 @@ jobs:
             runtime: linux-x64
           - os: macos-latest
             runtime: osx-arm64
-    env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: 1
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-    steps:
-      - name: log github context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
 
-      - name: setup dotnet core
-        uses: actions/setup-dotnet@v4.0.1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "**/*.csproj"
 
-      - name: get the code
-        uses: actions/checkout@v4.1.7
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.SOLUTION_PATH }} --runtime ${{ matrix.runtime }}
 
-      - name: clean
-        run: dotnet clean
-          --configuration ${{ env.CONFIGURATION }}
-          --nologo
-          ${{ env.SOLUTION_PATH }}
-
-      - name: restore
-        run: dotnet restore
-          --runtime ${{ matrix.runtime }}
-          --nologo
-          ${{ env.SOLUTION_PATH }}
-
-      - name: build
-        run: dotnet build
-          --configuration ${{ env.CONFIGURATION }}
-          --runtime ${{ matrix.runtime }}
-          --self-contained false
-          --no-incremental
-          --nologo
-          /p:WarningLevel=4
-          /p:TreatWarningsAsErrors=true
-          /p:NoWarn=""
-          /p:WarningsAsErrors=""
-          ${{ env.SOLUTION_PATH }}
-
-      - name: test
-        run: dotnet test
+      - name: Build
+        run: >-
+          dotnet build ${{ env.SOLUTION_PATH }}
           --configuration ${{ env.CONFIGURATION }}
           --runtime ${{ matrix.runtime }}
           --no-restore
+          --no-incremental
+          /p:WarningLevel=4
+          /p:TreatWarningsAsErrors=true
+
+      - name: Test
+        run: >-
+          dotnet test ${{ env.SOLUTION_PATH }}
+          --configuration ${{ env.CONFIGURATION }}
+          --runtime ${{ matrix.runtime }}
           --no-build
-          --nologo
+          --verbosity normal
+          --logger "trx;LogFileName=test-results.trx"
           --filter "Category=unit|Category=integration"
-          ${{ env.SOLUTION_PATH }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: "**/TestResults/*.trx"
+          retention-days: 7

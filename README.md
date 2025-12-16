@@ -6,7 +6,7 @@
 ![GitHub all releases](https://img.shields.io/github/downloads/pmcilreavy/AzureEventGridSimulator/total)
 ![Docker Pulls](https://img.shields.io/docker/pulls/pmcilreavy/azureeventgridsimulator)
 
-A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library. NOTE: Currently only the `EventGrid` event schema is supported. Support for the `CloudEvent` schema may be added at a future date.
+A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library. Both the `EventGrid` schema and the `CloudEvents v1.0` schema are supported.
 
 ## Configuration
 
@@ -42,6 +42,8 @@ An example of one topic with one subscriber is shown below.
 | `port` | The port to use for the topic endpoint. The topic will listen on `https://0.0.0.0:{port}/`. |
 | `key` | The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place. |
 | `subscribers` | The subscriptions for this topic. |
+| `inputSchema` | (Optional) The expected input event schema. Values: `EventGridSchema` or `CloudEventV1_0`. If not specified, the schema is auto-detected from the request. |
+| `outputSchema` | (Optional) The output event schema for delivery to subscribers. If not specified, events are delivered in the same schema they were received in. |
 
 ### Subscriber Settings
 
@@ -50,6 +52,7 @@ An example of one topic with one subscriber is shown below.
 | `name` | The name of the subscriber. It can only contain letters, numbers, and dashes. |
 | `endpoint` | The subscription endpoint url. Events received by topic will be sent to this address. |
 | `disableValidation` | Set to `true` to disable subscription validation. Default is `false`, which means subscription validation will be attempted each time the simulator starts. |
+| `deliverySchema` | (Optional) Override the delivery schema for this specific subscriber. Values: `EventGridSchema` or `CloudEventV1_0`. Takes precedence over the topic's `outputSchema`. |
 
 ### App Settings
 
@@ -175,7 +178,7 @@ docker-compose up   --build `
 
 Once configured and running, requests are `posted` to a topic endpoint. The endpoint of a topic will be in the form: `https://localhost:<configured-port>/api/events?api-version=2018-01-01`.
 
-#### cURL Example
+#### cURL Example (Event Grid Schema)
 
 ```bash
 curl -k -H "Content-Type: application/json" -H "aeg-sas-key: TheLocal+DevelopmentKey=" -X POST "https://localhost:60101/api/events?api-version=2018-01-01" -d @Data.json
@@ -196,6 +199,47 @@ _Data.json_
     "dataVersion": "1"
   }
 ]
+```
+
+#### cURL Example (CloudEvents Structured Mode)
+
+```bash
+curl -k -H "Content-Type: application/cloudevents+json" -H "aeg-sas-key: TheLocal+DevelopmentKey=" -X POST "https://localhost:60101/api/events?api-version=2018-01-01" -d @CloudEvent.json
+```
+
+_CloudEvent.json_
+
+```json
+{
+  "specversion": "1.0",
+  "type": "com.example.someevent",
+  "source": "/mycontext/subcontext",
+  "id": "A234-1234-1234",
+  "time": "2025-01-15T10:30:00Z",
+  "subject": "/example/subject",
+  "datacontenttype": "application/json",
+  "data": {
+    "MyProperty": "This is my awesome data!"
+  }
+}
+```
+
+#### cURL Example (CloudEvents Binary Mode)
+
+In binary mode, CloudEvents attributes are passed as HTTP headers:
+
+```bash
+curl -k \
+  -H "Content-Type: application/json" \
+  -H "aeg-sas-key: TheLocal+DevelopmentKey=" \
+  -H "ce-specversion: 1.0" \
+  -H "ce-type: com.example.someevent" \
+  -H "ce-source: /mycontext/subcontext" \
+  -H "ce-id: A234-1234-1234" \
+  -H "ce-time: 2025-01-15T10:30:00Z" \
+  -H "ce-subject: /example/subject" \
+  -X POST "https://localhost:60101/api/events?api-version=2018-01-01" \
+  -d '{"MyProperty": "This is my awesome data!"}'
 ```
 
 #### Postman
@@ -245,6 +289,8 @@ Azure Event Grid imposes certain size limits to the overall message body and to 
 
 Ensures that the properties of each event meets the minimum requirements.
 
+#### Event Grid Schema
+
 | Field           | Description                                               |
 | --------------- | --------------------------------------------------------- |
 | Id              | Must be a string. Not null or whitespace.                 |
@@ -256,6 +302,21 @@ Ensures that the properties of each event meets the minimum requirements.
 | DataVersion     | _Optional_. e.g. `1`.                                     |
 | Data            | _Optional_. Any custom object.                            |
 
+#### CloudEvents Schema
+
+| Field           | Description                                                        |
+| --------------- | ------------------------------------------------------------------ |
+| specversion     | Must be `1.0`.                                                     |
+| type            | Must be a string. Not null or whitespace.                          |
+| source          | Must be a string. Not null or whitespace.                          |
+| id              | Must be a string. Not null or whitespace.                          |
+| time            | _Optional_. Must be a valid RFC 3339 timestamp if provided.        |
+| subject         | _Optional_.                                                        |
+| datacontenttype | _Optional_.                                                        |
+| dataschema      | _Optional_. Must be a valid URI if provided.                       |
+| data            | _Optional_. Cannot be used together with `data_base64`.            |
+| data_base64     | _Optional_. Base64-encoded binary data. Cannot be used with `data`.|
+
 ## Why?
 
 There are a couple of similar projects out there. What I found though is that they don't adequately simulate an actual Event Grid Topic endpoint.
@@ -266,11 +327,23 @@ Typically an event grid topic endpoint url is like so: _https://topic-name.locat
 
 It posts the payload to https://host:port and drops the query uri. All of the existing simulator/ emulator projects I found don't support https and use a the query uri to distinguish between the topics. This isn't compatible with the `Microsoft.Azure.EventGrid` client.
 
+## Development
+
+### Code Formatting
+
+This project uses [CSharpier](https://csharpier.com/) for code formatting. CSharpier runs automatically on every build, so your code will be formatted before compilation.
+
+To manually format the code:
+
+```bash
+dotnet tool restore
+dotnet csharpier format src
+```
+
 ## Future Development
 
 Some features that could be added if there was a need for them: -
 
-- `CloudEvent` schema support.
 - Subscriber retries & dead lettering. https://docs.microsoft.com/en-us/azure/event-grid/delivery-and-retry
 - Certificate configuration in `appsettings.json`.
 - Subscriber token auth

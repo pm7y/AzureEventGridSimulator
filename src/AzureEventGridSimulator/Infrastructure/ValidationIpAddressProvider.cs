@@ -12,11 +12,17 @@ public class ValidationIpAddressProvider
 
     public string Create()
     {
-        return (NetworkInterface.GetAllNetworkInterfaces()
-                                .SelectMany(o => o.GetIPProperties().DnsAddresses)
-                                .FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork &&
-                                                      !ip.ToString().StartsWith("172") &&
-                                                      !IPAddress.IsLoopback(ip)) ?? IPAddress.Loopback).ToString();
+        return (
+            NetworkInterface
+                .GetAllNetworkInterfaces()
+                .SelectMany(o => o.GetIPProperties().DnsAddresses)
+                .FirstOrDefault(ip =>
+                    ip.AddressFamily == AddressFamily.InterNetwork
+                    && !ip.ToString().StartsWith("172")
+                    && !IPAddress.IsLoopback(ip)
+                )
+            ?? IPAddress.Loopback
+        ).ToString();
     }
 
     public override string ToString()

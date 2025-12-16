@@ -21,26 +21,49 @@ public class SimulatorSettings
             throw new InvalidOperationException("Each topic must have a unique name.");
         }
 
-        if (Topics.SelectMany(o => o.Subscribers).GroupBy(o => o.Name).Count() !=
-            Topics.SelectMany(o => o.Subscribers).Count())
+        if (
+            Topics.SelectMany(o => o.Subscribers).GroupBy(o => o.Name).Count()
+            != Topics.SelectMany(o => o.Subscribers).Count()
+        )
         {
             throw new InvalidOperationException("Each subscriber must have a unique name.");
         }
 
-        if (Topics.Select(t => t.Name)
-                  .Any(name => string.IsNullOrWhiteSpace(name) || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))))
+        if (
+            Topics
+                .Select(t => t.Name)
+                .Any(name =>
+                    string.IsNullOrWhiteSpace(name)
+                    || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))
+                )
+        )
         {
-            throw new InvalidOperationException("A topic name can only contain letters, numbers, and dashes.");
+            throw new InvalidOperationException(
+                "A topic name can only contain letters, numbers, and dashes."
+            );
         }
 
-        if (Topics.SelectMany(t => t.Subscribers).Select(s => s.Name)
-                  .Any(name => string.IsNullOrWhiteSpace(name) || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))))
+        if (
+            Topics
+                .SelectMany(t => t.Subscribers)
+                .Select(s => s.Name)
+                .Any(name =>
+                    string.IsNullOrWhiteSpace(name)
+                    || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))
+                )
+        )
         {
-            throw new InvalidOperationException("A subscriber name can only contain letters, numbers, and dashes.");
+            throw new InvalidOperationException(
+                "A subscriber name can only contain letters, numbers, and dashes."
+            );
         }
 
         // validate the filters
-        foreach (var filter in Topics.Where(t => t.Subscribers.Any()).SelectMany(t => t.Subscribers.Where(s => s.Filter != null).Select(s => s.Filter)))
+        foreach (
+            var filter in Topics
+                .Where(t => t.Subscribers.Any())
+                .SelectMany(t => t.Subscribers.Where(s => s.Filter != null).Select(s => s.Filter))
+        )
         {
             filter.Validate();
         }

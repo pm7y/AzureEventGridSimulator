@@ -79,38 +79,51 @@ public class EventGridEvent
 
         if (string.IsNullOrWhiteSpace(Subject))
         {
-            throw new InvalidOperationException($"Required property '{nameof(Subject)}' was not set.");
+            throw new InvalidOperationException(
+                $"Required property '{nameof(Subject)}' was not set."
+            );
         }
 
         if (string.IsNullOrWhiteSpace(EventType))
         {
-            throw new InvalidOperationException($"Required property '{nameof(EventType)}' was not set.");
+            throw new InvalidOperationException(
+                $"Required property '{nameof(EventType)}' was not set."
+            );
         }
 
         if (string.IsNullOrWhiteSpace(EventTime))
         {
-            throw new InvalidOperationException($"Required property '{nameof(EventTime)}' was not set.");
+            throw new InvalidOperationException(
+                $"Required property '{nameof(EventTime)}' was not set."
+            );
         }
 
         if (!EventTimeIsValid)
         {
-            throw new InvalidOperationException($"The event time property '{nameof(EventTime)}' was not a valid date/time.");
+            throw new InvalidOperationException(
+                $"The event time property '{nameof(EventTime)}' was not a valid date/time."
+            );
         }
 
         if (EventTimeParsed.Kind == DateTimeKind.Unspecified)
         {
-            throw new InvalidOperationException($"Property '{nameof(EventTime)}' must be either Local or UTC.");
+            throw new InvalidOperationException(
+                $"Property '{nameof(EventTime)}' must be either Local or UTC."
+            );
         }
 
         if (MetadataVersion != null && MetadataVersion != "1")
         {
-            throw new
-                InvalidOperationException($"Property '{nameof(MetadataVersion)}' was found to be set to '{MetadataVersion}', but was expected to either be null or be set to 1.");
+            throw new InvalidOperationException(
+                $"Property '{nameof(MetadataVersion)}' was found to be set to '{MetadataVersion}', but was expected to either be null or be set to 1."
+            );
         }
 
         if (!string.IsNullOrEmpty(Topic))
         {
-            throw new InvalidOperationException($"Property '{nameof(Topic)}' was found to be set to '{Topic}', but was expected to either be null/empty.");
+            throw new InvalidOperationException(
+                $"Property '{nameof(Topic)}' was found to be set to '{Topic}', but was expected to either be null/empty."
+            );
         }
     }
 }

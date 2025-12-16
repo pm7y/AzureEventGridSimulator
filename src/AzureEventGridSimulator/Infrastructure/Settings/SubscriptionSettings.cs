@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using AzureEventGridSimulator.Domain.Entities;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
 
@@ -23,6 +25,14 @@ public class SubscriptionSettings
 
     [JsonProperty(PropertyName = "disabled", Required = Required.Default)]
     public bool Disabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets the delivery schema for events sent to this subscriber.
+    /// If null, uses the topic's output schema or the original event schema.
+    /// </summary>
+    [JsonProperty(PropertyName = "deliverySchema", Required = Required.Default)]
+    [JsonConverter(typeof(StringEnumConverter))]
+    public EventSchema? DeliverySchema { get; set; }
 
     [JsonIgnore]
     public SubscriptionValidationStatus ValidationStatus { get; set; }

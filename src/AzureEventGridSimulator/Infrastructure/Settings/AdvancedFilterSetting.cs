@@ -21,7 +21,7 @@ public class AdvancedFilterSetting
         StringBeginsWith,
         StringEndsWith,
         StringIn,
-        StringNotIn
+        StringNotIn,
     }
 
     [JsonProperty(PropertyName = "operatorType", Required = Required.Always)]
@@ -45,31 +45,60 @@ public class AdvancedFilterSetting
 
         if (Value == null && !Values.HasItems())
         {
-            throw new ArgumentException("Either a Value or a set of Values must be provided", nameof(Value));
+            throw new ArgumentException(
+                "Either a Value or a set of Values must be provided",
+                nameof(Value)
+            );
         }
 
         const short maxStringLength = 512;
 
         if ((Value as string)?.Length > maxStringLength)
         {
-            throw new ArgumentOutOfRangeException(nameof(Value), $"Advanced filtering limits strings to {maxStringLength} characters per string value");
+            throw new ArgumentOutOfRangeException(
+                nameof(Value),
+                $"Advanced filtering limits strings to {maxStringLength} characters per string value"
+            );
         }
 
         if (Values?.Any(o => (o as string)?.Length > maxStringLength) == true)
         {
-            throw new ArgumentOutOfRangeException(nameof(Values), $"Advanced filtering limits strings to {maxStringLength} characters per string value");
+            throw new ArgumentOutOfRangeException(
+                nameof(Values),
+                $"Advanced filtering limits strings to {maxStringLength} characters per string value"
+            );
         }
 
-        if (new[] { AdvancedFilterOperatorType.NumberIn, AdvancedFilterOperatorType.NumberNotIn, AdvancedFilterOperatorType.StringIn, AdvancedFilterOperatorType.StringNotIn }.Contains(OperatorType) &&
-            Values?.Count > 5)
+        if (
+            new[]
+            {
+                AdvancedFilterOperatorType.NumberIn,
+                AdvancedFilterOperatorType.NumberNotIn,
+                AdvancedFilterOperatorType.StringIn,
+                AdvancedFilterOperatorType.StringNotIn,
+            }.Contains(OperatorType)
+            && Values?.Count > 5
+        )
         {
-            throw new ArgumentOutOfRangeException(nameof(OperatorType), "Advanced filtering limits filters to five values for in and not in operators");
+            throw new ArgumentOutOfRangeException(
+                nameof(OperatorType),
+                "Advanced filtering limits filters to five values for in and not in operators"
+            );
         }
     }
 
     public override string ToString()
     {
-        return string.Join(", ", Key, OperatorType, Value ?? "null", string.Join(", ", Values.HasItems() ? Values.Select(v => v.ToString()) : new[] { "null" }),
-                           Guid.NewGuid());
+        return string.Join(
+            ", ",
+            Key,
+            OperatorType,
+            Value ?? "null",
+            string.Join(
+                ", ",
+                Values.HasItems() ? Values.Select(v => v.ToString()) : new[] { "null" }
+            ),
+            Guid.NewGuid()
+        );
     }
 }
