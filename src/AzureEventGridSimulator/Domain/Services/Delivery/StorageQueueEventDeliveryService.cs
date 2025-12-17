@@ -89,7 +89,7 @@ public class StorageQueueEventDeliveryService : IAsyncDisposable
         StorageQueueSubscriberSettings subscription
     )
     {
-        var key = $"{subscription.ConnectionString}:{subscription.QueueName}";
+        var key = $"{subscription.EffectiveConnectionString}:{subscription.QueueName}";
 
         if (_clients.TryGetValue(key, out var existingClient))
         {
@@ -102,7 +102,10 @@ public class StorageQueueEventDeliveryService : IAsyncDisposable
             subscription.QueueName
         );
 
-        var client = new QueueClient(subscription.ConnectionString, subscription.QueueName);
+        var client = new QueueClient(
+            subscription.EffectiveConnectionString,
+            subscription.QueueName
+        );
 
         // Create the queue if it doesn't exist (useful for local development with Azurite)
         await client.CreateIfNotExistsAsync();

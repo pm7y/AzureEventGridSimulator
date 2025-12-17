@@ -41,4 +41,37 @@ public class TopicSettings
     [JsonPropertyName("outputSchema")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public EventSchema? OutputSchema { get; set; }
+
+    /// <summary>
+    /// Gets or sets the default Service Bus connection string for subscribers.
+    /// Subscribers can override this by specifying their own connection string or namespace credentials.
+    /// </summary>
+    [JsonPropertyName("serviceBusConnectionString")]
+    public string ServiceBusConnectionString { get; set; }
+
+    /// <summary>
+    /// Gets or sets the default Service Bus namespace (without .servicebus.windows.net suffix).
+    /// Used with ServiceBusSharedAccessKeyName and ServiceBusSharedAccessKey to build a connection string.
+    /// </summary>
+    [JsonPropertyName("serviceBusNamespace")]
+    public string ServiceBusNamespace { get; set; }
+
+    /// <summary>
+    /// Gets or sets the default Service Bus shared access key name.
+    /// </summary>
+    [JsonPropertyName("serviceBusSharedAccessKeyName")]
+    public string ServiceBusSharedAccessKeyName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the default Service Bus shared access key.
+    /// </summary>
+    [JsonPropertyName("serviceBusSharedAccessKey")]
+    public string ServiceBusSharedAccessKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets the default Storage Queue connection string for subscribers.
+    /// Subscribers can override this by specifying their own connection string.
+    /// </summary>
+    [JsonPropertyName("storageQueueConnectionString")]
+    public string StorageQueueConnectionString { get; set; }
 }

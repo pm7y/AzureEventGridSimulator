@@ -57,6 +57,20 @@ public class SimulatorSettings
             );
         }
 
+        // Wire up topic references for connection string inheritance
+        foreach (var topic in Topics)
+        {
+            foreach (var subscriber in topic.Subscribers.ServiceBusSubscribers)
+            {
+                subscriber.ParentTopic = topic;
+            }
+
+            foreach (var subscriber in topic.Subscribers.StorageQueueSubscribers)
+            {
+                subscriber.ParentTopic = topic;
+            }
+        }
+
         // Validate each subscriber
         foreach (var subscriber in allSubscribers)
         {

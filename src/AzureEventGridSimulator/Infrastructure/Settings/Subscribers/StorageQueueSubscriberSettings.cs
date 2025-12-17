@@ -9,6 +9,13 @@ namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 /// </summary>
 public class StorageQueueSubscriberSettings : ISubscriberSettings
 {
+    /// <summary>
+    /// Internal reference to the parent topic for connection string inheritance.
+    /// Set during validation in SimulatorSettings.
+    /// </summary>
+    [JsonIgnore]
+    internal TopicSettings ParentTopic { get; set; }
+
     [JsonPropertyName("name")]
     public string Name { get; set; }
 
@@ -23,6 +30,15 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
     /// </summary>
     [JsonPropertyName("queueName")]
     public string QueueName { get; set; }
+
+    /// <summary>
+    /// Gets the effective connection string, either from subscriber or topic level.
+    /// </summary>
+    [JsonIgnore]
+    public string EffectiveConnectionString =>
+        !string.IsNullOrWhiteSpace(ConnectionString)
+            ? ConnectionString
+            : ParentTopic?.StorageQueueConnectionString;
 
     [JsonPropertyName("filter")]
     public FilterSetting Filter { get; set; }
@@ -48,10 +64,11 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
             throw new ArgumentException("Subscriber name is required.", nameof(Name));
         }
 
-        if (string.IsNullOrWhiteSpace(ConnectionString))
+        // Validate connection string (considering topic-level default)
+        if (string.IsNullOrWhiteSpace(EffectiveConnectionString))
         {
             throw new ArgumentException(
-                $"Storage Queue subscriber '{Name}' must have a connectionString."
+                $"Storage Queue subscriber '{Name}' must have a connectionString, either at subscriber or topic level."
             );
         }
 
