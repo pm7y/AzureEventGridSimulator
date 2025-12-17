@@ -43,6 +43,12 @@ jobs:
         with:
           languages: csharp
           queries: security-and-quality
+          config: |
+            query-filters:
+              - include:
+                  problem.severity:
+                    - error
+                    - warning
 
       - name: Build
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
@@ -64,7 +70,7 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: docker/Dockerfile
-          failure-threshold: error
+          failure-threshold: warning
           format: sarif
           output-file: hadolint-results.sarif
 
