@@ -16,15 +16,13 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/aegs/azureEventGridSimulator.pfx
       - ASPNETCORE_Kestrel__Certificates__Default__Password=Y0urSup3rCrypt1cPa55w0rd!
 
-      # you could also define topics/subscribers via via a configfile
+      # topics, subscribers, and logging config
       - AEGS_ConfigFile=/aegs/appsettings.docker.json
-
-      # logging configuration
-      - AEGS_Serilog__MinimumLevel__Default=Verbose
 
     depends_on:
       - servicebus-emulator
       - azurite
+      - seq
 
     networks:
       - aegs-network
@@ -32,6 +30,22 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+
+  # Seq - Structured Log Server
+  # See: https://docs.datalust.co/docs/getting-started-with-docker
+  seq:
+    container_name: seq
+    image: datalust/seq:latest
+    ports:
+      - "5341:5341"   # Ingestion API
+      - "8081:80"     # Web UI
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_NOAUTHENTICATION=true
+    networks:
+      aegs-network:
+        aliases:
+          - seq
 
   # Azurite - Azure Storage Emulator
   # See: https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite
