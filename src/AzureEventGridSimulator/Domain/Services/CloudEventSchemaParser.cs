@@ -10,27 +10,20 @@ namespace AzureEventGridSimulator.Domain.Services;
 /// Parses events using the CloudEvents v1.0 schema.
 /// Supports both binary and structured content modes.
 /// </summary>
-public class CloudEventSchemaParser : IEventSchemaParser
+public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEventSchemaParser
 {
-    private readonly EventSchemaDetector _schemaDetector;
-
-    public CloudEventSchemaParser(EventSchemaDetector schemaDetector)
-    {
-        _schemaDetector = schemaDetector;
-    }
-
     /// <inheritdoc />
     public EventSchema Schema => EventSchema.CloudEventV1_0;
 
     /// <inheritdoc />
     public SimulatorEvent[] Parse(HttpContext context, string requestBody)
     {
-        if (_schemaDetector.IsBinaryMode(context))
+        if (schemaDetector.IsBinaryMode(context))
         {
             return ParseBinaryMode(context, requestBody);
         }
 
-        if (_schemaDetector.IsBatchMode(context))
+        if (schemaDetector.IsBatchMode(context))
         {
             return ParseBatchStructuredMode(requestBody);
         }

@@ -3,15 +3,10 @@ using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Infrastructure;
 
-public class ErrorMessage
+public class ErrorMessage(HttpStatusCode statusCode, string errorMessage, string code)
 {
-    public ErrorMessage(HttpStatusCode statusCode, string errorMessage, string code)
-    {
-        Error = new ErrorDetails(statusCode, errorMessage, code);
-    }
-
     [JsonPropertyName("error")]
-    public ErrorDetails Error { get; }
+    public ErrorDetails Error { get; } = new(statusCode, errorMessage, code);
 
     public class ErrorDetails
     {

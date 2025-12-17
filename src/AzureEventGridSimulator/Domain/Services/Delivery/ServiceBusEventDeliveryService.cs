@@ -13,24 +13,14 @@ namespace AzureEventGridSimulator.Domain.Services.Delivery;
 /// <summary>
 /// Delivers events to Azure Service Bus queues and topics.
 /// </summary>
-public class ServiceBusEventDeliveryService : IAsyncDisposable
+public class ServiceBusEventDeliveryService(
+    ILogger<ServiceBusEventDeliveryService> logger,
+    EventSchemaFormatterFactory formatterFactory,
+    DeliveryPropertyResolver propertyResolver
+) : IAsyncDisposable
 {
-    private readonly ILogger<ServiceBusEventDeliveryService> _logger;
-    private readonly EventSchemaFormatterFactory _formatterFactory;
-    private readonly DeliveryPropertyResolver _propertyResolver;
     private readonly ConcurrentDictionary<string, ServiceBusClient> _clients = new();
     private readonly ConcurrentDictionary<string, ServiceBusSender> _senders = new();
-
-    public ServiceBusEventDeliveryService(
-        ILogger<ServiceBusEventDeliveryService> logger,
-        EventSchemaFormatterFactory formatterFactory,
-        DeliveryPropertyResolver propertyResolver
-    )
-    {
-        _logger = logger;
-        _formatterFactory = formatterFactory;
-        _propertyResolver = propertyResolver;
-    }
 
     /// <summary>
     /// Sends an event to a Service Bus subscriber.
@@ -46,7 +36,7 @@ public class ServiceBusEventDeliveryService : IAsyncDisposable
         {
             if (subscription.Disabled)
             {
-                _logger.LogWarning(
+                logger.LogWarning(
                     "Service Bus subscription '{SubscriberName}' on topic '{TopicName}' is disabled",
                     subscription.Name,
                     topic.Name
@@ -56,7 +46,7 @@ public class ServiceBusEventDeliveryService : IAsyncDisposable
 
             // Determine the delivery schema
             var deliverySchema = subscription.DeliverySchema ?? topic.OutputSchema ?? inputSchema;
-            var formatter = _formatterFactory.GetFormatter(deliverySchema);
+            var formatter = formatterFactory.GetFormatter(deliverySchema);
 
             // Serialize the event
             var json = formatter.Serialize(evt);
@@ -72,7 +62,7 @@ public class ServiceBusEventDeliveryService : IAsyncDisposable
             };
 
             // Add delivery properties
-            var properties = _propertyResolver.ResolveProperties(subscription.Properties, evt);
+            var properties = propertyResolver.ResolveProperties(subscription.Properties, evt);
             foreach (var (name, value) in properties)
             {
                 message.ApplicationProperties[name] = value;
@@ -93,7 +83,7 @@ public class ServiceBusEventDeliveryService : IAsyncDisposable
             // Send the message
             await sender.SendMessageAsync(message);
 
-            _logger.LogDebug(
+            logger.LogDebug(
                 "Event {EventId} sent to Service Bus {DestinationType} '{DestinationName}' via subscription '{SubscriberName}' on topic '{TopicName}'",
                 evt.Id,
                 subscription.IsTopic ? "topic" : "queue",
@@ -104,7 +94,7 @@ public class ServiceBusEventDeliveryService : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            logger.LogError(
                 ex,
                 "Failed to send event {EventId} to Service Bus {DestinationType} '{DestinationName}' via subscription '{SubscriberName}'",
                 evt.Id,
@@ -135,7 +125,7 @@ public class ServiceBusEventDeliveryService : IAsyncDisposable
             subscription.EffectiveConnectionString,
             connectionString =>
             {
-                _logger.LogDebug(
+                logger.LogDebug(
                     "Creating Service Bus client for subscription '{SubscriberName}'",
                     subscription.Name
                 );

@@ -13,15 +13,8 @@ using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Infrastructure.Middleware;
 
-public class EventGridMiddleware
+public class EventGridMiddleware(RequestDelegate next)
 {
-    private readonly RequestDelegate _next;
-
-    public EventGridMiddleware(RequestDelegate next)
-    {
-        _next = next;
-    }
-
     // ReSharper disable once UnusedMember.Global
     public async Task InvokeAsync(
         HttpContext context,
@@ -75,7 +68,7 @@ public class EventGridMiddleware
             return;
         }
 
-        await _next(context);
+        await next(context);
     }
 
     private async Task ValidateNotificationRequest(
@@ -196,12 +189,12 @@ public class EventGridMiddleware
         context.Items["ParsedEvents"] = events;
         context.Items["DetectedSchema"] = detectedSchema;
 
-        await _next(context);
+        await next(context);
     }
 
     private async Task ValidateHealthRequest(HttpContext context)
     {
-        await _next(context);
+        await next(context);
     }
 
     private static bool IsNotificationRequest(HttpContext context)

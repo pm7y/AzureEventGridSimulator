@@ -18,20 +18,14 @@ namespace AzureEventGridSimulator.Tests.IntegrationTests;
 /// Note: this is a WIP.
 /// </summary>
 [Trait("Category", "integration")]
-public class BasicTests : IClassFixture<IntegrationContextFixture>
+public class BasicTests(IntegrationContextFixture factory)
+    : IClassFixture<IntegrationContextFixture>
 {
-    private readonly IntegrationContextFixture _factory;
-
-    public BasicTests(IntegrationContextFixture factory)
-    {
-        _factory = factory;
-    }
-
     [Fact]
     public async Task GivenAValidEvent_WhenPublished_ThenItShouldBeAccepted()
     {
         // Arrange
-        var client = _factory.CreateClient(
+        var client = factory.CreateClient(
             new WebApplicationFactoryClientOptions
             {
                 BaseAddress = new Uri("https://localhost:60101"),
@@ -63,7 +57,7 @@ public class BasicTests : IClassFixture<IntegrationContextFixture>
     public async Task GivenAHealthRequest_ThenItShouldRespondWithOk()
     {
         // Arrange
-        var client = _factory.CreateClient(
+        var client = factory.CreateClient(
             new WebApplicationFactoryClientOptions
             {
                 BaseAddress = new Uri("https://localhost:60101"),

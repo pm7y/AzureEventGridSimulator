@@ -4,7 +4,7 @@ using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.UnitTests;
+namespace AzureEventGridSimulator.Tests.UnitTests.Configuration;
 
 [Trait("Category", "unit")]
 public class ConfigurationLoadingTests

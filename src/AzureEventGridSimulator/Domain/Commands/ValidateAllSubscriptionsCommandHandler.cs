@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -16,33 +16,19 @@ using Microsoft.Extensions.Logging;
 namespace AzureEventGridSimulator.Domain.Commands;
 
 // ReSharper disable once UnusedMember.Global
-public class ValidateAllSubscriptionsCommandHandler
-    : IRequestHandler<ValidateAllSubscriptionsCommand>
+public class ValidateAllSubscriptionsCommandHandler(
+    ILogger<ValidateAllSubscriptionsCommandHandler> logger,
+    IHttpClientFactory httpClientFactory,
+    SimulatorSettings simulatorSettings,
+    ValidationIpAddressProvider validationIpAddress
+) : IRequestHandler<ValidateAllSubscriptionsCommand>
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<ValidateAllSubscriptionsCommandHandler> _logger;
-    private readonly SimulatorSettings _simulatorSettings;
-    private readonly ValidationIpAddressProvider _validationIpAddress;
-
-    public ValidateAllSubscriptionsCommandHandler(
-        ILogger<ValidateAllSubscriptionsCommandHandler> logger,
-        IHttpClientFactory httpClientFactory,
-        SimulatorSettings simulatorSettings,
-        ValidationIpAddressProvider validationIpAddress
-    )
-    {
-        _logger = logger;
-        _httpClientFactory = httpClientFactory;
-        _simulatorSettings = simulatorSettings;
-        _validationIpAddress = validationIpAddress;
-    }
-
     public async Task Handle(
         ValidateAllSubscriptionsCommand request,
         CancellationToken cancellationToken
     )
     {
-        foreach (var enabledTopic in _simulatorSettings.Topics.Where(o => !o.Disabled))
+        foreach (var enabledTopic in simulatorSettings.Topics.Where(o => !o.Disabled))
         {
             // Only HTTP subscribers need validation (Service Bus subscribers don't use webhook validation)
             foreach (
@@ -62,11 +48,11 @@ public class ValidateAllSubscriptionsCommandHandler
     )
     {
         var validationUrl =
-            $"https://{_validationIpAddress}:{topic.Port}/validate?id={subscription.ValidationCode}";
+            $"https://{validationIpAddress}:{topic.Port}/validate?id={subscription.ValidationCode}";
 
         try
         {
-            _logger.LogDebug(
+            logger.LogDebug(
                 "Sending subscription validation event to subscriber '{SubscriberName}'",
                 subscription.Name
             );
@@ -83,7 +69,7 @@ public class ValidateAllSubscriptionsCommandHandler
                 {
                     ValidationCode = subscription.ValidationCode,
                     ValidationUrl =
-                        $"https://{_validationIpAddress}:{topic.Port}/validate?id={subscription.ValidationCode}",
+                        $"https://{validationIpAddress}:{topic.Port}/validate?id={subscription.ValidationCode}",
                 },
             };
 
@@ -92,7 +78,7 @@ public class ValidateAllSubscriptionsCommandHandler
                 new JsonSerializerOptions { WriteIndented = true }
             );
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
-            using var httpClient = _httpClientFactory.CreateClient();
+            using var httpClient = httpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.Add(
                 Constants.AegEventTypeHeader,
                 Constants.ValidationEventType
@@ -125,7 +111,7 @@ public class ValidateAllSubscriptionsCommandHandler
             )
             {
                 subscription.ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful;
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Successfully validated subscriber '{SubscriberName}'",
                     subscription.Name
                 );
@@ -134,12 +120,12 @@ public class ValidateAllSubscriptionsCommandHandler
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            logger.LogError(
                 "Failed to validate subscriber '{SubscriberName}'. Note that subscriber must be started before the simulator. Or you can disable validation for this subscriber via settings: '{Error}'",
                 subscription.Name,
                 ex.Message
             );
-            _logger.LogInformation(
+            logger.LogInformation(
                 "'{SubscriberName}' manual validation url: {ValidationUrl}",
                 subscription.Name,
                 validationUrl

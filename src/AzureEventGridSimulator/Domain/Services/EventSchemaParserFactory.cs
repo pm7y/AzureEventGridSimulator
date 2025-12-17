@@ -6,20 +6,11 @@ namespace AzureEventGridSimulator.Domain.Services;
 /// <summary>
 /// Factory for creating event schema parsers based on the detected schema.
 /// </summary>
-public class EventSchemaParserFactory
+public class EventSchemaParserFactory(
+    EventGridSchemaParser eventGridParser,
+    CloudEventSchemaParser cloudEventParser
+)
 {
-    private readonly EventGridSchemaParser _eventGridParser;
-    private readonly CloudEventSchemaParser _cloudEventParser;
-
-    public EventSchemaParserFactory(
-        EventGridSchemaParser eventGridParser,
-        CloudEventSchemaParser cloudEventParser
-    )
-    {
-        _eventGridParser = eventGridParser;
-        _cloudEventParser = cloudEventParser;
-    }
-
     /// <summary>
     /// Gets the appropriate parser for the specified schema.
     /// </summary>
@@ -29,8 +20,8 @@ public class EventSchemaParserFactory
     {
         return schema switch
         {
-            EventSchema.EventGridSchema => _eventGridParser,
-            EventSchema.CloudEventV1_0 => _cloudEventParser,
+            EventSchema.EventGridSchema => eventGridParser,
+            EventSchema.CloudEventV1_0 => cloudEventParser,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(schema),
                 schema,

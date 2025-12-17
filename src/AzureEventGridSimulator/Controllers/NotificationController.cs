@@ -13,21 +13,13 @@ namespace AzureEventGridSimulator.Controllers;
 [Route("/api/events")]
 [ApiVersion(Constants.SupportedApiVersion)]
 [ApiController]
-public class NotificationController : ControllerBase
+public class NotificationController(SimulatorSettings simulatorSettings, IMediator mediator)
+    : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly SimulatorSettings _simulatorSettings;
-
-    public NotificationController(SimulatorSettings simulatorSettings, IMediator mediator)
-    {
-        _mediator = mediator;
-        _simulatorSettings = simulatorSettings;
-    }
-
     [HttpPost]
     public async Task<IActionResult> Post()
     {
-        var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t =>
+        var topicSettingsForCurrentRequestPort = simulatorSettings.Topics.First(t =>
             t.Port == HttpContext.Request.Host.Port
         );
 
@@ -35,7 +27,7 @@ public class NotificationController : ControllerBase
         var events = (SimulatorEvent[])HttpContext.Items["ParsedEvents"];
         var detectedSchema = (EventSchema)HttpContext.Items["DetectedSchema"];
 
-        await _mediator.Send(
+        await mediator.Send(
             new SendNotificationEventsToSubscriberCommand(
                 events,
                 topicSettingsForCurrentRequestPort,

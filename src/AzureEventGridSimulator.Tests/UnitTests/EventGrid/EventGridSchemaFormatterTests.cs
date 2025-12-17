@@ -4,7 +4,7 @@ using AzureEventGridSimulator.Domain.Services;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.UnitTests.CloudEvents;
+namespace AzureEventGridSimulator.Tests.UnitTests.EventGrid;
 
 [Trait("Category", "unit")]
 public class EventGridSchemaFormatterTests

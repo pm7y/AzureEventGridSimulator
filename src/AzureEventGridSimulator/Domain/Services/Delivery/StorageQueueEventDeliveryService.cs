@@ -12,20 +12,12 @@ namespace AzureEventGridSimulator.Domain.Services.Delivery;
 /// <summary>
 /// Delivers events to Azure Storage Queues.
 /// </summary>
-public class StorageQueueEventDeliveryService : IAsyncDisposable
+public class StorageQueueEventDeliveryService(
+    ILogger<StorageQueueEventDeliveryService> logger,
+    EventSchemaFormatterFactory formatterFactory
+) : IAsyncDisposable
 {
-    private readonly ILogger<StorageQueueEventDeliveryService> _logger;
-    private readonly EventSchemaFormatterFactory _formatterFactory;
     private readonly ConcurrentDictionary<string, QueueClient> _clients = new();
-
-    public StorageQueueEventDeliveryService(
-        ILogger<StorageQueueEventDeliveryService> logger,
-        EventSchemaFormatterFactory formatterFactory
-    )
-    {
-        _logger = logger;
-        _formatterFactory = formatterFactory;
-    }
 
     /// <summary>
     /// Sends an event to a Storage Queue subscriber.
@@ -41,7 +33,7 @@ public class StorageQueueEventDeliveryService : IAsyncDisposable
         {
             if (subscription.Disabled)
             {
-                _logger.LogWarning(
+                logger.LogWarning(
                     "Storage Queue subscription '{SubscriberName}' on topic '{TopicName}' is disabled",
                     subscription.Name,
                     topic.Name
@@ -51,7 +43,7 @@ public class StorageQueueEventDeliveryService : IAsyncDisposable
 
             // Determine the delivery schema
             var deliverySchema = subscription.DeliverySchema ?? topic.OutputSchema ?? inputSchema;
-            var formatter = _formatterFactory.GetFormatter(deliverySchema);
+            var formatter = formatterFactory.GetFormatter(deliverySchema);
 
             // Serialize the event
             var json = formatter.Serialize(evt);
@@ -65,7 +57,7 @@ public class StorageQueueEventDeliveryService : IAsyncDisposable
             // Send the message
             await client.SendMessageAsync(messageText);
 
-            _logger.LogDebug(
+            logger.LogDebug(
                 "Event {EventId} sent to Storage Queue '{QueueName}' via subscription '{SubscriberName}' on topic '{TopicName}'",
                 evt.Id,
                 subscription.QueueName,
@@ -75,7 +67,7 @@ public class StorageQueueEventDeliveryService : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            logger.LogError(
                 ex,
                 "Failed to send event {EventId} to Storage Queue '{QueueName}' via subscription '{SubscriberName}'",
                 evt.Id,
@@ -96,7 +88,7 @@ public class StorageQueueEventDeliveryService : IAsyncDisposable
             return existingClient;
         }
 
-        _logger.LogDebug(
+        logger.LogDebug(
             "Creating Storage Queue client for subscription '{SubscriberName}' (Queue: '{QueueName}')",
             subscription.Name,
             subscription.QueueName

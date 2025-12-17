@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -18,36 +18,20 @@ using Microsoft.Extensions.Logging;
 namespace AzureEventGridSimulator.Domain.Commands;
 
 // ReSharper disable once UnusedMember.Global
-public class SendNotificationEventsToSubscriberCommandHandler
-    : IRequestHandler<SendNotificationEventsToSubscriberCommand>
+public class SendNotificationEventsToSubscriberCommandHandler(
+    IHttpClientFactory httpClientFactory,
+    ILogger<SendNotificationEventsToSubscriberCommandHandler> logger,
+    EventSchemaFormatterFactory formatterFactory,
+    ServiceBusEventDeliveryService serviceBusDeliveryService,
+    StorageQueueEventDeliveryService storageQueueDeliveryService
+) : IRequestHandler<SendNotificationEventsToSubscriberCommand>
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
-    private readonly EventSchemaFormatterFactory _formatterFactory;
-    private readonly ServiceBusEventDeliveryService _serviceBusDeliveryService;
-    private readonly StorageQueueEventDeliveryService _storageQueueDeliveryService;
-
-    public SendNotificationEventsToSubscriberCommandHandler(
-        IHttpClientFactory httpClientFactory,
-        ILogger<SendNotificationEventsToSubscriberCommandHandler> logger,
-        EventSchemaFormatterFactory formatterFactory,
-        ServiceBusEventDeliveryService serviceBusDeliveryService,
-        StorageQueueEventDeliveryService storageQueueDeliveryService
-    )
-    {
-        _httpClientFactory = httpClientFactory;
-        _logger = logger;
-        _formatterFactory = formatterFactory;
-        _serviceBusDeliveryService = serviceBusDeliveryService;
-        _storageQueueDeliveryService = storageQueueDeliveryService;
-    }
-
     public Task Handle(
         SendNotificationEventsToSubscriberCommand request,
         CancellationToken cancellationToken
     )
     {
-        _logger.LogInformation(
+        logger.LogInformation(
             "{EventCount} event(s) received on topic '{TopicName}' (Schema: {Schema})",
             request.Events.Length,
             request.Topic.Name,
@@ -61,7 +45,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
 
         if (!allSubscribers.Any())
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "'{TopicName}' has no subscribers so {EventCount} event(s) could not be forwarded",
                 request.Topic.Name,
                 request.Events.Length
@@ -69,7 +53,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
         }
         else if (allSubscribers.All(o => o.Disabled))
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "'{TopicName}' has no enabled subscribers so {EventCount} event(s) could not be forwarded",
                 request.Topic.Name,
                 request.Events.Length
@@ -85,7 +69,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
             {
                 foreach (var eventFilteredOutByAllSubscribers in eventsFilteredOutByAllSubscribers)
                 {
-                    _logger.LogWarning(
+                    logger.LogWarning(
                         "All subscribers of topic '{TopicName}' filtered out event {EventId}",
                         request.Topic.Name,
                         eventFilteredOutByAllSubscribers.Id
@@ -115,7 +99,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
                         if (subscription.Filter.AcceptsEvent(evt))
                         {
 #pragma warning disable 4014
-                            _serviceBusDeliveryService.SendAsync(
+                            serviceBusDeliveryService.SendAsync(
                                 subscription,
                                 evt,
                                 request.Topic,
@@ -125,7 +109,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
                         }
                         else
                         {
-                            _logger.LogDebug(
+                            logger.LogDebug(
                                 "Event {EventId} filtered out for Service Bus subscriber '{SubscriberName}'",
                                 evt.Id,
                                 subscription.Name
@@ -142,7 +126,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
                         if (subscription.Filter.AcceptsEvent(evt))
                         {
 #pragma warning disable 4014
-                            _storageQueueDeliveryService.SendAsync(
+                            storageQueueDeliveryService.SendAsync(
                                 subscription,
                                 evt,
                                 request.Topic,
@@ -152,7 +136,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
                         }
                         else
                         {
-                            _logger.LogDebug(
+                            logger.LogDebug(
                                 "Event {EventId} filtered out for Storage Queue subscriber '{SubscriberName}'",
                                 evt.Id,
                                 subscription.Name
@@ -201,7 +185,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
         {
             if (subscription.Disabled)
             {
-                _logger.LogWarning(
+                logger.LogWarning(
                     "Subscription '{SubscriberName}' on topic '{TopicName}' is disabled and so Notification was skipped",
                     subscription.Name,
                     topic.Name
@@ -215,7 +199,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
                     != SubscriptionValidationStatus.ValidationSuccessful
             )
             {
-                _logger.LogWarning(
+                logger.LogWarning(
                     "Subscription '{SubscriberName}' on topic '{TopicName}' can't receive events. It's still pending validation",
                     subscription.Name,
                     topic.Name
@@ -223,7 +207,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
                 return;
             }
 
-            _logger.LogDebug(
+            logger.LogDebug(
                 "Sending to subscriber '{SubscriberName}' on topic '{TopicName}'",
                 subscription.Name,
                 topic.Name
@@ -239,7 +223,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
                 && deliverySchema == EventSchema.EventGridSchema
             )
             {
-                _logger.LogWarning(
+                logger.LogWarning(
                     "CloudEvents input to Event Grid output conversion is NOT supported by Azure Event Grid. "
                         + "Subscriber '{SubscriberName}' on topic '{TopicName}' has incompatible schema configuration. "
                         + "This will work in the simulator but will fail with actual Azure Event Grid.",
@@ -248,7 +232,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
                 );
             }
 
-            var formatter = _formatterFactory.GetFormatter(deliverySchema);
+            var formatter = formatterFactory.GetFormatter(deliverySchema);
 
             // "Event Grid sends the events to subscribers in an array that has a single event. This behaviour may change in the future."
             // https://docs.microsoft.com/en-us/azure/event-grid/event-schema
@@ -260,7 +244,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
 
                     using var content = new StringContent(json, Encoding.UTF8);
                     content.Headers.ContentType = MediaTypeHeaderValue.Parse(formatter.ContentType);
-                    var httpClient = _httpClientFactory.CreateClient();
+                    var httpClient = httpClientFactory.CreateClient();
 
                     // Add standard Event Grid headers
                     httpClient.DefaultRequestHeaders.Add(
@@ -300,7 +284,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
                 }
                 else
                 {
-                    _logger.LogDebug(
+                    logger.LogDebug(
                         "Event {EventId} filtered out for subscriber '{SubscriberName}'",
                         evt.Id,
                         subscription.Name
@@ -310,7 +294,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            logger.LogError(
                 ex,
                 "Failed to send to subscriber '{SubscriberName}'",
                 subscription.Name
@@ -327,7 +311,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
     {
         if (task.IsCompletedSuccessfully && task.Result.IsSuccessStatusCode)
         {
-            _logger.LogDebug(
+            logger.LogDebug(
                 "Event {EventId} sent to subscriber '{SubscriberName}' on topic '{TopicName}' successfully",
                 evt.Id,
                 subscription.Name,
@@ -336,7 +320,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
         }
         else
         {
-            _logger.LogError(
+            logger.LogError(
                 task.Exception?.GetBaseException(),
                 "Failed to send event {EventId} to subscriber '{SubscriberName}', '{TaskStatus}', '{Reason}'",
                 evt.Id,

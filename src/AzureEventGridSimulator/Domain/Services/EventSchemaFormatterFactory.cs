@@ -6,20 +6,11 @@ namespace AzureEventGridSimulator.Domain.Services;
 /// <summary>
 /// Factory for creating event schema formatters based on the desired output schema.
 /// </summary>
-public class EventSchemaFormatterFactory
+public class EventSchemaFormatterFactory(
+    EventGridSchemaFormatter eventGridFormatter,
+    CloudEventSchemaFormatter cloudEventFormatter
+)
 {
-    private readonly EventGridSchemaFormatter _eventGridFormatter;
-    private readonly CloudEventSchemaFormatter _cloudEventFormatter;
-
-    public EventSchemaFormatterFactory(
-        EventGridSchemaFormatter eventGridFormatter,
-        CloudEventSchemaFormatter cloudEventFormatter
-    )
-    {
-        _eventGridFormatter = eventGridFormatter;
-        _cloudEventFormatter = cloudEventFormatter;
-    }
-
     /// <summary>
     /// Gets the appropriate formatter for the specified schema.
     /// </summary>
@@ -29,8 +20,8 @@ public class EventSchemaFormatterFactory
     {
         return schema switch
         {
-            EventSchema.EventGridSchema => _eventGridFormatter,
-            EventSchema.CloudEventV1_0 => _cloudEventFormatter,
+            EventSchema.EventGridSchema => eventGridFormatter,
+            EventSchema.CloudEventV1_0 => cloudEventFormatter,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(schema),
                 schema,
