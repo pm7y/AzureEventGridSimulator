@@ -194,6 +194,8 @@ The simulator supports three subscriber types: HTTP webhooks, Azure Service Bus,
 | `disabled` | No | Disable the subscriber |
 | `deliverySchema` | No | Override delivery schema |
 | `filter` | No | Event filtering rules |
+| `retryPolicy` | No | Retry policy settings (see below) |
+| `deadLetter` | No | Dead-letter settings (see below) |
 
 ```json
 {
@@ -225,6 +227,8 @@ Events are delivered to Azure Service Bus queues or topics.
 | `topic` | ** | Topic name |
 | `properties` | No | Custom message properties (static or dynamic) |
 | `filter` | No | Event filtering rules |
+| `retryPolicy` | No | Retry policy settings (see below) |
+| `deadLetter` | No | Dead-letter settings (see below) |
 
 \* Either `connectionString` OR `namespace`+`sharedAccessKeyName`+`sharedAccessKey` required
 \** Either `queue` OR `topic` required
@@ -262,6 +266,8 @@ Events are delivered to Azure Storage Queues.
 | `disabled` | No | Disable the subscriber |
 | `deliverySchema` | No | Override delivery schema |
 | `filter` | No | Event filtering rules |
+| `retryPolicy` | No | Retry policy settings (see below) |
+| `deadLetter` | No | Dead-letter settings (see below) |
 
 ```json
 {
@@ -272,6 +278,65 @@ Events are delivered to Azure Storage Queues.
       "queueName": "audit-events"
     }
   ]
+}
+```
+
+### Retry Policy Settings
+
+The simulator supports Azure Event Grid-compatible retry with exponential backoff. Retry is **enabled by default**.
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `enabled` | `true` | Enable or disable retry |
+| `maxDeliveryAttempts` | `30` | Maximum delivery attempts (1-30) |
+| `eventTimeToLiveInMinutes` | `1440` | Event TTL before expiration (1-1440) |
+
+**Retry Schedule:** 10s → 30s → 1m → 5m → 10m → 30m → 1h → 3h → 6h → 12h (then every 12h)
+
+```json
+{
+  "retryPolicy": {
+    "enabled": true,
+    "maxDeliveryAttempts": 10,
+    "eventTimeToLiveInMinutes": 60
+  }
+}
+```
+
+### Dead-Letter Settings
+
+Events that cannot be delivered are written to local JSON files.
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `enabled` | `true` | Enable or disable dead-lettering |
+| `folderPath` | `./dead-letters` | Folder path for dead-letter files |
+
+**File Path:** `{folderPath}/{topicName}/{subscriberName}/{timestamp}_{eventId}.json`
+
+```json
+{
+  "deadLetter": {
+    "enabled": true,
+    "folderPath": "./dead-letters"
+  }
+}
+```
+
+> **Docker Note:** Mount a volume to persist dead-letter files:
+> ```bash
+> -v $(pwd)/dead-letters:/app/dead-letters
+> ```
+
+### Disabling Retry (Fire-and-Forget)
+
+To use fire-and-forget delivery without retries:
+
+```json
+{
+  "retryPolicy": {
+    "enabled": false
+  }
 }
 ```
 
