@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Shouldly;
@@ -158,8 +156,8 @@ public class ServiceBusSubscriberSettingsValidationTests
         var settings = CreateValidConnectionStringSettings();
         settings.Properties = new Dictionary<string, DeliveryPropertySettings>
         {
-            ["Label"] = new DeliveryPropertySettings { Type = "dynamic", Value = "Subject" },
-            ["Region"] = new DeliveryPropertySettings { Type = "static", Value = "west-us" },
+            ["Label"] = new() { Type = "dynamic", Value = "Subject" },
+            ["Region"] = new() { Type = "static", Value = "west-us" },
         };
 
         Should.NotThrow(() => settings.Validate());
@@ -171,7 +169,7 @@ public class ServiceBusSubscriberSettingsValidationTests
         var settings = CreateValidConnectionStringSettings();
         settings.Properties = new Dictionary<string, DeliveryPropertySettings>
         {
-            ["Label"] = new DeliveryPropertySettings { Type = "invalid", Value = "Subject" },
+            ["Label"] = new() { Type = "invalid", Value = "Subject" },
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
@@ -186,7 +184,7 @@ public class ServiceBusSubscriberSettingsValidationTests
         var settings = CreateValidConnectionStringSettings();
         settings.Properties = new Dictionary<string, DeliveryPropertySettings>
         {
-            ["Label"] = new DeliveryPropertySettings { Type = "", Value = "Subject" },
+            ["Label"] = new() { Type = "", Value = "Subject" },
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
@@ -200,7 +198,7 @@ public class ServiceBusSubscriberSettingsValidationTests
         var settings = CreateValidConnectionStringSettings();
         settings.Properties = new Dictionary<string, DeliveryPropertySettings>
         {
-            ["Label"] = new DeliveryPropertySettings { Type = "static", Value = "" },
+            ["Label"] = new() { Type = "static", Value = "" },
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());

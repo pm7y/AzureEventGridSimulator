@@ -1,11 +1,8 @@
-using System.Threading.Tasks;
-using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -15,8 +12,8 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Subscribers.Delivery;
 [Trait("Category", "unit")]
 public class ServiceBusEventDeliveryServiceTests
 {
-    private readonly ILogger<ServiceBusEventDeliveryService> _logger;
     private readonly EventSchemaFormatterFactory _formatterFactory;
+    private readonly ILogger<ServiceBusEventDeliveryService> _logger;
     private readonly DeliveryPropertyResolver _propertyResolver;
     private readonly ServiceBusEventDeliveryService _service;
 
@@ -97,10 +94,10 @@ public class ServiceBusEventDeliveryServiceTests
             .Received()
             .Log(
                 LogLevel.Warning,
-                Arg.Any<Microsoft.Extensions.Logging.EventId>(),
+                Arg.Any<EventId>(),
                 Arg.Is<object>(o => o.ToString().Contains("disabled")),
-                Arg.Any<System.Exception>(),
-                Arg.Any<System.Func<object, System.Exception, string>>()
+                Arg.Any<Exception>(),
+                Arg.Any<Func<object, Exception, string>>()
             );
     }
 
@@ -217,9 +214,9 @@ public class ServiceBusEventDeliveryServiceTests
     [Fact]
     public void GivenPropertyResolver_WhenResolvingStaticProperty_ThenReturnsValue()
     {
-        var properties = new System.Collections.Generic.Dictionary<string, DeliveryPropertySettings>
+        var properties = new Dictionary<string, DeliveryPropertySettings>
         {
-            ["Label"] = new DeliveryPropertySettings { Type = "static", Value = "test-label" },
+            ["Label"] = new() { Type = "static", Value = "test-label" },
         };
 
         var resolved = _propertyResolver.ResolveProperties(properties, CreateTestEvent());
@@ -230,9 +227,9 @@ public class ServiceBusEventDeliveryServiceTests
     [Fact]
     public void GivenPropertyResolver_WhenResolvingDynamicProperty_ThenReturnsEventValue()
     {
-        var properties = new System.Collections.Generic.Dictionary<string, DeliveryPropertySettings>
+        var properties = new Dictionary<string, DeliveryPropertySettings>
         {
-            ["Subject"] = new DeliveryPropertySettings { Type = "dynamic", Value = "Subject" },
+            ["Subject"] = new() { Type = "dynamic", Value = "Subject" },
         };
 
         var resolved = _propertyResolver.ResolveProperties(properties, CreateTestEvent());

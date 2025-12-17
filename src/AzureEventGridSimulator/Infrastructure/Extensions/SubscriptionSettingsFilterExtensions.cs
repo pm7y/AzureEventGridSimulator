@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
+﻿using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 
@@ -429,6 +426,7 @@ public static class SubscriptionSettingsFilterExtensions
                         return true;
                     }
                 }
+
                 return false;
         }
     }
@@ -467,6 +465,7 @@ public static class SubscriptionSettingsFilterExtensions
                             break;
                         }
                     }
+
                     if (!found)
                     {
                         return false;

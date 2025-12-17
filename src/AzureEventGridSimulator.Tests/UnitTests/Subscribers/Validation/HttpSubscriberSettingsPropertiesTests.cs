@@ -1,4 +1,3 @@
-using System;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
@@ -95,7 +94,7 @@ public class HttpSubscriberSettingsPropertiesTests
             Endpoint = "https://example.com",
         };
 
-        settings.ValidationStatus.ShouldBe(default(SubscriptionValidationStatus));
+        settings.ValidationStatus.ShouldBe(default);
     }
 
     [Fact]

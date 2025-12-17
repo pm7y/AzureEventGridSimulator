@@ -1,8 +1,6 @@
-using System;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
-using Microsoft.AspNetCore.Http;
 using Shouldly;
 using Xunit;
 
@@ -23,10 +21,10 @@ public class CloudEventSchemaParserTests
     public void GivenBinaryModeRequest_WhenParsed_ThenCloudEventCreatedFromHeaders()
     {
         var context = CreateBinaryModeContext(
-            specVersion: "1.0",
-            type: "com.example.test",
-            source: "/test/source",
-            id: "test-id-123"
+            "1.0",
+            "com.example.test",
+            "/test/source",
+            "test-id-123"
         );
         var requestBody = "{\"Property\": \"Value\"}";
 
@@ -44,14 +42,14 @@ public class CloudEventSchemaParserTests
     public void GivenBinaryModeRequestWithOptionalHeaders_WhenParsed_ThenOptionalFieldsPopulated()
     {
         var context = CreateBinaryModeContext(
-            specVersion: "1.0",
-            type: "com.example.test",
-            source: "/test/source",
-            id: "test-id-123",
-            time: "2025-01-15T10:30:00Z",
-            subject: "/test/subject",
-            dataContentType: "application/json",
-            dataSchema: "https://example.com/schema"
+            "1.0",
+            "com.example.test",
+            "/test/source",
+            "test-id-123",
+            "2025-01-15T10:30:00Z",
+            "/test/subject",
+            "application/json",
+            "https://example.com/schema"
         );
         var requestBody = "{\"Property\": \"Value\"}";
 
@@ -68,10 +66,10 @@ public class CloudEventSchemaParserTests
     public void GivenBinaryModeRequestWithJsonBody_WhenParsed_ThenDataIsDeserializedObject()
     {
         var context = CreateBinaryModeContext(
-            specVersion: "1.0",
-            type: "com.example.test",
-            source: "/test/source",
-            id: "test-id-123"
+            "1.0",
+            "com.example.test",
+            "/test/source",
+            "test-id-123"
         );
         var requestBody = "{\"Property\": \"Value\", \"Number\": 42}";
 
@@ -84,10 +82,10 @@ public class CloudEventSchemaParserTests
     public void GivenBinaryModeRequestWithNonJsonBody_WhenParsed_ThenDataIsString()
     {
         var context = CreateBinaryModeContext(
-            specVersion: "1.0",
-            type: "com.example.test",
-            source: "/test/source",
-            id: "test-id-123"
+            "1.0",
+            "com.example.test",
+            "/test/source",
+            "test-id-123"
         );
         var requestBody = "plain text data";
 
@@ -100,10 +98,10 @@ public class CloudEventSchemaParserTests
     public void GivenBinaryModeRequestWithEmptyBody_WhenParsed_ThenDataIsNull()
     {
         var context = CreateBinaryModeContext(
-            specVersion: "1.0",
-            type: "com.example.test",
-            source: "/test/source",
-            id: "test-id-123"
+            "1.0",
+            "com.example.test",
+            "/test/source",
+            "test-id-123"
         );
         var requestBody = "";
 
@@ -339,11 +337,11 @@ public class CloudEventSchemaParserTests
     {
         // CloudEvents HTTP binding requires percent-encoding for spaces and non-ASCII characters
         var context = CreateBinaryModeContextWithRawHeaders(
-            specVersion: "1.0",
-            type: "com.example.test",
-            source: "/test/source%20with%20spaces", // Space encoded as %20
-            id: "test-id-123",
-            subject: "Euro%20%E2%82%AC" // "Euro €" percent-encoded
+            "1.0",
+            "com.example.test",
+            "/test/source%20with%20spaces", // Space encoded as %20
+            "test-id-123",
+            "Euro%20%E2%82%AC" // "Euro €" percent-encoded
         );
         var requestBody = "{\"Property\": \"Value\"}";
 
@@ -358,10 +356,10 @@ public class CloudEventSchemaParserTests
     public void GivenBinaryModeRequestWithNonEncodedHeaders_WhenParsed_ThenValuesPassThrough()
     {
         var context = CreateBinaryModeContext(
-            specVersion: "1.0",
-            type: "com.example.test",
-            source: "/test/source",
-            id: "test-id-123"
+            "1.0",
+            "com.example.test",
+            "/test/source",
+            "test-id-123"
         );
         var requestBody = "{\"Property\": \"Value\"}";
 

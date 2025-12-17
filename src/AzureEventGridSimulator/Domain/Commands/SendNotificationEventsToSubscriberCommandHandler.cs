@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
@@ -13,7 +7,6 @@ using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 
@@ -65,7 +58,7 @@ public class SendNotificationEventsToSubscriberCommandHandler(
                 .Events.Where(e => allSubscribers.All(s => !s.Filter.AcceptsEvent(e)))
                 .ToArray();
 
-            if (eventsFilteredOutByAllSubscribers.Any())
+            if (eventsFilteredOutByAllSubscribers.Length != 0)
             {
                 foreach (var eventFilteredOutByAllSubscribers in eventsFilteredOutByAllSubscribers)
                 {
@@ -226,7 +219,7 @@ public class SendNotificationEventsToSubscriberCommandHandler(
                 logger.LogWarning(
                     "CloudEvents input to Event Grid output conversion is NOT supported by Azure Event Grid. "
                         + "Subscriber '{SubscriberName}' on topic '{TopicName}' has incompatible schema configuration. "
-                        + "This will work in the simulator but will fail with actual Azure Event Grid.",
+                        + "This will work in the simulator but will fail with actual Azure Event Grid",
                     subscription.Name,
                     topic.Name
                 );

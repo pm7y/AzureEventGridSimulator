@@ -1,8 +1,5 @@
-using System;
-using System.Linq;
 using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
-using Microsoft.AspNetCore.Http;
 
 namespace AzureEventGridSimulator.Domain.Services;
 

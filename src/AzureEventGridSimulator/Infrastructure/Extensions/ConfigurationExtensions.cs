@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-
-namespace AzureEventGridSimulator.Infrastructure.Extensions;
+﻿namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
 public static class ConfigurationExtensions
 {

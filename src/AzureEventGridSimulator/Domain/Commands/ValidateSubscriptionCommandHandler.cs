@@ -1,9 +1,5 @@
-﻿using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using AzureEventGridSimulator.Infrastructure.Mediator;
+﻿using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 

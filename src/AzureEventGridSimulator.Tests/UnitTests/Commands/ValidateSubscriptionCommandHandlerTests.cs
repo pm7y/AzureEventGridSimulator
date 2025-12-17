@@ -1,10 +1,6 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -14,8 +10,8 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Commands;
 [Trait("Category", "unit")]
 public class ValidateSubscriptionCommandHandlerTests
 {
-    private readonly ILogger<ValidateSubscriptionCommandHandler> _logger;
     private readonly ValidateSubscriptionCommandHandler _handler;
+    private readonly ILogger<ValidateSubscriptionCommandHandler> _logger;
 
     public ValidateSubscriptionCommandHandlerTests()
     {
@@ -165,7 +161,7 @@ public class ValidateSubscriptionCommandHandlerTests
 
         result.ShouldBeTrue();
         subscriber1.ValidationStatus.ShouldBe(SubscriptionValidationStatus.ValidationSuccessful);
-        subscriber2.ValidationStatus.ShouldBe(default(SubscriptionValidationStatus));
+        subscriber2.ValidationStatus.ShouldBe(default);
     }
 
     [Fact]
@@ -185,8 +181,8 @@ public class ValidateSubscriptionCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         result.ShouldBeFalse();
-        subscriber1.ValidationStatus.ShouldBe(default(SubscriptionValidationStatus));
-        subscriber2.ValidationStatus.ShouldBe(default(SubscriptionValidationStatus));
+        subscriber1.ValidationStatus.ShouldBe(default);
+        subscriber2.ValidationStatus.ShouldBe(default);
     }
 
     [Fact]

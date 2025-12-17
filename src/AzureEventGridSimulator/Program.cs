@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
+﻿using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Asp.Versioning;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
@@ -18,13 +11,6 @@ using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Middleware;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using ILogger = Serilog.ILogger;
@@ -89,7 +75,7 @@ public class Program
 
             var simulatorSettings = app.ApplicationServices.GetService<SimulatorSettings>();
 
-            if (simulatorSettings is null || !simulatorSettings.Topics.Any())
+            if (simulatorSettings is null || simulatorSettings.Topics.Length == 0)
             {
                 DisplayConfigurationHelp();
                 lifetime.StopApplication();
@@ -287,11 +273,12 @@ public class Program
         builder.Host.UseSerilog(
             (context, loggerConfiguration) =>
             {
-                var hasAtLeastOneLogSinkBeenConfigured = context
-                    .Configuration.GetSection("Serilog:WriteTo")
-                    .GetChildren()
-                    .ToArray()
-                    .Any();
+                var hasAtLeastOneLogSinkBeenConfigured =
+                    context
+                        .Configuration.GetSection("Serilog:WriteTo")
+                        .GetChildren()
+                        .ToArray()
+                        .Length != 0;
 
                 loggerConfiguration
                     .Enrich.FromLogContext()

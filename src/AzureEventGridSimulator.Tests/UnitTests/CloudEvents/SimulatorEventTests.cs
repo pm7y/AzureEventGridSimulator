@@ -1,4 +1,3 @@
-using System;
 using AzureEventGridSimulator.Domain.Entities;
 using Shouldly;
 using Xunit;

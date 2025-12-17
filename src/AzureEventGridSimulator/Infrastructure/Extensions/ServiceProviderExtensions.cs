@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using AzureEventGridSimulator.Infrastructure.Settings;
-using Microsoft.Extensions.DependencyInjection;
+﻿using AzureEventGridSimulator.Infrastructure.Settings;
 
 namespace AzureEventGridSimulator.Infrastructure.Extensions;
 

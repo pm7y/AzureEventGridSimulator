@@ -1,7 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Entities;
 
 namespace AzureEventGridSimulator.Domain.Services;
@@ -12,6 +10,11 @@ namespace AzureEventGridSimulator.Domain.Services;
 /// </summary>
 public class CloudEventSchemaFormatter : IEventSchemaFormatter
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
     /// <inheritdoc />
     public EventSchema Schema => EventSchema.CloudEventV1_0;
 
@@ -21,11 +24,6 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     /// so we use the batch content type even for single events.
     /// </remarks>
     public string ContentType => Constants.CloudEventsBatchContentType;
-
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-    };
 
     /// <inheritdoc />
     public string Serialize(SimulatorEvent evt)

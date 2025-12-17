@@ -1,7 +1,4 @@
-using System;
-using System.Linq;
-using System.Text.Json.Serialization;
-using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+﻿using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
 

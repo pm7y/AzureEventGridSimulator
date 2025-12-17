@@ -1,6 +1,4 @@
-﻿using System;
-using System.Net;
-using System.Threading.Tasks;
+﻿using System.Net;
 using Azure;
 using Azure.Core;
 using Azure.Messaging.EventGrid;
@@ -11,7 +9,9 @@ namespace AzureEventGridSimulator.Tests.ActualSimulatorTests;
 
 /// <summary>
 /// Simple tests to check that we can send an event via Azure.Messaging.EventGrid library.
-/// NOTE: These tests require (and automatically start) an actual instance of AzureEventGridSimulator.exe as there is no way to inject an HttpClient (from a WebApplicationFactory)
+/// NOTE: These tests require (and automatically start) an actual instance of
+/// AzureEventGridSimulator.exe as there is no way to inject an HttpClient (from a
+/// WebApplicationFactory)
 /// into Azure.Messaging.EventGrid.
 /// </summary>
 [Collection(nameof(ActualSimulatorFixtureCollection))]

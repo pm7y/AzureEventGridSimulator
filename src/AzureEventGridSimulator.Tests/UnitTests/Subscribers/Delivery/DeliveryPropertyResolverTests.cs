@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
@@ -238,13 +237,9 @@ public class DeliveryPropertyResolverTests
     {
         var properties = new Dictionary<string, DeliveryPropertySettings>
         {
-            ["Label"] = new DeliveryPropertySettings { Type = "dynamic", Value = "Subject" },
-            ["Region"] = new DeliveryPropertySettings { Type = "static", Value = "west-us" },
-            ["CustomerId"] = new DeliveryPropertySettings
-            {
-                Type = "dynamic",
-                Value = "data.customerId",
-            },
+            ["Label"] = new() { Type = "dynamic", Value = "Subject" },
+            ["Region"] = new() { Type = "static", Value = "west-us" },
+            ["CustomerId"] = new() { Type = "dynamic", Value = "data.customerId" },
         };
 
         var result = _resolver.ResolveProperties(properties, CreateTestEvent());
@@ -260,12 +255,8 @@ public class DeliveryPropertyResolverTests
     {
         var properties = new Dictionary<string, DeliveryPropertySettings>
         {
-            ["Label"] = new DeliveryPropertySettings { Type = "dynamic", Value = "Subject" },
-            ["Missing"] = new DeliveryPropertySettings
-            {
-                Type = "dynamic",
-                Value = "data.nonExistent",
-            },
+            ["Label"] = new() { Type = "dynamic", Value = "Subject" },
+            ["Missing"] = new() { Type = "dynamic", Value = "data.nonExistent" },
         };
 
         var result = _resolver.ResolveProperties(properties, CreateTestEvent());

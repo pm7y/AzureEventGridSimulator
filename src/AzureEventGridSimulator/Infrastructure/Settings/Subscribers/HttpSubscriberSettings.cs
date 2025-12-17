@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Entities;
@@ -13,17 +11,26 @@ public class HttpSubscriberSettings : ISubscriberSettings
 {
     private readonly DateTime _expired = DateTime.UtcNow.AddMinutes(5);
 
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
-
     [JsonPropertyName("endpoint")]
     public string Endpoint { get; set; }
 
-    [JsonPropertyName("filter")]
-    public FilterSetting Filter { get; set; }
-
     [JsonPropertyName("disableValidation")]
     public bool DisableValidation { get; set; }
+
+    [JsonIgnore]
+    public SubscriptionValidationStatus ValidationStatus { get; set; }
+
+    [JsonIgnore]
+    public Guid ValidationCode => GetValidationCode();
+
+    [JsonIgnore]
+    public bool ValidationPeriodExpired => DateTime.UtcNow > _expired;
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("filter")]
+    public FilterSetting Filter { get; set; }
 
     [JsonPropertyName("disabled")]
     public bool Disabled { get; set; }
@@ -38,22 +45,6 @@ public class HttpSubscriberSettings : ISubscriberSettings
 
     [JsonIgnore]
     public string SubscriberType => "http";
-
-    [JsonIgnore]
-    public SubscriptionValidationStatus ValidationStatus { get; set; }
-
-    [JsonIgnore]
-    public Guid ValidationCode => GetValidationCode();
-
-    [JsonIgnore]
-    public bool ValidationPeriodExpired => DateTime.UtcNow > _expired;
-
-    public Guid GetValidationCode()
-    {
-        return new Guid(
-            Encoding.UTF8.GetBytes(Endpoint).AsEnumerable().Reverse().Take(16).ToArray()
-        );
-    }
 
     public void Validate()
     {
@@ -82,5 +73,12 @@ public class HttpSubscriberSettings : ISubscriberSettings
         }
 
         Filter?.Validate();
+    }
+
+    public Guid GetValidationCode()
+    {
+        return new Guid(
+            Encoding.UTF8.GetBytes(Endpoint).AsEnumerable().Reverse().Take(16).ToArray()
+        );
     }
 }

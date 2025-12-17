@@ -1,9 +1,6 @@
-﻿using System;
-using System.Net;
-using System.Net.Http;
+﻿using System.Net;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Azure.Messaging.EventGrid;
 using AzureEventGridSimulator.Domain;
 using Microsoft.AspNetCore.Mvc.Testing;

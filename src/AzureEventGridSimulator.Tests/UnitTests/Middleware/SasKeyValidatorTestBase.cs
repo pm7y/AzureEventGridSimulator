@@ -1,9 +1,7 @@
-using System;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 using AzureEventGridSimulator.Infrastructure.Middleware;
-using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace AzureEventGridSimulator.Tests.UnitTests.Middleware;

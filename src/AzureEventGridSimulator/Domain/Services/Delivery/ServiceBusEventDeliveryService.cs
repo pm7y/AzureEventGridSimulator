@@ -1,12 +1,9 @@
-using System;
 using System.Collections.Concurrent;
 using System.Text;
-using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
 
@@ -21,6 +18,22 @@ public class ServiceBusEventDeliveryService(
 {
     private readonly ConcurrentDictionary<string, ServiceBusClient> _clients = new();
     private readonly ConcurrentDictionary<string, ServiceBusSender> _senders = new();
+
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var sender in _senders.Values)
+        {
+            await sender.DisposeAsync();
+        }
+
+        foreach (var client in _clients.Values)
+        {
+            await client.DisposeAsync();
+        }
+
+        _senders.Clear();
+        _clients.Clear();
+    }
 
     /// <summary>
     /// Sends an event to a Service Bus subscriber.
@@ -133,21 +146,5 @@ public class ServiceBusEventDeliveryService(
                 return new ServiceBusClient(connectionString);
             }
         );
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        foreach (var sender in _senders.Values)
-        {
-            await sender.DisposeAsync();
-        }
-
-        foreach (var client in _clients.Values)
-        {
-            await client.DisposeAsync();
-        }
-
-        _senders.Clear();
-        _clients.Clear();
     }
 }

@@ -2,7 +2,6 @@ using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.AspNetCore.Http;
 
 namespace AzureEventGridSimulator.Tests.UnitTests.Common;
 

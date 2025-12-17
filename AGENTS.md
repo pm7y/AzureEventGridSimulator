@@ -168,6 +168,8 @@ This project uses Central Package Management (CPM). Package versions are defined
 - **var**: Preferred for all variable declarations
 - **Expression bodies**: Preferred for properties/indexers/lambdas, block bodies for methods
 - **Pattern matching**: Preferred over `is` with cast and `as` with null check
+- **Primary constructors**: Preferred for simple classes and records
+- **Collection expressions**: Preferred (`[]` syntax)
 
 ### Code Organization
 
@@ -453,3 +455,14 @@ Releases are automated via Release Please:
    - NuGet package publish
    - Docker image build and push
    - Platform binaries upload
+
+## Documentation Maintenance
+
+When making changes to the codebase, keep documentation in sync:
+
+- **AGENTS.md**: Update when changing architecture, conventions, build processes, or development workflows
+- **README.md**: Update when changing user-facing features, configuration options, or usage instructions
+- **DOCKER.md**: Update when changing Docker configuration, environment variables, or container behavior
+- **.github/copilot-instructions.md**: Update when changing code style conventions or project patterns
+
+Documentation should be updated in the same commit or PR as the related code changes.

@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Entities;
 
@@ -16,9 +14,6 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
     /// </summary>
     [JsonIgnore]
     internal TopicSettings ParentTopic { get; set; }
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
 
     /// <summary>
     /// Gets or sets the Service Bus connection string.
@@ -57,29 +52,12 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
     [JsonPropertyName("queue")]
     public string Queue { get; set; }
 
-    [JsonPropertyName("filter")]
-    public FilterSetting Filter { get; set; }
-
-    [JsonPropertyName("disabled")]
-    public bool Disabled { get; set; }
-
-    /// <summary>
-    /// Gets or sets the delivery schema for events sent to this subscriber.
-    /// If null, uses the topic's output schema or the original event schema.
-    /// </summary>
-    [JsonPropertyName("deliverySchema")]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public EventSchema? DeliverySchema { get; set; }
-
     /// <summary>
     /// Gets or sets the delivery properties to add to Service Bus messages.
     /// Keys are property names, values specify whether the property is static or dynamic.
     /// </summary>
     [JsonPropertyName("properties")]
     public Dictionary<string, DeliveryPropertySettings> Properties { get; set; }
-
-    [JsonIgnore]
-    public string SubscriberType => "serviceBus";
 
     /// <summary>
     /// Gets the destination name (either topic or queue).
@@ -94,7 +72,8 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
     public bool IsTopic => !string.IsNullOrWhiteSpace(Topic);
 
     /// <summary>
-    /// Gets the connection string, either directly specified, built from components, or inherited from topic.
+    /// Gets the connection string, either directly specified, built from components, or inherited from
+    /// topic.
     /// Falls back to topic-level defaults if not specified at subscriber level.
     /// </summary>
     [JsonIgnore]
@@ -138,28 +117,25 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
         }
     }
 
-    private bool HasSubscriberNamespaceCredentials() =>
-        !string.IsNullOrWhiteSpace(Namespace)
-        && !string.IsNullOrWhiteSpace(SharedAccessKeyName)
-        && !string.IsNullOrWhiteSpace(SharedAccessKey);
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
 
-    private bool HasAnySubscriberNamespaceCredential() =>
-        !string.IsNullOrWhiteSpace(Namespace)
-        || !string.IsNullOrWhiteSpace(SharedAccessKeyName)
-        || !string.IsNullOrWhiteSpace(SharedAccessKey);
+    [JsonPropertyName("filter")]
+    public FilterSetting Filter { get; set; }
 
-    private bool HasTopicNamespaceCredentials() =>
-        ParentTopic != null
-        && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusNamespace)
-        && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusSharedAccessKeyName)
-        && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusSharedAccessKey);
+    [JsonPropertyName("disabled")]
+    public bool Disabled { get; set; }
 
-    private static string BuildConnectionString(
-        string serviceBusNamespace,
-        string sharedAccessKeyName,
-        string sharedAccessKey
-    ) =>
-        $"Endpoint=sb://{serviceBusNamespace}.servicebus.windows.net/;SharedAccessKeyName={sharedAccessKeyName};SharedAccessKey={sharedAccessKey}";
+    /// <summary>
+    /// Gets or sets the delivery schema for events sent to this subscriber.
+    /// If null, uses the topic's output schema or the original event schema.
+    /// </summary>
+    [JsonPropertyName("deliverySchema")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public EventSchema? DeliverySchema { get; set; }
+
+    [JsonIgnore]
+    public string SubscriberType => "serviceBus";
 
     public void Validate()
     {
@@ -223,5 +199,36 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
         }
 
         Filter?.Validate();
+    }
+
+    private bool HasSubscriberNamespaceCredentials()
+    {
+        return !string.IsNullOrWhiteSpace(Namespace)
+            && !string.IsNullOrWhiteSpace(SharedAccessKeyName)
+            && !string.IsNullOrWhiteSpace(SharedAccessKey);
+    }
+
+    private bool HasAnySubscriberNamespaceCredential()
+    {
+        return !string.IsNullOrWhiteSpace(Namespace)
+            || !string.IsNullOrWhiteSpace(SharedAccessKeyName)
+            || !string.IsNullOrWhiteSpace(SharedAccessKey);
+    }
+
+    private bool HasTopicNamespaceCredentials()
+    {
+        return ParentTopic != null
+            && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusNamespace)
+            && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusSharedAccessKeyName)
+            && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusSharedAccessKey);
+    }
+
+    private static string BuildConnectionString(
+        string serviceBusNamespace,
+        string sharedAccessKeyName,
+        string sharedAccessKey
+    )
+    {
+        return $"Endpoint=sb://{serviceBusNamespace}.servicebus.windows.net/;SharedAccessKeyName={sharedAccessKeyName};SharedAccessKey={sharedAccessKey}";
     }
 }

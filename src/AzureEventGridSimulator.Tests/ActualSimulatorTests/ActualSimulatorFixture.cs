@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using Xunit;
 
 namespace AzureEventGridSimulator.Tests.ActualSimulatorTests;
@@ -44,6 +38,27 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
         await WaitForSimulatorToBeReady();
     }
 
+    public Task DisposeAsync()
+    {
+        Dispose();
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            if (_simulatorProcess?.HasExited == false)
+            {
+                _simulatorProcess?.Kill(true);
+                _simulatorProcess?.WaitForExit();
+            }
+
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+    }
+
     private static async Task WaitForSimulatorToBeReady()
     {
         using var handler = new HttpClientHandler
@@ -80,27 +95,6 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
         throw new InvalidOperationException(
             $"Simulator did not start within {MaxStartupWaitTimeMs}ms"
         );
-    }
-
-    public Task DisposeAsync()
-    {
-        Dispose();
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        if (!_disposed)
-        {
-            if (_simulatorProcess?.HasExited == false)
-            {
-                _simulatorProcess?.Kill(true);
-                _simulatorProcess?.WaitForExit();
-            }
-
-            _disposed = true;
-            GC.SuppressFinalize(this);
-        }
     }
 
     private void KillExistingSimulators()

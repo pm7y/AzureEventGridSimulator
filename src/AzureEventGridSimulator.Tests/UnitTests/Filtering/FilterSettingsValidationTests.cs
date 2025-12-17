@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using AzureEventGridSimulator.Infrastructure.Settings;
+﻿using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Shouldly;
 using Xunit;

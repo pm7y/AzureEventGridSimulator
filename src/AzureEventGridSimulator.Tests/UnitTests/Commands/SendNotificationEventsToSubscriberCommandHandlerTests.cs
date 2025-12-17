@@ -1,13 +1,9 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -17,8 +13,8 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Commands;
 [Trait("Category", "unit")]
 public class SendNotificationEventsToSubscriberCommandHandlerTests
 {
-    private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
     private readonly SendNotificationEventsToSubscriberCommandHandler _handler;
+    private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
 
     public SendNotificationEventsToSubscriberCommandHandlerTests()
     {

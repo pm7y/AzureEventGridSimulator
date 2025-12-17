@@ -1,5 +1,3 @@
-using System;
-
 namespace AzureEventGridSimulator.Domain.Entities;
 
 /// <summary>
