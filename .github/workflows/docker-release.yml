@@ -21,7 +21,7 @@ permissions:
 env:
   VERSION_NUMBER: ${{ github.event.inputs.tag_name || github.event.release.tag_name }}
   REGISTRY: docker.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: pmcilreavy/azureeventgridsimulator
 
 jobs:
   build-and-push:

@@ -1,5 +1,5 @@
 # start with an sdk enabled alpine image so we can build source
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine as build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /source
 
 # copy build configuration files first
@@ -31,7 +31,7 @@ RUN dotnet publish ./AzureEventGridSimulator/AzureEventGridSimulator.csproj \
     -p:DesignTimeBuild=true
 
 # add binary artifact to new runtime-deps only image
-FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine
 WORKDIR /app
 
 # add tzdata incase we want to set the timezone
