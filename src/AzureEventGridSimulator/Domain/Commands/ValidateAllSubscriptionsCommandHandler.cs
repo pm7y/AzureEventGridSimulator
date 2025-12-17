@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Entities;
@@ -11,7 +12,6 @@ using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 
@@ -87,7 +87,10 @@ public class ValidateAllSubscriptionsCommandHandler
                 },
             };
 
-            var json = JsonConvert.SerializeObject(new[] { evt }, Formatting.Indented);
+            var json = JsonSerializer.Serialize(
+                new[] { evt },
+                new JsonSerializerOptions { WriteIndented = true }
+            );
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
             using var httpClient = _httpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.Add(
@@ -112,7 +115,7 @@ public class ValidateAllSubscriptionsCommandHandler
             response.EnsureSuccessStatusCode();
 
             var text = await response.Content.ReadAsStringAsync();
-            var validationResponse = JsonConvert.DeserializeObject<SubscriptionValidationResponse>(
+            var validationResponse = JsonSerializer.Deserialize<SubscriptionValidationResponse>(
                 text
             );
 

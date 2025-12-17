@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using Newtonsoft.Json.Linq;
 
 namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
@@ -423,28 +423,82 @@ public static class SubscriptionSettingsFilterExtensions
                     && split.Length > 1
                 )
                 {
-                    var tmpValue = simulatorEvent.Data;
-                    for (var i = 1; i < split.Length; i++)
+                    if (TryGetNestedValue(simulatorEvent.Data, split, 1, out var nestedValue))
                     {
-                        if (
-                            tmpValue == null
-                            || !JObject
-                                .FromObject(tmpValue)
-                                .TryGetValue(split[i], out var dataValue)
-                        )
-                        {
-                            return false;
-                        }
-                        tmpValue = dataValue.ToObject<object>();
-                    }
-                    if (tmpValue != null)
-                    {
-                        value = tmpValue;
+                        value = nestedValue;
                         return true;
                     }
                 }
                 return false;
         }
+    }
+
+    private static bool TryGetNestedValue(
+        object data,
+        string[] pathParts,
+        int startIndex,
+        out object value
+    )
+    {
+        value = null;
+        try
+        {
+            var json = JsonSerializer.Serialize(data);
+            using var document = JsonDocument.Parse(json);
+            var current = document.RootElement;
+
+            for (var i = startIndex; i < pathParts.Length; i++)
+            {
+                if (current.ValueKind != JsonValueKind.Object)
+                {
+                    return false;
+                }
+
+                if (!current.TryGetProperty(pathParts[i], out var property))
+                {
+                    // Try case-insensitive match
+                    var found = false;
+                    foreach (var prop in current.EnumerateObject())
+                    {
+                        if (prop.Name.Equals(pathParts[i], StringComparison.OrdinalIgnoreCase))
+                        {
+                            current = prop.Value;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    current = property;
+                }
+            }
+
+            value = ConvertJsonElement(current);
+            return value != null || current.ValueKind == JsonValueKind.Null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static object ConvertJsonElement(JsonElement element)
+    {
+        return element.ValueKind switch
+        {
+            JsonValueKind.String => element.GetString(),
+            JsonValueKind.Number when element.TryGetInt64(out var l) => l,
+            JsonValueKind.Number => element.GetDouble(),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => null,
+            _ => element.GetRawText(),
+        };
     }
 
     private static double ToNumber(this object value)
@@ -474,7 +528,7 @@ public static class SubscriptionSettingsFilterExtensions
 
     /// <summary>
     /// Checks if a number is within any of the specified ranges.
-    /// Ranges are specified as arrays or JArrays like [[min1, max1], [min2, max2]] in the Values collection.
+    /// Ranges are specified as arrays like [[min1, max1], [min2, max2]] in the Values collection.
     /// </summary>
     private static bool IsNumberInRanges(double value, ICollection<object> ranges)
     {
@@ -488,11 +542,19 @@ public static class SubscriptionSettingsFilterExtensions
             double min,
                 max;
 
-            // Handle JArray (from JSON deserialization)
-            if (range is JArray jArray && jArray.Count >= 2)
+            // Handle JsonElement (from System.Text.Json deserialization)
+            if (range is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Array)
             {
-                min = jArray[0].ToObject<double>();
-                max = jArray[1].ToObject<double>();
+                var length = jsonElement.GetArrayLength();
+                if (length >= 2)
+                {
+                    min = jsonElement[0].GetDouble();
+                    max = jsonElement[1].GetDouble();
+                }
+                else
+                {
+                    continue;
+                }
             }
             // Handle object array
             else if (range is object[] objArray && objArray.Length >= 2)
@@ -568,24 +630,11 @@ public static class SubscriptionSettingsFilterExtensions
                 {
                     break;
                 }
-                var tmpValue = gridEvent.Data;
-                for (var i = 1; i < split.Length; i++)
-                {
-                    // look for the property on the grid event data object
-                    if (
-                        tmpValue == null
-                        || !JObject.FromObject(tmpValue).TryGetValue(split[i], out var dataValue)
-                    )
-                    {
-                        tmpValue = null;
-                        break;
-                    }
-                    tmpValue = dataValue.ToObject<object>();
-                }
-                if (tmpValue != null)
+
+                if (TryGetNestedValue(gridEvent.Data, split, 1, out var nestedValue))
                 {
                     retval = true;
-                    value = tmpValue;
+                    value = nestedValue;
                 }
 
                 break;

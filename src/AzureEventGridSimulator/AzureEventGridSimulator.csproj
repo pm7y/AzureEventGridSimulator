@@ -6,7 +6,6 @@
   <ItemGroup>
     <PackageReference Include="MediatR" />
     <PackageReference Include="Asp.Versioning.Mvc" />
-    <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Settings.Configuration" />

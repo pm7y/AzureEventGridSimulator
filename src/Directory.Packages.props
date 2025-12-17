@@ -6,7 +6,6 @@
     <!-- Main Application -->
     <PackageVersion Include="MediatR" Version="12.5.0" />
     <PackageVersion Include="Asp.Versioning.Mvc" Version="8.1.0" />
-    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <!-- Serilog -->
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="9.0.2" />

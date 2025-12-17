@@ -1,5 +1,5 @@
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
@@ -11,7 +11,7 @@ public class DeliveryPropertySettings
     /// <summary>
     /// Gets or sets the type of property: "static" or "dynamic".
     /// </summary>
-    [JsonProperty(PropertyName = "type", Required = Required.Always)]
+    [JsonPropertyName("type")]
     public string Type { get; set; }
 
     /// <summary>
@@ -19,7 +19,7 @@ public class DeliveryPropertySettings
     /// For static properties, this is the literal value.
     /// For dynamic properties, this is the path to the event property (e.g., "Subject", "data.customerId").
     /// </summary>
-    [JsonProperty(PropertyName = "value", Required = Required.Always)]
+    [JsonPropertyName("value")]
     public string Value { get; set; }
 
     /// <summary>

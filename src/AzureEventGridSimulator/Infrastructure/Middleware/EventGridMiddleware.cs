@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Text.Json;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
@@ -9,7 +10,6 @@ using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Infrastructure.Middleware;
 
@@ -161,8 +161,8 @@ public class EventGridMiddleware
         {
             var eventSize =
                 evt.Schema == EventSchema.EventGridSchema
-                    ? JsonConvert.SerializeObject(evt.EventGridEvent, Formatting.None).Length
-                    : JsonConvert.SerializeObject(evt.CloudEvent, Formatting.None).Length;
+                    ? JsonSerializer.Serialize(evt.EventGridEvent).Length
+                    : JsonSerializer.Serialize(evt.CloudEvent).Length;
 
             if (eventSize > maximumAllowedEventSizeInBytes)
             {

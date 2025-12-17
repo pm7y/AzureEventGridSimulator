@@ -1,85 +1,79 @@
 using System;
-using System.Runtime.Serialization;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Domain.Entities;
 
 /// <summary>
 /// Properties of a CloudEvents v1.0 event.
 /// </summary>
-[DataContract]
 public class CloudEvent
 {
     /// <summary>
     /// Gets or sets the CloudEvents specification version (required).
     /// Must be "1.0".
     /// </summary>
-    [DataMember(Name = "specversion")]
-    [JsonProperty(PropertyName = "specversion")]
+    [JsonPropertyName("specversion")]
     public string SpecVersion { get; set; }
 
     /// <summary>
     /// Gets or sets the event type (required).
     /// </summary>
-    [DataMember(Name = "type")]
-    [JsonProperty(PropertyName = "type")]
+    [JsonPropertyName("type")]
     public string Type { get; set; }
 
     /// <summary>
     /// Gets or sets the event source URI (required).
     /// </summary>
-    [DataMember(Name = "source")]
-    [JsonProperty(PropertyName = "source")]
+    [JsonPropertyName("source")]
     public string Source { get; set; }
 
     /// <summary>
     /// Gets or sets the unique event identifier (required).
     /// </summary>
-    [DataMember(Name = "id")]
-    [JsonProperty(PropertyName = "id")]
+    [JsonPropertyName("id")]
     public string Id { get; set; }
 
     /// <summary>
     /// Gets or sets the event timestamp in RFC 3339 format (optional).
     /// </summary>
-    [DataMember(Name = "time")]
-    [JsonProperty(PropertyName = "time", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("time")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string Time { get; set; }
 
     /// <summary>
     /// Gets or sets the subject of the event (optional).
     /// </summary>
-    [DataMember(Name = "subject")]
-    [JsonProperty(PropertyName = "subject", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("subject")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string Subject { get; set; }
 
     /// <summary>
     /// Gets or sets the content type of the data attribute (optional).
     /// </summary>
-    [DataMember(Name = "datacontenttype")]
-    [JsonProperty(PropertyName = "datacontenttype", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("datacontenttype")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string DataContentType { get; set; }
 
     /// <summary>
     /// Gets or sets a URI reference to the schema for the data attribute (optional).
     /// </summary>
-    [DataMember(Name = "dataschema")]
-    [JsonProperty(PropertyName = "dataschema", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("dataschema")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string DataSchema { get; set; }
 
     /// <summary>
     /// Gets or sets the event payload (optional).
     /// </summary>
-    [DataMember(Name = "data")]
-    [JsonProperty(PropertyName = "data", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("data")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public object Data { get; set; }
 
     /// <summary>
     /// Gets or sets the base64-encoded binary event payload (optional).
     /// Used as an alternative to data for binary content.
     /// </summary>
-    [DataMember(Name = "data_base64")]
-    [JsonProperty(PropertyName = "data_base64", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("data_base64")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string DataBase64 { get; set; }
 
     [JsonIgnore]

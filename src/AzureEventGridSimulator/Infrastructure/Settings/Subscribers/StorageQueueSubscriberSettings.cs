@@ -1,7 +1,6 @@
 using System;
+using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Entities;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
@@ -10,33 +9,33 @@ namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 /// </summary>
 public class StorageQueueSubscriberSettings : ISubscriberSettings
 {
-    [JsonProperty(PropertyName = "name", Required = Required.Always)]
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
     /// <summary>
     /// Gets or sets the Storage Queue connection string.
     /// </summary>
-    [JsonProperty(PropertyName = "connectionString", Required = Required.Always)]
+    [JsonPropertyName("connectionString")]
     public string ConnectionString { get; set; }
 
     /// <summary>
     /// Gets or sets the queue name.
     /// </summary>
-    [JsonProperty(PropertyName = "queueName", Required = Required.Always)]
+    [JsonPropertyName("queueName")]
     public string QueueName { get; set; }
 
-    [JsonProperty(PropertyName = "filter", Required = Required.Default)]
+    [JsonPropertyName("filter")]
     public FilterSetting Filter { get; set; }
 
-    [JsonProperty(PropertyName = "disabled", Required = Required.Default)]
+    [JsonPropertyName("disabled")]
     public bool Disabled { get; set; }
 
     /// <summary>
     /// Gets or sets the delivery schema for events sent to this subscriber.
     /// If null, uses the topic's output schema or the original event schema.
     /// </summary>
-    [JsonProperty(PropertyName = "deliverySchema", Required = Required.Default)]
-    [JsonConverter(typeof(StringEnumConverter))]
+    [JsonPropertyName("deliverySchema")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public EventSchema? DeliverySchema { get; set; }
 
     [JsonIgnore]

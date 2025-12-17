@@ -1,7 +1,7 @@
 using System.Linq;
+using System.Text.Json;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
@@ -29,7 +29,7 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         settings.ShouldNotBeNull();
         settings.Topics.ShouldHaveSingleItem();
@@ -67,7 +67,7 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         settings.Topics.First().Subscribers.HttpSubscribers.Count().ShouldBe(2);
     }
@@ -93,7 +93,7 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         settings.ShouldNotBeNull();
         var topic = settings.Topics.First();
@@ -126,7 +126,7 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         settings.ShouldNotBeNull();
         var topic = settings.Topics.First();
@@ -166,7 +166,7 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         settings.ShouldNotBeNull();
         var topic = settings.Topics.First();
@@ -198,7 +198,7 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         var sbSub = settings.Topics.First().Subscribers.ServiceBusSubscribers.First();
         sbSub.Namespace.ShouldBe("my-namespace");
@@ -235,7 +235,7 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         var sbSub = settings.Topics.First().Subscribers.ServiceBusSubscribers.First();
         sbSub.Properties.ShouldNotBeNull();
@@ -262,7 +262,7 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         settings.Topics.First().Subscribers.HttpSubscribers.ShouldBeEmpty();
         settings.Topics.First().Subscribers.ServiceBusSubscribers.ShouldBeEmpty();
@@ -282,7 +282,7 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         settings.Topics.First().Subscribers.HttpSubscribers.ShouldBeEmpty();
         settings.Topics.First().Subscribers.ServiceBusSubscribers.ShouldBeEmpty();
@@ -310,7 +310,7 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         var allSubscribers = settings.Topics.First().Subscribers.All.ToList();
         allSubscribers.Count.ShouldBe(3);
@@ -337,7 +337,7 @@ public class SubscribersSettingsConverterTests
             },
         };
 
-        var json = JsonConvert.SerializeObject(settings);
+        var json = JsonSerializer.Serialize(settings);
 
         json.ShouldContain("\"http\":");
         json.ShouldContain("\"serviceBus\":");
@@ -371,7 +371,7 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         var httpSub = settings.Topics.First().Subscribers.HttpSubscribers.First();
         httpSub.Filter.ShouldNotBeNull();
@@ -380,7 +380,7 @@ public class SubscribersSettingsConverterTests
     }
 
     [Fact]
-    public void InvalidTokenType_ShouldThrowJsonSerializationException()
+    public void InvalidTokenType_ShouldThrowJsonException()
     {
         const string json =
             @"
@@ -393,8 +393,6 @@ public class SubscribersSettingsConverterTests
     }]
 }";
 
-        Should.Throw<JsonSerializationException>(() =>
-            JsonConvert.DeserializeObject<SimulatorSettings>(json)
-        );
+        Should.Throw<JsonException>(() => JsonSerializer.Deserialize<SimulatorSettings>(json));
     }
 }

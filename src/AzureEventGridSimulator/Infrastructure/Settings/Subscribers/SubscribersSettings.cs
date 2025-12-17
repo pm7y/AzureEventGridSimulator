@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
@@ -13,20 +13,20 @@ public class SubscribersSettings
     /// <summary>
     /// Gets or sets HTTP webhook subscribers.
     /// </summary>
-    [JsonProperty(PropertyName = "http", Required = Required.Default)]
+    [JsonPropertyName("http")]
     public HttpSubscriberSettings[] Http { get; set; } = Array.Empty<HttpSubscriberSettings>();
 
     /// <summary>
     /// Gets or sets Azure Service Bus subscribers.
     /// </summary>
-    [JsonProperty(PropertyName = "serviceBus", Required = Required.Default)]
+    [JsonPropertyName("serviceBus")]
     public ServiceBusSubscriberSettings[] ServiceBus { get; set; } =
         Array.Empty<ServiceBusSubscriberSettings>();
 
     /// <summary>
     /// Gets or sets Azure Storage Queue subscribers.
     /// </summary>
-    [JsonProperty(PropertyName = "storageQueue", Required = Required.Default)]
+    [JsonPropertyName("storageQueue")]
     public StorageQueueSubscriberSettings[] StorageQueue { get; set; } =
         Array.Empty<StorageQueueSubscriberSettings>();
 

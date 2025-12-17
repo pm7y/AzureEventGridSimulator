@@ -1,13 +1,13 @@
 using System;
 using System.Linq;
+using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
 
 public class SimulatorSettings
 {
-    [JsonProperty(PropertyName = "topics", Required = Required.Always)]
+    [JsonPropertyName("topics")]
     public TopicSettings[] Topics { get; set; } = Array.Empty<TopicSettings>();
 
     public void Validate()

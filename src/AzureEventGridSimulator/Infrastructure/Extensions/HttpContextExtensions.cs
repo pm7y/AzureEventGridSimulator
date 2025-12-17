@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using System.Net;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
-using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
@@ -29,6 +29,8 @@ public static class HttpContextExtensions
 
         context.Response.StatusCode = (int)statusCode;
 
-        await context.Response.WriteAsync(JsonConvert.SerializeObject(error, Formatting.Indented));
+        await context.Response.WriteAsync(
+            JsonSerializer.Serialize(error, new JsonSerializerOptions { WriteIndented = true })
+        );
     }
 }

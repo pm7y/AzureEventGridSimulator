@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Entities;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
@@ -11,65 +10,65 @@ namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 /// </summary>
 public class ServiceBusSubscriberSettings : ISubscriberSettings
 {
-    [JsonProperty(PropertyName = "name", Required = Required.Always)]
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
     /// <summary>
     /// Gets or sets the Service Bus connection string.
     /// Either this OR (Namespace + SharedAccessKeyName + SharedAccessKey) must be provided.
     /// </summary>
-    [JsonProperty(PropertyName = "connectionString", Required = Required.Default)]
+    [JsonPropertyName("connectionString")]
     public string ConnectionString { get; set; }
 
     /// <summary>
     /// Gets or sets the Service Bus namespace (without .servicebus.windows.net suffix).
     /// </summary>
-    [JsonProperty(PropertyName = "namespace", Required = Required.Default)]
+    [JsonPropertyName("namespace")]
     public string Namespace { get; set; }
 
     /// <summary>
     /// Gets or sets the shared access key name.
     /// </summary>
-    [JsonProperty(PropertyName = "sharedAccessKeyName", Required = Required.Default)]
+    [JsonPropertyName("sharedAccessKeyName")]
     public string SharedAccessKeyName { get; set; }
 
     /// <summary>
     /// Gets or sets the shared access key.
     /// </summary>
-    [JsonProperty(PropertyName = "sharedAccessKey", Required = Required.Default)]
+    [JsonPropertyName("sharedAccessKey")]
     public string SharedAccessKey { get; set; }
 
     /// <summary>
     /// Gets or sets the topic name. Either Topic or Queue must be specified, but not both.
     /// </summary>
-    [JsonProperty(PropertyName = "topic", Required = Required.Default)]
+    [JsonPropertyName("topic")]
     public string Topic { get; set; }
 
     /// <summary>
     /// Gets or sets the queue name. Either Topic or Queue must be specified, but not both.
     /// </summary>
-    [JsonProperty(PropertyName = "queue", Required = Required.Default)]
+    [JsonPropertyName("queue")]
     public string Queue { get; set; }
 
-    [JsonProperty(PropertyName = "filter", Required = Required.Default)]
+    [JsonPropertyName("filter")]
     public FilterSetting Filter { get; set; }
 
-    [JsonProperty(PropertyName = "disabled", Required = Required.Default)]
+    [JsonPropertyName("disabled")]
     public bool Disabled { get; set; }
 
     /// <summary>
     /// Gets or sets the delivery schema for events sent to this subscriber.
     /// If null, uses the topic's output schema or the original event schema.
     /// </summary>
-    [JsonProperty(PropertyName = "deliverySchema", Required = Required.Default)]
-    [JsonConverter(typeof(StringEnumConverter))]
+    [JsonPropertyName("deliverySchema")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public EventSchema? DeliverySchema { get; set; }
 
     /// <summary>
     /// Gets or sets the delivery properties to add to Service Bus messages.
     /// Keys are property names, values specify whether the property is static or dynamic.
     /// </summary>
-    [JsonProperty(PropertyName = "properties", Required = Required.Default)]
+    [JsonPropertyName("properties")]
     public Dictionary<string, DeliveryPropertySettings> Properties { get; set; }
 
     [JsonIgnore]

@@ -2,11 +2,11 @@
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Azure.Messaging.EventGrid;
 using AzureEventGridSimulator.Domain;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
@@ -45,7 +45,10 @@ public class BasicTests : IClassFixture<IntegrationContextFixture>
         );
 
         var testEvent = new EventGridEvent("subject", "eventType", "1.0", new { Blah = 1 });
-        var json = JsonConvert.SerializeObject(new[] { testEvent }, Formatting.Indented);
+        var json = JsonSerializer.Serialize(
+            new[] { testEvent },
+            new JsonSerializerOptions { WriteIndented = true }
+        );
 
         // Act
         var jsonContent = new StringContent(json, Encoding.UTF8, "application/json");
