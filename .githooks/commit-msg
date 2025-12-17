@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# Git hook to validate commit messages follow Conventional Commits format.
+# https://www.conventionalcommits.org/
+#
+# To enable this hook, run:
+#   git config core.hooksPath .githooks
+#
+
+commit_msg_file="$1"
+commit_msg=$(cat "$commit_msg_file")
+
+# Skip merge commits
+if echo "$commit_msg" | grep -qE "^Merge "; then
+    exit 0
+fi
+
+# Conventional commit pattern: type(optional scope): description
+# Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert, deps
+pattern="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|deps)(\(.+\))?: .+"
+
+if ! echo "$commit_msg" | head -1 | grep -qE "$pattern"; then
+    echo ""
+    echo "ERROR: Commit message does not follow Conventional Commits format."
+    echo ""
+    echo "Expected format: <type>: <description>"
+    echo "                 <type>(<scope>): <description>"
+    echo ""
+    echo "Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert, deps"
+    echo ""
+    echo "Examples:"
+    echo "  feat: add new subscriber type"
+    echo "  fix: resolve validation error"
+    echo "  docs: update README"
+    echo "  chore(deps): update dependencies"
+    echo ""
+    echo "Note: There must be a space after the colon."
+    echo ""
+    echo "Your commit message was:"
+    echo "  $(head -1 "$commit_msg_file")"
+    echo ""
+    exit 1
+fi
+
+exit 0
