@@ -50,8 +50,8 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
         {
             if (_simulatorProcess?.HasExited == false)
             {
-                _simulatorProcess?.Kill(true);
-                _simulatorProcess?.WaitForExit();
+                _simulatorProcess.Kill(true);
+                _simulatorProcess.WaitForExit();
             }
 
             _disposed = true;

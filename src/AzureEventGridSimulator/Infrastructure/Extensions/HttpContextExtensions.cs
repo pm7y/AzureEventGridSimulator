@@ -10,7 +10,7 @@ public static class HttpContextExtensions
     {
         public async Task<string> RequestBody()
         {
-            var reader = new StreamReader(context.Request.Body);
+            using var reader = new StreamReader(context.Request.Body);
             reader.BaseStream.Seek(0, SeekOrigin.Begin);
             return await reader.ReadToEndAsync();
         }

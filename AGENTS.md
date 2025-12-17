@@ -460,9 +460,10 @@ Releases are automated via Release Please:
 
 When making changes to the codebase, keep documentation in sync:
 
-- **AGENTS.md**: Update when changing architecture, conventions, build processes, or development workflows
+- **AGENTS.md**: Single source of truth for all AI/LLM coding assistants. Update when changing architecture, conventions, build processes, or development workflows
 - **README.md**: Update when changing user-facing features, configuration options, or usage instructions
 - **DOCKER.md**: Update when changing Docker configuration, environment variables, or container behavior
-- **.github/copilot-instructions.md**: Update when changing code style conventions or project patterns
+
+Note: `.github/copilot-instructions.md` redirects to this file (AGENTS.md) to maintain a single source of truth.
 
 Documentation should be updated in the same commit or PR as the related code changes.

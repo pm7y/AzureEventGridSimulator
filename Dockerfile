@@ -19,7 +19,7 @@ RUN rid="linux-musl-arm64" \
 # Note: Trimming is disabled because MediatR and Asp.Versioning use reflection-based DI
 RUN dotnet publish ./AzureEventGridSimulator/AzureEventGridSimulator.csproj \
     -c release -o /artifact \
-    -r $(cat /tmp/rid) \
+    -r "$(cat /tmp/rid)" \
     -f net10.0 \
     -v q \
     --nologo \
@@ -35,6 +35,7 @@ FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine
 WORKDIR /app
 
 # add tzdata incase we want to set the timezone
+# hadolint ignore=DL3018
 RUN apk add --no-cache tzdata
 
 ENV ASPNETCORE_URLS=
