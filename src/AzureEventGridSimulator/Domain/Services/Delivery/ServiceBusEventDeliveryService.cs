@@ -14,7 +14,7 @@ public class ServiceBusEventDeliveryService(
     ILogger<ServiceBusEventDeliveryService> logger,
     EventSchemaFormatterFactory formatterFactory,
     DeliveryPropertyResolver propertyResolver
-) : IAsyncDisposable
+) : IEventDeliveryService, IAsyncDisposable
 {
     private readonly ConcurrentDictionary<string, ServiceBusClient> _clients = new();
     private readonly ConcurrentDictionary<string, ServiceBusSender> _senders = new();
@@ -33,6 +33,126 @@ public class ServiceBusEventDeliveryService(
 
         _senders.Clear();
         _clients.Clear();
+    }
+
+    /// <inheritdoc />
+    public async Task<DeliveryResult> DeliverAsync(
+        PendingDelivery delivery,
+        CancellationToken cancellationToken
+    )
+    {
+        if (delivery.Subscriber is not ServiceBusSubscriberSettings subscription)
+        {
+            return new DeliveryResult(
+                false,
+                DeliveryOutcome.ServiceBusError,
+                ErrorMessage: "Invalid subscriber type for Service Bus delivery"
+            );
+        }
+
+        try
+        {
+            if (subscription.Disabled)
+            {
+                return new DeliveryResult(
+                    false,
+                    DeliveryOutcome.ServiceBusError,
+                    ErrorMessage: "Subscription is disabled"
+                );
+            }
+
+            // Determine the delivery schema
+            var deliverySchema =
+                subscription.DeliverySchema ?? delivery.Topic.OutputSchema ?? delivery.InputSchema;
+            var formatter = formatterFactory.GetFormatter(deliverySchema);
+
+            // Serialize the event
+            var json = formatter.Serialize(delivery.Event);
+
+            // Get or create the sender
+            var sender = GetOrCreateSender(subscription);
+
+            // Create the message
+            var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(json))
+            {
+                ContentType = formatter.ContentType,
+                MessageId = delivery.Event.Id ?? Guid.NewGuid().ToString(),
+            };
+
+            // Add delivery properties
+            var properties = propertyResolver.ResolveProperties(
+                subscription.Properties,
+                delivery.Event
+            );
+            foreach (var (name, value) in properties)
+            {
+                message.ApplicationProperties[name] = value;
+            }
+
+            // Add standard Event Grid headers as application properties
+            message.ApplicationProperties["aeg-event-type"] = "Notification";
+            message.ApplicationProperties["aeg-subscription-name"] =
+                subscription.Name.ToUpperInvariant();
+            message.ApplicationProperties["aeg-delivery-count"] = delivery.AttemptCount + 1;
+
+            if (deliverySchema == EventSchema.EventGridSchema)
+            {
+                message.ApplicationProperties["aeg-data-version"] =
+                    delivery.Event.DataVersion ?? "";
+                message.ApplicationProperties["aeg-metadata-version"] = "1";
+            }
+
+            // Send the message
+            await sender.SendMessageAsync(message, cancellationToken);
+
+            logger.LogDebug(
+                "Event {EventId} sent to Service Bus {DestinationType} '{DestinationName}' via subscription '{SubscriberName}'",
+                delivery.Event.Id,
+                subscription.IsTopic ? "topic" : "queue",
+                subscription.DestinationName,
+                subscription.Name
+            );
+
+            return new DeliveryResult(true, DeliveryOutcome.Success);
+        }
+        catch (ServiceBusException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Service Bus error sending event {EventId} to {DestinationType} '{DestinationName}'",
+                delivery.Event.Id,
+                subscription.IsTopic ? "topic" : "queue",
+                subscription.DestinationName
+            );
+
+            return new DeliveryResult(
+                false,
+                DeliveryOutcome.ServiceBusError,
+                ErrorMessage: ex.Message
+            );
+        }
+        catch (OperationCanceledException)
+        {
+            return new DeliveryResult(
+                false,
+                DeliveryOutcome.Cancelled,
+                ErrorMessage: "Delivery cancelled"
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Unexpected error sending event {EventId} to Service Bus",
+                delivery.Event.Id
+            );
+
+            return new DeliveryResult(
+                false,
+                DeliveryOutcome.ServiceBusError,
+                ErrorMessage: ex.Message
+            );
+        }
     }
 
     /// <summary>
@@ -85,7 +205,7 @@ public class ServiceBusEventDeliveryService(
             message.ApplicationProperties["aeg-event-type"] = "Notification";
             message.ApplicationProperties["aeg-subscription-name"] =
                 subscription.Name.ToUpperInvariant();
-            message.ApplicationProperties["aeg-delivery-count"] = 0;
+            message.ApplicationProperties["aeg-delivery-count"] = 1;
 
             if (deliverySchema == EventSchema.EventGridSchema)
             {

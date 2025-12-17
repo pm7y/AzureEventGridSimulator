@@ -1,7 +1,6 @@
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Domain.Entities;
-using AzureEventGridSimulator.Domain.Services;
-using AzureEventGridSimulator.Domain.Services.Delivery;
+using AzureEventGridSimulator.Domain.Services.Retry;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using NSubstitute;
@@ -13,41 +12,16 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Commands;
 [Trait("Category", "unit")]
 public class SendNotificationEventsToSubscriberCommandHandlerTests
 {
+    private readonly IDeliveryQueue _deliveryQueue;
     private readonly SendNotificationEventsToSubscriberCommandHandler _handler;
     private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
 
     public SendNotificationEventsToSubscriberCommandHandlerTests()
     {
-        var httpClientFactory = Substitute.For<IHttpClientFactory>();
         _logger = Substitute.For<ILogger<SendNotificationEventsToSubscriberCommandHandler>>();
+        _deliveryQueue = Substitute.For<IDeliveryQueue>();
 
-        var serviceBusLogger = Substitute.For<ILogger<ServiceBusEventDeliveryService>>();
-        var storageQueueLogger = Substitute.For<ILogger<StorageQueueEventDeliveryService>>();
-        var propertyResolver = new DeliveryPropertyResolver();
-
-        var formatterFactory = new EventSchemaFormatterFactory(
-            new EventGridSchemaFormatter(),
-            new CloudEventSchemaFormatter()
-        );
-
-        var serviceBusDeliveryService = new ServiceBusEventDeliveryService(
-            serviceBusLogger,
-            formatterFactory,
-            propertyResolver
-        );
-
-        var storageQueueDeliveryService = new StorageQueueEventDeliveryService(
-            storageQueueLogger,
-            formatterFactory
-        );
-
-        _handler = new SendNotificationEventsToSubscriberCommandHandler(
-            httpClientFactory,
-            _logger,
-            formatterFactory,
-            serviceBusDeliveryService,
-            storageQueueDeliveryService
-        );
+        _handler = new SendNotificationEventsToSubscriberCommandHandler(_deliveryQueue, _logger);
     }
 
     [Fact]
@@ -248,7 +222,7 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
     }
 
     [Fact]
-    public async Task GivenDisabledHttpSubscriber_WhenHandled_ThenLogsWarningAndSkips()
+    public async Task GivenDisabledHttpSubscriber_WhenHandled_ThenLogsDebugAndSkips()
     {
         var subscriber = CreateHttpSubscriber();
         subscriber.Disabled = true;
@@ -265,9 +239,9 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
         _logger
             .Received()
             .Log(
-                LogLevel.Warning,
+                LogLevel.Debug,
                 Arg.Any<EventId>(),
-                Arg.Any<object>(),
+                Arg.Is<object>(o => o.ToString().Contains("Skipping disabled subscriber")),
                 Arg.Any<Exception>(),
                 Arg.Any<Func<object, Exception, string>>()
             );

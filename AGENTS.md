@@ -14,7 +14,9 @@ Azure Event Grid Simulator is a local development simulator that provides HTTPS 
 **Key Features:**
 
 - Multi-topic support with individual HTTPS endpoints
-- HTTP webhook and Azure Service Bus subscriber delivery
+- HTTP webhook, Azure Service Bus, and Storage Queue subscriber delivery
+- Azure Event Grid-compatible retry with exponential backoff
+- Dead-letter support with local JSON file output
 - Event filtering (subject-based and advanced)
 - Schema transformation between EventGrid and CloudEvents
 - Authentication via aeg-sas-key or aeg-sas-token headers
@@ -48,8 +50,10 @@ dotnet dev-certs https --trust
 The simulator uses `appsettings.json` for topic and subscriber configuration. Key settings:
 
 - **Topics**: Each topic requires `name`, `port`, and optional `key` for authentication
-- **Subscribers**: Supports HTTP webhooks and Azure Service Bus (queues/topics)
+- **Subscribers**: Supports HTTP webhooks, Azure Service Bus (queues/topics), and Storage Queues
 - **Filtering**: Event type, subject-based, and advanced filtering per subscriber
+- **Retry Policy**: Configurable per subscriber (maxDeliveryAttempts, eventTimeToLiveInMinutes, enabled)
+- **Dead-Letter**: Configurable per subscriber (enabled, folderPath for JSON output)
 
 Example configuration: `/src/AzureEventGridSimulator/src/AzureEventGridSimulator/appsettings.json`
 
@@ -121,16 +125,20 @@ docker-compose -f /src/AzureEventGridSimulator/docker-compose.yml down
 │   ├── Controllers/                   # API endpoints
 │   ├── Domain/                        # Business logic layer
 │   │   ├── Commands/                  # Command handlers
-│   │   ├── Entities/                  # Domain models
+│   │   ├── Entities/                  # Domain models (including PendingDelivery, DeadLetterEvent)
 │   │   └── Services/                  # Domain services
+│   │       ├── Delivery/              # Event delivery services (HTTP, ServiceBus, StorageQueue)
+│   │       └── Retry/                 # Retry infrastructure (queue, scheduler, dead-letter)
 │   ├── Infrastructure/                # Cross-cutting concerns
 │   │   ├── Extensions/                # Extension methods
 │   │   ├── Mediator/                  # Custom mediator implementation
 │   │   ├── Middleware/                # HTTP middleware
 │   │   └── Settings/                  # Configuration models
+│   │       └── Subscribers/           # Subscriber settings (including RetryPolicy, DeadLetter)
 │   └── Program.cs                     # Application entry point
 ├── AzureEventGridSimulator.Tests/     # Test project
 │   ├── UnitTests/                     # Unit tests
+│   │   └── Retry/                     # Retry-specific tests
 │   ├── IntegrationTests/              # Integration tests
 │   └── ActualSimulatorTests/          # End-to-end tests
 ├── Directory.Build.props              # Shared MSBuild properties

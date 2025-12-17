@@ -53,6 +53,20 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public EventSchema? DeliverySchema { get; set; }
 
+    /// <summary>
+    /// Gets or sets the retry policy for this subscriber.
+    /// If null, default Azure Event Grid retry behavior is used (enabled with 30 attempts, 24h TTL).
+    /// </summary>
+    [JsonPropertyName("retryPolicy")]
+    public RetryPolicySettings RetryPolicy { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the dead-letter settings for this subscriber.
+    /// Events that cannot be delivered are written to the dead-letter destination.
+    /// </summary>
+    [JsonPropertyName("deadLetter")]
+    public DeadLetterSettings DeadLetter { get; set; } = new();
+
     [JsonIgnore]
     public string SubscriberType => "storageQueue";
 
@@ -79,5 +93,7 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
         }
 
         Filter?.Validate();
+        RetryPolicy?.Validate();
+        DeadLetter?.Validate();
     }
 }

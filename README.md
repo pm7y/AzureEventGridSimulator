@@ -83,23 +83,24 @@ An example of one topic with one subscriber is shown below.
 
 ### Topic Settings
 
-| Setting                        | Description                                                                                                                                                        |
-|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `name`                         | The name of the topic. It can only contain letters, numbers, and dashes.                                                                                           |
-| `port`                         | The port to use for the topic endpoint. The topic will listen on `https://0.0.0.0:{port}/`.                                                                        |
-| `key`                          | The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place. |
-| `subscribers`                  | The subscriptions for this topic.                                                                                                                                  |
-| `inputSchema`                  | (Optional) The expected input event schema. Values: `EventGridSchema` or `CloudEventV1_0`. If not specified, the schema is auto-detected from the request.         |
-| `outputSchema`                 | (Optional) The output event schema for delivery to subscribers. If not specified, events are delivered in the same schema they were received in.                   |
-| `serviceBusConnectionString`   | (Optional) Default Service Bus connection string for all Service Bus subscribers in this topic. Subscribers can override with their own.                           |
-| `serviceBusNamespace`          | (Optional) Default Service Bus namespace (without `.servicebus.windows.net`). Use with `serviceBusSharedAccessKeyName` and `serviceBusSharedAccessKey`.            |
-| `serviceBusSharedAccessKeyName`| (Optional) Default shared access key name for Service Bus.                                                                                                         |
-| `serviceBusSharedAccessKey`    | (Optional) Default shared access key for Service Bus.                                                                                                              |
-| `storageQueueConnectionString` | (Optional) Default Storage Queue connection string for all Storage Queue subscribers in this topic. Subscribers can override with their own.                       |
+| Setting                         | Description                                                                                                                                                        |
+|---------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`                          | The name of the topic. It can only contain letters, numbers, and dashes.                                                                                           |
+| `port`                          | The port to use for the topic endpoint. The topic will listen on `https://0.0.0.0:{port}/`.                                                                        |
+| `key`                           | The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place. |
+| `subscribers`                   | The subscriptions for this topic.                                                                                                                                  |
+| `inputSchema`                   | (Optional) The expected input event schema. Values: `EventGridSchema` or `CloudEventV1_0`. If not specified, the schema is auto-detected from the request.         |
+| `outputSchema`                  | (Optional) The output event schema for delivery to subscribers. If not specified, events are delivered in the same schema they were received in.                   |
+| `serviceBusConnectionString`    | (Optional) Default Service Bus connection string for all Service Bus subscribers in this topic. Subscribers can override with their own.                           |
+| `serviceBusNamespace`           | (Optional) Default Service Bus namespace (without `.servicebus.windows.net`). Use with `serviceBusSharedAccessKeyName` and `serviceBusSharedAccessKey`.            |
+| `serviceBusSharedAccessKeyName` | (Optional) Default shared access key name for Service Bus.                                                                                                         |
+| `serviceBusSharedAccessKey`     | (Optional) Default shared access key for Service Bus.                                                                                                              |
+| `storageQueueConnectionString`  | (Optional) Default Storage Queue connection string for all Storage Queue subscribers in this topic. Subscribers can override with their own.                       |
 
 ### Subscriber Settings
 
-The simulator supports three subscriber types: **HTTP webhooks**, **Azure Service Bus** (queues and topics), and **Azure Storage Queues**.
+The simulator supports three subscriber types: **HTTP webhooks**, **Azure Service Bus** (queues and topics), and **Azure
+Storage Queues**.
 
 #### Grouped Format (Recommended)
 
@@ -153,20 +154,24 @@ For backwards compatibility, a flat array of HTTP subscribers is still supported
 | `endpoint`          | The subscription endpoint url. Events received by topic will be sent to this address.                                                                                  |
 | `disableValidation` | Set to `true` to disable subscription validation. Default is `false`, which means subscription validation will be attempted each time the simulator starts.            |
 | `deliverySchema`    | (Optional) Override the delivery schema for this specific subscriber. Values: `EventGridSchema` or `CloudEventV1_0`. Takes precedence over the topic's `outputSchema`. |
+| `retryPolicy`       | (Optional) Retry policy settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                                                                              |
+| `deadLetter`        | (Optional) Dead-letter settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                                                                               |
 
 #### Service Bus Subscriber Settings
 
-| Setting               | Description                                                                                                                                            |
-|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `name`                | The name of the subscriber.                                                                                                                            |
-| `connectionString`    | The Service Bus connection string. Can be omitted if `serviceBusConnectionString` is set at the topic level.                                           |
-| `namespace`           | The Service Bus namespace (without `.servicebus.windows.net` suffix). Alternative to `connectionString`. Can inherit from topic-level settings.        |
-| `sharedAccessKeyName` | The shared access key name (e.g., `RootManageSharedAccessKey`). Used with `namespace`.                                                                 |
-| `sharedAccessKey`     | The shared access key. Used with `namespace`.                                                                                                          |
-| `queue`               | The queue name. Either `queue` or `topic` must be specified (not both).                                                                                |
-| `topic`               | The topic name. Either `queue` or `topic` must be specified (not both).                                                                                |
-| `deliverySchema`      | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                                                                |
-| `properties`          | (Optional) Custom delivery properties to add to Service Bus messages. See below.                                                                       |
+| Setting               | Description                                                                                                                                     |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`                | The name of the subscriber.                                                                                                                     |
+| `connectionString`    | The Service Bus connection string. Can be omitted if `serviceBusConnectionString` is set at the topic level.                                    |
+| `namespace`           | The Service Bus namespace (without `.servicebus.windows.net` suffix). Alternative to `connectionString`. Can inherit from topic-level settings. |
+| `sharedAccessKeyName` | The shared access key name (e.g., `RootManageSharedAccessKey`). Used with `namespace`.                                                          |
+| `sharedAccessKey`     | The shared access key. Used with `namespace`.                                                                                                   |
+| `queue`               | The queue name. Either `queue` or `topic` must be specified (not both).                                                                         |
+| `topic`               | The topic name. Either `queue` or `topic` must be specified (not both).                                                                         |
+| `deliverySchema`      | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                                                         |
+| `properties`          | (Optional) Custom delivery properties to add to Service Bus messages. See below.                                                                |
+| `retryPolicy`         | (Optional) Retry policy settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                                                       |
+| `deadLetter`          | (Optional) Dead-letter settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                                                        |
 
 #### Service Bus Delivery Properties
 
@@ -198,12 +203,14 @@ You can add custom application properties to Service Bus messages using static o
 
 #### Storage Queue Subscriber Settings
 
-| Setting            | Description                                                                                                              |
-|--------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `name`             | The name of the subscriber.                                                                                              |
-| `connectionString` | The Storage Queue connection string. Can be omitted if `storageQueueConnectionString` is set at the topic level.         |
-| `queueName`        | The name of the queue to send events to.                                                                                 |
-| `deliverySchema`   | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                                  |
+| Setting            | Description                                                                                                      |
+|--------------------|------------------------------------------------------------------------------------------------------------------|
+| `name`             | The name of the subscriber.                                                                                      |
+| `connectionString` | The Storage Queue connection string. Can be omitted if `storageQueueConnectionString` is set at the topic level. |
+| `queueName`        | The name of the queue to send events to.                                                                         |
+| `deliverySchema`   | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                          |
+| `retryPolicy`      | (Optional) Retry policy settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                        |
+| `deadLetter`       | (Optional) Dead-letter settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                         |
 
 #### Complete Example
 
@@ -250,7 +257,8 @@ You can add custom application properties to Service Bus messages using static o
 }
 ```
 
-Note: The `serviceBus` and `storageQueue` subscribers above inherit their connection strings from the topic-level settings. Subscribers can override these by specifying their own `connectionString`.
+Note: The `serviceBus` and `storageQueue` subscribers above inherit their connection strings from the topic-level
+settings. Subscribers can override these by specifying their own `connectionString`.
 
 ### App Settings
 
@@ -373,6 +381,148 @@ etc.) return `true` when the key doesn't exist.
 AzureEventGridSimulator.exe --ConfigFile=/path/to/config.json
 ```
 
+### Retry & Dead-Letter
+
+The simulator supports Azure Event Grid-compatible retry and dead-letter behavior. When delivery to a subscriber fails,
+the event is automatically retried with exponential backoff. Events that cannot be delivered after all retry attempts
+are written to a dead-letter folder as JSON files.
+
+**Retry is enabled by default** (matching Azure Event Grid behavior). You can configure retry and dead-letter settings
+per subscriber.
+
+#### Retry Schedule
+
+The retry schedule follows Azure Event Grid's exponential backoff:
+
+| Attempt | Delay    |
+|---------|----------|
+| 1       | 10 sec   |
+| 2       | 30 sec   |
+| 3       | 1 min    |
+| 4       | 5 min    |
+| 5       | 10 min   |
+| 6       | 30 min   |
+| 7       | 1 hour   |
+| 8       | 3 hours  |
+| 9       | 6 hours  |
+| 10+     | 12 hours |
+
+After attempt 10, retries continue every 12 hours until the event TTL expires (default 24 hours).
+
+#### HTTP Status Code Handling
+
+| Status Code   | Behavior                                  |
+|---------------|-------------------------------------------|
+| 200-204       | Success - delivery complete               |
+| 400, 401, 403 | Immediate dead-letter (no retry)          |
+| 413           | Immediate dead-letter (payload too large) |
+| 404           | Retry with minimum 5 minute delay         |
+| 408           | Retry with minimum 2 minute delay         |
+| 503           | Retry with minimum 30 second delay        |
+| Other errors  | Retry with standard exponential backoff   |
+
+#### Retry Policy Settings
+
+Configure retry behavior per subscriber:
+
+```json
+{
+  "retryPolicy": {
+    "enabled": true,
+    "maxDeliveryAttempts": 30,
+    "eventTimeToLiveInMinutes": 1440
+  }
+}
+```
+
+| Setting                    | Description                                           | Default |
+|----------------------------|-------------------------------------------------------|---------|
+| `enabled`                  | Enable or disable retry for this subscriber           | `true`  |
+| `maxDeliveryAttempts`      | Maximum delivery attempts (1-30)                      | `30`    |
+| `eventTimeToLiveInMinutes` | Time-to-live in minutes before event expires (1-1440) | `1440`  |
+
+#### Dead-Letter Settings
+
+Configure dead-letter behavior per subscriber:
+
+```json
+{
+  "deadLetter": {
+    "enabled": true,
+    "folderPath": "./dead-letters"
+  }
+}
+```
+
+| Setting      | Description                            | Default          |
+|--------------|----------------------------------------|------------------|
+| `enabled`    | Enable or disable dead-lettering       | `true`           |
+| `folderPath` | Folder path for dead-letter JSON files | `./dead-letters` |
+
+#### Dead-Letter File Format
+
+Failed events are written to: `{folderPath}/{topicName}/{subscriberName}/{timestamp}_{eventId}.json`
+
+```json
+{
+  "deadLetterReason": "MaxDeliveryAttemptsExceeded",
+  "deliveryAttempts": 10,
+  "lastDeliveryOutcome": "HttpError",
+  "lastHttpStatusCode": 503,
+  "lastErrorMessage": "Service Unavailable",
+  "publishTime": "2025-01-15T10:30:00Z",
+  "lastDeliveryAttemptTime": "2025-01-15T11:30:00Z",
+  "topicName": "OrdersTopic",
+  "subscriberName": "MyWebhook",
+  "subscriberType": "http",
+  "event": { }
+}
+```
+
+#### Complete Example with Retry & Dead-Letter
+
+```json
+{
+  "topics": [
+    {
+      "name": "OrdersTopic",
+      "port": 60101,
+      "key": "TheLocal+DevelopmentKey=",
+      "subscribers": {
+        "http": [
+          {
+            "name": "MyWebhook",
+            "endpoint": "https://myapp.com/webhooks/orders",
+            "disableValidation": true,
+            "retryPolicy": {
+              "enabled": true,
+              "maxDeliveryAttempts": 10,
+              "eventTimeToLiveInMinutes": 60
+            },
+            "deadLetter": {
+              "enabled": true,
+              "folderPath": "./dead-letters"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+#### Disabling Retry (Fire-and-Forget)
+
+To restore the previous fire-and-forget behavior:
+
+```json
+{
+  "retryPolicy": {
+    "enabled": false
+  }
+}
+```
+
 ## Docker
 
 There's a published image available on the [↗ Docker hub](https://hub.docker.com/r/pmcilreavy/azureeventgridsimulator)
@@ -411,7 +561,8 @@ docker run `
 
 ### Docker Compose
 
-There is a `docker-compose.yml` file in the `docker/` folder that you can use to build and run the simulator along with an
+There is a `docker-compose.yml` file in the `docker/` folder that you can use to build and run the simulator along with
+an
 Azure Service Bus emulator for local development.
 
 ```
@@ -620,7 +771,6 @@ dotnet csharpier format src
 
 Some features that could be added if there was a need for them:
 
-- Subscriber retries & dead lettering. https://docs.microsoft.com/en-us/azure/event-grid/delivery-and-retry
 - Certificate configuration in `appsettings.json`.
 - Subscriber token auth.
 - Azure Event Hub subscriber support.

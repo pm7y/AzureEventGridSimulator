@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
+using Azure;
 using Azure.Storage.Queues;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
@@ -13,7 +14,7 @@ namespace AzureEventGridSimulator.Domain.Services.Delivery;
 public class StorageQueueEventDeliveryService(
     ILogger<StorageQueueEventDeliveryService> logger,
     EventSchemaFormatterFactory formatterFactory
-) : IAsyncDisposable
+) : IEventDeliveryService, IAsyncDisposable
 {
     private readonly ConcurrentDictionary<string, QueueClient> _clients = new();
 
@@ -22,6 +23,98 @@ public class StorageQueueEventDeliveryService(
         // QueueClient doesn't require explicit disposal, but we clear the cache for cleanup
         _clients.Clear();
         return ValueTask.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task<DeliveryResult> DeliverAsync(
+        PendingDelivery delivery,
+        CancellationToken cancellationToken
+    )
+    {
+        if (delivery.Subscriber is not StorageQueueSubscriberSettings subscription)
+        {
+            return new DeliveryResult(
+                false,
+                DeliveryOutcome.StorageQueueError,
+                ErrorMessage: "Invalid subscriber type for Storage Queue delivery"
+            );
+        }
+
+        try
+        {
+            if (subscription.Disabled)
+            {
+                return new DeliveryResult(
+                    false,
+                    DeliveryOutcome.StorageQueueError,
+                    ErrorMessage: "Subscription is disabled"
+                );
+            }
+
+            // Determine the delivery schema
+            var deliverySchema =
+                subscription.DeliverySchema ?? delivery.Topic.OutputSchema ?? delivery.InputSchema;
+            var formatter = formatterFactory.GetFormatter(deliverySchema);
+
+            // Serialize the event
+            var json = formatter.Serialize(delivery.Event);
+
+            // Get or create the queue client (creates queue if it doesn't exist)
+            var client = await GetOrCreateClientAsync(subscription);
+
+            // Base64 encode the JSON (matches Azure Event Grid behavior)
+            var messageText = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+
+            // Send the message
+            await client.SendMessageAsync(messageText, cancellationToken);
+
+            logger.LogDebug(
+                "Event {EventId} sent to Storage Queue '{QueueName}' via subscription '{SubscriberName}'",
+                delivery.Event.Id,
+                subscription.QueueName,
+                subscription.Name
+            );
+
+            return new DeliveryResult(true, DeliveryOutcome.Success);
+        }
+        catch (RequestFailedException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Storage Queue error sending event {EventId} to queue '{QueueName}'",
+                delivery.Event.Id,
+                subscription.QueueName
+            );
+
+            return new DeliveryResult(
+                false,
+                DeliveryOutcome.StorageQueueError,
+                ex.Status,
+                ex.Message
+            );
+        }
+        catch (OperationCanceledException)
+        {
+            return new DeliveryResult(
+                false,
+                DeliveryOutcome.Cancelled,
+                ErrorMessage: "Delivery cancelled"
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Unexpected error sending event {EventId} to Storage Queue",
+                delivery.Event.Id
+            );
+
+            return new DeliveryResult(
+                false,
+                DeliveryOutcome.StorageQueueError,
+                ErrorMessage: ex.Message
+            );
+        }
     }
 
     /// <summary>
