@@ -48,6 +48,8 @@ public class AdvancedFilterSetting
     [JsonPropertyName("values")]
     public ICollection<object> Values { get; set; }
 
+    private static readonly string[] values = ["null"];
+
     internal void Validate()
     {
         if (string.IsNullOrWhiteSpace(Key))
@@ -132,10 +134,7 @@ public class AdvancedFilterSetting
             Key,
             OperatorType,
             Value ?? "null",
-            string.Join(
-                ", ",
-                Values.HasItems() ? Values.Select(v => v.ToString()) : new[] { "null" }
-            ),
+            string.Join(", ", Values.HasItems() ? Values.Select(v => v.ToString()) : values),
             Guid.NewGuid()
         );
     }

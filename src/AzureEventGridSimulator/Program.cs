@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Globalization;
+using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Asp.Versioning;
@@ -13,6 +14,7 @@ using AzureEventGridSimulator.Infrastructure.Middleware;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Serilog;
 using Serilog.Events;
+using Serilog.Extensions.Hosting;
 using ILogger = Serilog.ILogger;
 
 [assembly: InternalsVisibleTo("AzureEventGridSimulator.Tests")]
@@ -170,7 +172,7 @@ public class Program
         return ConfigureWebHost(args, configuration);
     }
 
-    private static ILogger CreateBasicConsoleLogger()
+    private static ReloadableLogger CreateBasicConsoleLogger()
     {
         return new LoggerConfiguration()
             .MinimumLevel.Is(LogEventLevel.Verbose)
@@ -262,7 +264,7 @@ public class Program
             .Services.AddApiVersioning(options =>
             {
                 options.DefaultApiVersion = new ApiVersion(
-                    DateOnly.Parse(Constants.SupportedApiVersion)
+                    DateOnly.Parse(Constants.SupportedApiVersion, CultureInfo.InvariantCulture)
                 );
                 options.AssumeDefaultVersionWhenUnspecified = true;
                 options.ReportApiVersions = true;
@@ -305,8 +307,9 @@ public class Program
         builder.Configuration.AddConfiguration(configuration);
         builder.WebHost.UseKestrel(options =>
         {
+            var debugView = ((IConfigurationRoot)configuration).GetDebugView().Normalize();
             // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
-            Log.Verbose(((IConfigurationRoot)configuration).GetDebugView().Normalize());
+            Log.Verbose(debugView);
 
             options.ConfigureSimulatorCertificate();
 

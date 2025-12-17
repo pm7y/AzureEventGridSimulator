@@ -12,8 +12,8 @@ public class AdvancedFilterValidationTests
     {
         return new SimulatorSettings
         {
-            Topics = new[]
-            {
+            Topics =
+            [
                 new TopicSettings
                 {
                     Key = "TopicKey",
@@ -21,8 +21,8 @@ public class AdvancedFilterValidationTests
                     Port = 12345,
                     Subscribers = new SubscribersSettings
                     {
-                        Http = new[]
-                        {
+                        Http =
+                        [
                             new HttpSubscriberSettings
                             {
                                 Name = "SubscriberName",
@@ -32,10 +32,10 @@ public class AdvancedFilterValidationTests
                                     AdvancedFilters = new[] { advancedFilter },
                                 },
                             },
-                        },
+                        ],
                     },
                 },
-            },
+            ],
         };
     }
 
@@ -169,9 +169,7 @@ public class AdvancedFilterValidationTests
         Should.NotThrow(() =>
         {
             foreach (
-                AdvancedFilterSetting.AdvancedFilterOperatorType operatorType in Enum.GetValues(
-                    typeof(AdvancedFilterSetting.AdvancedFilterOperatorType)
-                )
+                var operatorType in Enum.GetValues<AdvancedFilterSetting.AdvancedFilterOperatorType>()
             )
             {
                 var filterConfig = new AdvancedFilterSetting
@@ -189,9 +187,7 @@ public class AdvancedFilterValidationTests
     public void TestFilterValidationWithSixValues()
     {
         foreach (
-            AdvancedFilterSetting.AdvancedFilterOperatorType operatorType in Enum.GetValues(
-                typeof(AdvancedFilterSetting.AdvancedFilterOperatorType)
-            )
+            var operatorType in Enum.GetValues<AdvancedFilterSetting.AdvancedFilterOperatorType>()
         )
         {
             var filterConfig = new AdvancedFilterSetting

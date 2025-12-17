@@ -24,8 +24,8 @@ internal class PositiveFilterTestCaseContainer : IEnumerable<object[]>
 
     private static AdvancedFilterSetting[] GetPositiveIdFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "Id",
@@ -158,13 +158,13 @@ internal class PositiveFilterTestCaseContainer : IEnumerable<object[]>
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
                 Values = Array.Empty<string>(),
             },
-        };
+        ];
     }
 
     private static AdvancedFilterSetting[] GetPositiveTopicFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "Topic",
@@ -201,13 +201,13 @@ internal class PositiveFilterTestCaseContainer : IEnumerable<object[]>
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
                 Values = new object[] { "not_the_right_one" },
             },
-        };
+        ];
     }
 
     private static AdvancedFilterSetting[] GetPositiveSubjectFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "Subject",
@@ -244,13 +244,13 @@ internal class PositiveFilterTestCaseContainer : IEnumerable<object[]>
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
                 Values = new object[] { "NotTheEventSubject" },
             },
-        };
+        ];
     }
 
     private static AdvancedFilterSetting[] GetPositiveEventTypeFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "EventType",
@@ -287,13 +287,13 @@ internal class PositiveFilterTestCaseContainer : IEnumerable<object[]>
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
                 Values = new object[] { "Not-the-right-type" },
             },
-        };
+        ];
     }
 
     private static AdvancedFilterSetting[] GetPositiveDataVersionFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "DataVersion",
@@ -324,13 +324,13 @@ internal class PositiveFilterTestCaseContainer : IEnumerable<object[]>
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
                 Values = new object[] { "5" },
             },
-        };
+        ];
     }
 
     private static AdvancedFilterSetting[] GetPositiveEventDataFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "Data.NumberValue",
@@ -563,6 +563,6 @@ internal class PositiveFilterTestCaseContainer : IEnumerable<object[]>
                 Key = "Data.NumberValue",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull,
             },
-        };
+        ];
     }
 }

@@ -20,10 +20,9 @@ public abstract class SasKeyValidatorTestBase
 
     protected static string GenerateValidSasToken(string key, string resource, DateTime expiry)
     {
-        var decodedResource = resource;
         var decodedExpiration = expiry.ToString("o");
 
-        var encodedResource = HttpUtility.UrlEncode(decodedResource);
+        var encodedResource = HttpUtility.UrlEncode(resource);
         var encodedExpiration = HttpUtility.UrlEncode(decodedExpiration);
 
         var unsignedSas = $"r={encodedResource}&e={encodedExpiration}";

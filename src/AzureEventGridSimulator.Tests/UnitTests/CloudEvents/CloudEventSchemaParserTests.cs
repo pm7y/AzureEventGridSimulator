@@ -26,7 +26,7 @@ public class CloudEventSchemaParserTests
             "/test/source",
             "test-id-123"
         );
-        var requestBody = "{\"Property\": \"Value\"}";
+        const string requestBody = "{\"Property\": \"Value\"}";
 
         var events = _parser.Parse(context, requestBody);
 
@@ -51,7 +51,7 @@ public class CloudEventSchemaParserTests
             "application/json",
             "https://example.com/schema"
         );
-        var requestBody = "{\"Property\": \"Value\"}";
+        const string requestBody = "{\"Property\": \"Value\"}";
 
         var events = _parser.Parse(context, requestBody);
 
@@ -71,7 +71,7 @@ public class CloudEventSchemaParserTests
             "/test/source",
             "test-id-123"
         );
-        var requestBody = "{\"Property\": \"Value\", \"Number\": 42}";
+        const string requestBody = "{\"Property\": \"Value\", \"Number\": 42}";
 
         var events = _parser.Parse(context, requestBody);
 
@@ -87,7 +87,7 @@ public class CloudEventSchemaParserTests
             "/test/source",
             "test-id-123"
         );
-        var requestBody = "plain text data";
+        const string requestBody = "plain text data";
 
         var events = _parser.Parse(context, requestBody);
 
@@ -103,7 +103,7 @@ public class CloudEventSchemaParserTests
             "/test/source",
             "test-id-123"
         );
-        var requestBody = "";
+        const string requestBody = "";
 
         var events = _parser.Parse(context, requestBody);
 
@@ -114,13 +114,14 @@ public class CloudEventSchemaParserTests
     public void GivenStructuredModeRequest_WhenParsed_ThenCloudEventCreatedFromBody()
     {
         var context = CreateStructuredModeContext();
-        var requestBody =
-            @"{
-            ""specversion"": ""1.0"",
-            ""type"": ""com.example.test"",
-            ""source"": ""/test/source"",
-            ""id"": ""test-id-456""
-        }";
+        const string requestBody = """
+            {
+                        "specversion": "1.0",
+                        "type": "com.example.test",
+                        "source": "/test/source",
+                        "id": "test-id-456"
+                    }
+            """;
 
         var events = _parser.Parse(context, requestBody);
 
@@ -136,18 +137,19 @@ public class CloudEventSchemaParserTests
     public void GivenStructuredModeRequestWithOptionalFields_WhenParsed_ThenAllFieldsPopulated()
     {
         var context = CreateStructuredModeContext();
-        var requestBody =
-            @"{
-            ""specversion"": ""1.0"",
-            ""type"": ""com.example.test"",
-            ""source"": ""/test/source"",
-            ""id"": ""test-id-456"",
-            ""time"": ""2025-01-15T10:30:00Z"",
-            ""subject"": ""/test/subject"",
-            ""datacontenttype"": ""application/json"",
-            ""dataschema"": ""https://example.com/schema"",
-            ""data"": { ""Property"": ""Value"" }
-        }";
+        const string requestBody = """
+            {
+                        "specversion": "1.0",
+                        "type": "com.example.test",
+                        "source": "/test/source",
+                        "id": "test-id-456",
+                        "time": "2025-01-15T10:30:00Z",
+                        "subject": "/test/subject",
+                        "datacontenttype": "application/json",
+                        "dataschema": "https://example.com/schema",
+                        "data": { "Property": "Value" }
+                    }
+            """;
 
         var events = _parser.Parse(context, requestBody);
 
@@ -163,13 +165,14 @@ public class CloudEventSchemaParserTests
     public void GivenStructuredModeRequestWithArrayOfOne_WhenParsed_ThenSingleEventReturned()
     {
         var context = CreateStructuredModeContext();
-        var requestBody =
-            @"[{
-            ""specversion"": ""1.0"",
-            ""type"": ""com.example.test"",
-            ""source"": ""/test/source"",
-            ""id"": ""test-id-789""
-        }]";
+        var requestBody = """
+            [{
+                        "specversion": "1.0",
+                        "type": "com.example.test",
+                        "source": "/test/source",
+                        "id": "test-id-789"
+                    }]
+            """;
 
         var events = _parser.Parse(context, requestBody);
 
@@ -217,21 +220,22 @@ public class CloudEventSchemaParserTests
     public void GivenBatchModeRequest_WhenParsed_ThenMultipleEventsReturned()
     {
         var context = CreateBatchModeContext();
-        var requestBody =
-            @"[
-            {
-                ""specversion"": ""1.0"",
-                ""type"": ""com.example.test1"",
-                ""source"": ""/test/source"",
-                ""id"": ""event-1""
-            },
-            {
-                ""specversion"": ""1.0"",
-                ""type"": ""com.example.test2"",
-                ""source"": ""/test/source"",
-                ""id"": ""event-2""
-            }
-        ]";
+        var requestBody = """
+            [
+                        {
+                            "specversion": "1.0",
+                            "type": "com.example.test1",
+                            "source": "/test/source",
+                            "id": "event-1"
+                        },
+                        {
+                            "specversion": "1.0",
+                            "type": "com.example.test2",
+                            "source": "/test/source",
+                            "id": "event-2"
+                        }
+                    ]
+            """;
 
         var events = _parser.Parse(context, requestBody);
 
@@ -246,13 +250,14 @@ public class CloudEventSchemaParserTests
     public void GivenBatchModeRequestWithSingleEvent_WhenParsed_ThenSingleEventReturned()
     {
         var context = CreateBatchModeContext();
-        var requestBody =
-            @"[{
-            ""specversion"": ""1.0"",
-            ""type"": ""com.example.test"",
-            ""source"": ""/test/source"",
-            ""id"": ""single-event""
-        }]";
+        var requestBody = """
+            [{
+                        "specversion": "1.0",
+                        "type": "com.example.test",
+                        "source": "/test/source",
+                        "id": "single-event"
+                    }]
+            """;
 
         var events = _parser.Parse(context, requestBody);
 
@@ -369,7 +374,7 @@ public class CloudEventSchemaParserTests
         events[0].CloudEvent.Source.ShouldBe("/test/source");
     }
 
-    private static HttpContext CreateBinaryModeContext(
+    private static DefaultHttpContext CreateBinaryModeContext(
         string specVersion,
         string type,
         string source,
@@ -418,7 +423,7 @@ public class CloudEventSchemaParserTests
         return context;
     }
 
-    private static HttpContext CreateStructuredModeContext()
+    private static DefaultHttpContext CreateStructuredModeContext()
     {
         var context = new DefaultHttpContext
         {
@@ -427,7 +432,7 @@ public class CloudEventSchemaParserTests
         return context;
     }
 
-    private static HttpContext CreateBatchModeContext()
+    private static DefaultHttpContext CreateBatchModeContext()
     {
         var context = new DefaultHttpContext
         {
@@ -436,7 +441,7 @@ public class CloudEventSchemaParserTests
         return context;
     }
 
-    private static HttpContext CreateBinaryModeContextWithRawHeaders(
+    private static DefaultHttpContext CreateBinaryModeContextWithRawHeaders(
         string specVersion,
         string type,
         string source,

@@ -74,7 +74,7 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
             }
         }
 
-        return new[] { SimulatorEvent.FromCloudEvent(cloudEvent) };
+        return [SimulatorEvent.FromCloudEvent(cloudEvent)];
     }
 
     /// <summary>
@@ -119,7 +119,7 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
             throw new InvalidOperationException("Failed to parse CloudEvent from request body.");
         }
 
-        return new[] { SimulatorEvent.FromCloudEvent(cloudEvent) };
+        return [SimulatorEvent.FromCloudEvent(cloudEvent)];
     }
 
     /// <summary>

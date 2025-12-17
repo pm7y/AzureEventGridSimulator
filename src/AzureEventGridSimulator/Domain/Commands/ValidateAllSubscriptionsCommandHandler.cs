@@ -6,10 +6,12 @@ using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using JetBrains.Annotations;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 
 // ReSharper disable once UnusedMember.Global
+[UsedImplicitly]
 public class ValidateAllSubscriptionsCommandHandler(
     ILogger<ValidateAllSubscriptionsCommandHandler> logger,
     IHttpClientFactory httpClientFactory,

@@ -6,6 +6,7 @@
     <!-- Main Application -->
     <PackageVersion Include="Asp.Versioning.Mvc" Version="8.1.0" />
     <!-- Serilog -->
+    <PackageVersion Include="JetBrains.Annotations" Version="2025.2.4" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Settings.Configuration" Version="10.0.0" />

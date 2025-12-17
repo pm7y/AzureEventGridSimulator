@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc.Testing;
+﻿using JetBrains.Annotations;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
 namespace AzureEventGridSimulator.Tests.IntegrationTests;
 
+[UsedImplicitly]
 public class IntegrationContextFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public Task InitializeAsync()

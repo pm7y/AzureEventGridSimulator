@@ -61,11 +61,10 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
 
     private static async Task WaitForSimulatorToBeReady()
     {
-        using var handler = new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = (_, _, _, _) => true,
-        };
-        using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(2) };
+        using var handler = new HttpClientHandler();
+        handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+        using var httpClient = new HttpClient(handler);
+        httpClient.Timeout = TimeSpan.FromSeconds(2);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -74,7 +73,7 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
             try
             {
                 // Try to connect to the simulator's endpoint
-                var response = await httpClient.GetAsync(
+                _ = await httpClient.GetAsync(
                     "https://localhost:60101/api/events?api-version=2018-01-01"
                 );
                 // Any response (even 4xx) means the server is up

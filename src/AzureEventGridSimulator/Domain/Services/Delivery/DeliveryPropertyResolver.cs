@@ -215,7 +215,7 @@ public class DeliveryPropertyResolver
 
     private static bool TryParseGuid(string value, out Guid result)
     {
-        result = default;
+        result = Guid.Empty;
         if (string.IsNullOrEmpty(value))
         {
             return false;

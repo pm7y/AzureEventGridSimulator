@@ -4,42 +4,41 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
 public static class ConfigurationBuilderExtensions
 {
-    public static IConfigurationBuilder AddCustomSimulatorConfigFileIfSpecified(
-        this IConfigurationBuilder builder,
-        IConfiguration configuration
-    )
+    extension(IConfigurationBuilder builder)
     {
-        var configFileOverridden = configuration["ConfigFile"];
-
-        if (!string.IsNullOrWhiteSpace(configFileOverridden))
+        public IConfigurationBuilder AddCustomSimulatorConfigFileIfSpecified(
+            IConfiguration configuration
+        )
         {
-            if (!File.Exists(configFileOverridden))
+            var configFileOverridden = configuration["ConfigFile"];
+
+            if (!string.IsNullOrWhiteSpace(configFileOverridden))
             {
-                throw new FileNotFoundException(
-                    "The specified ConfigFile could not be found.",
-                    configFileOverridden
+                if (!File.Exists(configFileOverridden))
+                {
+                    throw new FileNotFoundException(
+                        "The specified ConfigFile could not be found.",
+                        configFileOverridden
+                    );
+                }
+
+                builder.AddJsonFile(
+                    Path.Combine(Directory.GetCurrentDirectory(), configFileOverridden),
+                    false,
+                    false
                 );
+                Log.Warning("Overriding settings with '{ConfigFile}'", configFileOverridden);
             }
 
-            builder.AddJsonFile(
-                Path.Combine(Directory.GetCurrentDirectory(), configFileOverridden),
-                false,
-                false
-            );
-            Log.Warning("Overriding settings with '{ConfigFile}'", configFileOverridden);
+            return builder;
         }
 
-        return builder;
-    }
-
-    public static IConfigurationBuilder AddEnvironmentVariablesAndCommandLine(
-        this IConfigurationBuilder builder,
-        string[] args
-    )
-    {
-        return builder
-            .AddEnvironmentVariables("ASPNETCORE_")
-            .AddEnvironmentVariables("AEGS_")
-            .AddCommandLine(args);
+        public IConfigurationBuilder AddEnvironmentVariablesAndCommandLine(string[] args)
+        {
+            return builder
+                .AddEnvironmentVariables("ASPNETCORE_")
+                .AddEnvironmentVariables("AEGS_")
+                .AddCommandLine(args);
+        }
     }
 }

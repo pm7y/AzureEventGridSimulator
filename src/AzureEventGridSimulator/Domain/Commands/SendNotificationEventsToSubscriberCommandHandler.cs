@@ -36,7 +36,7 @@ public class SendNotificationEventsToSubscriberCommandHandler(
 
         var allSubscribers = request.Topic.Subscribers.All.ToList();
 
-        if (!allSubscribers.Any())
+        if (allSubscribers.Count == 0)
         {
             logger.LogWarning(
                 "'{TopicName}' has no subscribers so {EventCount} event(s) could not be forwarded",

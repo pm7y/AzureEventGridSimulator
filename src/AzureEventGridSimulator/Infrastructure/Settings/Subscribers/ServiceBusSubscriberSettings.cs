@@ -105,11 +105,14 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
             // Fall back to topic-level namespace components
             if (HasTopicNamespaceCredentials())
             {
-                return BuildConnectionString(
-                    ParentTopic.ServiceBusNamespace,
-                    ParentTopic.ServiceBusSharedAccessKeyName,
-                    ParentTopic.ServiceBusSharedAccessKey
-                );
+                if (ParentTopic != null)
+                {
+                    return BuildConnectionString(
+                        ParentTopic.ServiceBusNamespace,
+                        ParentTopic.ServiceBusSharedAccessKeyName,
+                        ParentTopic.ServiceBusSharedAccessKey
+                    );
+                }
             }
 
             // No connection string available - will fail validation

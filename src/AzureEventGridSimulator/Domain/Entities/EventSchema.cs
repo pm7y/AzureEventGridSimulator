@@ -13,5 +13,6 @@ public enum EventSchema
     /// <summary>
     /// CloudEvents v1.0 schema.
     /// </summary>
+    // ReSharper disable once InconsistentNaming
     CloudEventV1_0,
 }

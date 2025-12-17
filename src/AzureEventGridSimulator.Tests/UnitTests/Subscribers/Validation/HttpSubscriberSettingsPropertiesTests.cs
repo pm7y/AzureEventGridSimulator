@@ -104,9 +104,8 @@ public class HttpSubscriberSettingsPropertiesTests
         {
             Name = "TestSubscriber",
             Endpoint = "https://example.com",
+            ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful,
         };
-
-        settings.ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful;
 
         settings.ValidationStatus.ShouldBe(SubscriptionValidationStatus.ValidationSuccessful);
     }

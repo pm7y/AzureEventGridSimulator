@@ -12,41 +12,42 @@ public class ConfigurationLoadingTests
     public void TestConfigurationLoad()
     {
         // This test uses the legacy format (array of subscribers) to verify backwards compatibility
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyAwesomeTopic"",
-        ""port"": 60101,
-        ""key"": ""TheLocal+DevelopmentKey="",
-        ""subscribers"": [{
-            ""name"": ""LocalAzureFunctionSubscription"",
-            ""endpoint"":""http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb"",
-            ""filter"": {
-                ""includedEventTypes"":[""some.special.event.type""],
-                ""subjectBeginsWith"":""MySubject"",
-                ""subjectEndsWith"":""_success"",
-                ""isSubjectCaseSensitive"":true,
-                ""advancedFilters"": [{
-                    ""operatorType"":""NumberGreaterThanOrEquals"",
-                    ""key"":""Data.Key1"",
-                    ""value"":5
+        const string json = """
+
+            {
+                "topics": [{
+                    "name": "MyAwesomeTopic",
+                    "port": 60101,
+                    "key": "TheLocal+DevelopmentKey=",
+                    "subscribers": [{
+                        "name": "LocalAzureFunctionSubscription",
+                        "endpoint":"http://localhost:7071/runtime/webhooks/EventGrid?functionName=PersistEventToDb",
+                        "filter": {
+                            "includedEventTypes":["some.special.event.type"],
+                            "subjectBeginsWith":"MySubject",
+                            "subjectEndsWith":"_success",
+                            "isSubjectCaseSensitive":true,
+                            "advancedFilters": [{
+                                "operatorType":"NumberGreaterThanOrEquals",
+                                "key":"Data.Key1",
+                                "value":5
+                            },
+                            {
+                                "operatorType":"StringContains",
+                                "key":"Subject",
+                                "values":["container1","container2"
+                            ]}
+                        ]}
+                    }]
                 },
                 {
-                    ""operatorType"":""StringContains"",
-                    ""key"":""Subject"",
-                    ""values"":[""container1"",""container2""
-                ]}
-            ]}
-        }]
-    },
-    {
-        ""name"":""ATopicWithNoSubscribers"",
-        ""port"":60102,
-        ""key"":""TheLocal+DevelopmentKey="",
-        ""subscribers"":[]
-    }]
-}";
+                    "name":"ATopicWithNoSubscribers",
+                    "port":60102,
+                    "key":"TheLocal+DevelopmentKey=",
+                    "subscribers":[]
+                }]
+            }
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
@@ -57,9 +58,7 @@ public class ConfigurationLoadingTests
         var topicWithSubscribers = settings.Topics.First();
         topicWithSubscribers.Subscribers.HttpSubscribers.ShouldNotBeEmpty();
         topicWithSubscribers
-            .Subscribers.HttpSubscribers.All(s =>
-                s.Filter != null && s.Filter.AdvancedFilters != null
-            )
+            .Subscribers.HttpSubscribers.All(s => s.Filter is { AdvancedFilters: not null })
             .ShouldBeTrue();
 
         Should.NotThrow(() =>

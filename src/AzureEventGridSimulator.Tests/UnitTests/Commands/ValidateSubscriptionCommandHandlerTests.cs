@@ -124,8 +124,8 @@ public class ValidateSubscriptionCommandHandlerTests
             Key = "TestKey",
             Subscribers = new SubscribersSettings
             {
-                ServiceBus = new[]
-                {
+                ServiceBus =
+                [
                     new ServiceBusSubscriberSettings
                     {
                         Name = "ServiceBusSub",
@@ -133,7 +133,7 @@ public class ValidateSubscriptionCommandHandlerTests
                             "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=Key;SharedAccessKey=abc123",
                         Queue = "test-queue",
                     },
-                },
+                ],
             },
         };
         var command = new ValidateSubscriptionCommand(topic, Guid.NewGuid());
@@ -153,7 +153,7 @@ public class ValidateSubscriptionCommandHandlerTests
             Name = "TestTopic",
             Port = 60101,
             Key = "TestKey",
-            Subscribers = new SubscribersSettings { Http = new[] { subscriber1, subscriber2 } },
+            Subscribers = new SubscribersSettings { Http = [subscriber1, subscriber2] },
         };
         var command = new ValidateSubscriptionCommand(topic, subscriber1.ValidationCode);
 
@@ -174,7 +174,7 @@ public class ValidateSubscriptionCommandHandlerTests
             Name = "TestTopic",
             Port = 60101,
             Key = "TestKey",
-            Subscribers = new SubscribersSettings { Http = new[] { subscriber1, subscriber2 } },
+            Subscribers = new SubscribersSettings { Http = [subscriber1, subscriber2] },
         };
         var command = new ValidateSubscriptionCommand(topic, Guid.NewGuid());
 
@@ -214,7 +214,7 @@ public class ValidateSubscriptionCommandHandlerTests
             Name = "TestTopic",
             Port = 60101,
             Key = "TestKey",
-            Subscribers = new SubscribersSettings { Http = new[] { subscriber } },
+            Subscribers = new SubscribersSettings { Http = [subscriber] },
         };
     }
 }

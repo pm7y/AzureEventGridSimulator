@@ -4,13 +4,16 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
 public static class ServiceProviderExtensions
 {
-    public static SimulatorSettings SimulatorSettings(this IServiceProvider provider)
+    extension(IServiceProvider provider)
     {
-        return provider.GetService<SimulatorSettings>();
-    }
+        public SimulatorSettings SimulatorSettings()
+        {
+            return provider.GetService<SimulatorSettings>();
+        }
 
-    public static IEnumerable<TopicSettings> EnabledTopics(this IServiceProvider provider)
-    {
-        return SimulatorSettings(provider).Topics.Where(o => !o.Disabled);
+        public IEnumerable<TopicSettings> EnabledTopics()
+        {
+            return SimulatorSettings(provider).Topics.Where(o => !o.Disabled);
+        }
     }
 }

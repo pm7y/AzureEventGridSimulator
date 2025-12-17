@@ -383,7 +383,7 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             Name = "TestTopic",
             Port = 60101,
             Key = "TestKey",
-            Subscribers = new SubscribersSettings { Http = new[] { subscriber } },
+            Subscribers = new SubscribersSettings { Http = [subscriber] },
         };
     }
 
@@ -398,9 +398,9 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             Key = "TestKey",
             Subscribers = new SubscribersSettings
             {
-                Http = new[] { httpSubscriber },
-                ServiceBus = new[]
-                {
+                Http = [httpSubscriber],
+                ServiceBus =
+                [
                     new ServiceBusSubscriberSettings
                     {
                         Name = "ServiceBusSub",
@@ -408,14 +408,14 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
                             "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=Key;SharedAccessKey=abc123",
                         Queue = "test-queue",
                     },
-                },
+                ],
             },
         };
     }
 
     private static SimulatorEvent[] CreateTestEvents()
     {
-        return new[] { CreateTestEventGridEvent("test-id") };
+        return [CreateTestEventGridEvent("test-id")];
     }
 
     private static SimulatorEvent CreateTestEventGridEvent(string id)

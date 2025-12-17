@@ -33,17 +33,17 @@ public class SubscribersSettingsDefaultTests : SubscribersSettingsTestBase
     {
         var settings = new SubscribersSettings
         {
-            Http = new[] { CreateValidHttpSubscriber("Http1"), CreateValidHttpSubscriber("Http2") },
-            ServiceBus = new[]
-            {
+            Http = [CreateValidHttpSubscriber("Http1"), CreateValidHttpSubscriber("Http2")],
+            ServiceBus =
+            [
                 CreateValidServiceBusSubscriber("ServiceBus1"),
                 CreateValidServiceBusSubscriber("ServiceBus2"),
-            },
-            StorageQueue = new[]
-            {
+            ],
+            StorageQueue =
+            [
                 CreateValidStorageQueueSubscriber("StorageQueue1"),
                 CreateValidStorageQueueSubscriber("StorageQueue2"),
-            },
+            ],
         };
 
         Should.NotThrow(() => settings.Validate());

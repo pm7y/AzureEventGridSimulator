@@ -12,21 +12,22 @@ public class SubscribersSettingsConverterTests
     [Fact]
     public void LegacyArrayFormat_ShouldDeserializeAsHttpSubscribers()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": [
+        const string json = """
+
             {
-                ""name"": ""LegacySubscriber"",
-                ""endpoint"": ""https://example.com/webhook""
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": [
+                        {
+                            "name": "LegacySubscriber",
+                            "endpoint": "https://example.com/webhook"
+                        }
+                    ]
+                }]
             }
-        ]
-    }]
-}";
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
@@ -46,25 +47,26 @@ public class SubscribersSettingsConverterTests
     [Fact]
     public void LegacyArrayFormat_WithMultipleSubscribers_ShouldDeserializeAll()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": [
+        const string json = """
+
             {
-                ""name"": ""Subscriber1"",
-                ""endpoint"": ""https://example.com/webhook1""
-            },
-            {
-                ""name"": ""Subscriber2"",
-                ""endpoint"": ""https://example.com/webhook2""
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": [
+                        {
+                            "name": "Subscriber1",
+                            "endpoint": "https://example.com/webhook1"
+                        },
+                        {
+                            "name": "Subscriber2",
+                            "endpoint": "https://example.com/webhook2"
+                        }
+                    ]
+                }]
             }
-        ]
-    }]
-}";
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
@@ -74,23 +76,24 @@ public class SubscribersSettingsConverterTests
     [Fact]
     public void NewGroupedFormat_WithOnlyHttpSubscribers_ShouldDeserialize()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": {
-            ""http"": [
-                {
-                    ""name"": ""HttpSubscriber"",
-                    ""endpoint"": ""https://example.com/webhook""
-                }
-            ]
-        }
-    }]
-}";
+        const string json = """
+
+            {
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": {
+                        "http": [
+                            {
+                                "name": "HttpSubscriber",
+                                "endpoint": "https://example.com/webhook"
+                            }
+                        ]
+                    }
+                }]
+            }
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
@@ -106,24 +109,25 @@ public class SubscribersSettingsConverterTests
     [Fact]
     public void NewGroupedFormat_WithOnlyServiceBusSubscribers_ShouldDeserialize()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": {
-            ""serviceBus"": [
-                {
-                    ""name"": ""ServiceBusSubscriber"",
-                    ""connectionString"": ""Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123"",
-                    ""queue"": ""my-queue""
-                }
-            ]
-        }
-    }]
-}";
+        const string json = """
+
+            {
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": {
+                        "serviceBus": [
+                            {
+                                "name": "ServiceBusSubscriber",
+                                "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+                                "queue": "my-queue"
+                            }
+                        ]
+                    }
+                }]
+            }
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
@@ -140,30 +144,31 @@ public class SubscribersSettingsConverterTests
     [Fact]
     public void NewGroupedFormat_WithBothSubscriberTypes_ShouldDeserialize()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": {
-            ""http"": [
-                {
-                    ""name"": ""HttpSubscriber"",
-                    ""endpoint"": ""https://example.com/webhook""
-                }
-            ],
-            ""serviceBus"": [
-                {
-                    ""name"": ""ServiceBusSubscriber"",
-                    ""connectionString"": ""Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123"",
-                    ""topic"": ""my-topic""
-                }
-            ]
-        }
-    }]
-}";
+        const string json = """
+
+            {
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": {
+                        "http": [
+                            {
+                                "name": "HttpSubscriber",
+                                "endpoint": "https://example.com/webhook"
+                            }
+                        ],
+                        "serviceBus": [
+                            {
+                                "name": "ServiceBusSubscriber",
+                                "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+                                "topic": "my-topic"
+                            }
+                        ]
+                    }
+                }]
+            }
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
@@ -176,26 +181,27 @@ public class SubscribersSettingsConverterTests
     [Fact]
     public void ServiceBusSubscriber_WithNamespaceCredentials_ShouldDeserialize()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": {
-            ""serviceBus"": [
-                {
-                    ""name"": ""ServiceBusSubscriber"",
-                    ""namespace"": ""my-namespace"",
-                    ""sharedAccessKeyName"": ""RootManageSharedAccessKey"",
-                    ""sharedAccessKey"": ""abc123"",
-                    ""queue"": ""my-queue""
-                }
-            ]
-        }
-    }]
-}";
+        const string json = """
+
+            {
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": {
+                        "serviceBus": [
+                            {
+                                "name": "ServiceBusSubscriber",
+                                "namespace": "my-namespace",
+                                "sharedAccessKeyName": "RootManageSharedAccessKey",
+                                "sharedAccessKey": "abc123",
+                                "queue": "my-queue"
+                            }
+                        ]
+                    }
+                }]
+            }
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
@@ -211,28 +217,29 @@ public class SubscribersSettingsConverterTests
     [Fact]
     public void ServiceBusSubscriber_WithDeliveryProperties_ShouldDeserialize()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": {
-            ""serviceBus"": [
-                {
-                    ""name"": ""ServiceBusSubscriber"",
-                    ""connectionString"": ""Endpoint=sb://ns.servicebus.windows.net/"",
-                    ""queue"": ""my-queue"",
-                    ""properties"": {
-                        ""Label"": { ""type"": ""dynamic"", ""value"": ""Subject"" },
-                        ""Region"": { ""type"": ""static"", ""value"": ""west-us"" }
+        const string json = """
+
+            {
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": {
+                        "serviceBus": [
+                            {
+                                "name": "ServiceBusSubscriber",
+                                "connectionString": "Endpoint=sb://ns.servicebus.windows.net/",
+                                "queue": "my-queue",
+                                "properties": {
+                                    "Label": { "type": "dynamic", "value": "Subject" },
+                                    "Region": { "type": "static", "value": "west-us" }
+                                }
+                            }
+                        ]
                     }
-                }
-            ]
-        }
-    }]
-}";
+                }]
+            }
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
@@ -250,16 +257,17 @@ public class SubscribersSettingsConverterTests
     [Fact]
     public void EmptySubscribersArray_ShouldDeserializeToEmptyLists()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": []
-    }]
-}";
+        const string json = """
+
+            {
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": []
+                }]
+            }
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
@@ -270,16 +278,17 @@ public class SubscribersSettingsConverterTests
     [Fact]
     public void EmptySubscribersObject_ShouldDeserializeToEmptyLists()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": {}
-    }]
-}";
+        const string json = """
+
+            {
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": {}
+                }]
+            }
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
@@ -287,33 +296,36 @@ public class SubscribersSettingsConverterTests
         settings.Topics.First().Subscribers.ServiceBusSubscribers.ShouldBeEmpty();
     }
 
+    private static readonly string[] _expected = ["Http1", "Http2", "SB1"];
+
     [Fact]
     public void AllSubscribers_ShouldReturnCombinedList()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": {
-            ""http"": [
-                { ""name"": ""Http1"", ""endpoint"": ""https://a.com"" },
-                { ""name"": ""Http2"", ""endpoint"": ""https://b.com"" }
-            ],
-            ""serviceBus"": [
-                { ""name"": ""SB1"", ""connectionString"": ""Endpoint=sb://ns.servicebus.windows.net/"", ""queue"": ""q1"" }
-            ]
-        }
-    }]
-}";
+        const string json = """
+
+            {
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": {
+                        "http": [
+                            { "name": "Http1", "endpoint": "https://a.com" },
+                            { "name": "Http2", "endpoint": "https://b.com" }
+                        ],
+                        "serviceBus": [
+                            { "name": "SB1", "connectionString": "Endpoint=sb://ns.servicebus.windows.net/", "queue": "q1" }
+                        ]
+                    }
+                }]
+            }
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         var allSubscribers = settings.Topics.First().Subscribers.All.ToList();
         allSubscribers.Count.ShouldBe(3);
-        allSubscribers.Select(s => s.Name).ShouldBe(new[] { "Http1", "Http2", "SB1" });
+        allSubscribers.Select(s => s.Name).ShouldBe(_expected);
     }
 
     [Fact]
@@ -321,19 +333,19 @@ public class SubscribersSettingsConverterTests
     {
         var settings = new SubscribersSettings
         {
-            Http = new[]
-            {
+            Http =
+            [
                 new HttpSubscriberSettings { Name = "HttpSub", Endpoint = "https://example.com" },
-            },
-            ServiceBus = new[]
-            {
+            ],
+            ServiceBus =
+            [
                 new ServiceBusSubscriberSettings
                 {
                     Name = "SBSub",
                     ConnectionString = "Endpoint=sb://ns.servicebus.windows.net/",
                     Queue = "my-queue",
                 },
-            },
+            ],
         };
 
         var json = JsonSerializer.Serialize(settings);
@@ -347,28 +359,29 @@ public class SubscribersSettingsConverterTests
     [Fact]
     public void LegacyFormat_WithFilter_ShouldDeserialize()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": [
+        const string json = """
+
             {
-                ""name"": ""FilteredSubscriber"",
-                ""endpoint"": ""https://example.com/webhook"",
-                ""filter"": {
-                    ""includedEventTypes"": [""MyEvent""],
-                    ""subjectBeginsWith"": ""test/"",
-                    ""subjectEndsWith"": null,
-                    ""isSubjectCaseSensitive"": false,
-                    ""advancedFilters"": null
-                }
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": [
+                        {
+                            "name": "FilteredSubscriber",
+                            "endpoint": "https://example.com/webhook",
+                            "filter": {
+                                "includedEventTypes": ["MyEvent"],
+                                "subjectBeginsWith": "test/",
+                                "subjectEndsWith": null,
+                                "isSubjectCaseSensitive": false,
+                                "advancedFilters": null
+                            }
+                        }
+                    ]
+                }]
             }
-        ]
-    }]
-}";
+            """;
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
@@ -381,16 +394,17 @@ public class SubscribersSettingsConverterTests
     [Fact]
     public void InvalidTokenType_ShouldThrowJsonException()
     {
-        const string json =
-            @"
-{
-    ""topics"": [{
-        ""name"": ""MyTopic"",
-        ""port"": 60101,
-        ""key"": ""TheKey="",
-        ""subscribers"": ""invalid_string""
-    }]
-}";
+        const string json = """
+
+            {
+                "topics": [{
+                    "name": "MyTopic",
+                    "port": 60101,
+                    "key": "TheKey=",
+                    "subscribers": "invalid_string"
+                }]
+            }
+            """;
 
         Should.Throw<JsonException>(() => JsonSerializer.Deserialize<SimulatorSettings>(json));
     }

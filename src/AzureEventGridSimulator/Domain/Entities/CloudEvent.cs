@@ -141,7 +141,7 @@ public class CloudEvent
                 );
             }
 
-            if (TimeParsed.HasValue && TimeParsed.Value.Kind == DateTimeKind.Unspecified)
+            if (TimeParsed is { Kind: DateTimeKind.Unspecified })
             {
                 throw new InvalidOperationException(
                     $"Property '{nameof(Time)}' must include timezone information."

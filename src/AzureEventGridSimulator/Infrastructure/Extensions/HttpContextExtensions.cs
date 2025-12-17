@@ -6,28 +6,30 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
 public static class HttpContextExtensions
 {
-    public static async Task<string> RequestBody(this HttpContext context)
+    extension(HttpContext context)
     {
-        var reader = new StreamReader(context.Request.Body);
-        reader.BaseStream.Seek(0, SeekOrigin.Begin);
-        return await reader.ReadToEndAsync();
-    }
+        public async Task<string> RequestBody()
+        {
+            var reader = new StreamReader(context.Request.Body);
+            reader.BaseStream.Seek(0, SeekOrigin.Begin);
+            return await reader.ReadToEndAsync();
+        }
 
-    public static async Task WriteErrorResponse(
-        this HttpContext context,
-        HttpStatusCode statusCode,
-        string errorMessage,
-        string code
-    )
-    {
-        var error = new ErrorMessage(statusCode, errorMessage, code);
+        public async Task WriteErrorResponse(
+            HttpStatusCode statusCode,
+            string errorMessage,
+            string code
+        )
+        {
+            var error = new ErrorMessage(statusCode, errorMessage, code);
 
-        context.Response.Headers[HeaderNames.ContentType] = "application/json";
+            context.Response.Headers[HeaderNames.ContentType] = "application/json";
 
-        context.Response.StatusCode = (int)statusCode;
+            context.Response.StatusCode = (int)statusCode;
 
-        await context.Response.WriteAsync(
-            JsonSerializer.Serialize(error, new JsonSerializerOptions { WriteIndented = true })
-        );
+            await context.Response.WriteAsync(
+                JsonSerializer.Serialize(error, new JsonSerializerOptions { WriteIndented = true })
+            );
+        }
     }
 }
