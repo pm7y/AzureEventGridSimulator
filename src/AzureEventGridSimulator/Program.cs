@@ -89,16 +89,9 @@ public class Program
 
             var simulatorSettings = app.ApplicationServices.GetService<SimulatorSettings>();
 
-            if (simulatorSettings is null)
+            if (simulatorSettings is null || !simulatorSettings.Topics.Any())
             {
-                Log.Fatal("Settings are not found. The application will now exit");
-                lifetime.StopApplication();
-                return;
-            }
-
-            if (!simulatorSettings.Topics.Any())
-            {
-                Log.Fatal("There are no configured topics. The application will now exit");
+                DisplayConfigurationHelp();
                 lifetime.StopApplication();
                 return;
             }
@@ -130,6 +123,53 @@ public class Program
             Log.Fatal(e, "It died !");
             lifetime.StopApplication();
         }
+    }
+
+    private static void DisplayConfigurationHelp()
+    {
+        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "Unknown";
+
+        Console.WriteLine();
+        Console.WriteLine($"Azure Event Grid Simulator v{version}");
+        Console.WriteLine(new string('=', 50));
+        Console.WriteLine();
+        Console.WriteLine(
+            "No topics configured. To get started, provide configuration using one of these methods:"
+        );
+        Console.WriteLine();
+        Console.WriteLine("1. Create an appsettings.json file in the current directory:");
+        Console.WriteLine();
+        Console.WriteLine("   {");
+        Console.WriteLine("     \"topics\": [");
+        Console.WriteLine("       {");
+        Console.WriteLine("         \"name\": \"MyTopic\",");
+        Console.WriteLine("         \"port\": 60101,");
+        Console.WriteLine("         \"key\": \"MyAccessKey=\",");
+        Console.WriteLine("         \"subscribers\": [");
+        Console.WriteLine("           {");
+        Console.WriteLine("             \"name\": \"MySubscriber\",");
+        Console.WriteLine("             \"endpoint\": \"https://localhost:5000/api/events\",");
+        Console.WriteLine("             \"disableValidation\": true");
+        Console.WriteLine("           }");
+        Console.WriteLine("         ]");
+        Console.WriteLine("       }");
+        Console.WriteLine("     ]");
+        Console.WriteLine("   }");
+        Console.WriteLine();
+        Console.WriteLine("2. Use the --ConfigFile argument to specify a config file path:");
+        Console.WriteLine();
+        Console.WriteLine("   azure-eventgrid-simulator --ConfigFile=/path/to/config.json");
+        Console.WriteLine();
+        Console.WriteLine("3. Use environment variables with the AEGS_ prefix:");
+        Console.WriteLine();
+        Console.WriteLine(
+            "   AEGS_topics__0__name=MyTopic AEGS_topics__0__port=60101 azure-eventgrid-simulator"
+        );
+        Console.WriteLine();
+        Console.WriteLine(
+            "For more information, visit: https://github.com/pmcilreavy/AzureEventGridSimulator"
+        );
+        Console.WriteLine();
     }
 
     private static WebApplicationBuilder CreateWebHostBuilder(string[] args)
