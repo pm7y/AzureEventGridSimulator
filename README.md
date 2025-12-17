@@ -5,8 +5,39 @@
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pmcilreavy/AzureEventGridSimulator?label=latest)
 ![GitHub all releases](https://img.shields.io/github/downloads/pmcilreavy/AzureEventGridSimulator/total)
 ![Docker Pulls](https://img.shields.io/docker/pulls/pmcilreavy/azureeventgridsimulator)
+![NuGet Version](https://img.shields.io/nuget/v/AzureEventGridSimulator)
 
 A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library. Both the `EventGrid` schema and the `CloudEvents v1.0` schema are supported.
+
+## Installation
+
+### .NET Tool (Recommended)
+
+Install as a global .NET tool:
+
+```bash
+dotnet tool install -g AzureEventGridSimulator
+```
+
+Then run with:
+
+```bash
+azure-eventgrid-simulator
+```
+
+To update to the latest version:
+
+```bash
+dotnet tool update -g AzureEventGridSimulator
+```
+
+### Docker
+
+See the [Docker](#docker) section below for running via Docker.
+
+### Binary Release
+
+Download standalone executables from [GitHub Releases](https://github.com/pmcilreavy/AzureEventGridSimulator/releases).
 
 ## Configuration
 

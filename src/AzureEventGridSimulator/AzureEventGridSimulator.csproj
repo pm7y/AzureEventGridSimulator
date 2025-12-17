@@ -1,7 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
+
+    <!-- .NET Tool packaging -->
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>azure-eventgrid-simulator</ToolCommandName>
+    <PackageId>AzureEventGridSimulator</PackageId>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+
+    <!-- NuGet metadata -->
+    <Authors>Paul McIlreavy</Authors>
+    <Description>A simulator that provides endpoints to mimic the functionality of Azure Event Grid topics and subscribers. Compatible with the Microsoft.Azure.EventGrid client library. Supports both EventGrid and CloudEvents v1.0 schemas.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/pmcilreavy/AzureEventGridSimulator</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/pmcilreavy/AzureEventGridSimulator</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>azure;eventgrid;event-grid;simulator;emulator;development;testing</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Asp.Versioning.Mvc" />
