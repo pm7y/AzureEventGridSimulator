@@ -5,6 +5,7 @@
     <!-- .NET Tool packaging -->
     <IsPackable>true</IsPackable>
     <PackAsTool>true</PackAsTool>
+    <RollForward>LatestMinor</RollForward>
     <ToolCommandName>azure-eventgrid-simulator</ToolCommandName>
     <PackageId>AzureEventGridSimulator</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
