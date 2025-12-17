@@ -7,6 +7,8 @@
   "bump-patch-for-minor-pre-major": true,
   "draft": false,
   "prerelease": false,
+  "pull-request-title-pattern": "chore: release ${version}",
+  "pull-request-header": "This PR prepares the next release. Merge to publish.",
   "packages": {
     ".": {
       "package-name": "AzureEventGridSimulator",
