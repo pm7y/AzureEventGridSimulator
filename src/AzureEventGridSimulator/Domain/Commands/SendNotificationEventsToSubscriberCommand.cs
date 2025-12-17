@@ -1,6 +1,6 @@
 ﻿using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using MediatR;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 

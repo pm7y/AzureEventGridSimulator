@@ -6,8 +6,8 @@ using Asp.Versioning;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Infrastructure;
+using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AzureEventGridSimulator.Controllers;

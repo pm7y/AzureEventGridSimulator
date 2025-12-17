@@ -1,4 +1,4 @@
-﻿using MediatR;
+﻿using AzureEventGridSimulator.Infrastructure.Mediator;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 

@@ -15,9 +15,9 @@ using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Middleware;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -188,9 +188,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddSimulatorSettings(configuration);
-        builder.Services.AddMediatR(o =>
-            o.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly())
-        );
+        builder.Services.AddMediator(Assembly.GetExecutingAssembly());
 
         // Register event schema services (stateless, can be singletons)
         builder.Services.AddSingleton<EventSchemaDetector>();

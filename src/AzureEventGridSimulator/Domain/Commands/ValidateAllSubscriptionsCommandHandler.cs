@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Infrastructure;
+using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Commands;
