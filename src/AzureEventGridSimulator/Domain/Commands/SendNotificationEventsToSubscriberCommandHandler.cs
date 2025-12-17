@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -8,8 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
+using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -22,16 +24,19 @@ public class SendNotificationEventsToSubscriberCommandHandler
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
     private readonly EventSchemaFormatterFactory _formatterFactory;
+    private readonly ServiceBusEventDeliveryService _serviceBusDeliveryService;
 
     public SendNotificationEventsToSubscriberCommandHandler(
         IHttpClientFactory httpClientFactory,
         ILogger<SendNotificationEventsToSubscriberCommandHandler> logger,
-        EventSchemaFormatterFactory formatterFactory
+        EventSchemaFormatterFactory formatterFactory,
+        ServiceBusEventDeliveryService serviceBusDeliveryService
     )
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _formatterFactory = formatterFactory;
+        _serviceBusDeliveryService = serviceBusDeliveryService;
     }
 
     public Task Handle(
@@ -49,7 +54,9 @@ public class SendNotificationEventsToSubscriberCommandHandler
         // Enrich events with topic information
         EnrichEvents(request.Events, request.Topic.Name);
 
-        if (!request.Topic.Subscribers.Any())
+        var allSubscribers = request.Topic.Subscribers.All.ToList();
+
+        if (!allSubscribers.Any())
         {
             _logger.LogWarning(
                 "'{TopicName}' has no subscribers so {EventCount} event(s) could not be forwarded",
@@ -57,7 +64,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
                 request.Events.Length
             );
         }
-        else if (request.Topic.Subscribers.All(o => o.Disabled))
+        else if (allSubscribers.All(o => o.Disabled))
         {
             _logger.LogWarning(
                 "'{TopicName}' has no enabled subscribers so {EventCount} event(s) could not be forwarded",
@@ -68,7 +75,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
         else
         {
             var eventsFilteredOutByAllSubscribers = request
-                .Events.Where(e => request.Topic.Subscribers.All(s => !s.Filter.AcceptsEvent(e)))
+                .Events.Where(e => allSubscribers.All(s => !s.Filter.AcceptsEvent(e)))
                 .ToArray();
 
             if (eventsFilteredOutByAllSubscribers.Any())
@@ -84,16 +91,44 @@ public class SendNotificationEventsToSubscriberCommandHandler
             }
             else
             {
-                foreach (var subscription in request.Topic.Subscribers)
+                // Send to HTTP subscribers
+                foreach (var subscription in request.Topic.Subscribers.HttpSubscribers)
                 {
 #pragma warning disable 4014
-                    SendToSubscriber(
+                    SendToHttpSubscriber(
                         subscription,
                         request.Events,
                         request.Topic,
                         request.InputSchema
                     );
 #pragma warning restore 4014
+                }
+
+                // Send to Service Bus subscribers
+                foreach (var subscription in request.Topic.Subscribers.ServiceBusSubscribers)
+                {
+                    foreach (var evt in request.Events)
+                    {
+                        if (subscription.Filter.AcceptsEvent(evt))
+                        {
+#pragma warning disable 4014
+                            _serviceBusDeliveryService.SendAsync(
+                                subscription,
+                                evt,
+                                request.Topic,
+                                request.InputSchema
+                            );
+#pragma warning restore 4014
+                        }
+                        else
+                        {
+                            _logger.LogDebug(
+                                "Event {EventId} filtered out for Service Bus subscriber '{SubscriberName}'",
+                                evt.Id,
+                                subscription.Name
+                            );
+                        }
+                    }
                 }
             }
         }
@@ -125,8 +160,8 @@ public class SendNotificationEventsToSubscriberCommandHandler
         }
     }
 
-    private async Task SendToSubscriber(
-        SubscriptionSettings subscription,
+    private async Task SendToHttpSubscriber(
+        HttpSubscriberSettings subscription,
         IEnumerable<SimulatorEvent> events,
         TopicSettings topic,
         EventSchema inputSchema
@@ -256,7 +291,7 @@ public class SendNotificationEventsToSubscriberCommandHandler
     private void LogResult(
         Task<HttpResponseMessage> task,
         SimulatorEvent evt,
-        SubscriptionSettings subscription,
+        HttpSubscriberSettings subscription,
         string topicName
     )
     {

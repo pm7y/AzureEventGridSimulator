@@ -1,5 +1,5 @@
-﻿using System;
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -19,8 +19,13 @@ public class TopicSettings
     [JsonProperty(PropertyName = "disabled", Required = Required.Default)]
     public bool Disabled { get; set; }
 
+    /// <summary>
+    /// Gets or sets the subscribers for this topic.
+    /// Supports both legacy format (array of HTTP subscribers) and new grouped format.
+    /// </summary>
     [JsonProperty(PropertyName = "subscribers", Required = Required.Default)]
-    public SubscriptionSettings[] Subscribers { get; set; } = Array.Empty<SubscriptionSettings>();
+    [JsonConverter(typeof(SubscribersSettingsConverter))]
+    public SubscribersSettings Subscribers { get; set; } = new SubscribersSettings();
 
     /// <summary>
     /// Gets or sets the expected input schema for events published to this topic.

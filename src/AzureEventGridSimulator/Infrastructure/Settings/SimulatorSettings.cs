@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Linq;
+using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
@@ -21,10 +22,9 @@ public class SimulatorSettings
             throw new InvalidOperationException("Each topic must have a unique name.");
         }
 
-        if (
-            Topics.SelectMany(o => o.Subscribers).GroupBy(o => o.Name).Count()
-            != Topics.SelectMany(o => o.Subscribers).Count()
-        )
+        var allSubscribers = Topics.SelectMany(o => o.Subscribers.All).ToList();
+
+        if (allSubscribers.GroupBy(o => o.Name).Count() != allSubscribers.Count)
         {
             throw new InvalidOperationException("Each subscriber must have a unique name.");
         }
@@ -44,8 +44,7 @@ public class SimulatorSettings
         }
 
         if (
-            Topics
-                .SelectMany(t => t.Subscribers)
+            allSubscribers
                 .Select(s => s.Name)
                 .Any(name =>
                     string.IsNullOrWhiteSpace(name)
@@ -58,12 +57,14 @@ public class SimulatorSettings
             );
         }
 
-        // validate the filters
-        foreach (
-            var filter in Topics
-                .Where(t => t.Subscribers.Any())
-                .SelectMany(t => t.Subscribers.Where(s => s.Filter != null).Select(s => s.Filter))
-        )
+        // Validate each subscriber
+        foreach (var subscriber in allSubscribers)
+        {
+            subscriber.Validate();
+        }
+
+        // Validate filters
+        foreach (var filter in allSubscribers.Where(s => s.Filter != null).Select(s => s.Filter))
         {
             filter.Validate();
         }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -8,6 +8,7 @@ using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -43,8 +44,9 @@ public class ValidateAllSubscriptionsCommandHandler
     {
         foreach (var enabledTopic in _simulatorSettings.Topics.Where(o => !o.Disabled))
         {
+            // Only HTTP subscribers need validation (Service Bus subscribers don't use webhook validation)
             foreach (
-                var subscriber in enabledTopic.Subscribers.Where(o =>
+                var subscriber in enabledTopic.Subscribers.HttpSubscribers.Where(o =>
                     !o.DisableValidation && !o.Disabled
                 )
             )
@@ -54,7 +56,10 @@ public class ValidateAllSubscriptionsCommandHandler
         }
     }
 
-    private async Task ValidateSubscription(TopicSettings topic, SubscriptionSettings subscription)
+    private async Task ValidateSubscription(
+        TopicSettings topic,
+        HttpSubscriberSettings subscription
+    )
     {
         var validationUrl =
             $"https://{_validationIpAddress}:{topic.Port}/validate?id={subscription.ValidationCode}";

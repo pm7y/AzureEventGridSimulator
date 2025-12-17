@@ -19,6 +19,7 @@
 
     <!-- Azure -->
     <PackageVersion Include="Azure.Messaging.EventGrid" Version="4.31.0" />
+    <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.18.2" />
 
     <!-- Testing -->
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.1" />

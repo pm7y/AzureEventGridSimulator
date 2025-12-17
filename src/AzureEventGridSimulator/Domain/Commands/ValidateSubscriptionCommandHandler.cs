@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureEventGridSimulator.Infrastructure.Settings;
@@ -21,7 +21,8 @@ public class ValidateSubscriptionCommandHandler : IRequestHandler<ValidateSubscr
         CancellationToken cancellationToken
     )
     {
-        var subscriber = request.Topic.Subscribers.FirstOrDefault(s =>
+        // Only HTTP subscribers need validation (Service Bus doesn't use webhook validation)
+        var subscriber = request.Topic.Subscribers.HttpSubscribers.FirstOrDefault(s =>
             s.ValidationCode == request.ValidationCode
         );
 

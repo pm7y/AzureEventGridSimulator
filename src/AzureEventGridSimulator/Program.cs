@@ -12,6 +12,7 @@ using Asp.Versioning;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Domain.Services;
+using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Middleware;
@@ -191,14 +192,18 @@ public class Program
             o.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly())
         );
 
-        // Register event schema services
-        builder.Services.AddScoped<EventSchemaDetector>();
-        builder.Services.AddScoped<EventGridSchemaParser>();
-        builder.Services.AddScoped<CloudEventSchemaParser>();
-        builder.Services.AddScoped<EventSchemaParserFactory>();
-        builder.Services.AddScoped<EventGridSchemaFormatter>();
-        builder.Services.AddScoped<CloudEventSchemaFormatter>();
-        builder.Services.AddScoped<EventSchemaFormatterFactory>();
+        // Register event schema services (stateless, can be singletons)
+        builder.Services.AddSingleton<EventSchemaDetector>();
+        builder.Services.AddSingleton<EventGridSchemaParser>();
+        builder.Services.AddSingleton<CloudEventSchemaParser>();
+        builder.Services.AddSingleton<EventSchemaParserFactory>();
+        builder.Services.AddSingleton<EventGridSchemaFormatter>();
+        builder.Services.AddSingleton<CloudEventSchemaFormatter>();
+        builder.Services.AddSingleton<EventSchemaFormatterFactory>();
+
+        // Register delivery services
+        builder.Services.AddSingleton<DeliveryPropertyResolver>();
+        builder.Services.AddSingleton<ServiceBusEventDeliveryService>();
 
         var httpClientBuilder = builder.Services.AddHttpClient(nameof(AzureEventGridSimulator));
         if (configuration.GetValue<bool>("dangerousAcceptAnyServerCertificateValidator"))

@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Newtonsoft.Json;
 using Shouldly;
@@ -12,6 +12,7 @@ public class ConfigurationLoadingTests
     [Fact]
     public void TestConfigurationLoad()
     {
+        // This test uses the legacy format (array of subscribers) to verify backwards compatibility
         const string json =
             @"
 {
@@ -52,10 +53,15 @@ public class ConfigurationLoadingTests
 
         settings.ShouldNotBeNull();
         settings.Topics.ShouldNotBeNull();
-        settings.Topics.ShouldAllBe(t =>
-            t.Subscribers.All(s => s.Filter != null)
-            && t.Subscribers.All(s => s.Filter.AdvancedFilters != null)
-        );
+
+        // Verify the legacy format was correctly converted to HTTP subscribers
+        var topicWithSubscribers = settings.Topics.First();
+        topicWithSubscribers.Subscribers.HttpSubscribers.ShouldNotBeEmpty();
+        topicWithSubscribers
+            .Subscribers.HttpSubscribers.All(s =>
+                s.Filter != null && s.Filter.AdvancedFilters != null
+            )
+            .ShouldBeTrue();
 
         Should.NotThrow(() =>
         {
