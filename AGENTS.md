@@ -399,3 +399,57 @@ Integration tests can use real Azure Service Bus if connection strings are provi
 - Main branch: `master`
 - Active development may occur on feature branches
 - CI runs on `master`, `main`, and pull requests
+
+### Commit Message Convention
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) for automated versioning via Release Please. Commit messages must follow this format:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Types that trigger version bumps:**
+
+| Type | Description | Version Bump |
+|------|-------------|--------------|
+| `feat` | New feature | Minor (4.1.0 → 4.2.0) |
+| `fix` | Bug fix | Patch (4.1.0 → 4.1.1) |
+| `feat!` or `fix!` | Breaking change (note the `!`) | Major (4.1.0 → 5.0.0) |
+
+**Types that do NOT trigger version bumps:**
+
+- `docs` - Documentation changes
+- `style` - Formatting, whitespace
+- `refactor` - Code restructuring without behavior change
+- `perf` - Performance improvements
+- `test` - Adding or updating tests
+- `build` - Build system or dependencies
+- `ci` - CI/CD configuration
+- `chore` - Other maintenance tasks
+
+**Examples:**
+
+```bash
+feat: add Azure Storage Queue subscriber support
+fix: correct SAS token validation for special characters
+feat!: change configuration schema for multi-topic setup
+docs: update README with Docker instructions
+chore: update NuGet dependencies
+```
+
+### Release Process
+
+Releases are automated via Release Please:
+
+1. Push commits to `master` using conventional commit messages
+2. Release Please creates/updates a "Release PR" with changelog
+3. Merge the Release PR to trigger:
+   - Git tag creation (e.g., `4.2.0`)
+   - GitHub Release with generated changelog
+   - NuGet package publish
+   - Docker image build and push
+   - Platform binaries upload
