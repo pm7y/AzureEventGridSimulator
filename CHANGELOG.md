@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.2](https://github.com/pm7y/AzureEventGridSimulator/compare/4.2.1...4.2.2) (2025-12-17)
+
+
+### Bug Fixes
+
+* specify framework for publish in release workflow ([#217](https://github.com/pm7y/AzureEventGridSimulator/issues/217)) ([f7d4803](https://github.com/pm7y/AzureEventGridSimulator/commit/f7d48036111ba707de43b4348e32ccc06fb10b02))
+
 ## [4.2.1](https://github.com/pm7y/AzureEventGridSimulator/compare/4.2.0...4.2.1) (2025-12-17)
 
 
