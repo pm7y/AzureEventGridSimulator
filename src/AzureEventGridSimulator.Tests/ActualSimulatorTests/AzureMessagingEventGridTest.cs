@@ -16,15 +16,10 @@ namespace AzureEventGridSimulator.Tests.ActualSimulatorTests;
 /// </summary>
 [Collection(nameof(ActualSimulatorFixtureCollection))]
 [Trait("Category", "integration-actual")]
-public class AzureMessagingEventGridTest
+public class AzureMessagingEventGridTest(ActualSimulatorFixture actualSimulatorFixture)
 {
     // ReSharper disable once NotAccessedField.Local
-    private readonly ActualSimulatorFixture _actualSimulatorFixture;
-
-    public AzureMessagingEventGridTest(ActualSimulatorFixture actualSimulatorFixture)
-    {
-        _actualSimulatorFixture = actualSimulatorFixture;
-    }
+    private readonly ActualSimulatorFixture _actualSimulatorFixture = actualSimulatorFixture;
 
     [Fact]
     public async Task GivenValidEvent_WhenUriContainsNonStandardPort_ThenItShouldBeAccepted()

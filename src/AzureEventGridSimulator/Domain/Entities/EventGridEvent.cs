@@ -1,43 +1,41 @@
-﻿using System;
-using System.Runtime.Serialization;
-using Newtonsoft.Json;
+using System;
+using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Domain.Entities;
 
 /// <summary>
 /// Properties of an event published to an Event Grid topic.
 /// </summary>
-[DataContract]
 public class EventGridEvent
 {
     /// <summary>
     /// Gets or sets an unique identifier for the event.
     /// </summary>
-    [DataMember(Name = "id")]
+    [JsonPropertyName("id")]
     public string Id { get; set; }
 
     /// <summary>
     /// Gets or sets a resource path relative to the topic path.
     /// </summary>
-    [DataMember(Name = "subject")]
+    [JsonPropertyName("subject")]
     public string Subject { get; set; }
 
     /// <summary>
     /// Gets or sets event data specific to the event type.
     /// </summary>
-    [DataMember(Name = "data")]
+    [JsonPropertyName("data")]
     public object Data { get; set; }
 
     /// <summary>
     /// Gets or sets the type of the event that occurred.
     /// </summary>
-    [DataMember(Name = "eventType")]
+    [JsonPropertyName("eventType")]
     public string EventType { get; set; }
 
     /// <summary>
     /// Gets or sets the time (in UTC) the event was generated.
     /// </summary>
-    [DataMember(Name = "eventTime")]
+    [JsonPropertyName("eventTime")]
     public string EventTime { get; set; }
 
     [JsonIgnore]
@@ -49,19 +47,19 @@ public class EventGridEvent
     /// <summary>
     /// Gets or sets the schema version of the data object.
     /// </summary>
-    [DataMember(Name = "dataVersion")]
+    [JsonPropertyName("dataVersion")]
     public string DataVersion { get; set; }
 
     /// <summary>
     /// Gets the schema version of the event metadata.
     /// </summary>
-    [DataMember(Name = "metadataVersion")]
+    [JsonPropertyName("metadataVersion")]
     public string MetadataVersion { get; set; }
 
     /// <summary>
     /// Gets or sets the resource path of the event source.
     /// </summary>
-    [DataMember(Name = "topic")]
+    [JsonPropertyName("topic")]
     public string Topic { get; set; }
 
     /// <summary>

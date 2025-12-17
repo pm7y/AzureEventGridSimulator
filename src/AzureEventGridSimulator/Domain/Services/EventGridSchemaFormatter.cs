@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
-using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Domain.Services;
 
@@ -21,14 +21,14 @@ public class EventGridSchemaFormatter : IEventSchemaFormatter
     public string Serialize(SimulatorEvent evt)
     {
         var eventGridEvent = ConvertToEventGridEvent(evt);
-        return JsonConvert.SerializeObject(new[] { eventGridEvent }, Formatting.None);
+        return JsonSerializer.Serialize(new[] { eventGridEvent });
     }
 
     /// <inheritdoc />
     public string SerializeArray(IEnumerable<SimulatorEvent> events)
     {
         var eventGridEvents = events.Select(ConvertToEventGridEvent).ToArray();
-        return JsonConvert.SerializeObject(eventGridEvents, Formatting.None);
+        return JsonSerializer.Serialize(eventGridEvents);
     }
 
     /// <inheritdoc />

@@ -1,9 +1,8 @@
 using System;
 using System.Linq;
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace AzureEventGridSimulator.Domain.Services;
 
@@ -11,27 +10,20 @@ namespace AzureEventGridSimulator.Domain.Services;
 /// Parses events using the CloudEvents v1.0 schema.
 /// Supports both binary and structured content modes.
 /// </summary>
-public class CloudEventSchemaParser : IEventSchemaParser
+public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEventSchemaParser
 {
-    private readonly EventSchemaDetector _schemaDetector;
-
-    public CloudEventSchemaParser(EventSchemaDetector schemaDetector)
-    {
-        _schemaDetector = schemaDetector;
-    }
-
     /// <inheritdoc />
     public EventSchema Schema => EventSchema.CloudEventV1_0;
 
     /// <inheritdoc />
     public SimulatorEvent[] Parse(HttpContext context, string requestBody)
     {
-        if (_schemaDetector.IsBinaryMode(context))
+        if (schemaDetector.IsBinaryMode(context))
         {
             return ParseBinaryMode(context, requestBody);
         }
 
-        if (_schemaDetector.IsBatchMode(context))
+        if (schemaDetector.IsBatchMode(context))
         {
             return ParseBatchStructuredMode(requestBody);
         }
@@ -67,7 +59,8 @@ public class CloudEventSchemaParser : IEventSchemaParser
             // Try to parse as JSON, otherwise treat as string
             try
             {
-                cloudEvent.Data = JsonConvert.DeserializeObject(requestBody);
+                using var doc = JsonDocument.Parse(requestBody);
+                cloudEvent.Data = JsonSerializer.Deserialize<object>(doc.RootElement.GetRawText());
             }
             catch (JsonException)
             {
@@ -93,21 +86,22 @@ public class CloudEventSchemaParser : IEventSchemaParser
 
         try
         {
+            using var document = JsonDocument.Parse(requestBody);
+
             // Check if it's an array (single event in array format)
-            var token = JToken.Parse(requestBody);
-            if (token is JArray array)
+            if (document.RootElement.ValueKind == JsonValueKind.Array)
             {
-                if (array.Count == 0)
+                if (document.RootElement.GetArrayLength() == 0)
                 {
                     throw new InvalidOperationException("No events found in the request body.");
                 }
 
                 // Handle single event in array format
-                var events = array.Select(t => t.ToObject<CloudEvent>()).ToArray();
+                var events = JsonSerializer.Deserialize<CloudEvent[]>(requestBody);
                 return events.Select(SimulatorEvent.FromCloudEvent).ToArray();
             }
 
-            cloudEvent = JsonConvert.DeserializeObject<CloudEvent>(requestBody);
+            cloudEvent = JsonSerializer.Deserialize<CloudEvent>(requestBody);
         }
         catch (JsonException ex)
         {
@@ -136,7 +130,7 @@ public class CloudEventSchemaParser : IEventSchemaParser
 
         try
         {
-            events = JsonConvert.DeserializeObject<CloudEvent[]>(requestBody);
+            events = JsonSerializer.Deserialize<CloudEvent[]>(requestBody);
         }
         catch (JsonException ex)
         {

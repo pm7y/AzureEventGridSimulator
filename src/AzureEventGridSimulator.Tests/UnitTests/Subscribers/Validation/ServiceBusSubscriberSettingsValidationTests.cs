@@ -5,7 +5,7 @@ using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.UnitTests.Subscribers;
+namespace AzureEventGridSimulator.Tests.UnitTests.Subscribers.Validation;
 
 [Trait("Category", "unit")]
 public class ServiceBusSubscriberSettingsValidationTests

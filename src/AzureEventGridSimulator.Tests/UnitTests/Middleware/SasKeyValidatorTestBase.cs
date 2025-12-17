@@ -1,0 +1,42 @@
+using System;
+using System.Security.Cryptography;
+using System.Text;
+using System.Web;
+using AzureEventGridSimulator.Infrastructure.Middleware;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+
+namespace AzureEventGridSimulator.Tests.UnitTests.Middleware;
+
+public abstract class SasKeyValidatorTestBase
+{
+    protected const string ValidTopicKey = "TheLocal+DevelopmentKey=";
+    protected readonly ILogger<SasKeyValidator> Logger;
+    protected readonly SasKeyValidator Validator;
+
+    protected SasKeyValidatorTestBase()
+    {
+        Logger = Substitute.For<ILogger<SasKeyValidator>>();
+        Validator = new SasKeyValidator(Logger);
+    }
+
+    protected static string GenerateValidSasToken(string key, string resource, DateTime expiry)
+    {
+        var decodedResource = resource;
+        var decodedExpiration = expiry.ToString("o");
+
+        var encodedResource = HttpUtility.UrlEncode(decodedResource);
+        var encodedExpiration = HttpUtility.UrlEncode(decodedExpiration);
+
+        var unsignedSas = $"r={encodedResource}&e={encodedExpiration}";
+
+        using var hmac = new HMACSHA256(Convert.FromBase64String(key));
+        var signature = Convert.ToBase64String(
+            hmac.ComputeHash(Encoding.UTF8.GetBytes(unsignedSas))
+        );
+
+        var encodedSignature = HttpUtility.UrlEncode(signature);
+
+        return $"r={encodedResource}&e={encodedExpiration}&s={encodedSignature}";
+    }
+}

@@ -1,13 +1,13 @@
 using System;
 using System.Linq;
+using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
 
 public class SimulatorSettings
 {
-    [JsonProperty(PropertyName = "topics", Required = Required.Always)]
+    [JsonPropertyName("topics")]
     public TopicSettings[] Topics { get; set; } = Array.Empty<TopicSettings>();
 
     public void Validate()
@@ -55,6 +55,20 @@ public class SimulatorSettings
             throw new InvalidOperationException(
                 "A subscriber name can only contain letters, numbers, and dashes."
             );
+        }
+
+        // Wire up topic references for connection string inheritance
+        foreach (var topic in Topics)
+        {
+            foreach (var subscriber in topic.Subscribers.ServiceBusSubscribers)
+            {
+                subscriber.ParentTopic = topic;
+            }
+
+            foreach (var subscriber in topic.Subscribers.StorageQueueSubscribers)
+            {
+                subscriber.ParentTopic = topic;
+            }
         }
 
         // Validate each subscriber

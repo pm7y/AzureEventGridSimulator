@@ -1,21 +1,15 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 
-public class ValidateSubscriptionCommandHandler : IRequestHandler<ValidateSubscriptionCommand, bool>
+public class ValidateSubscriptionCommandHandler(ILogger<ValidateSubscriptionCommandHandler> logger)
+    : IRequestHandler<ValidateSubscriptionCommand, bool>
 {
-    private readonly ILogger<ValidateSubscriptionCommandHandler> _logger;
-
-    public ValidateSubscriptionCommandHandler(ILogger<ValidateSubscriptionCommandHandler> logger)
-    {
-        _logger = logger;
-    }
-
     public Task<bool> Handle(
         ValidateSubscriptionCommand request,
         CancellationToken cancellationToken
@@ -33,7 +27,7 @@ public class ValidateSubscriptionCommandHandler : IRequestHandler<ValidateSubscr
         )
         {
             subscriber.ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful;
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Subscription {SubscriptionName} on topic {TopicName} was successfully validated",
                 subscriber.Name,
                 request.Topic.Name
@@ -42,7 +36,7 @@ public class ValidateSubscriptionCommandHandler : IRequestHandler<ValidateSubscr
             return Task.FromResult(true);
         }
 
-        _logger.LogWarning(
+        logger.LogWarning(
             "Validation failed for code {ValidationCode} on topic {TopicName}",
             request.ValidationCode,
             request.Topic?.Name

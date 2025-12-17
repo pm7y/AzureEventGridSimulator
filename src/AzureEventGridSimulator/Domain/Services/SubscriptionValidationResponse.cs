@@ -1,10 +1,10 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Domain.Services;
 
 public class SubscriptionValidationResponse
 {
-    [JsonProperty(PropertyName = "validationResponse", Required = Required.Always)]
+    [JsonPropertyName("validationResponse")]
     public Guid ValidationResponse { get; set; }
 }

@@ -1,17 +1,12 @@
 ﻿using System.Net;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Infrastructure;
 
-public class ErrorMessage
+public class ErrorMessage(HttpStatusCode statusCode, string errorMessage, string code)
 {
-    public ErrorMessage(HttpStatusCode statusCode, string errorMessage, string code)
-    {
-        Error = new ErrorDetails(statusCode, errorMessage, code);
-    }
-
-    [JsonProperty(PropertyName = "error")]
-    public ErrorDetails Error { get; }
+    [JsonPropertyName("error")]
+    public ErrorDetails Error { get; } = new(statusCode, errorMessage, code);
 
     public class ErrorDetails
     {
@@ -21,10 +16,10 @@ public class ErrorMessage
             Message = errorMessage;
         }
 
-        [JsonProperty(PropertyName = "code", Order = 1)]
+        [JsonPropertyName("code")]
         public string Code { get; }
 
-        [JsonProperty(PropertyName = "message", Order = 2)]
+        [JsonPropertyName("message")]
         public string Message { get; }
     }
 }

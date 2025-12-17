@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
@@ -13,15 +13,22 @@ public class SubscribersSettings
     /// <summary>
     /// Gets or sets HTTP webhook subscribers.
     /// </summary>
-    [JsonProperty(PropertyName = "http", Required = Required.Default)]
+    [JsonPropertyName("http")]
     public HttpSubscriberSettings[] Http { get; set; } = Array.Empty<HttpSubscriberSettings>();
 
     /// <summary>
     /// Gets or sets Azure Service Bus subscribers.
     /// </summary>
-    [JsonProperty(PropertyName = "serviceBus", Required = Required.Default)]
+    [JsonPropertyName("serviceBus")]
     public ServiceBusSubscriberSettings[] ServiceBus { get; set; } =
         Array.Empty<ServiceBusSubscriberSettings>();
+
+    /// <summary>
+    /// Gets or sets Azure Storage Queue subscribers.
+    /// </summary>
+    [JsonPropertyName("storageQueue")]
+    public StorageQueueSubscriberSettings[] StorageQueue { get; set; } =
+        Array.Empty<StorageQueueSubscriberSettings>();
 
     /// <summary>
     /// Gets all subscribers of all types.
@@ -30,7 +37,8 @@ public class SubscribersSettings
     public IEnumerable<ISubscriberSettings> All =>
         (Http ?? Array.Empty<HttpSubscriberSettings>())
             .Cast<ISubscriberSettings>()
-            .Concat(ServiceBus ?? Array.Empty<ServiceBusSubscriberSettings>());
+            .Concat(ServiceBus ?? Array.Empty<ServiceBusSubscriberSettings>())
+            .Concat(StorageQueue ?? Array.Empty<StorageQueueSubscriberSettings>());
 
     /// <summary>
     /// Gets all HTTP subscribers.
@@ -45,6 +53,13 @@ public class SubscribersSettings
     [JsonIgnore]
     public IEnumerable<ServiceBusSubscriberSettings> ServiceBusSubscribers =>
         ServiceBus ?? Array.Empty<ServiceBusSubscriberSettings>();
+
+    /// <summary>
+    /// Gets all Storage Queue subscribers.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<StorageQueueSubscriberSettings> StorageQueueSubscribers =>
+        StorageQueue ?? Array.Empty<StorageQueueSubscriberSettings>();
 
     /// <summary>
     /// Gets whether there are any subscribers configured.

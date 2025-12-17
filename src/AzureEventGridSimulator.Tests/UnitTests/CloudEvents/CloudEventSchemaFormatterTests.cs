@@ -1,6 +1,6 @@
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
-using Newtonsoft.Json.Linq;
 using Shouldly;
 using Xunit;
 
@@ -26,13 +26,14 @@ public class CloudEventSchemaFormatterTests
         var json = _formatter.Serialize(simulatorEvent);
 
         // Azure Event Grid sends events "in an array that has a single event"
-        var array = JArray.Parse(json);
-        array.Count.ShouldBe(1);
+        using var doc = JsonDocument.Parse(json);
+        var array = doc.RootElement;
+        array.GetArrayLength().ShouldBe(1);
         var parsed = array[0];
-        parsed["specversion"]?.ToString().ShouldBe("1.0");
-        parsed["type"]?.ToString().ShouldBe("com.example.test");
-        parsed["source"]?.ToString().ShouldBe("/test/source");
-        parsed["id"]?.ToString().ShouldBe("test-id-123");
+        parsed.GetProperty("specversion").GetString().ShouldBe("1.0");
+        parsed.GetProperty("type").GetString().ShouldBe("com.example.test");
+        parsed.GetProperty("source").GetString().ShouldBe("/test/source");
+        parsed.GetProperty("id").GetString().ShouldBe("test-id-123");
     }
 
     [Fact]
@@ -52,12 +53,13 @@ public class CloudEventSchemaFormatterTests
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
         var json = _formatter.Serialize(simulatorEvent);
 
-        var array = JArray.Parse(json);
-        array.Count.ShouldBe(1);
+        using var doc = JsonDocument.Parse(json);
+        var array = doc.RootElement;
+        array.GetArrayLength().ShouldBe(1);
         var parsed = array[0];
-        parsed["subject"]?.ToString().ShouldBe("/test/subject");
-        parsed["time"].ShouldNotBeNull(); // Time format may vary by locale
-        parsed["data"].ShouldNotBeNull();
+        parsed.GetProperty("subject").GetString().ShouldBe("/test/subject");
+        parsed.TryGetProperty("time", out _).ShouldBeTrue(); // Time format may vary by locale
+        parsed.TryGetProperty("data", out _).ShouldBeTrue();
     }
 
     [Fact]
@@ -76,15 +78,16 @@ public class CloudEventSchemaFormatterTests
         var simulatorEvent = SimulatorEvent.FromEventGridEvent(eventGridEvent);
         var json = _formatter.Serialize(simulatorEvent);
 
-        var array = JArray.Parse(json);
-        array.Count.ShouldBe(1);
+        using var doc = JsonDocument.Parse(json);
+        var array = doc.RootElement;
+        array.GetArrayLength().ShouldBe(1);
         var parsed = array[0];
-        parsed["specversion"]?.ToString().ShouldBe("1.0");
-        parsed["type"]?.ToString().ShouldBe("Test.Event.Type");
-        parsed["source"]?.ToString().ShouldBe("/test/topic");
-        parsed["id"]?.ToString().ShouldBe("event-123");
-        parsed["subject"]?.ToString().ShouldBe("/test/subject");
-        parsed["time"].ShouldNotBeNull(); // Time format may vary by locale
+        parsed.GetProperty("specversion").GetString().ShouldBe("1.0");
+        parsed.GetProperty("type").GetString().ShouldBe("Test.Event.Type");
+        parsed.GetProperty("source").GetString().ShouldBe("/test/topic");
+        parsed.GetProperty("id").GetString().ShouldBe("event-123");
+        parsed.GetProperty("subject").GetString().ShouldBe("/test/subject");
+        parsed.TryGetProperty("time", out _).ShouldBeTrue(); // Time format may vary by locale
     }
 
     [Fact]

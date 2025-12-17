@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Entities;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
@@ -11,65 +10,72 @@ namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 /// </summary>
 public class ServiceBusSubscriberSettings : ISubscriberSettings
 {
-    [JsonProperty(PropertyName = "name", Required = Required.Always)]
+    /// <summary>
+    /// Internal reference to the parent topic for connection string inheritance.
+    /// Set during validation in SimulatorSettings.
+    /// </summary>
+    [JsonIgnore]
+    internal TopicSettings ParentTopic { get; set; }
+
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
     /// <summary>
     /// Gets or sets the Service Bus connection string.
     /// Either this OR (Namespace + SharedAccessKeyName + SharedAccessKey) must be provided.
     /// </summary>
-    [JsonProperty(PropertyName = "connectionString", Required = Required.Default)]
+    [JsonPropertyName("connectionString")]
     public string ConnectionString { get; set; }
 
     /// <summary>
     /// Gets or sets the Service Bus namespace (without .servicebus.windows.net suffix).
     /// </summary>
-    [JsonProperty(PropertyName = "namespace", Required = Required.Default)]
+    [JsonPropertyName("namespace")]
     public string Namespace { get; set; }
 
     /// <summary>
     /// Gets or sets the shared access key name.
     /// </summary>
-    [JsonProperty(PropertyName = "sharedAccessKeyName", Required = Required.Default)]
+    [JsonPropertyName("sharedAccessKeyName")]
     public string SharedAccessKeyName { get; set; }
 
     /// <summary>
     /// Gets or sets the shared access key.
     /// </summary>
-    [JsonProperty(PropertyName = "sharedAccessKey", Required = Required.Default)]
+    [JsonPropertyName("sharedAccessKey")]
     public string SharedAccessKey { get; set; }
 
     /// <summary>
     /// Gets or sets the topic name. Either Topic or Queue must be specified, but not both.
     /// </summary>
-    [JsonProperty(PropertyName = "topic", Required = Required.Default)]
+    [JsonPropertyName("topic")]
     public string Topic { get; set; }
 
     /// <summary>
     /// Gets or sets the queue name. Either Topic or Queue must be specified, but not both.
     /// </summary>
-    [JsonProperty(PropertyName = "queue", Required = Required.Default)]
+    [JsonPropertyName("queue")]
     public string Queue { get; set; }
 
-    [JsonProperty(PropertyName = "filter", Required = Required.Default)]
+    [JsonPropertyName("filter")]
     public FilterSetting Filter { get; set; }
 
-    [JsonProperty(PropertyName = "disabled", Required = Required.Default)]
+    [JsonPropertyName("disabled")]
     public bool Disabled { get; set; }
 
     /// <summary>
     /// Gets or sets the delivery schema for events sent to this subscriber.
     /// If null, uses the topic's output schema or the original event schema.
     /// </summary>
-    [JsonProperty(PropertyName = "deliverySchema", Required = Required.Default)]
-    [JsonConverter(typeof(StringEnumConverter))]
+    [JsonPropertyName("deliverySchema")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public EventSchema? DeliverySchema { get; set; }
 
     /// <summary>
     /// Gets or sets the delivery properties to add to Service Bus messages.
     /// Keys are property names, values specify whether the property is static or dynamic.
     /// </summary>
-    [JsonProperty(PropertyName = "properties", Required = Required.Default)]
+    [JsonPropertyName("properties")]
     public Dictionary<string, DeliveryPropertySettings> Properties { get; set; }
 
     [JsonIgnore]
@@ -88,21 +94,72 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
     public bool IsTopic => !string.IsNullOrWhiteSpace(Topic);
 
     /// <summary>
-    /// Gets the connection string, either directly specified or built from components.
+    /// Gets the connection string, either directly specified, built from components, or inherited from topic.
+    /// Falls back to topic-level defaults if not specified at subscriber level.
     /// </summary>
     [JsonIgnore]
     public string EffectiveConnectionString
     {
         get
         {
+            // Subscriber-level connection string (direct)
             if (!string.IsNullOrWhiteSpace(ConnectionString))
             {
                 return ConnectionString;
             }
 
-            return $"Endpoint=sb://{Namespace}.servicebus.windows.net/;SharedAccessKeyName={SharedAccessKeyName};SharedAccessKey={SharedAccessKey}";
+            // Subscriber-level namespace components
+            if (HasSubscriberNamespaceCredentials())
+            {
+                return BuildConnectionString(Namespace, SharedAccessKeyName, SharedAccessKey);
+            }
+
+            // Fall back to topic-level connection string
+            if (
+                ParentTopic != null
+                && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusConnectionString)
+            )
+            {
+                return ParentTopic.ServiceBusConnectionString;
+            }
+
+            // Fall back to topic-level namespace components
+            if (HasTopicNamespaceCredentials())
+            {
+                return BuildConnectionString(
+                    ParentTopic.ServiceBusNamespace,
+                    ParentTopic.ServiceBusSharedAccessKeyName,
+                    ParentTopic.ServiceBusSharedAccessKey
+                );
+            }
+
+            // No connection string available - will fail validation
+            return null;
         }
     }
+
+    private bool HasSubscriberNamespaceCredentials() =>
+        !string.IsNullOrWhiteSpace(Namespace)
+        && !string.IsNullOrWhiteSpace(SharedAccessKeyName)
+        && !string.IsNullOrWhiteSpace(SharedAccessKey);
+
+    private bool HasAnySubscriberNamespaceCredential() =>
+        !string.IsNullOrWhiteSpace(Namespace)
+        || !string.IsNullOrWhiteSpace(SharedAccessKeyName)
+        || !string.IsNullOrWhiteSpace(SharedAccessKey);
+
+    private bool HasTopicNamespaceCredentials() =>
+        ParentTopic != null
+        && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusNamespace)
+        && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusSharedAccessKeyName)
+        && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusSharedAccessKey);
+
+    private static string BuildConnectionString(
+        string serviceBusNamespace,
+        string sharedAccessKeyName,
+        string sharedAccessKey
+    ) =>
+        $"Endpoint=sb://{serviceBusNamespace}.servicebus.windows.net/;SharedAccessKeyName={sharedAccessKeyName};SharedAccessKey={sharedAccessKey}";
 
     public void Validate()
     {
@@ -111,24 +168,30 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
             throw new ArgumentException("Subscriber name is required.", nameof(Name));
         }
 
-        // Validate authentication
+        // Validate authentication (considering topic-level defaults)
         var hasConnectionString = !string.IsNullOrWhiteSpace(ConnectionString);
-        var hasNamespaceCredentials =
-            !string.IsNullOrWhiteSpace(Namespace)
-            && !string.IsNullOrWhiteSpace(SharedAccessKeyName)
-            && !string.IsNullOrWhiteSpace(SharedAccessKey);
+        var hasTopicConnectionString =
+            ParentTopic != null
+            && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusConnectionString);
 
-        if (!hasConnectionString && !hasNamespaceCredentials)
-        {
-            throw new ArgumentException(
-                $"Service Bus subscriber '{Name}' must have either a connectionString or namespace + sharedAccessKeyName + sharedAccessKey."
-            );
-        }
-
-        if (hasConnectionString && hasNamespaceCredentials)
+        // Check if subscriber specifies both connection string and any namespace components
+        if (hasConnectionString && HasAnySubscriberNamespaceCredential())
         {
             throw new ArgumentException(
                 $"Service Bus subscriber '{Name}' should specify either connectionString or namespace credentials, not both."
+            );
+        }
+
+        // Check if at least one authentication method is available (subscriber or topic level)
+        if (
+            !hasConnectionString
+            && !HasSubscriberNamespaceCredentials()
+            && !hasTopicConnectionString
+            && !HasTopicNamespaceCredentials()
+        )
+        {
+            throw new ArgumentException(
+                $"Service Bus subscriber '{Name}' must have either a connectionString or namespace + sharedAccessKeyName + sharedAccessKey, either at subscriber or topic level."
             );
         }
 

@@ -10,15 +10,8 @@ using Microsoft.Net.Http.Headers;
 
 namespace AzureEventGridSimulator.Infrastructure.Middleware;
 
-public class SasKeyValidator
+public class SasKeyValidator(ILogger<SasKeyValidator> logger)
 {
-    private readonly ILogger<SasKeyValidator> _logger;
-
-    public SasKeyValidator(ILogger<SasKeyValidator> logger)
-    {
-        _logger = logger;
-    }
-
     public bool IsValid(IHeaderDictionary requestHeaders, string topicKey)
     {
         if (
@@ -29,7 +22,7 @@ public class SasKeyValidator
         {
             if (!string.Equals(requestHeaders[Constants.AegSasKeyHeader], topicKey))
             {
-                _logger.LogError("'aeg-sas-key' value did not match the expected value!");
+                logger.LogError("'aeg-sas-key' value did not match the expected value!");
                 return false;
             }
 
@@ -49,7 +42,7 @@ public class SasKeyValidator
             var token = requestHeaders[Constants.AegSasTokenHeader].First();
             if (!TokenIsValid(token, topicKey))
             {
-                _logger.LogError("'aeg-sas-token' value did not match the expected value!");
+                logger.LogError("'aeg-sas-token' value did not match the expected value!");
                 return false;
             }
 
@@ -68,7 +61,7 @@ public class SasKeyValidator
                 && !TokenIsValid(token.Replace(Constants.SasAuthorizationType, "").Trim(), topicKey)
             )
             {
-                _logger.LogError(
+                logger.LogError(
                     "'Authorization: SharedAccessSignature' value did not match the expected value!"
                 );
                 return false;
@@ -111,7 +104,7 @@ public class SasKeyValidator
             return true;
         }
 
-        _logger.LogWarning(
+        logger.LogWarning(
             "{ExpectedSignature} != {MessageSignature}",
             encodedComputedSignature,
             signature

@@ -1,24 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
 
 public class FilterSetting
 {
-    [JsonProperty(PropertyName = "includedEventTypes", Required = Required.AllowNull)]
+    [JsonPropertyName("includedEventTypes")]
     public ICollection<string> IncludedEventTypes { get; set; }
 
-    [JsonProperty(PropertyName = "isSubjectCaseSensitive", Required = Required.AllowNull)]
+    [JsonPropertyName("isSubjectCaseSensitive")]
     public bool IsSubjectCaseSensitive { get; set; }
 
-    [JsonProperty(PropertyName = "subjectBeginsWith", Required = Required.AllowNull)]
+    [JsonPropertyName("subjectBeginsWith")]
     public string SubjectBeginsWith { get; set; }
 
-    [JsonProperty(PropertyName = "subjectEndsWith", Required = Required.AllowNull)]
+    [JsonPropertyName("subjectEndsWith")]
     public string SubjectEndsWith { get; set; }
 
-    [JsonProperty(PropertyName = "advancedFilters", Required = Required.AllowNull)]
+    [JsonPropertyName("advancedFilters")]
     public ICollection<AdvancedFilterSetting> AdvancedFilters { get; set; }
 
     internal void Validate()

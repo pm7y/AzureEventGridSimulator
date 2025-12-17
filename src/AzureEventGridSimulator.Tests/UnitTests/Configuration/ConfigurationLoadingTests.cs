@@ -1,10 +1,10 @@
 using System.Linq;
+using System.Text.Json;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.UnitTests;
+namespace AzureEventGridSimulator.Tests.UnitTests.Configuration;
 
 [Trait("Category", "unit")]
 public class ConfigurationLoadingTests
@@ -49,7 +49,7 @@ public class ConfigurationLoadingTests
     }]
 }";
 
-        var settings = JsonConvert.DeserializeObject<SimulatorSettings>(json);
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
         settings.ShouldNotBeNull();
         settings.Topics.ShouldNotBeNull();

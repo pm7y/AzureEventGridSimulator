@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Infrastructure.Extensions;
-using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
 
@@ -38,16 +38,17 @@ public class AdvancedFilterSetting
         IsNotNull,
     }
 
-    [JsonProperty(PropertyName = "operatorType", Required = Required.Always)]
+    [JsonPropertyName("operatorType")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public AdvancedFilterOperatorType OperatorType { get; set; }
 
-    [JsonProperty(PropertyName = "key", Required = Required.Always)]
+    [JsonPropertyName("key")]
     public string Key { get; set; }
 
-    [JsonProperty(PropertyName = "value", Required = Required.DisallowNull)]
+    [JsonPropertyName("value")]
     public object Value { get; set; }
 
-    [JsonProperty(PropertyName = "values", Required = Required.DisallowNull)]
+    [JsonPropertyName("values")]
     public ICollection<object> Values { get; set; }
 
     internal void Validate()

@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Domain.Services;
 
@@ -26,7 +26,7 @@ public class EventGridSchemaParser : IEventSchemaParser
 
         try
         {
-            events = JsonConvert.DeserializeObject<EventGridEvent[]>(requestBody);
+            events = JsonSerializer.Deserialize<EventGridEvent[]>(requestBody);
         }
         catch (JsonException ex)
         {

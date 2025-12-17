@@ -6,8 +6,8 @@ using Asp.Versioning;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Infrastructure;
+using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AzureEventGridSimulator.Controllers;
@@ -15,24 +15,18 @@ namespace AzureEventGridSimulator.Controllers;
 [Route("/validate")]
 [ApiVersion(Constants.SupportedApiVersion)]
 [ApiController]
-public class SubscriptionValidationController : ControllerBase
+public class SubscriptionValidationController(
+    SimulatorSettings simulatorSettings,
+    IMediator mediator
+) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly SimulatorSettings _simulatorSettings;
-
-    public SubscriptionValidationController(SimulatorSettings simulatorSettings, IMediator mediator)
-    {
-        _simulatorSettings = simulatorSettings;
-        _mediator = mediator;
-    }
-
     [HttpGet]
     public async Task<IActionResult> Get(Guid id)
     {
-        var topicSettingsForCurrentRequestPort = _simulatorSettings.Topics.First(t =>
+        var topicSettingsForCurrentRequestPort = simulatorSettings.Topics.First(t =>
             t.Port == HttpContext.Request.Host.Port
         );
-        var isValid = await _mediator.Send(
+        var isValid = await mediator.Send(
             new ValidateSubscriptionCommand(topicSettingsForCurrentRequestPort, id)
         );
 

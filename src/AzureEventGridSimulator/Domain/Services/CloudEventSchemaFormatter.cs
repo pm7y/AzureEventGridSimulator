@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
-using Newtonsoft.Json;
 
 namespace AzureEventGridSimulator.Domain.Services;
 
@@ -22,27 +22,24 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     /// </remarks>
     public string ContentType => Constants.CloudEventsBatchContentType;
 
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+    };
+
     /// <inheritdoc />
     public string Serialize(SimulatorEvent evt)
     {
         var cloudEvent = ConvertToCloudEvent(evt);
         // Azure Event Grid sends events "in an array that has a single event"
-        return JsonConvert.SerializeObject(
-            new[] { cloudEvent },
-            Formatting.None,
-            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }
-        );
+        return JsonSerializer.Serialize(new[] { cloudEvent }, SerializerOptions);
     }
 
     /// <inheritdoc />
     public string SerializeArray(IEnumerable<SimulatorEvent> events)
     {
         var cloudEvents = events.Select(ConvertToCloudEvent).ToArray();
-        return JsonConvert.SerializeObject(
-            cloudEvents,
-            Formatting.None,
-            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }
-        );
+        return JsonSerializer.Serialize(cloudEvents, SerializerOptions);
     }
 
     /// <inheritdoc />

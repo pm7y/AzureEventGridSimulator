@@ -2,11 +2,11 @@
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Azure.Messaging.EventGrid;
 using AzureEventGridSimulator.Domain;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
@@ -18,20 +18,14 @@ namespace AzureEventGridSimulator.Tests.IntegrationTests;
 /// Note: this is a WIP.
 /// </summary>
 [Trait("Category", "integration")]
-public class BasicTests : IClassFixture<IntegrationContextFixture>
+public class BasicTests(IntegrationContextFixture factory)
+    : IClassFixture<IntegrationContextFixture>
 {
-    private readonly IntegrationContextFixture _factory;
-
-    public BasicTests(IntegrationContextFixture factory)
-    {
-        _factory = factory;
-    }
-
     [Fact]
     public async Task GivenAValidEvent_WhenPublished_ThenItShouldBeAccepted()
     {
         // Arrange
-        var client = _factory.CreateClient(
+        var client = factory.CreateClient(
             new WebApplicationFactoryClientOptions
             {
                 BaseAddress = new Uri("https://localhost:60101"),
@@ -45,7 +39,10 @@ public class BasicTests : IClassFixture<IntegrationContextFixture>
         );
 
         var testEvent = new EventGridEvent("subject", "eventType", "1.0", new { Blah = 1 });
-        var json = JsonConvert.SerializeObject(new[] { testEvent }, Formatting.Indented);
+        var json = JsonSerializer.Serialize(
+            new[] { testEvent },
+            new JsonSerializerOptions { WriteIndented = true }
+        );
 
         // Act
         var jsonContent = new StringContent(json, Encoding.UTF8, "application/json");
@@ -60,7 +57,7 @@ public class BasicTests : IClassFixture<IntegrationContextFixture>
     public async Task GivenAHealthRequest_ThenItShouldRespondWithOk()
     {
         // Arrange
-        var client = _factory.CreateClient(
+        var client = factory.CreateClient(
             new WebApplicationFactoryClientOptions
             {
                 BaseAddress = new Uri("https://localhost:60101"),

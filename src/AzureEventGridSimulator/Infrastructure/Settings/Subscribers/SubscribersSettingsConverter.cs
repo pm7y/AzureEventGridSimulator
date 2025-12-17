@@ -1,6 +1,6 @@
 using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
@@ -10,80 +10,101 @@ namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 /// </summary>
 public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
 {
-    public override SubscribersSettings ReadJson(
-        JsonReader reader,
-        Type objectType,
-        SubscribersSettings existingValue,
-        bool hasExistingValue,
-        JsonSerializer serializer
+    public override SubscribersSettings Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options
     )
     {
-        var token = JToken.Load(reader);
-
-        if (token.Type == JTokenType.Null)
+        if (reader.TokenType == JsonTokenType.Null)
         {
             return new SubscribersSettings();
         }
 
         // Legacy format: array of HTTP subscribers
-        if (token.Type == JTokenType.Array)
+        if (reader.TokenType == JsonTokenType.StartArray)
         {
-            var httpSubscribers = token.ToObject<HttpSubscriberSettings[]>(serializer);
+            var httpSubscribers = JsonSerializer.Deserialize<HttpSubscriberSettings[]>(
+                ref reader,
+                options
+            );
             return new SubscribersSettings
             {
                 Http = httpSubscribers ?? Array.Empty<HttpSubscriberSettings>(),
                 ServiceBus = Array.Empty<ServiceBusSubscriberSettings>(),
+                StorageQueue = Array.Empty<StorageQueueSubscriberSettings>(),
             };
         }
 
-        // New format: object with http, serviceBus arrays
-        if (token.Type == JTokenType.Object)
+        // New format: object with http, serviceBus, storageQueue arrays
+        if (reader.TokenType == JsonTokenType.StartObject)
         {
             var result = new SubscribersSettings();
 
-            var httpToken = token["http"];
-            if (httpToken != null)
+            using var document = JsonDocument.ParseValue(ref reader);
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("http", out var httpElement))
             {
                 result.Http =
-                    httpToken.ToObject<HttpSubscriberSettings[]>(serializer)
-                    ?? Array.Empty<HttpSubscriberSettings>();
+                    JsonSerializer.Deserialize<HttpSubscriberSettings[]>(
+                        httpElement.GetRawText(),
+                        options
+                    ) ?? Array.Empty<HttpSubscriberSettings>();
             }
 
-            var serviceBusToken = token["serviceBus"];
-            if (serviceBusToken != null)
+            if (root.TryGetProperty("serviceBus", out var serviceBusElement))
             {
                 result.ServiceBus =
-                    serviceBusToken.ToObject<ServiceBusSubscriberSettings[]>(serializer)
-                    ?? Array.Empty<ServiceBusSubscriberSettings>();
+                    JsonSerializer.Deserialize<ServiceBusSubscriberSettings[]>(
+                        serviceBusElement.GetRawText(),
+                        options
+                    ) ?? Array.Empty<ServiceBusSubscriberSettings>();
+            }
+
+            if (root.TryGetProperty("storageQueue", out var storageQueueElement))
+            {
+                result.StorageQueue =
+                    JsonSerializer.Deserialize<StorageQueueSubscriberSettings[]>(
+                        storageQueueElement.GetRawText(),
+                        options
+                    ) ?? Array.Empty<StorageQueueSubscriberSettings>();
             }
 
             return result;
         }
 
-        throw new JsonSerializationException(
-            $"Unexpected token type '{token.Type}' when parsing subscribers. Expected array or object."
+        throw new JsonException(
+            $"Unexpected token type '{reader.TokenType}' when parsing subscribers. Expected array or object."
         );
     }
 
-    public override void WriteJson(
-        JsonWriter writer,
+    public override void Write(
+        Utf8JsonWriter writer,
         SubscribersSettings value,
-        JsonSerializer serializer
+        JsonSerializerOptions options
     )
     {
-        // Always write in the new format
-        var obj = new JObject();
+        writer.WriteStartObject();
 
         if (value.Http?.Length > 0)
         {
-            obj["http"] = JArray.FromObject(value.Http, serializer);
+            writer.WritePropertyName("http");
+            JsonSerializer.Serialize(writer, value.Http, options);
         }
 
         if (value.ServiceBus?.Length > 0)
         {
-            obj["serviceBus"] = JArray.FromObject(value.ServiceBus, serializer);
+            writer.WritePropertyName("serviceBus");
+            JsonSerializer.Serialize(writer, value.ServiceBus, options);
         }
 
-        obj.WriteTo(writer);
+        if (value.StorageQueue?.Length > 0)
+        {
+            writer.WritePropertyName("storageQueue");
+            JsonSerializer.Serialize(writer, value.StorageQueue, options);
+        }
+
+        writer.WriteEndObject();
     }
 }

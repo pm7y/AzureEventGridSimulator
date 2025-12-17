@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Newtonsoft.Json.Linq;
 
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
 
@@ -129,37 +129,43 @@ public class DeliveryPropertyResolver
     {
         try
         {
-            // Convert the data object to a JToken for navigation
-            JToken current = JToken.FromObject(data);
+            // Convert the data object to JSON for navigation
+            var json = JsonSerializer.Serialize(data);
+            using var document = JsonDocument.Parse(json);
+            var current = document.RootElement;
 
             for (var i = startIndex; i < pathParts.Length; i++)
             {
-                if (current == null || current.Type == JTokenType.Null)
+                if (current.ValueKind == JsonValueKind.Null)
                 {
                     return null;
                 }
 
-                if (current is not JObject jObject)
+                if (current.ValueKind != JsonValueKind.Object)
                 {
                     return null;
                 }
 
-                if (
-                    !jObject.TryGetValue(
-                        pathParts[i],
-                        StringComparison.OrdinalIgnoreCase,
-                        out var token
-                    )
-                )
+                // Try case-insensitive property lookup
+                var found = false;
+                foreach (var prop in current.EnumerateObject())
+                {
+                    if (prop.Name.Equals(pathParts[i], StringComparison.OrdinalIgnoreCase))
+                    {
+                        current = prop.Value;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
                 {
                     return null;
                 }
-
-                current = token;
             }
 
-            // Convert the final JToken to an appropriate .NET type
-            return ConvertJToken(current);
+            // Convert the final JsonElement to an appropriate .NET type
+            return ConvertJsonElement(current);
         }
         catch
         {
@@ -168,20 +174,41 @@ public class DeliveryPropertyResolver
     }
 
     /// <summary>
-    /// Converts a JToken to an appropriate .NET type for use as a Service Bus message property.
+    /// Converts a JsonElement to an appropriate .NET type for use as a Service Bus message property.
     /// </summary>
-    private static object ConvertJToken(JToken token)
+    private static object ConvertJsonElement(JsonElement element)
     {
-        return token.Type switch
+        return element.ValueKind switch
         {
-            JTokenType.String => token.Value<string>(),
-            JTokenType.Integer => token.Value<long>(),
-            JTokenType.Float => token.Value<double>(),
-            JTokenType.Boolean => token.Value<bool>(),
-            JTokenType.Date => token.Value<DateTime>(),
-            JTokenType.Guid => token.Value<Guid>(),
-            JTokenType.Null => null,
-            _ => token.ToString(),
+            JsonValueKind.String when TryParseDateTime(element.GetString(), out var dt) => dt,
+            JsonValueKind.String when TryParseGuid(element.GetString(), out var guid) => guid,
+            JsonValueKind.String => element.GetString(),
+            JsonValueKind.Number when element.TryGetInt64(out var l) => l,
+            JsonValueKind.Number => element.GetDouble(),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => null,
+            _ => element.GetRawText(),
         };
+    }
+
+    private static bool TryParseDateTime(string value, out DateTime result)
+    {
+        result = default;
+        if (string.IsNullOrEmpty(value))
+        {
+            return false;
+        }
+        return DateTime.TryParse(value, out result);
+    }
+
+    private static bool TryParseGuid(string value, out Guid result)
+    {
+        result = default;
+        if (string.IsNullOrEmpty(value))
+        {
+            return false;
+        }
+        return Guid.TryParse(value, out result);
     }
 }
