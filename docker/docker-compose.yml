@@ -1,3 +1,5 @@
+name: aegs
+
 services:
   azureeventgridsimulator:
     image: azureeventgridsimulator:dev
