@@ -7,6 +7,7 @@ using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
+using AzureEventGridSimulator.Domain.Services.Retry;
 using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Mediator;
@@ -230,6 +231,12 @@ public class Program
         builder.Services.AddSingleton<DeliveryPropertyResolver>();
         builder.Services.AddSingleton<ServiceBusEventDeliveryService>();
         builder.Services.AddSingleton<StorageQueueEventDeliveryService>();
+        builder.Services.AddSingleton<HttpEventDeliveryService>();
+
+        // Register retry and dead-letter services
+        builder.Services.AddSingleton<IDeliveryQueue, InMemoryDeliveryQueue>();
+        builder.Services.AddSingleton<DeadLetterService>();
+        builder.Services.AddHostedService<RetryDeliveryBackgroundService>();
 
         var httpClientBuilder = builder.Services.AddHttpClient(nameof(AzureEventGridSimulator));
         if (configuration.GetValue<bool>("dangerousAcceptAnyServerCertificateValidator"))

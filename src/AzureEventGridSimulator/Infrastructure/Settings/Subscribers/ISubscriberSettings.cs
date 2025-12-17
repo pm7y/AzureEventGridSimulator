@@ -34,6 +34,18 @@ public interface ISubscriberSettings
     string SubscriberType { get; }
 
     /// <summary>
+    /// Gets or sets the retry policy for this subscriber.
+    /// If null, default Azure Event Grid retry behavior is used.
+    /// </summary>
+    RetryPolicySettings RetryPolicy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the dead-letter settings for this subscriber.
+    /// Events that cannot be delivered are written to the dead-letter destination.
+    /// </summary>
+    DeadLetterSettings DeadLetter { get; set; }
+
+    /// <summary>
     /// Validates the subscriber settings.
     /// </summary>
     void Validate();
