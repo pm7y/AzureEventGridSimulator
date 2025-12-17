@@ -411,10 +411,11 @@ docker run `
 
 ### Docker Compose
 
-There is a `docker-compose.yml` file in the repo root that you can use to build and run the simulator along with an
+There is a `docker-compose.yml` file in the `docker/` folder that you can use to build and run the simulator along with an
 Azure Service Bus emulator for local development.
 
 ```
+cd docker
 docker-compose up --build --detach
 ```
 
