@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.1](https://github.com/pm7y/AzureEventGridSimulator/compare/4.2.0...4.2.1) (2025-12-17)
+
+
+### Bug Fixes
+
+* Trigger docker/nuget actions when release is published ([#215](https://github.com/pm7y/AzureEventGridSimulator/issues/215)) ([3e496ff](https://github.com/pm7y/AzureEventGridSimulator/commit/3e496ff1f6e1953351b91efca1f78db011d2d4b2))
+
 ## [4.2.0](https://github.com/pm7y/AzureEventGridSimulator/compare/4.1.2...4.2.0) (2025-12-17)
 
 
