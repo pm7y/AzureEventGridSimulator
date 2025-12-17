@@ -76,7 +76,7 @@ public class HttpEventDeliveryServiceTests
     public async Task GivenTimeout_WhenDelivering_ThenReturnsTimeout()
     {
         // HTTP client timeout throws TaskCanceledException with a different cancellation token
-        var timeoutCts = new CancellationTokenSource();
+        using var timeoutCts = new CancellationTokenSource();
         var timeoutException = new TaskCanceledException(
             "The request was cancelled due to timeout",
             new TimeoutException("The operation timed out"),
@@ -97,7 +97,7 @@ public class HttpEventDeliveryServiceTests
     [Fact]
     public async Task GivenCancellation_WhenDelivering_ThenReturnsCancelled()
     {
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         var httpClientFactory = CreateMockHttpClientFactory(
             responseAction: () => cts.Cancel(), // Cancel during request
             throwException: new TaskCanceledException(null, null, cts.Token)
@@ -158,7 +158,8 @@ public class HttpEventDeliveryServiceTests
 
         await service.DeliverAsync(delivery, CancellationToken.None);
 
-        capturedDeliveryCount.ShouldBe("5");
+        // AttemptCount is 5, delivery count header should be AttemptCount + 1 = 6
+        capturedDeliveryCount.ShouldBe("6");
     }
 
     [Fact]

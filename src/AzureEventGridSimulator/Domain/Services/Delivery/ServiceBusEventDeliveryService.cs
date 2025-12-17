@@ -93,7 +93,7 @@ public class ServiceBusEventDeliveryService(
             message.ApplicationProperties["aeg-event-type"] = "Notification";
             message.ApplicationProperties["aeg-subscription-name"] =
                 subscription.Name.ToUpperInvariant();
-            message.ApplicationProperties["aeg-delivery-count"] = delivery.AttemptCount;
+            message.ApplicationProperties["aeg-delivery-count"] = delivery.AttemptCount + 1;
 
             if (deliverySchema == EventSchema.EventGridSchema)
             {
@@ -205,7 +205,7 @@ public class ServiceBusEventDeliveryService(
             message.ApplicationProperties["aeg-event-type"] = "Notification";
             message.ApplicationProperties["aeg-subscription-name"] =
                 subscription.Name.ToUpperInvariant();
-            message.ApplicationProperties["aeg-delivery-count"] = 0;
+            message.ApplicationProperties["aeg-delivery-count"] = 1;
 
             if (deliverySchema == EventSchema.EventGridSchema)
             {

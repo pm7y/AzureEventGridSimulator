@@ -84,21 +84,19 @@ public class SendNotificationEventsToSubscriberCommandHandler(
             }
 
             // Check HTTP subscriber validation status
-            if (subscriber is HttpSubscriberSettings httpSubscriber)
+            if (
+                subscriber is HttpSubscriberSettings httpSubscriber
+                && !httpSubscriber.DisableValidation
+                && httpSubscriber.ValidationStatus
+                    != SubscriptionValidationStatus.ValidationSuccessful
+            )
             {
-                if (
-                    !httpSubscriber.DisableValidation
-                    && httpSubscriber.ValidationStatus
-                        != SubscriptionValidationStatus.ValidationSuccessful
-                )
-                {
-                    logger.LogWarning(
-                        "Subscription '{SubscriberName}' on topic '{TopicName}' can't receive events. It's still pending validation",
-                        subscriber.Name,
-                        request.Topic.Name
-                    );
-                    continue;
-                }
+                logger.LogWarning(
+                    "Subscription '{SubscriberName}' on topic '{TopicName}' can't receive events. It's still pending validation",
+                    subscriber.Name,
+                    request.Topic.Name
+                );
+                continue;
             }
 
             foreach (var evt in request.Events)

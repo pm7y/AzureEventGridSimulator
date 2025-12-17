@@ -64,11 +64,9 @@ public class PendingDeliveryTests
             InputSchema = EventSchema.EventGridSchema,
         };
 
-        // Use reflection to set EnqueuedTime if provided (it's init-only)
+        // Set EnqueuedTime if provided (using object initializer since it's init-only)
         if (enqueuedTime.HasValue)
         {
-            var field = typeof(PendingDelivery).GetProperty(nameof(PendingDelivery.EnqueuedTime));
-            // EnqueuedTime has init accessor, so we need to create with object initializer
             return new PendingDelivery
             {
                 Event = evt,

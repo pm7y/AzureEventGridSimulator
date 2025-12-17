@@ -43,7 +43,7 @@ public class HttpEventDeliveryService(
             using var content = new StringContent(json, Encoding.UTF8);
             content.Headers.ContentType = MediaTypeHeaderValue.Parse(formatter.ContentType);
 
-            var httpClient = httpClientFactory.CreateClient();
+            var httpClient = httpClientFactory.CreateClient("AzureEventGridSimulator");
 
             // Add standard Event Grid headers
             httpClient.DefaultRequestHeaders.Add(
@@ -56,7 +56,7 @@ public class HttpEventDeliveryService(
             );
             httpClient.DefaultRequestHeaders.Add(
                 Constants.AegDeliveryCountHeader,
-                delivery.AttemptCount.ToString()
+                (delivery.AttemptCount + 1).ToString()
             );
 
             // Add schema-specific headers

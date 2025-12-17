@@ -40,7 +40,9 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
         try
         {
             var basePath = deadLetterSettings.FolderPath ?? "./dead-letters";
-            var folder = Path.Combine(basePath, delivery.Topic.Name, delivery.Subscriber.Name);
+            var topicName = SanitizeDirectoryName(delivery.Topic.Name);
+            var subscriberName = SanitizeDirectoryName(delivery.Subscriber.Name);
+            var folder = Path.Combine(basePath, topicName, subscriberName);
 
             Directory.CreateDirectory(folder);
 
@@ -118,6 +120,33 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
         if (sanitized.Length > 50)
         {
             sanitized = sanitized[..50];
+        }
+
+        return string.IsNullOrWhiteSpace(sanitized) ? "unknown" : sanitized;
+    }
+
+    /// <summary>
+    /// Sanitizes a string to be safe for use as a directory name.
+    /// Removes path separators and invalid characters to prevent path traversal.
+    /// </summary>
+    private static string SanitizeDirectoryName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "unknown";
+        }
+
+        // Remove path separators and invalid path characters
+        var invalidChars = Path.GetInvalidFileNameChars()
+            .Concat([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar])
+            .ToHashSet();
+
+        var sanitized = new string(name.Where(c => !invalidChars.Contains(c)).ToArray());
+
+        // Limit length
+        if (sanitized.Length > 100)
+        {
+            sanitized = sanitized[..100];
         }
 
         return string.IsNullOrWhiteSpace(sanitized) ? "unknown" : sanitized;

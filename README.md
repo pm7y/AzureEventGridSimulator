@@ -411,15 +411,15 @@ After attempt 10, retries continue every 12 hours until the event TTL expires (d
 
 #### HTTP Status Code Handling
 
-| Status Code     | Behavior                                        |
-|-----------------|-------------------------------------------------|
-| 200-204         | Success - delivery complete                     |
-| 400, 401, 403   | Immediate dead-letter (no retry)                |
-| 413             | Immediate dead-letter (payload too large)       |
-| 404             | Retry with minimum 5 minute delay               |
-| 408             | Retry with minimum 2 minute delay               |
-| 503             | Retry with minimum 30 second delay              |
-| Other errors    | Retry with standard exponential backoff         |
+| Status Code   | Behavior                                  |
+|---------------|-------------------------------------------|
+| 200-204       | Success - delivery complete               |
+| 400, 401, 403 | Immediate dead-letter (no retry)          |
+| 413           | Immediate dead-letter (payload too large) |
+| 404           | Retry with minimum 5 minute delay         |
+| 408           | Retry with minimum 2 minute delay         |
+| 503           | Retry with minimum 30 second delay        |
+| Other errors  | Retry with standard exponential backoff   |
 
 #### Retry Policy Settings
 
@@ -435,11 +435,11 @@ Configure retry behavior per subscriber:
 }
 ```
 
-| Setting                    | Description                                                    | Default |
-|----------------------------|----------------------------------------------------------------|---------|
-| `enabled`                  | Enable or disable retry for this subscriber                    | `true`  |
-| `maxDeliveryAttempts`      | Maximum delivery attempts (1-30)                               | `30`    |
-| `eventTimeToLiveInMinutes` | Time-to-live in minutes before event expires (1-1440)          | `1440`  |
+| Setting                    | Description                                           | Default |
+|----------------------------|-------------------------------------------------------|---------|
+| `enabled`                  | Enable or disable retry for this subscriber           | `true`  |
+| `maxDeliveryAttempts`      | Maximum delivery attempts (1-30)                      | `30`    |
+| `eventTimeToLiveInMinutes` | Time-to-live in minutes before event expires (1-1440) | `1440`  |
 
 #### Dead-Letter Settings
 
@@ -454,10 +454,10 @@ Configure dead-letter behavior per subscriber:
 }
 ```
 
-| Setting      | Description                                      | Default           |
-|--------------|--------------------------------------------------|-------------------|
-| `enabled`    | Enable or disable dead-lettering                 | `true`            |
-| `folderPath` | Folder path for dead-letter JSON files           | `./dead-letters`  |
+| Setting      | Description                            | Default          |
+|--------------|----------------------------------------|------------------|
+| `enabled`    | Enable or disable dead-lettering       | `true`           |
+| `folderPath` | Folder path for dead-letter JSON files | `./dead-letters` |
 
 #### Dead-Letter File Format
 
