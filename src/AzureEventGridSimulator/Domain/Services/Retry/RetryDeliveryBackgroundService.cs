@@ -1,9 +1,6 @@
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Services.Retry;
 
@@ -19,7 +16,7 @@ public class RetryDeliveryBackgroundService(
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("Retry delivery background service started");

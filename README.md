@@ -83,23 +83,24 @@ An example of one topic with one subscriber is shown below.
 
 ### Topic Settings
 
-| Setting                        | Description                                                                                                                                                        |
-|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `name`                         | The name of the topic. It can only contain letters, numbers, and dashes.                                                                                           |
-| `port`                         | The port to use for the topic endpoint. The topic will listen on `https://0.0.0.0:{port}/`.                                                                        |
-| `key`                          | The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place. |
-| `subscribers`                  | The subscriptions for this topic.                                                                                                                                  |
-| `inputSchema`                  | (Optional) The expected input event schema. Values: `EventGridSchema` or `CloudEventV1_0`. If not specified, the schema is auto-detected from the request.         |
-| `outputSchema`                 | (Optional) The output event schema for delivery to subscribers. If not specified, events are delivered in the same schema they were received in.                   |
-| `serviceBusConnectionString`   | (Optional) Default Service Bus connection string for all Service Bus subscribers in this topic. Subscribers can override with their own.                           |
-| `serviceBusNamespace`          | (Optional) Default Service Bus namespace (without `.servicebus.windows.net`). Use with `serviceBusSharedAccessKeyName` and `serviceBusSharedAccessKey`.            |
-| `serviceBusSharedAccessKeyName`| (Optional) Default shared access key name for Service Bus.                                                                                                         |
-| `serviceBusSharedAccessKey`    | (Optional) Default shared access key for Service Bus.                                                                                                              |
-| `storageQueueConnectionString` | (Optional) Default Storage Queue connection string for all Storage Queue subscribers in this topic. Subscribers can override with their own.                       |
+| Setting                         | Description                                                                                                                                                        |
+|---------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`                          | The name of the topic. It can only contain letters, numbers, and dashes.                                                                                           |
+| `port`                          | The port to use for the topic endpoint. The topic will listen on `https://0.0.0.0:{port}/`.                                                                        |
+| `key`                           | The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place. |
+| `subscribers`                   | The subscriptions for this topic.                                                                                                                                  |
+| `inputSchema`                   | (Optional) The expected input event schema. Values: `EventGridSchema` or `CloudEventV1_0`. If not specified, the schema is auto-detected from the request.         |
+| `outputSchema`                  | (Optional) The output event schema for delivery to subscribers. If not specified, events are delivered in the same schema they were received in.                   |
+| `serviceBusConnectionString`    | (Optional) Default Service Bus connection string for all Service Bus subscribers in this topic. Subscribers can override with their own.                           |
+| `serviceBusNamespace`           | (Optional) Default Service Bus namespace (without `.servicebus.windows.net`). Use with `serviceBusSharedAccessKeyName` and `serviceBusSharedAccessKey`.            |
+| `serviceBusSharedAccessKeyName` | (Optional) Default shared access key name for Service Bus.                                                                                                         |
+| `serviceBusSharedAccessKey`     | (Optional) Default shared access key for Service Bus.                                                                                                              |
+| `storageQueueConnectionString`  | (Optional) Default Storage Queue connection string for all Storage Queue subscribers in this topic. Subscribers can override with their own.                       |
 
 ### Subscriber Settings
 
-The simulator supports three subscriber types: **HTTP webhooks**, **Azure Service Bus** (queues and topics), and **Azure Storage Queues**.
+The simulator supports three subscriber types: **HTTP webhooks**, **Azure Service Bus** (queues and topics), and **Azure
+Storage Queues**.
 
 #### Grouped Format (Recommended)
 
@@ -156,17 +157,17 @@ For backwards compatibility, a flat array of HTTP subscribers is still supported
 
 #### Service Bus Subscriber Settings
 
-| Setting               | Description                                                                                                                                            |
-|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `name`                | The name of the subscriber.                                                                                                                            |
-| `connectionString`    | The Service Bus connection string. Can be omitted if `serviceBusConnectionString` is set at the topic level.                                           |
-| `namespace`           | The Service Bus namespace (without `.servicebus.windows.net` suffix). Alternative to `connectionString`. Can inherit from topic-level settings.        |
-| `sharedAccessKeyName` | The shared access key name (e.g., `RootManageSharedAccessKey`). Used with `namespace`.                                                                 |
-| `sharedAccessKey`     | The shared access key. Used with `namespace`.                                                                                                          |
-| `queue`               | The queue name. Either `queue` or `topic` must be specified (not both).                                                                                |
-| `topic`               | The topic name. Either `queue` or `topic` must be specified (not both).                                                                                |
-| `deliverySchema`      | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                                                                |
-| `properties`          | (Optional) Custom delivery properties to add to Service Bus messages. See below.                                                                       |
+| Setting               | Description                                                                                                                                     |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`                | The name of the subscriber.                                                                                                                     |
+| `connectionString`    | The Service Bus connection string. Can be omitted if `serviceBusConnectionString` is set at the topic level.                                    |
+| `namespace`           | The Service Bus namespace (without `.servicebus.windows.net` suffix). Alternative to `connectionString`. Can inherit from topic-level settings. |
+| `sharedAccessKeyName` | The shared access key name (e.g., `RootManageSharedAccessKey`). Used with `namespace`.                                                          |
+| `sharedAccessKey`     | The shared access key. Used with `namespace`.                                                                                                   |
+| `queue`               | The queue name. Either `queue` or `topic` must be specified (not both).                                                                         |
+| `topic`               | The topic name. Either `queue` or `topic` must be specified (not both).                                                                         |
+| `deliverySchema`      | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                                                         |
+| `properties`          | (Optional) Custom delivery properties to add to Service Bus messages. See below.                                                                |
 
 #### Service Bus Delivery Properties
 
@@ -198,12 +199,12 @@ You can add custom application properties to Service Bus messages using static o
 
 #### Storage Queue Subscriber Settings
 
-| Setting            | Description                                                                                                              |
-|--------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `name`             | The name of the subscriber.                                                                                              |
-| `connectionString` | The Storage Queue connection string. Can be omitted if `storageQueueConnectionString` is set at the topic level.         |
-| `queueName`        | The name of the queue to send events to.                                                                                 |
-| `deliverySchema`   | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                                  |
+| Setting            | Description                                                                                                      |
+|--------------------|------------------------------------------------------------------------------------------------------------------|
+| `name`             | The name of the subscriber.                                                                                      |
+| `connectionString` | The Storage Queue connection string. Can be omitted if `storageQueueConnectionString` is set at the topic level. |
+| `queueName`        | The name of the queue to send events to.                                                                         |
+| `deliverySchema`   | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                          |
 
 #### Complete Example
 
@@ -250,7 +251,8 @@ You can add custom application properties to Service Bus messages using static o
 }
 ```
 
-Note: The `serviceBus` and `storageQueue` subscribers above inherit their connection strings from the topic-level settings. Subscribers can override these by specifying their own `connectionString`.
+Note: The `serviceBus` and `storageQueue` subscribers above inherit their connection strings from the topic-level
+settings. Subscribers can override these by specifying their own `connectionString`.
 
 ### App Settings
 
@@ -411,7 +413,8 @@ docker run `
 
 ### Docker Compose
 
-There is a `docker-compose.yml` file in the `docker/` folder that you can use to build and run the simulator along with an
+There is a `docker-compose.yml` file in the `docker/` folder that you can use to build and run the simulator along with
+an
 Azure Service Bus emulator for local development.
 
 ```

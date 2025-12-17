@@ -2,7 +2,6 @@ using System.Net.Http.Headers;
 using System.Text;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
 
@@ -15,7 +14,7 @@ public class HttpEventDeliveryService(
     ILogger<HttpEventDeliveryService> logger
 ) : IEventDeliveryService
 {
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task<DeliveryResult> DeliverAsync(
         PendingDelivery delivery,
         CancellationToken cancellationToken

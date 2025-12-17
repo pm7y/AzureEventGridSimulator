@@ -1,6 +1,5 @@
 using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
-using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Services.Retry;
 
@@ -18,8 +17,12 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
     /// <summary>
     /// Writes a dead-letter event to the configured folder.
     /// </summary>
-    /// <param name="delivery">The failed delivery.</param>
-    /// <param name="reason">The reason for dead-lettering.</param>
+    /// <param name="delivery" >
+    /// The failed delivery.
+    /// </param>
+    /// <param name="reason" >
+    /// The reason for dead-lettering.
+    /// </param>
     public async Task WriteDeadLetterAsync(PendingDelivery delivery, string reason)
     {
         var deadLetterSettings = delivery.Subscriber.DeadLetter;

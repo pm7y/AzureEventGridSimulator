@@ -35,9 +35,15 @@ public static class RetryScheduler
     /// <summary>
     /// Calculates the next retry time based on attempt number and HTTP status code.
     /// </summary>
-    /// <param name="attemptNumber">The current attempt number (1-based).</param>
-    /// <param name="httpStatusCode">The HTTP status code from the failed attempt, if applicable.</param>
-    /// <returns>The next retry time.</returns>
+    /// <param name="attemptNumber" >
+    /// The current attempt number (1-based).
+    /// </param>
+    /// <param name="httpStatusCode" >
+    /// The HTTP status code from the failed attempt, if applicable.
+    /// </param>
+    /// <returns>
+    /// The next retry time.
+    /// </returns>
     public static DateTime GetNextRetryTime(int attemptNumber, int? httpStatusCode = null)
     {
         var delay = GetRetryDelay(attemptNumber, httpStatusCode);
@@ -89,8 +95,12 @@ public static class RetryScheduler
     /// <summary>
     /// Determines if an HTTP status code indicates successful delivery.
     /// </summary>
-    /// <param name="statusCode">The HTTP status code.</param>
-    /// <returns>True if the status code indicates success.</returns>
+    /// <param name="statusCode" >
+    /// The HTTP status code.
+    /// </param>
+    /// <returns>
+    /// True if the status code indicates success.
+    /// </returns>
     public static bool IsSuccessStatusCode(int statusCode)
     {
         return SuccessStatusCodes.Contains(statusCode);
@@ -99,8 +109,12 @@ public static class RetryScheduler
     /// <summary>
     /// Determines if an HTTP status code should immediately dead-letter (no retry).
     /// </summary>
-    /// <param name="statusCode">The HTTP status code.</param>
-    /// <returns>True if the event should be immediately dead-lettered.</returns>
+    /// <param name="statusCode" >
+    /// The HTTP status code.
+    /// </param>
+    /// <returns>
+    /// True if the event should be immediately dead-lettered.
+    /// </returns>
     public static bool ShouldImmediatelyDeadLetter(int statusCode)
     {
         return ImmediateDeadLetterStatusCodes.Contains(statusCode);
@@ -109,8 +123,12 @@ public static class RetryScheduler
     /// <summary>
     /// Gets the dead-letter reason for an HTTP status code.
     /// </summary>
-    /// <param name="statusCode">The HTTP status code.</param>
-    /// <returns>The dead-letter reason string.</returns>
+    /// <param name="statusCode" >
+    /// The HTTP status code.
+    /// </param>
+    /// <returns>
+    /// The dead-letter reason string.
+    /// </returns>
     public static string GetDeadLetterReasonForStatusCode(int statusCode)
     {
         return statusCode switch

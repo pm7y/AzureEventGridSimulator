@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using AzureEventGridSimulator.Domain.Entities;
-using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Services.Retry;
 
@@ -12,7 +11,7 @@ public class InMemoryDeliveryQueue(ILogger<InMemoryDeliveryQueue> logger) : IDel
 {
     private readonly ConcurrentDictionary<string, PendingDelivery> _queue = new();
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public void Enqueue(PendingDelivery delivery)
     {
         if (_queue.TryAdd(delivery.Id, delivery))
@@ -33,13 +32,13 @@ public class InMemoryDeliveryQueue(ILogger<InMemoryDeliveryQueue> logger) : IDel
         }
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public bool Remove(string deliveryId)
     {
         return _queue.TryRemove(deliveryId, out _);
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public void RequeueForRetry(PendingDelivery delivery)
     {
         // Update the delivery in place or add it back
@@ -53,7 +52,7 @@ public class InMemoryDeliveryQueue(ILogger<InMemoryDeliveryQueue> logger) : IDel
         );
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public IEnumerable<PendingDelivery> GetDueDeliveries()
     {
         var now = DateTime.UtcNow;
@@ -64,6 +63,6 @@ public class InMemoryDeliveryQueue(ILogger<InMemoryDeliveryQueue> logger) : IDel
             .ToList(); // Materialize to avoid modification during enumeration
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public int Count => _queue.Count;
 }

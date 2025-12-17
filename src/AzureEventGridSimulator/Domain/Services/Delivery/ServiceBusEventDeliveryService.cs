@@ -4,7 +4,6 @@ using Azure.Messaging.ServiceBus;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
 
@@ -36,90 +35,7 @@ public class ServiceBusEventDeliveryService(
         _clients.Clear();
     }
 
-    /// <summary>
-    /// Sends an event to a Service Bus subscriber.
-    /// </summary>
-    public async Task SendAsync(
-        ServiceBusSubscriberSettings subscription,
-        SimulatorEvent evt,
-        TopicSettings topic,
-        EventSchema inputSchema
-    )
-    {
-        try
-        {
-            if (subscription.Disabled)
-            {
-                logger.LogWarning(
-                    "Service Bus subscription '{SubscriberName}' on topic '{TopicName}' is disabled",
-                    subscription.Name,
-                    topic.Name
-                );
-                return;
-            }
-
-            // Determine the delivery schema
-            var deliverySchema = subscription.DeliverySchema ?? topic.OutputSchema ?? inputSchema;
-            var formatter = formatterFactory.GetFormatter(deliverySchema);
-
-            // Serialize the event
-            var json = formatter.Serialize(evt);
-
-            // Get or create the sender
-            var sender = GetOrCreateSender(subscription);
-
-            // Create the message
-            var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(json))
-            {
-                ContentType = formatter.ContentType,
-                MessageId = evt.Id ?? Guid.NewGuid().ToString(),
-            };
-
-            // Add delivery properties
-            var properties = propertyResolver.ResolveProperties(subscription.Properties, evt);
-            foreach (var (name, value) in properties)
-            {
-                message.ApplicationProperties[name] = value;
-            }
-
-            // Add standard Event Grid headers as application properties
-            message.ApplicationProperties["aeg-event-type"] = "Notification";
-            message.ApplicationProperties["aeg-subscription-name"] =
-                subscription.Name.ToUpperInvariant();
-            message.ApplicationProperties["aeg-delivery-count"] = 0;
-
-            if (deliverySchema == EventSchema.EventGridSchema)
-            {
-                message.ApplicationProperties["aeg-data-version"] = evt.DataVersion ?? "";
-                message.ApplicationProperties["aeg-metadata-version"] = "1";
-            }
-
-            // Send the message
-            await sender.SendMessageAsync(message);
-
-            logger.LogDebug(
-                "Event {EventId} sent to Service Bus {DestinationType} '{DestinationName}' via subscription '{SubscriberName}' on topic '{TopicName}'",
-                evt.Id,
-                subscription.IsTopic ? "topic" : "queue",
-                subscription.DestinationName,
-                subscription.Name,
-                topic.Name
-            );
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Failed to send event {EventId} to Service Bus {DestinationType} '{DestinationName}' via subscription '{SubscriberName}'",
-                evt.Id,
-                subscription.IsTopic ? "topic" : "queue",
-                subscription.DestinationName,
-                subscription.Name
-            );
-        }
-    }
-
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task<DeliveryResult> DeliverAsync(
         PendingDelivery delivery,
         CancellationToken cancellationToken
@@ -235,6 +151,89 @@ public class ServiceBusEventDeliveryService(
                 false,
                 DeliveryOutcome.ServiceBusError,
                 ErrorMessage: ex.Message
+            );
+        }
+    }
+
+    /// <summary>
+    /// Sends an event to a Service Bus subscriber.
+    /// </summary>
+    public async Task SendAsync(
+        ServiceBusSubscriberSettings subscription,
+        SimulatorEvent evt,
+        TopicSettings topic,
+        EventSchema inputSchema
+    )
+    {
+        try
+        {
+            if (subscription.Disabled)
+            {
+                logger.LogWarning(
+                    "Service Bus subscription '{SubscriberName}' on topic '{TopicName}' is disabled",
+                    subscription.Name,
+                    topic.Name
+                );
+                return;
+            }
+
+            // Determine the delivery schema
+            var deliverySchema = subscription.DeliverySchema ?? topic.OutputSchema ?? inputSchema;
+            var formatter = formatterFactory.GetFormatter(deliverySchema);
+
+            // Serialize the event
+            var json = formatter.Serialize(evt);
+
+            // Get or create the sender
+            var sender = GetOrCreateSender(subscription);
+
+            // Create the message
+            var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(json))
+            {
+                ContentType = formatter.ContentType,
+                MessageId = evt.Id ?? Guid.NewGuid().ToString(),
+            };
+
+            // Add delivery properties
+            var properties = propertyResolver.ResolveProperties(subscription.Properties, evt);
+            foreach (var (name, value) in properties)
+            {
+                message.ApplicationProperties[name] = value;
+            }
+
+            // Add standard Event Grid headers as application properties
+            message.ApplicationProperties["aeg-event-type"] = "Notification";
+            message.ApplicationProperties["aeg-subscription-name"] =
+                subscription.Name.ToUpperInvariant();
+            message.ApplicationProperties["aeg-delivery-count"] = 0;
+
+            if (deliverySchema == EventSchema.EventGridSchema)
+            {
+                message.ApplicationProperties["aeg-data-version"] = evt.DataVersion ?? "";
+                message.ApplicationProperties["aeg-metadata-version"] = "1";
+            }
+
+            // Send the message
+            await sender.SendMessageAsync(message);
+
+            logger.LogDebug(
+                "Event {EventId} sent to Service Bus {DestinationType} '{DestinationName}' via subscription '{SubscriberName}' on topic '{TopicName}'",
+                evt.Id,
+                subscription.IsTopic ? "topic" : "queue",
+                subscription.DestinationName,
+                subscription.Name,
+                topic.Name
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Failed to send event {EventId} to Service Bus {DestinationType} '{DestinationName}' via subscription '{SubscriberName}'",
+                evt.Id,
+                subscription.IsTopic ? "topic" : "queue",
+                subscription.DestinationName,
+                subscription.Name
             );
         }
     }

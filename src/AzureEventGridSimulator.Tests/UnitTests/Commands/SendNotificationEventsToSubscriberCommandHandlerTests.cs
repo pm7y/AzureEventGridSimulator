@@ -12,9 +12,9 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Commands;
 [Trait("Category", "unit")]
 public class SendNotificationEventsToSubscriberCommandHandlerTests
 {
+    private readonly IDeliveryQueue _deliveryQueue;
     private readonly SendNotificationEventsToSubscriberCommandHandler _handler;
     private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
-    private readonly IDeliveryQueue _deliveryQueue;
 
     public SendNotificationEventsToSubscriberCommandHandlerTests()
     {
