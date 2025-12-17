@@ -7,7 +7,10 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/pmcilreavy/azureeventgridsimulator)
 ![NuGet Version](https://img.shields.io/nuget/v/AzureEventGridSimulator)
 
-A simulator that provides endpoints to mimic the functionality of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible with the `Microsoft.Azure.EventGrid` client library. Both the `EventGrid` schema and the `CloudEvents v1.0` schema are supported.
+A simulator that provides endpoints to mimic the functionality
+of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers and is compatible
+with the `Microsoft.Azure.EventGrid` client library. Both the `EventGrid` schema and the `CloudEvents v1.0` schema are
+supported.
 
 ## Installation
 
@@ -41,7 +44,8 @@ dotnet tool install AzureEventGridSimulator
 dotnet tool run azure-eventgrid-simulator
 ```
 
-The tool manifest (`.config/dotnet-tools.json`) can be committed to source control. Team members just run `dotnet tool restore` after cloning.
+The tool manifest (`.config/dotnet-tools.json`) can be committed to source control. Team members just run
+`dotnet tool restore` after cloning.
 
 ### Docker
 
@@ -79,18 +83,23 @@ An example of one topic with one subscriber is shown below.
 
 ### Topic Settings
 
-| Setting | Description |
-|---------|-------------|
-| `name` | The name of the topic. It can only contain letters, numbers, and dashes. |
-| `port` | The port to use for the topic endpoint. The topic will listen on `https://0.0.0.0:{port}/`. |
-| `key` | The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place. |
-| `subscribers` | The subscriptions for this topic. |
-| `inputSchema` | (Optional) The expected input event schema. Values: `EventGridSchema` or `CloudEventV1_0`. If not specified, the schema is auto-detected from the request. |
-| `outputSchema` | (Optional) The output event schema for delivery to subscribers. If not specified, events are delivered in the same schema they were received in. |
+| Setting                        | Description                                                                                                                                                        |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`                         | The name of the topic. It can only contain letters, numbers, and dashes.                                                                                           |
+| `port`                         | The port to use for the topic endpoint. The topic will listen on `https://0.0.0.0:{port}/`.                                                                        |
+| `key`                          | The key that will be used to validate the `aeg-sas-key` or `aeg-sas-token` header in each request. If this is not supplied then no key validation will take place. |
+| `subscribers`                  | The subscriptions for this topic.                                                                                                                                  |
+| `inputSchema`                  | (Optional) The expected input event schema. Values: `EventGridSchema` or `CloudEventV1_0`. If not specified, the schema is auto-detected from the request.         |
+| `outputSchema`                 | (Optional) The output event schema for delivery to subscribers. If not specified, events are delivered in the same schema they were received in.                   |
+| `serviceBusConnectionString`   | (Optional) Default Service Bus connection string for all Service Bus subscribers in this topic. Subscribers can override with their own.                           |
+| `serviceBusNamespace`          | (Optional) Default Service Bus namespace (without `.servicebus.windows.net`). Use with `serviceBusSharedAccessKeyName` and `serviceBusSharedAccessKey`.            |
+| `serviceBusSharedAccessKeyName`| (Optional) Default shared access key name for Service Bus.                                                                                                         |
+| `serviceBusSharedAccessKey`    | (Optional) Default shared access key for Service Bus.                                                                                                              |
+| `storageQueueConnectionString` | (Optional) Default Storage Queue connection string for all Storage Queue subscribers in this topic. Subscribers can override with their own.                       |
 
 ### Subscriber Settings
 
-The simulator supports two types of subscribers: **HTTP webhooks** and **Azure Service Bus** (queues and topics).
+The simulator supports three subscriber types: **HTTP webhooks**, **Azure Service Bus** (queues and topics), and **Azure Storage Queues**.
 
 #### Grouped Format (Recommended)
 
@@ -108,6 +117,13 @@ The simulator supports two types of subscribers: **HTTP webhooks** and **Azure S
         "name": "ServiceBusSubscription",
         "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=...;SharedAccessKey=...",
         "queue": "my-queue"
+      }
+    ],
+    "storageQueue": [
+      {
+        "name": "StorageQueueSubscription",
+        "connectionString": "DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net",
+        "queueName": "my-queue"
       }
     ]
   }
@@ -131,26 +147,26 @@ For backwards compatibility, a flat array of HTTP subscribers is still supported
 
 #### HTTP Subscriber Settings
 
-| Setting | Description |
-|---------|-------------|
-| `name` | The name of the subscriber. It can only contain letters, numbers, and dashes. |
-| `endpoint` | The subscription endpoint url. Events received by topic will be sent to this address. |
-| `disableValidation` | Set to `true` to disable subscription validation. Default is `false`, which means subscription validation will be attempted each time the simulator starts. |
-| `deliverySchema` | (Optional) Override the delivery schema for this specific subscriber. Values: `EventGridSchema` or `CloudEventV1_0`. Takes precedence over the topic's `outputSchema`. |
+| Setting             | Description                                                                                                                                                            |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`              | The name of the subscriber. It can only contain letters, numbers, and dashes.                                                                                          |
+| `endpoint`          | The subscription endpoint url. Events received by topic will be sent to this address.                                                                                  |
+| `disableValidation` | Set to `true` to disable subscription validation. Default is `false`, which means subscription validation will be attempted each time the simulator starts.            |
+| `deliverySchema`    | (Optional) Override the delivery schema for this specific subscriber. Values: `EventGridSchema` or `CloudEventV1_0`. Takes precedence over the topic's `outputSchema`. |
 
 #### Service Bus Subscriber Settings
 
-| Setting | Description |
-|---------|-------------|
-| `name` | The name of the subscriber. |
-| `connectionString` | The Service Bus connection string. Either this OR (`namespace` + `sharedAccessKeyName` + `sharedAccessKey`) must be provided. |
-| `namespace` | The Service Bus namespace (without `.servicebus.windows.net` suffix). |
-| `sharedAccessKeyName` | The shared access key name (e.g., `RootManageSharedAccessKey`). |
-| `sharedAccessKey` | The shared access key. |
-| `queue` | The queue name. Either `queue` or `topic` must be specified (not both). |
-| `topic` | The topic name. Either `queue` or `topic` must be specified (not both). |
-| `deliverySchema` | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`. |
-| `properties` | (Optional) Custom delivery properties to add to Service Bus messages. See below. |
+| Setting               | Description                                                                                                                                            |
+|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`                | The name of the subscriber.                                                                                                                            |
+| `connectionString`    | The Service Bus connection string. Can be omitted if `serviceBusConnectionString` is set at the topic level.                                           |
+| `namespace`           | The Service Bus namespace (without `.servicebus.windows.net` suffix). Alternative to `connectionString`. Can inherit from topic-level settings.        |
+| `sharedAccessKeyName` | The shared access key name (e.g., `RootManageSharedAccessKey`). Used with `namespace`.                                                                 |
+| `sharedAccessKey`     | The shared access key. Used with `namespace`.                                                                                                          |
+| `queue`               | The queue name. Either `queue` or `topic` must be specified (not both).                                                                                |
+| `topic`               | The topic name. Either `queue` or `topic` must be specified (not both).                                                                                |
+| `deliverySchema`      | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                                                                |
+| `properties`          | (Optional) Custom delivery properties to add to Service Bus messages. See below.                                                                       |
 
 #### Service Bus Delivery Properties
 
@@ -177,8 +193,17 @@ You can add custom application properties to Service Bus messages using static o
 
 - **Static properties**: The `value` is used as-is.
 - **Dynamic properties**: The `value` is a path to extract from the event. Supported paths:
-  - Top-level fields: `Id`, `Subject`, `EventType`, `EventTime`, `DataVersion`, `Source`/`Topic`
-  - Data properties: `data.propertyName` or `data.nested.property`
+    - Top-level fields: `Id`, `Subject`, `EventType`, `EventTime`, `DataVersion`, `Source`/`Topic`
+    - Data properties: `data.propertyName` or `data.nested.property`
+
+#### Storage Queue Subscriber Settings
+
+| Setting            | Description                                                                                                              |
+|--------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `name`             | The name of the subscriber.                                                                                              |
+| `connectionString` | The Storage Queue connection string. Can be omitted if `storageQueueConnectionString` is set at the topic level.         |
+| `queueName`        | The name of the queue to send events to.                                                                                 |
+| `deliverySchema`   | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                                  |
 
 #### Complete Example
 
@@ -189,6 +214,8 @@ You can add custom application properties to Service Bus messages using static o
       "name": "OrdersTopic",
       "port": 60101,
       "key": "TheLocal+DevelopmentKey=",
+      "serviceBusConnectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=...",
+      "storageQueueConnectionString": "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=...;EndpointSuffix=core.windows.net",
       "subscribers": {
         "http": [
           {
@@ -203,13 +230,18 @@ You can add custom application properties to Service Bus messages using static o
         "serviceBus": [
           {
             "name": "OrdersQueueSubscription",
-            "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=...",
             "queue": "orders-queue",
             "properties": {
               "OrderId": { "type": "dynamic", "value": "data.orderId" },
               "EventType": { "type": "dynamic", "value": "EventType" },
               "Source": { "type": "static", "value": "EventGridSimulator" }
             }
+          }
+        ],
+        "storageQueue": [
+          {
+            "name": "OrdersStorageQueueSubscription",
+            "queueName": "orders-archive"
           }
         ]
       }
@@ -218,26 +250,38 @@ You can add custom application properties to Service Bus messages using static o
 }
 ```
 
+Note: The `serviceBus` and `storageQueue` subscribers above inherit their connection strings from the topic-level settings. Subscribers can override these by specifying their own `connectionString`.
+
 ### App Settings
 
-| Setting | Description |
-|---------|-------------|
+| Setting                                        | Description                                                                                        |
+|------------------------------------------------|----------------------------------------------------------------------------------------------------|
 | `dangerousAcceptAnyServerCertificateValidator` | Set to `true` to accept any server certificate. Useful when testing with self-signed certificates. |
 
 #### Subscription Validation
 
-When a subscription is added to Azure Event Grid it first sends a validation event to the subscription endpoint. The validation event contains a `validationCode` which the subscription endpoint must echo back. If this does not occur then Azure Event Grid will not enable the subscription.
+When a subscription is added to Azure Event Grid it first sends a validation event to the subscription endpoint. The
+validation event contains a `validationCode` which the subscription endpoint must echo back. If this does not occur then
+Azure Event Grid will not enable the subscription.
 
-More information about subscription validation can be found at [https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery](https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery).
+More information about subscription validation can be found
+at [https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery](https://docs.microsoft.com/en-us/azure/event-grid/webhook-event-delivery).
 
-The Azure Event Grid Simualator will mimick this validation behaviour at start up but it can be disabled using the `disableValidation` setting (above).
+The Azure Event Grid Simualator will mimick this validation behaviour at start up but it can be disabled using the
+`disableValidation` setting (above).
 
 #### Filtering Events
 
-Event filtering is configurable on each subscriber using the filter model defined here: https://docs.microsoft.com/en-us/azure/event-grid/event-filtering. This page provides a full guide to the configuration options available and all parts of this guide are currently supported. For ease of transition, explicit limitations have also been adhered to.
-The restrictions mentioned have been further modified (https://azure.microsoft.com/en-us/updates/advanced-filtering-generally-available-in-event-grid/) and these new less restrictive filtering limits have been observed.
+Event filtering is configurable on each subscriber using the filter model defined
+here: https://docs.microsoft.com/en-us/azure/event-grid/event-filtering. This page provides a full guide to the
+configuration options available and all parts of this guide are currently supported. For ease of transition, explicit
+limitations have also been adhered to.
+The restrictions mentioned have been further
+modified (https://azure.microsoft.com/en-us/updates/advanced-filtering-generally-available-in-event-grid/) and these new
+less restrictive filtering limits have been observed.
 
-Extending the example above to include a basic filter which will only deliver events to the subscription if they are of a specific type is illustrated below.
+Extending the example above to include a basic filter which will only deliver events to the subscription if they are of
+a specific type is illustrated below.
 
 ```json
 {
@@ -291,33 +335,37 @@ or advanced filtering:
 
 #### Advanced Filter Operators
 
-Each advanced filter requires an `operatorType`, a `key` (the event property to filter on), and either a `value`, `values`, or no value property depending on the operator type. Up to 25 advanced filters can be configured per subscription.
+Each advanced filter requires an `operatorType`, a `key` (the event property to filter on), and either a `value`,
+`values`, or no value property depending on the operator type. Up to 25 advanced filters can be configured per
+subscription.
 
-| Operator | Property | Description |
-|----------|----------|-------------|
-| `NumberGreaterThan` | `value` | Event value must be greater than the specified number |
-| `NumberGreaterThanOrEquals` | `value` | Event value must be greater than or equal to the specified number |
-| `NumberLessThan` | `value` | Event value must be less than the specified number |
-| `NumberLessThanOrEquals` | `value` | Event value must be less than or equal to the specified number |
-| `NumberIn` | `values` | Event value must match one of the specified numbers (max 5 values) |
-| `NumberNotIn` | `values` | Event value must not match any of the specified numbers (max 5 values) |
-| `NumberInRange` | `values` | Event value must be within one of the specified ranges (e.g., `[[0, 10], [20, 30]]`) |
-| `NumberNotInRange` | `values` | Event value must not be within any of the specified ranges |
-| `BoolEquals` | `value` | Event value must equal the specified boolean |
-| `StringContains` | `values` | Event value must contain at least one of the specified strings |
-| `StringNotContains` | `values` | Event value must not contain any of the specified strings |
-| `StringBeginsWith` | `values` | Event value must begin with at least one of the specified strings |
-| `StringNotBeginsWith` | `values` | Event value must not begin with any of the specified strings |
-| `StringEndsWith` | `values` | Event value must end with at least one of the specified strings |
-| `StringNotEndsWith` | `values` | Event value must not end with any of the specified strings |
-| `StringIn` | `values` | Event value must match one of the specified strings (max 5 values) |
-| `StringNotIn` | `values` | Event value must not match any of the specified strings (max 5 values) |
-| `IsNullOrUndefined` | _(none)_ | Key must be null or not exist |
-| `IsNotNull` | _(none)_ | Key must exist and have a non-null value |
+| Operator                    | Property | Description                                                                          |
+|-----------------------------|----------|--------------------------------------------------------------------------------------|
+| `NumberGreaterThan`         | `value`  | Event value must be greater than the specified number                                |
+| `NumberGreaterThanOrEquals` | `value`  | Event value must be greater than or equal to the specified number                    |
+| `NumberLessThan`            | `value`  | Event value must be less than the specified number                                   |
+| `NumberLessThanOrEquals`    | `value`  | Event value must be less than or equal to the specified number                       |
+| `NumberIn`                  | `values` | Event value must match one of the specified numbers (max 5 values)                   |
+| `NumberNotIn`               | `values` | Event value must not match any of the specified numbers (max 5 values)               |
+| `NumberInRange`             | `values` | Event value must be within one of the specified ranges (e.g., `[[0, 10], [20, 30]]`) |
+| `NumberNotInRange`          | `values` | Event value must not be within any of the specified ranges                           |
+| `BoolEquals`                | `value`  | Event value must equal the specified boolean                                         |
+| `StringContains`            | `values` | Event value must contain at least one of the specified strings                       |
+| `StringNotContains`         | `values` | Event value must not contain any of the specified strings                            |
+| `StringBeginsWith`          | `values` | Event value must begin with at least one of the specified strings                    |
+| `StringNotBeginsWith`       | `values` | Event value must not begin with any of the specified strings                         |
+| `StringEndsWith`            | `values` | Event value must end with at least one of the specified strings                      |
+| `StringNotEndsWith`         | `values` | Event value must not end with any of the specified strings                           |
+| `StringIn`                  | `values` | Event value must match one of the specified strings (max 5 values)                   |
+| `StringNotIn`               | `values` | Event value must not match any of the specified strings (max 5 values)               |
+| `IsNullOrUndefined`         | _(none)_ | Key must be null or not exist                                                        |
+| `IsNotNull`                 | _(none)_ | Key must exist and have a non-null value                                             |
 
-**Note:** The `key` property supports nested data properties using dot notation, e.g., `Data.MyProperty` or `Data.Nested.Value`.
+**Note:** The `key` property supports nested data properties using dot notation, e.g., `Data.MyProperty` or
+`Data.Nested.Value`.
 
-**Note:** String comparisons in advanced filters are case-insensitive. "Not" operators (`StringNotIn`, `NumberNotIn`, etc.) return `true` when the key doesn't exist.
+**Note:** String comparisons in advanced filters are case-insensitive. "Not" operators (`StringNotIn`, `NumberNotIn`,
+etc.) return `true` when the key doesn't exist.
 
 **Note:** you can also specify the configuration file to use by setting the `ConfigFile` command line argument, e.g.
 
@@ -327,13 +375,17 @@ AzureEventGridSimulator.exe --ConfigFile=/path/to/config.json
 
 ## Docker
 
-There's a published image available on the [↗ Docker hub](https://hub.docker.com/r/pmcilreavy/azureeventgridsimulator) called `pmcilreavy/azureeventgridsimulator:latest`.
-The image is not configured with any topics or subscribers. The configuration can be passed in via command line environment variables (as below) or via a json file.
+There's a published image available on the [↗ Docker hub](https://hub.docker.com/r/pmcilreavy/azureeventgridsimulator)
+called `pmcilreavy/azureeventgridsimulator:latest`.
+The image is not configured with any topics or subscribers. The configuration can be passed in via command line
+environment variables (as below) or via a json file.
 
 ### Docker Run
 
-Here's an example of running a container based on that image and passing in the configuration via environment variables to create 1 topic with 2 subscribers.
-In this example the folder `C:\src\AzureEventGridSimulator\docker` on the host is being shared with the container. **Note:** see the _notes_ section further below on how to create a certificate file.
+Here's an example of running a container based on that image and passing in the configuration via environment variables
+to create 1 topic with 2 subscribers.
+In this example the folder `C:\src\AzureEventGridSimulator\docker` on the host is being shared with the container. *
+*Note:** see the _notes_ section further below on how to create a certificate file.
 
 ```
 docker run `
@@ -359,13 +411,16 @@ docker run `
 
 ### Docker Compose
 
-There is a `docker-compose.yml` file in the repo root that you can use to build and run the simulator along with an Azure Service Bus emulator for local development.
+There is a `docker-compose.yml` file in the `docker/` folder that you can use to build and run the simulator along with an
+Azure Service Bus emulator for local development.
 
 ```
+cd docker
 docker-compose up --build --detach
 ```
 
 The Docker Compose setup includes:
+
 - **Azure Event Grid Simulator** - The main simulator
 - **Azure Service Bus Emulator** - For testing Service Bus subscribers locally
 - **SQL Server** - Required by the Service Bus emulator
@@ -374,7 +429,8 @@ See `docker/appsettings.docker.json` for an example configuration with both HTTP
 
 ## Using the Simulator
 
-Once configured and running, requests are `posted` to a topic endpoint. The endpoint of a topic will be in the form: `https://localhost:<configured-port>/api/events?api-version=2018-01-01`.
+Once configured and running, requests are `posted` to a topic endpoint. The endpoint of a topic will be in the form:
+`https://localhost:<configured-port>/api/events?api-version=2018-01-01`.
 
 #### cURL Example (Event Grid Schema)
 
@@ -442,7 +498,9 @@ curl -k \
 
 #### Postman
 
-An example request that you can import into [Postman](https://www.getpostman.com/) can be found in the AzureEventGridSimulator repo here https://github.com/pmcilreavy/AzureEventGridSimulator/blob/master/src/Azure%20Event%20Grid%20Simulator.postman_collection.json.
+An example request that you can import into [Postman](https://www.getpostman.com/) can be found in the
+AzureEventGridSimulator repo
+here https://github.com/pmcilreavy/AzureEventGridSimulator/blob/master/src/Azure%20Event%20Grid%20Simulator.postman_collection.json.
 
 #### EventGridClient
 
@@ -470,18 +528,29 @@ You can also generate a certificate file (suitable for using with a Docker conta
 
 ### Subscribers
 
-A topic can have 0 to _n_ subscribers. When a request is received for a topic, the events will be forwarded to each of the subscribers with the addition of an `aeg-event-type: Notification` header. If the message contains multiple events, they will be sent to each subscriber one at a time inline with the Azure Event Grid behaviour. _"Event Grid sends the events to subscribers in an array that has a single event. This behavior may change in the future."_ https://docs.microsoft.com/en-us/azure/event-grid/event-schema
+A topic can have 0 to _n_ subscribers. When a request is received for a topic, the events will be forwarded to each of
+the subscribers with the addition of an `aeg-event-type: Notification` header. If the message contains multiple events,
+they will be sent to each subscriber one at a time inline with the Azure Event Grid behaviour. _"Event Grid sends the
+events to subscribers in an array that has a single event. This behavior may change in the
+future."_ https://docs.microsoft.com/en-us/azure/event-grid/event-schema
 
 ### Key Validation
 
-The simulator supports both: `aeg-sas-key` or `aeg-sas-token` request headers. Using `aeg-sas-key` is the simplest way. Just set the value of the `aeg-sas-key` to the same `key` value configured for the topic. Using an `aeg-sas-token` is more secure as the `key` is hashed but it's a bit trickier to set up. More information on `sas token` can be found here https://docs.microsoft.com/en-us/azure/event-grid/security-authentication#sas-tokens.
+The simulator supports both: `aeg-sas-key` or `aeg-sas-token` request headers. Using `aeg-sas-key` is the simplest way.
+Just set the value of the `aeg-sas-key` to the same `key` value configured for the topic. Using an `aeg-sas-token` is
+more secure as the `key` is hashed but it's a bit trickier to set up. More information on `sas token` can be found
+here https://docs.microsoft.com/en-us/azure/event-grid/security-authentication#sas-tokens.
 
-If the incoming request contains either an `aeg-sas-token` or an `aeg-sas-key` header _and_ there is a `Key` configured for the topic then the simulator will validate the key and reject the request if the value in the header is not valid.
+If the incoming request contains either an `aeg-sas-token` or an `aeg-sas-key` header _and_ there is a `Key` configured
+for the topic then the simulator will validate the key and reject the request if the value in the header is not valid.
 If you want to skip the validation then set the `Key` to _null_ in `appsettings.json`.
 
 ### Size Validation
 
-Azure Event Grid imposes certain size limits to the overall message body and to the each individual event. The overall message body and each individual event must be <= 1048576 bytes (1 Mb). _These are the advertised size limits. My testing has shown that the actual limits are 1536000 bytes (1.5 Mb) for the overall message body and 1049600 bytes (1 Mb) for each individual event._
+Azure Event Grid imposes certain size limits to the overall message body and to the each individual event. The overall
+message body and each individual event must be <= 1048576 bytes (1 Mb). _These are the advertised size limits. My
+testing has shown that the actual limits are 1536000 bytes (1.5 Mb) for the overall message body and 1049600 bytes (1
+Mb) for each individual event._
 
 ### Message Validation
 
@@ -490,7 +559,7 @@ Ensures that the properties of each event meets the minimum requirements.
 #### Event Grid Schema
 
 | Field           | Description                                               |
-| --------------- | --------------------------------------------------------- |
+|-----------------|-----------------------------------------------------------|
 | Id              | Must be a string. Not null or whitespace.                 |
 | Subject         | Must be a string. Not null or whitespace.                 |
 | EventType       | Must be a string. Not null or whitespace.                 |
@@ -502,34 +571,43 @@ Ensures that the properties of each event meets the minimum requirements.
 
 #### CloudEvents Schema
 
-| Field           | Description                                                        |
-| --------------- | ------------------------------------------------------------------ |
-| specversion     | Must be `1.0`.                                                     |
-| type            | Must be a string. Not null or whitespace.                          |
-| source          | Must be a string. Not null or whitespace.                          |
-| id              | Must be a string. Not null or whitespace.                          |
-| time            | _Optional_. Must be a valid RFC 3339 timestamp if provided.        |
-| subject         | _Optional_.                                                        |
-| datacontenttype | _Optional_.                                                        |
-| dataschema      | _Optional_. Must be a valid URI if provided.                       |
-| data            | _Optional_. Cannot be used together with `data_base64`.            |
-| data_base64     | _Optional_. Base64-encoded binary data. Cannot be used with `data`.|
+| Field           | Description                                                         |
+|-----------------|---------------------------------------------------------------------|
+| specversion     | Must be `1.0`.                                                      |
+| type            | Must be a string. Not null or whitespace.                           |
+| source          | Must be a string. Not null or whitespace.                           |
+| id              | Must be a string. Not null or whitespace.                           |
+| time            | _Optional_. Must be a valid RFC 3339 timestamp if provided.         |
+| subject         | _Optional_.                                                         |
+| datacontenttype | _Optional_.                                                         |
+| dataschema      | _Optional_. Must be a valid URI if provided.                        |
+| data            | _Optional_. Cannot be used together with `data_base64`.             |
+| data_base64     | _Optional_. Base64-encoded binary data. Cannot be used with `data`. |
 
 ## Why?
 
-There are a couple of similar projects out there. What I found though is that they don't adequately simulate an actual Event Grid Topic endpoint.
+There are a couple of similar projects out there. What I found though is that they don't adequately simulate an actual
+Event Grid Topic endpoint.
 
-Azure Event Grid only excepts connections over https and the `Microsoft.Azure.EventGrid` client only sends requests over https. If you're posting events to an Event Grid topic using custom code then maybe this isn't an issue. If you are using the client library though then any test endpoint must be https.
+Azure Event Grid only excepts connections over https and the `Microsoft.Azure.EventGrid` client only sends requests over
+https. If you're posting events to an Event Grid topic using custom code then maybe this isn't an issue. If you are
+using the client library though then any test endpoint must be https.
 
-Typically an event grid topic endpoint url is like so: _https://topic-name.location-name.eventgrid.azure.net/api/events_. Note that all the information needed to post to a topic is contained in the host part. The `Microsoft.Azure.EventGrid` client will essentially reduce the url you give it down to just the host part and prefix it with **https** (regardless of the original scheme).
+Typically an event grid topic endpoint url is like so:
+_https://topic-name.location-name.eventgrid.azure.net/api/events_. Note that all the information needed to post to a
+topic is contained in the host part. The `Microsoft.Azure.EventGrid` client will essentially reduce the url you give it
+down to just the host part and prefix it with **https** (regardless of the original scheme).
 
-It posts the payload to https://host:port and drops the query uri. All of the existing simulator/ emulator projects I found don't support https and use a the query uri to distinguish between the topics. This isn't compatible with the `Microsoft.Azure.EventGrid` client.
+It posts the payload to https://host:port and drops the query uri. All of the existing simulator/ emulator projects I
+found don't support https and use a the query uri to distinguish between the topics. This isn't compatible with the
+`Microsoft.Azure.EventGrid` client.
 
 ## Development
 
 ### Code Formatting
 
-This project uses [CSharpier](https://csharpier.com/) for code formatting. CSharpier runs automatically on every build, so your code will be formatted before compilation.
+This project uses [CSharpier](https://csharpier.com/) for code formatting. CSharpier runs automatically on every build,
+so your code will be formatted before compilation.
 
 To manually format the code:
 
@@ -546,5 +624,4 @@ Some features that could be added if there was a need for them:
 - Certificate configuration in `appsettings.json`.
 - Subscriber token auth.
 - Azure Event Hub subscriber support.
-- Azure Storage Queue subscriber support.
 - Web-based console for admin stats etc.

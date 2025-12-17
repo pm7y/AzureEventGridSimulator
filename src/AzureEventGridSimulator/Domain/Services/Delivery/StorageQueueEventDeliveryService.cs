@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Concurrent;
-using System.Threading.Tasks;
+using System.Text;
 using Azure.Storage.Queues;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.Logging;
 
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
 
@@ -18,6 +16,13 @@ public class StorageQueueEventDeliveryService(
 ) : IAsyncDisposable
 {
     private readonly ConcurrentDictionary<string, QueueClient> _clients = new();
+
+    public ValueTask DisposeAsync()
+    {
+        // QueueClient doesn't require explicit disposal, but we clear the cache for cleanup
+        _clients.Clear();
+        return ValueTask.CompletedTask;
+    }
 
     /// <summary>
     /// Sends an event to a Storage Queue subscriber.
@@ -52,7 +57,7 @@ public class StorageQueueEventDeliveryService(
             var client = await GetOrCreateClientAsync(subscription);
 
             // Base64 encode the JSON (matches Azure Event Grid behavior)
-            var messageText = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
+            var messageText = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
 
             // Send the message
             await client.SendMessageAsync(messageText);
@@ -104,12 +109,5 @@ public class StorageQueueEventDeliveryService(
 
         _clients.TryAdd(key, client);
         return client;
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        // QueueClient doesn't require explicit disposal, but we clear the cache for cleanup
-        _clients.Clear();
-        return ValueTask.CompletedTask;
     }
 }

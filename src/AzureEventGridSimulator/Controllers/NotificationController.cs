@@ -1,5 +1,3 @@
-using System.Linq;
-using System.Threading.Tasks;
 using Asp.Versioning;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;

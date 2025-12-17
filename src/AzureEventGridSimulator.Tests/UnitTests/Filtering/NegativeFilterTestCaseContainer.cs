@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections;
 using AzureEventGridSimulator.Infrastructure.Settings;
 
 namespace AzureEventGridSimulator.Tests.UnitTests.Filtering;
@@ -32,8 +29,8 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
 
     private static AdvancedFilterSetting[] GetNegativeIdFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "Id",
@@ -154,13 +151,13 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
                 Values = new[] { "different", "EventId", "Another" },
             },
-        };
+        ];
     }
 
     private static AdvancedFilterSetting[] GetNegativeTopicFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "Topic",
@@ -197,13 +194,13 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
                 Values = new object[] { "THE_EVENT_TOPIC" },
             },
-        };
+        ];
     }
 
     private static AdvancedFilterSetting[] GetNegativeSubjectFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "Subject",
@@ -240,13 +237,13 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
                 Values = new object[] { "theeventsubject" },
             },
-        };
+        ];
     }
 
     private static AdvancedFilterSetting[] GetNegativeEventTypeFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "EventType",
@@ -283,13 +280,13 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
                 Values = new object[] { "Not-the-right-type", "this.is.a.test.event.type" },
             },
-        };
+        ];
     }
 
     private static AdvancedFilterSetting[] GetNegativeDataVersionFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "DataVersion",
@@ -320,13 +317,13 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
                 Values = new object[] { "5.0" },
             },
-        };
+        ];
     }
 
     private static AdvancedFilterSetting[] GetNegativeEventDataFilterConfigurations()
     {
-        return new[]
-        {
+        return
+        [
             new AdvancedFilterSetting
             {
                 Key = "Data.NumberValue",
@@ -640,27 +637,27 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
                 Key = "Data.NonExistentKey",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull,
             },
-        };
+        ];
     }
 
     private static AdvancedFilterSetting[] GetNegativeEventIdFilterConfigurations()
     {
         // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn't not conform to the cloud schema
         // special case for use with the cloud event schema (https://docs.microsoft.com/en-us/azure/event-grid/cloudevents-schema)
-        return new[] { new AdvancedFilterSetting { Key = "EventId" } };
+        return [new AdvancedFilterSetting { Key = "EventId" }];
     }
 
     private static AdvancedFilterSetting[] GetNegativeSourceFilterConfigurations()
     {
         // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn't not conform to the cloud schema
         // no positive tests are available for this key yet since no support for the cloud event schema is available at the moment
-        return new[] { new AdvancedFilterSetting { Key = "Source" } };
+        return [new AdvancedFilterSetting { Key = "Source" }];
     }
 
     private static AdvancedFilterSetting[] GetNegativeEventTypeVersionFilterConfigurations()
     {
         // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn't not conform to the cloud schema
         // no positive tests are available for this key yet since no support for the cloud event schema is available at the moment
-        return new[] { new AdvancedFilterSetting { Key = "EventTypeVersion" } };
+        return [new AdvancedFilterSetting { Key = "EventTypeVersion" }];
     }
 }

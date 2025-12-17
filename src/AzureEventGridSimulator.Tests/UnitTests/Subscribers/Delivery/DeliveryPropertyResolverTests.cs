@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
@@ -10,12 +9,7 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Subscribers.Delivery;
 [Trait("Category", "unit")]
 public class DeliveryPropertyResolverTests
 {
-    private readonly DeliveryPropertyResolver _resolver;
-
-    public DeliveryPropertyResolverTests()
-    {
-        _resolver = new DeliveryPropertyResolver();
-    }
+    private readonly DeliveryPropertyResolver _resolver = new();
 
     private static SimulatorEvent CreateTestEvent()
     {
@@ -37,23 +31,6 @@ public class DeliveryPropertyResolverTests
                 },
             }
         );
-    }
-
-    private static SimulatorEvent CreateTestEventWithTopic()
-    {
-        var evt = SimulatorEvent.FromEventGridEvent(
-            new EventGridEvent
-            {
-                Id = "test-event-id",
-                Subject = "test/subject",
-                EventType = "Test.EventType",
-                EventTime = "2024-01-15T10:30:00Z",
-                DataVersion = "1.0",
-                Topic = "/subscriptions/test/topic",
-                Data = new { customerId = "cust-123" },
-            }
-        );
-        return evt;
     }
 
     [Fact]
@@ -238,13 +215,9 @@ public class DeliveryPropertyResolverTests
     {
         var properties = new Dictionary<string, DeliveryPropertySettings>
         {
-            ["Label"] = new DeliveryPropertySettings { Type = "dynamic", Value = "Subject" },
-            ["Region"] = new DeliveryPropertySettings { Type = "static", Value = "west-us" },
-            ["CustomerId"] = new DeliveryPropertySettings
-            {
-                Type = "dynamic",
-                Value = "data.customerId",
-            },
+            ["Label"] = new() { Type = "dynamic", Value = "Subject" },
+            ["Region"] = new() { Type = "static", Value = "west-us" },
+            ["CustomerId"] = new() { Type = "dynamic", Value = "data.customerId" },
         };
 
         var result = _resolver.ResolveProperties(properties, CreateTestEvent());
@@ -260,12 +233,8 @@ public class DeliveryPropertyResolverTests
     {
         var properties = new Dictionary<string, DeliveryPropertySettings>
         {
-            ["Label"] = new DeliveryPropertySettings { Type = "dynamic", Value = "Subject" },
-            ["Missing"] = new DeliveryPropertySettings
-            {
-                Type = "dynamic",
-                Value = "data.nonExistent",
-            },
+            ["Label"] = new() { Type = "dynamic", Value = "Subject" },
+            ["Missing"] = new() { Type = "dynamic", Value = "data.nonExistent" },
         };
 
         var result = _resolver.ResolveProperties(properties, CreateTestEvent());

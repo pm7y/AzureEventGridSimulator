@@ -24,7 +24,7 @@ public class TopicSettings
     /// </summary>
     [JsonPropertyName("subscribers")]
     [JsonConverter(typeof(SubscribersSettingsConverter))]
-    public SubscribersSettings Subscribers { get; set; } = new SubscribersSettings();
+    public SubscribersSettings Subscribers { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the expected input schema for events published to this topic.

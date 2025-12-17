@@ -1,4 +1,3 @@
-using System;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Shouldly;
 using Xunit;
@@ -13,10 +12,7 @@ public class SubscribersSettingsIndividualValidationTests
     {
         var settings = new SubscribersSettings
         {
-            Http = new[]
-            {
-                new HttpSubscriberSettings { Name = "", Endpoint = "https://example.com" },
-            },
+            Http = [new HttpSubscriberSettings { Name = "", Endpoint = "https://example.com" }],
         };
 
         Should.Throw<ArgumentException>(() => settings.Validate());
@@ -27,7 +23,7 @@ public class SubscribersSettingsIndividualValidationTests
     {
         var settings = new SubscribersSettings
         {
-            ServiceBus = new[] { new ServiceBusSubscriberSettings { Name = "Test" } },
+            ServiceBus = [new ServiceBusSubscriberSettings { Name = "Test" }],
         };
 
         Should.Throw<ArgumentException>(() => settings.Validate());
@@ -38,7 +34,7 @@ public class SubscribersSettingsIndividualValidationTests
     {
         var settings = new SubscribersSettings
         {
-            StorageQueue = new[] { new StorageQueueSubscriberSettings { Name = "Test" } },
+            StorageQueue = [new StorageQueueSubscriberSettings { Name = "Test" }],
         };
 
         Should.Throw<ArgumentException>(() => settings.Validate());

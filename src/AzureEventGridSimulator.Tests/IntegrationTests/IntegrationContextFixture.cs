@@ -1,14 +1,10 @@
-﻿using System.IO;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
+﻿using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace AzureEventGridSimulator.Tests.IntegrationTests;
 
+[UsedImplicitly]
 public class IntegrationContextFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public Task InitializeAsync()

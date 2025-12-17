@@ -1,5 +1,4 @@
 using AzureEventGridSimulator.Domain.Entities;
-using Microsoft.AspNetCore.Http;
 
 namespace AzureEventGridSimulator.Domain.Services;
 
@@ -11,8 +10,12 @@ public class EventSchemaDetector
     /// <summary>
     /// Detects the event schema from the HTTP context.
     /// </summary>
-    /// <param name="context">The HTTP context.</param>
-    /// <returns>The detected event schema.</returns>
+    /// <param name="context" >
+    /// The HTTP context.
+    /// </param>
+    /// <returns>
+    /// The detected event schema.
+    /// </returns>
     public EventSchema DetectSchema(HttpContext context)
     {
         // Check for CloudEvents structured mode (content-type based)

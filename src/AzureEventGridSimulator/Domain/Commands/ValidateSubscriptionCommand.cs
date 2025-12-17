@@ -1,5 +1,4 @@
-﻿using System;
-using AzureEventGridSimulator.Infrastructure.Mediator;
+﻿using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
 
 namespace AzureEventGridSimulator.Domain.Commands;

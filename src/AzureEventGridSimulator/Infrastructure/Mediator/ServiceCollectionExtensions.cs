@@ -1,7 +1,4 @@
-using System;
-using System.Linq;
 using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AzureEventGridSimulator.Infrastructure.Mediator;
 
@@ -13,9 +10,15 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds the mediator and registers all request handlers from the specified assembly.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="assembly">The assembly to scan for handlers.</param>
-    /// <returns>The service collection for chaining.</returns>
+    /// <param name="services" >
+    /// The service collection.
+    /// </param>
+    /// <param name="assembly" >
+    /// The assembly to scan for handlers.
+    /// </param>
+    /// <returns>
+    /// The service collection for chaining.
+    /// </returns>
     public static IServiceCollection AddMediator(
         this IServiceCollection services,
         Assembly assembly

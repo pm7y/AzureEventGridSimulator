@@ -1,4 +1,3 @@
-using System;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Shouldly;
 using Xunit;
@@ -13,11 +12,11 @@ public class SubscribersSettingsDuplicateNameValidationTests : SubscribersSettin
     {
         var settings = new SubscribersSettings
         {
-            Http = new[]
-            {
+            Http =
+            [
                 CreateValidHttpSubscriber("Subscriber1"),
                 CreateValidHttpSubscriber("Subscriber1"),
-            },
+            ],
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
@@ -30,8 +29,8 @@ public class SubscribersSettingsDuplicateNameValidationTests : SubscribersSettin
     {
         var settings = new SubscribersSettings
         {
-            Http = new[] { CreateValidHttpSubscriber("SharedName") },
-            ServiceBus = new[] { CreateValidServiceBusSubscriber("SharedName") },
+            Http = [CreateValidHttpSubscriber("SharedName")],
+            ServiceBus = [CreateValidServiceBusSubscriber("SharedName")],
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
@@ -44,11 +43,11 @@ public class SubscribersSettingsDuplicateNameValidationTests : SubscribersSettin
     {
         var settings = new SubscribersSettings
         {
-            Http = new[]
-            {
+            Http =
+            [
                 CreateValidHttpSubscriber("Subscriber"),
                 CreateValidHttpSubscriber("SUBSCRIBER"),
-            },
+            ],
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
@@ -60,13 +59,13 @@ public class SubscribersSettingsDuplicateNameValidationTests : SubscribersSettin
     {
         var settings = new SubscribersSettings
         {
-            Http = new[]
-            {
+            Http =
+            [
                 CreateValidHttpSubscriber("Dup1"),
                 CreateValidHttpSubscriber("Dup1"),
                 CreateValidHttpSubscriber("Dup2"),
                 CreateValidHttpSubscriber("Dup2"),
-            },
+            ],
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());

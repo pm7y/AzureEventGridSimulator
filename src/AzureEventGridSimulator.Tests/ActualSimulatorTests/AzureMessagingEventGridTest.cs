@@ -1,8 +1,7 @@
-﻿using System;
-using System.Net;
-using System.Threading.Tasks;
+﻿using System.Net;
 using Azure;
 using Azure.Core;
+using Azure.Core.Pipeline;
 using Azure.Messaging.EventGrid;
 using Shouldly;
 using Xunit;
@@ -11,15 +10,34 @@ namespace AzureEventGridSimulator.Tests.ActualSimulatorTests;
 
 /// <summary>
 /// Simple tests to check that we can send an event via Azure.Messaging.EventGrid library.
-/// NOTE: These tests require (and automatically start) an actual instance of AzureEventGridSimulator.exe as there is no way to inject an HttpClient (from a WebApplicationFactory)
+/// NOTE: These tests require (and automatically start) an actual instance of
+/// AzureEventGridSimulator.exe as there is no way to inject an HttpClient (from a
+/// WebApplicationFactory)
 /// into Azure.Messaging.EventGrid.
 /// </summary>
 [Collection(nameof(ActualSimulatorFixtureCollection))]
 [Trait("Category", "integration-actual")]
-public class AzureMessagingEventGridTest(ActualSimulatorFixture actualSimulatorFixture)
+public class AzureMessagingEventGridTest
 {
-    // ReSharper disable once NotAccessedField.Local
-    private readonly ActualSimulatorFixture _actualSimulatorFixture = actualSimulatorFixture;
+    private static EventGridPublisherClientOptions CreateClientOptions()
+    {
+        var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+        };
+
+        return new EventGridPublisherClientOptions
+        {
+            Transport = new HttpClientTransport(handler),
+            Retry =
+            {
+                Mode = RetryMode.Fixed,
+                MaxRetries = 0,
+                NetworkTimeout = TimeSpan.FromSeconds(5),
+            },
+        };
+    }
 
     [Fact]
     public async Task GivenValidEvent_WhenUriContainsNonStandardPort_ThenItShouldBeAccepted()
@@ -27,15 +45,7 @@ public class AzureMessagingEventGridTest(ActualSimulatorFixture actualSimulatorF
         var client = new EventGridPublisherClient(
             new Uri("https://localhost:60101/api/events"),
             new AzureKeyCredential("TheLocal+DevelopmentKey="),
-            new EventGridPublisherClientOptions
-            {
-                Retry =
-                {
-                    Mode = RetryMode.Fixed,
-                    MaxRetries = 0,
-                    NetworkTimeout = TimeSpan.FromSeconds(5),
-                },
-            }
+            CreateClientOptions()
         );
 
         var response = await client.SendEventAsync(
@@ -51,15 +61,7 @@ public class AzureMessagingEventGridTest(ActualSimulatorFixture actualSimulatorF
         var client = new EventGridPublisherClient(
             new Uri("https://localhost:60101/api/events"),
             new AzureKeyCredential("TheLocal+DevelopmentKey="),
-            new EventGridPublisherClientOptions
-            {
-                Retry =
-                {
-                    Mode = RetryMode.Fixed,
-                    MaxRetries = 0,
-                    NetworkTimeout = TimeSpan.FromSeconds(5),
-                },
-            }
+            CreateClientOptions()
         );
 
         var events = new[]
@@ -89,15 +91,7 @@ public class AzureMessagingEventGridTest(ActualSimulatorFixture actualSimulatorF
         var client = new EventGridPublisherClient(
             new Uri("https://localhost:19999/api/events"),
             new AzureKeyCredential("TheLocal+DevelopmentKey="),
-            new EventGridPublisherClientOptions
-            {
-                Retry =
-                {
-                    Mode = RetryMode.Fixed,
-                    MaxRetries = 0,
-                    NetworkTimeout = TimeSpan.FromSeconds(5),
-                },
-            }
+            CreateClientOptions()
         );
 
         var exception = await Should.ThrowAsync<RequestFailedException>(async () =>
@@ -122,15 +116,7 @@ public class AzureMessagingEventGridTest(ActualSimulatorFixture actualSimulatorF
         var client = new EventGridPublisherClient(
             new Uri("https://localhost:60101/api/events"),
             new AzureKeyCredential("TheWrongLocal+DevelopmentKey="),
-            new EventGridPublisherClientOptions
-            {
-                Retry =
-                {
-                    Mode = RetryMode.Fixed,
-                    MaxRetries = 0,
-                    NetworkTimeout = TimeSpan.FromSeconds(5),
-                },
-            }
+            CreateClientOptions()
         );
 
         var exception = await Should.ThrowAsync<RequestFailedException>(async () =>

@@ -1,21 +1,17 @@
-﻿using System;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.Logging;
+using JetBrains.Annotations;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 
 // ReSharper disable once UnusedMember.Global
+[UsedImplicitly]
 public class ValidateAllSubscriptionsCommandHandler(
     ILogger<ValidateAllSubscriptionsCommandHandler> logger,
     IHttpClientFactory httpClientFactory,
@@ -121,6 +117,7 @@ public class ValidateAllSubscriptionsCommandHandler(
         catch (Exception ex)
         {
             logger.LogError(
+                ex,
                 "Failed to validate subscriber '{SubscriberName}'. Note that subscriber must be started before the simulator. Or you can disable validation for this subscriber via settings: '{Error}'",
                 subscription.Name,
                 ex.Message

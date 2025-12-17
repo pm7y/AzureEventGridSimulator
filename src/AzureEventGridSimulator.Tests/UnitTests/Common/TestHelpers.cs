@@ -2,7 +2,6 @@ using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.AspNetCore.Http;
 
 namespace AzureEventGridSimulator.Tests.UnitTests.Common;
 
@@ -11,8 +10,6 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Common;
 /// </summary>
 public static class TestHelpers
 {
-    #region HttpContext Helpers
-
     /// <summary>
     /// Creates a basic HttpContext with the specified content type.
     /// </summary>
@@ -94,10 +91,6 @@ public static class TestHelpers
             Request = { ContentType = "application/cloudevents-batch+json" },
         };
     }
-
-    #endregion
-
-    #region Event Helpers
 
     /// <summary>
     /// Creates a valid EventGridEvent for testing.
@@ -182,10 +175,6 @@ public static class TestHelpers
         );
     }
 
-    #endregion
-
-    #region Subscriber Settings Helpers
-
     /// <summary>
     /// Creates valid ServiceBusSubscriberSettings for testing.
     /// </summary>
@@ -238,22 +227,4 @@ public static class TestHelpers
             Key = key,
         };
     }
-
-    #endregion
-
-    #region Test Constants
-
-    /// <summary>
-    /// Test connection string for Service Bus.
-    /// </summary>
-    public const string TestServiceBusConnectionString =
-        "Endpoint=sb://test-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123";
-
-    /// <summary>
-    /// Test connection string for Storage Queue.
-    /// </summary>
-    public const string TestStorageQueueConnectionString =
-        "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net";
-
-    #endregion
 }

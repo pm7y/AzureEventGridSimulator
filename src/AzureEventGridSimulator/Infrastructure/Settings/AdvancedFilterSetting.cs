@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
@@ -37,6 +34,8 @@ public class AdvancedFilterSetting
         IsNullOrUndefined,
         IsNotNull,
     }
+
+    private static readonly string[] values = ["null"];
 
     [JsonPropertyName("operatorType")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -135,10 +134,7 @@ public class AdvancedFilterSetting
             Key,
             OperatorType,
             Value ?? "null",
-            string.Join(
-                ", ",
-                Values.HasItems() ? Values.Select(v => v.ToString()) : new[] { "null" }
-            ),
+            string.Join(", ", Values.HasItems() ? Values.Select(v => v.ToString()) : values),
             Guid.NewGuid()
         );
     }

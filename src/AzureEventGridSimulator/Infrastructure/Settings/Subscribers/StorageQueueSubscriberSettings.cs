@@ -1,4 +1,3 @@
-using System;
 using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Entities;
 
@@ -15,9 +14,6 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
     /// </summary>
     [JsonIgnore]
     internal TopicSettings ParentTopic { get; set; }
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
 
     /// <summary>
     /// Gets or sets the Storage Queue connection string.
@@ -39,6 +35,9 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
         !string.IsNullOrWhiteSpace(ConnectionString)
             ? ConnectionString
             : ParentTopic?.StorageQueueConnectionString;
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
 
     [JsonPropertyName("filter")]
     public FilterSetting Filter { get; set; }

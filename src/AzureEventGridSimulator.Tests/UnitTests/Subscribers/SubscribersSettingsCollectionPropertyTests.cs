@@ -12,9 +12,9 @@ public class SubscribersSettingsCollectionPropertyTests : SubscribersSettingsTes
     {
         var settings = new SubscribersSettings
         {
-            Http = new[] { CreateValidHttpSubscriber("Http1") },
-            ServiceBus = new[] { CreateValidServiceBusSubscriber("ServiceBus1") },
-            StorageQueue = new[] { CreateValidStorageQueueSubscriber("StorageQueue1") },
+            Http = [CreateValidHttpSubscriber("Http1")],
+            ServiceBus = [CreateValidServiceBusSubscriber("ServiceBus1")],
+            StorageQueue = [CreateValidStorageQueueSubscriber("StorageQueue1")],
         };
 
         settings.All.ShouldContain(s => s.Name == "Http1");
@@ -42,8 +42,8 @@ public class SubscribersSettingsCollectionPropertyTests : SubscribersSettingsTes
     {
         var settings = new SubscribersSettings
         {
-            Http = new[] { CreateValidHttpSubscriber("Http1") },
-            ServiceBus = new[] { CreateValidServiceBusSubscriber("ServiceBus1") },
+            Http = [CreateValidHttpSubscriber("Http1")],
+            ServiceBus = [CreateValidServiceBusSubscriber("ServiceBus1")],
         };
 
         settings.HttpSubscribers.ShouldHaveSingleItem();
@@ -55,8 +55,8 @@ public class SubscribersSettingsCollectionPropertyTests : SubscribersSettingsTes
     {
         var settings = new SubscribersSettings
         {
-            Http = new[] { CreateValidHttpSubscriber("Http1") },
-            ServiceBus = new[] { CreateValidServiceBusSubscriber("ServiceBus1") },
+            Http = [CreateValidHttpSubscriber("Http1")],
+            ServiceBus = [CreateValidServiceBusSubscriber("ServiceBus1")],
         };
 
         settings.ServiceBusSubscribers.ShouldHaveSingleItem();
@@ -68,8 +68,8 @@ public class SubscribersSettingsCollectionPropertyTests : SubscribersSettingsTes
     {
         var settings = new SubscribersSettings
         {
-            Http = new[] { CreateValidHttpSubscriber("Http1") },
-            StorageQueue = new[] { CreateValidStorageQueueSubscriber("StorageQueue1") },
+            Http = [CreateValidHttpSubscriber("Http1")],
+            StorageQueue = [CreateValidStorageQueueSubscriber("StorageQueue1")],
         };
 
         settings.StorageQueueSubscribers.ShouldHaveSingleItem();

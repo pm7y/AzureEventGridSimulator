@@ -1,7 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Entities;
 
 namespace AzureEventGridSimulator.Domain.Services;
@@ -12,6 +10,11 @@ namespace AzureEventGridSimulator.Domain.Services;
 /// </summary>
 public class CloudEventSchemaFormatter : IEventSchemaFormatter
 {
+    private static readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
     /// <inheritdoc />
     public EventSchema Schema => EventSchema.CloudEventV1_0;
 
@@ -22,24 +25,19 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     /// </remarks>
     public string ContentType => Constants.CloudEventsBatchContentType;
 
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <inheritdoc />
     public string Serialize(SimulatorEvent evt)
     {
         var cloudEvent = ConvertToCloudEvent(evt);
         // Azure Event Grid sends events "in an array that has a single event"
-        return JsonSerializer.Serialize(new[] { cloudEvent }, SerializerOptions);
+        return JsonSerializer.Serialize(new[] { cloudEvent }, _serializerOptions);
     }
 
     /// <inheritdoc />
     public string SerializeArray(IEnumerable<SimulatorEvent> events)
     {
         var cloudEvents = events.Select(ConvertToCloudEvent).ToArray();
-        return JsonSerializer.Serialize(cloudEvents, SerializerOptions);
+        return JsonSerializer.Serialize(cloudEvents, _serializerOptions);
     }
 
     /// <inheritdoc />

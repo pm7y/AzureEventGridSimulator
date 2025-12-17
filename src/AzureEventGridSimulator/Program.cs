@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.Globalization;
 using System.Net;
-using System.Net.Http;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Asp.Versioning;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
@@ -18,16 +12,9 @@ using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Middleware;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
-using ILogger = Serilog.ILogger;
+using Serilog.Extensions.Hosting;
 
 [assembly: InternalsVisibleTo("AzureEventGridSimulator.Tests")]
 
@@ -89,7 +76,7 @@ public class Program
 
             var simulatorSettings = app.ApplicationServices.GetService<SimulatorSettings>();
 
-            if (simulatorSettings is null || !simulatorSettings.Topics.Any())
+            if (simulatorSettings is null || simulatorSettings.Topics.Length == 0)
             {
                 DisplayConfigurationHelp();
                 lifetime.StopApplication();
@@ -184,7 +171,7 @@ public class Program
         return ConfigureWebHost(args, configuration);
     }
 
-    private static ILogger CreateBasicConsoleLogger()
+    private static ReloadableLogger CreateBasicConsoleLogger()
     {
         return new LoggerConfiguration()
             .MinimumLevel.Is(LogEventLevel.Verbose)
@@ -276,7 +263,7 @@ public class Program
             .Services.AddApiVersioning(options =>
             {
                 options.DefaultApiVersion = new ApiVersion(
-                    DateOnly.Parse(Constants.SupportedApiVersion)
+                    DateOnly.Parse(Constants.SupportedApiVersion, CultureInfo.InvariantCulture)
                 );
                 options.AssumeDefaultVersionWhenUnspecified = true;
                 options.ReportApiVersions = true;
@@ -287,11 +274,12 @@ public class Program
         builder.Host.UseSerilog(
             (context, loggerConfiguration) =>
             {
-                var hasAtLeastOneLogSinkBeenConfigured = context
-                    .Configuration.GetSection("Serilog:WriteTo")
-                    .GetChildren()
-                    .ToArray()
-                    .Any();
+                var hasAtLeastOneLogSinkBeenConfigured =
+                    context
+                        .Configuration.GetSection("Serilog:WriteTo")
+                        .GetChildren()
+                        .ToArray()
+                        .Length != 0;
 
                 loggerConfiguration
                     .Enrich.FromLogContext()
@@ -318,8 +306,9 @@ public class Program
         builder.Configuration.AddConfiguration(configuration);
         builder.WebHost.UseKestrel(options =>
         {
+            var debugView = ((IConfigurationRoot)configuration).GetDebugView().Normalize();
             // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
-            Log.Verbose(((IConfigurationRoot)configuration).GetDebugView().Normalize());
+            Log.Verbose(debugView);
 
             options.ConfigureSimulatorCertificate();
 

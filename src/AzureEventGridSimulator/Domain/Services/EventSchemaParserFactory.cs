@@ -1,4 +1,3 @@
-using System;
 using AzureEventGridSimulator.Domain.Entities;
 
 namespace AzureEventGridSimulator.Domain.Services;
@@ -14,8 +13,12 @@ public class EventSchemaParserFactory(
     /// <summary>
     /// Gets the appropriate parser for the specified schema.
     /// </summary>
-    /// <param name="schema">The event schema.</param>
-    /// <returns>The parser for the schema.</returns>
+    /// <param name="schema" >
+    /// The event schema.
+    /// </param>
+    /// <returns>
+    /// The parser for the schema.
+    /// </returns>
     public IEventSchemaParser GetParser(EventSchema schema)
     {
         return schema switch

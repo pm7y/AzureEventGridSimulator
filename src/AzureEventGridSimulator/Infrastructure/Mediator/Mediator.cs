@@ -1,12 +1,8 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-
 namespace AzureEventGridSimulator.Infrastructure.Mediator;
 
 /// <summary>
-/// Default implementation of <see cref="IMediator"/> that resolves handlers from the service provider.
+/// Default implementation of <see cref="IMediator" /> that resolves handlers from the service
+/// provider.
 /// </summary>
 public class Mediator(IServiceProvider serviceProvider) : IMediator
 {

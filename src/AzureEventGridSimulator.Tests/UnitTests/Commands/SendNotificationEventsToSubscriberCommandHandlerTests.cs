@@ -1,13 +1,9 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -17,8 +13,8 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Commands;
 [Trait("Category", "unit")]
 public class SendNotificationEventsToSubscriberCommandHandlerTests
 {
-    private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
     private readonly SendNotificationEventsToSubscriberCommandHandler _handler;
+    private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
 
     public SendNotificationEventsToSubscriberCommandHandlerTests()
     {
@@ -387,7 +383,7 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             Name = "TestTopic",
             Port = 60101,
             Key = "TestKey",
-            Subscribers = new SubscribersSettings { Http = new[] { subscriber } },
+            Subscribers = new SubscribersSettings { Http = [subscriber] },
         };
     }
 
@@ -402,9 +398,9 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             Key = "TestKey",
             Subscribers = new SubscribersSettings
             {
-                Http = new[] { httpSubscriber },
-                ServiceBus = new[]
-                {
+                Http = [httpSubscriber],
+                ServiceBus =
+                [
                     new ServiceBusSubscriberSettings
                     {
                         Name = "ServiceBusSub",
@@ -412,14 +408,14 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
                             "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=Key;SharedAccessKey=abc123",
                         Queue = "test-queue",
                     },
-                },
+                ],
             },
         };
     }
 
     private static SimulatorEvent[] CreateTestEvents()
     {
-        return new[] { CreateTestEventGridEvent("test-id") };
+        return [CreateTestEventGridEvent("test-id")];
     }
 
     private static SimulatorEvent CreateTestEventGridEvent(string id)

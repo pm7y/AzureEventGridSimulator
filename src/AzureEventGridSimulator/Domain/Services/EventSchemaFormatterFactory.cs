@@ -1,4 +1,3 @@
-using System;
 using AzureEventGridSimulator.Domain.Entities;
 
 namespace AzureEventGridSimulator.Domain.Services;
@@ -14,8 +13,12 @@ public class EventSchemaFormatterFactory(
     /// <summary>
     /// Gets the appropriate formatter for the specified schema.
     /// </summary>
-    /// <param name="schema">The desired output schema.</param>
-    /// <returns>The formatter for the schema.</returns>
+    /// <param name="schema" >
+    /// The desired output schema.
+    /// </param>
+    /// <returns>
+    /// The formatter for the schema.
+    /// </returns>
     public IEventSchemaFormatter GetFormatter(EventSchema schema)
     {
         return schema switch

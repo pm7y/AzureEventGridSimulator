@@ -1,8 +1,5 @@
-using System;
-using System.Linq;
 using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
-using Microsoft.AspNetCore.Http;
 
 namespace AzureEventGridSimulator.Domain.Services;
 
@@ -29,6 +26,15 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
         }
 
         return ParseStructuredMode(requestBody);
+    }
+
+    /// <inheritdoc />
+    public void Validate(SimulatorEvent[] events)
+    {
+        foreach (var evt in events)
+        {
+            evt.Validate();
+        }
     }
 
     /// <summary>
@@ -68,7 +74,7 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
             }
         }
 
-        return new[] { SimulatorEvent.FromCloudEvent(cloudEvent) };
+        return [SimulatorEvent.FromCloudEvent(cloudEvent)];
     }
 
     /// <summary>
@@ -113,7 +119,7 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
             throw new InvalidOperationException("Failed to parse CloudEvent from request body.");
         }
 
-        return new[] { SimulatorEvent.FromCloudEvent(cloudEvent) };
+        return [SimulatorEvent.FromCloudEvent(cloudEvent)];
     }
 
     /// <summary>
@@ -146,15 +152,6 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
         }
 
         return events.Select(SimulatorEvent.FromCloudEvent).ToArray();
-    }
-
-    /// <inheritdoc />
-    public void Validate(SimulatorEvent[] events)
-    {
-        foreach (var evt in events)
-        {
-            evt.Validate();
-        }
     }
 
     /// <summary>

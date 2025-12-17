@@ -1,12 +1,9 @@
-using System;
-using System.Threading.Tasks;
-using AzureEventGridSimulator.Domain;
+using System.Text;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -16,8 +13,8 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Subscribers.Delivery;
 [Trait("Category", "unit")]
 public class StorageQueueEventDeliveryServiceTests
 {
-    private readonly ILogger<StorageQueueEventDeliveryService> _logger;
     private readonly EventSchemaFormatterFactory _formatterFactory;
+    private readonly ILogger<StorageQueueEventDeliveryService> _logger;
     private readonly StorageQueueEventDeliveryService _service;
 
     public StorageQueueEventDeliveryServiceTests()
@@ -81,7 +78,7 @@ public class StorageQueueEventDeliveryServiceTests
             .Received()
             .Log(
                 LogLevel.Warning,
-                Arg.Any<Microsoft.Extensions.Logging.EventId>(),
+                Arg.Any<EventId>(),
                 Arg.Is<object>(o => o.ToString().Contains("disabled")),
                 Arg.Any<Exception>(),
                 Arg.Any<Func<object, Exception, string>>()
@@ -169,10 +166,10 @@ public class StorageQueueEventDeliveryServiceTests
         var json = formatter.Serialize(evt);
 
         // Encode as Base64 (same as the service does)
-        var encoded = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
+        var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
 
         // Verify it can be decoded back
-        var decoded = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
+        var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
         decoded.ShouldBe(json);
     }
 

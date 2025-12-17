@@ -65,6 +65,7 @@ jobs:
           --runtime ${{ matrix.runtime }}
           --no-restore
           --no-incremental
+          /p:Version=${{ env.VERSION_NUMBER }}
           /p:WarningLevel=4
           /p:TreatWarningsAsErrors=true
 

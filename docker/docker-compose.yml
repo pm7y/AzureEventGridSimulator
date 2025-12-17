@@ -6,13 +6,13 @@ services:
       # add a port mapping for each topic in the settings file
       - "60101:60101"
     volumes:
-      # map a local folder './docker' to a read-only folder '/aegs' in the container
+      # map this folder to a read-only folder '/aegs' in the container
       # this allows us to access files (e.g. settings or certificates) from within the container
-      - ./docker:/aegs:ro
+      - .:/aegs:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       # specify cert details note: can be generated like so:
-      # dotnet dev-certs https --export-path ./docker/azureEventGridSimulator.pfx --password Y0urSup3rCrypt1cPa55w0rd!
+      # dotnet dev-certs https --export-path ./azureEventGridSimulator.pfx --password Y0urSup3rCrypt1cPa55w0rd!
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/aegs/azureEventGridSimulator.pfx
       - ASPNETCORE_Kestrel__Certificates__Default__Password=Y0urSup3rCrypt1cPa55w0rd!
 
@@ -28,8 +28,8 @@ services:
       - aegs-network
 
     build:
-      context: .
-      dockerfile: ./Dockerfile
+      context: ..
+      dockerfile: ./docker/Dockerfile
 
   # Seq - Structured Log Server
   # See: https://docs.datalust.co/docs/getting-started-with-docker
@@ -69,7 +69,7 @@ services:
     image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
     pull_policy: always
     volumes:
-      - ./docker/servicebus-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json
+      - ./servicebus-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json
     ports:
       - "5672:5672"   # AMQP port
     environment:
@@ -96,6 +96,3 @@ services:
 
 networks:
   aegs-network:
-
-volumes:
-  docker:

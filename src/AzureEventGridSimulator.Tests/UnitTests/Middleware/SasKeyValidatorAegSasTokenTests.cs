@@ -1,7 +1,4 @@
-using System;
 using AzureEventGridSimulator.Domain;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -108,7 +105,7 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
     [Fact]
     public void GivenTokenWithInvalidExpirationFormat_WhenValidated_ThenReturnsFalse()
     {
-        var token = "r=http%3A%2F%2Flocalhost&e=not-a-valid-date&s=somesignature";
+        const string token = "r=http%3A%2F%2Flocalhost&e=not-a-valid-date&s=somesignature";
         var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
 
         var result = Validator.IsValid(headers, ValidTopicKey);

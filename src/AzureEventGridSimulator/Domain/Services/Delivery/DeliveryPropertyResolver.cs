@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
@@ -14,9 +12,15 @@ public class DeliveryPropertyResolver
     /// <summary>
     /// Resolves all delivery properties for a given event.
     /// </summary>
-    /// <param name="properties">The property configurations.</param>
-    /// <param name="evt">The event to extract dynamic property values from.</param>
-    /// <returns>A dictionary of resolved property names and values.</returns>
+    /// <param name="properties" >
+    /// The property configurations.
+    /// </param>
+    /// <param name="evt" >
+    /// The event to extract dynamic property values from.
+    /// </param>
+    /// <returns>
+    /// A dictionary of resolved property names and values.
+    /// </returns>
     public Dictionary<string, object> ResolveProperties(
         Dictionary<string, DeliveryPropertySettings> properties,
         SimulatorEvent evt
@@ -44,9 +48,15 @@ public class DeliveryPropertyResolver
     /// <summary>
     /// Resolves a single delivery property value.
     /// </summary>
-    /// <param name="setting">The property configuration.</param>
-    /// <param name="evt">The event to extract dynamic property values from.</param>
-    /// <returns>The resolved property value, or null if not found.</returns>
+    /// <param name="setting" >
+    /// The property configuration.
+    /// </param>
+    /// <param name="evt" >
+    /// The event to extract dynamic property values from.
+    /// </param>
+    /// <returns>
+    /// The resolved property value, or null if not found.
+    /// </returns>
     public object ResolveProperty(DeliveryPropertySettings setting, SimulatorEvent evt)
     {
         if (setting == null)
@@ -199,16 +209,18 @@ public class DeliveryPropertyResolver
         {
             return false;
         }
+
         return DateTime.TryParse(value, out result);
     }
 
     private static bool TryParseGuid(string value, out Guid result)
     {
-        result = default;
+        result = Guid.Empty;
         if (string.IsNullOrEmpty(value))
         {
             return false;
         }
+
         return Guid.TryParse(value, out result);
     }
 }

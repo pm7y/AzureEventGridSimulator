@@ -1,5 +1,4 @@
 ﻿using AzureEventGridSimulator.Infrastructure.Middleware;
-using Microsoft.AspNetCore.Builder;
 
 namespace AzureEventGridSimulator.Infrastructure.Extensions;
 

@@ -1,4 +1,3 @@
-using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -30,9 +29,9 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
             );
             return new SubscribersSettings
             {
-                Http = httpSubscribers ?? Array.Empty<HttpSubscriberSettings>(),
-                ServiceBus = Array.Empty<ServiceBusSubscriberSettings>(),
-                StorageQueue = Array.Empty<StorageQueueSubscriberSettings>(),
+                Http = httpSubscribers ?? [],
+                ServiceBus = [],
+                StorageQueue = [],
             };
         }
 
@@ -50,7 +49,7 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
                     JsonSerializer.Deserialize<HttpSubscriberSettings[]>(
                         httpElement.GetRawText(),
                         options
-                    ) ?? Array.Empty<HttpSubscriberSettings>();
+                    ) ?? [];
             }
 
             if (root.TryGetProperty("serviceBus", out var serviceBusElement))
@@ -59,7 +58,7 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
                     JsonSerializer.Deserialize<ServiceBusSubscriberSettings[]>(
                         serviceBusElement.GetRawText(),
                         options
-                    ) ?? Array.Empty<ServiceBusSubscriberSettings>();
+                    ) ?? [];
             }
 
             if (root.TryGetProperty("storageQueue", out var storageQueueElement))
@@ -68,7 +67,7 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
                     JsonSerializer.Deserialize<StorageQueueSubscriberSettings[]>(
                         storageQueueElement.GetRawText(),
                         options
-                    ) ?? Array.Empty<StorageQueueSubscriberSettings>();
+                    ) ?? [];
             }
 
             return result;

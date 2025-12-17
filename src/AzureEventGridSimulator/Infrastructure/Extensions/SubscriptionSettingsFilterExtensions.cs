@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
+﻿using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 
@@ -9,175 +6,6 @@ namespace AzureEventGridSimulator.Infrastructure.Extensions;
 
 public static class SubscriptionSettingsFilterExtensions
 {
-    /// <summary>
-    /// Checks if the filter accepts a SimulatorEvent (schema-agnostic).
-    /// </summary>
-    public static bool AcceptsEvent(this FilterSetting filter, SimulatorEvent simulatorEvent)
-    {
-        if (filter == null)
-        {
-            return true;
-        }
-
-        // Extract common properties from SimulatorEvent
-        var eventType = simulatorEvent.EventType;
-        var subject = simulatorEvent.Subject ?? "";
-        var data = simulatorEvent.Data;
-
-        // Check event type filter
-        var retVal =
-            filter.IncludedEventTypes == null
-            || filter.IncludedEventTypes.Contains("All")
-            || filter.IncludedEventTypes.Contains(eventType);
-
-        // Check subject begins with filter
-        retVal =
-            retVal
-            && (
-                string.IsNullOrWhiteSpace(filter.SubjectBeginsWith)
-                || subject.StartsWith(
-                    filter.SubjectBeginsWith,
-                    filter.IsSubjectCaseSensitive
-                        ? StringComparison.Ordinal
-                        : StringComparison.OrdinalIgnoreCase
-                )
-            );
-
-        // Check subject ends with filter
-        retVal =
-            retVal
-            && (
-                string.IsNullOrWhiteSpace(filter.SubjectEndsWith)
-                || subject.EndsWith(
-                    filter.SubjectEndsWith,
-                    filter.IsSubjectCaseSensitive
-                        ? StringComparison.Ordinal
-                        : StringComparison.OrdinalIgnoreCase
-                )
-            );
-
-        // Check advanced filters
-        retVal =
-            retVal
-            && (filter.AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>()).All(af =>
-                af.AcceptsEvent(simulatorEvent)
-            );
-
-        return retVal;
-    }
-
-    /// <summary>
-    /// Checks if the filter accepts an EventGridEvent (legacy support).
-    /// </summary>
-    public static bool AcceptsEvent(this FilterSetting filter, EventGridEvent gridEvent)
-    {
-        var retVal = filter == null;
-
-        if (retVal)
-        {
-            return true;
-        }
-
-        // we have a filter to parse
-        retVal =
-            filter.IncludedEventTypes == null
-            || filter.IncludedEventTypes.Contains("All")
-            || filter.IncludedEventTypes.Contains(gridEvent.EventType);
-
-        // short circuit if we have decided the event type is not acceptable
-        retVal =
-            retVal
-            && (
-                string.IsNullOrWhiteSpace(filter.SubjectBeginsWith)
-                || gridEvent.Subject.StartsWith(
-                    filter.SubjectBeginsWith,
-                    filter.IsSubjectCaseSensitive
-                        ? StringComparison.Ordinal
-                        : StringComparison.OrdinalIgnoreCase
-                )
-            );
-
-        // again, don't bother doing the comparison if we have already decided not to allow the event through the filter
-        retVal =
-            retVal
-            && (
-                string.IsNullOrWhiteSpace(filter.SubjectEndsWith)
-                || gridEvent.Subject.EndsWith(
-                    filter.SubjectEndsWith,
-                    filter.IsSubjectCaseSensitive
-                        ? StringComparison.Ordinal
-                        : StringComparison.OrdinalIgnoreCase
-                )
-            );
-
-        retVal =
-            retVal
-            && (filter.AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>()).All(af =>
-                af.AcceptsEvent(gridEvent)
-            );
-
-        return retVal;
-    }
-
-    private static bool AcceptsEvent(
-        this AdvancedFilterSetting filter,
-        SimulatorEvent simulatorEvent
-    )
-    {
-        if (filter == null)
-        {
-            return true;
-        }
-
-        var keyExists = simulatorEvent.TryGetValue(filter.Key, out var value);
-        var valueIsNull = keyExists && value == null;
-
-        // Handle null check operators specially - they evaluate based on key existence
-        switch (filter.OperatorType)
-        {
-            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
-                return !keyExists || valueIsNull;
-            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
-                return keyExists && !valueIsNull;
-        }
-
-        // For "Not" operators, return true when key doesn't exist (per Azure docs)
-        if (!keyExists)
-        {
-            return IsNegationOperator(filter.OperatorType);
-        }
-
-        return EvaluateAdvancedFilter(filter, value);
-    }
-
-    private static bool AcceptsEvent(this AdvancedFilterSetting filter, EventGridEvent gridEvent)
-    {
-        if (filter == null)
-        {
-            return true;
-        }
-
-        var keyExists = gridEvent.TryGetValue(filter.Key, out var value);
-        var valueIsNull = keyExists && value == null;
-
-        // Handle null check operators specially - they evaluate based on key existence
-        switch (filter.OperatorType)
-        {
-            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
-                return !keyExists || valueIsNull;
-            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
-                return keyExists && !valueIsNull;
-        }
-
-        // For "Not" operators, return true when key doesn't exist (per Azure docs)
-        if (!keyExists)
-        {
-            return IsNegationOperator(filter.OperatorType);
-        }
-
-        return EvaluateAdvancedFilter(filter, value);
-    }
-
     private static bool IsNegationOperator(
         AdvancedFilterSetting.AdvancedFilterOperatorType operatorType
     )
@@ -232,7 +60,7 @@ public static class SubscriptionSettingsFilterExtensions
                     retVal = Try(() =>
                         !string.IsNullOrEmpty(valueAsString)
                         && (filter.Values ?? Array.Empty<object>())
-                            .Select(v => Convert.ToString(v))
+                            .Select(Convert.ToString)
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.Contains(
@@ -250,7 +78,7 @@ public static class SubscriptionSettingsFilterExtensions
                     retVal = Try(() =>
                         !string.IsNullOrEmpty(valueAsString)
                         && (filter.Values ?? Array.Empty<object>())
-                            .Select(v => Convert.ToString(v))
+                            .Select(Convert.ToString)
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.StartsWith(
@@ -268,7 +96,7 @@ public static class SubscriptionSettingsFilterExtensions
                     retVal = Try(() =>
                         !string.IsNullOrEmpty(valueAsString)
                         && (filter.Values ?? Array.Empty<object>())
-                            .Select(v => Convert.ToString(v))
+                            .Select(Convert.ToString)
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.EndsWith(
@@ -305,7 +133,7 @@ public static class SubscriptionSettingsFilterExtensions
                     retVal = Try(() =>
                         string.IsNullOrEmpty(valueAsString)
                         || !(filter.Values ?? Array.Empty<object>())
-                            .Select(v => Convert.ToString(v))
+                            .Select(Convert.ToString)
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.Contains(
@@ -322,7 +150,7 @@ public static class SubscriptionSettingsFilterExtensions
                     retVal = Try(() =>
                         string.IsNullOrEmpty(valueAsString)
                         || !(filter.Values ?? Array.Empty<object>())
-                            .Select(v => Convert.ToString(v))
+                            .Select(Convert.ToString)
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.StartsWith(
@@ -339,7 +167,7 @@ public static class SubscriptionSettingsFilterExtensions
                     retVal = Try(() =>
                         string.IsNullOrEmpty(valueAsString)
                         || !(filter.Values ?? Array.Empty<object>())
-                            .Select(v => Convert.ToString(v))
+                            .Select(Convert.ToString)
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.EndsWith(
@@ -429,6 +257,7 @@ public static class SubscriptionSettingsFilterExtensions
                         return true;
                     }
                 }
+
                 return false;
         }
     }
@@ -467,6 +296,7 @@ public static class SubscriptionSettingsFilterExtensions
                             break;
                         }
                     }
+
                     if (!found)
                     {
                         return false;
@@ -543,7 +373,7 @@ public static class SubscriptionSettingsFilterExtensions
                 max;
 
             // Handle JsonElement (from System.Text.Json deserialization)
-            if (range is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Array)
+            if (range is JsonElement { ValueKind: JsonValueKind.Array } jsonElement)
             {
                 var length = jsonElement.GetArrayLength();
                 if (length >= 2)
@@ -557,13 +387,13 @@ public static class SubscriptionSettingsFilterExtensions
                 }
             }
             // Handle object array
-            else if (range is object[] objArray && objArray.Length >= 2)
+            else if (range is object[] { Length: >= 2 } objArray)
             {
                 min = Convert.ToDouble(objArray[0]);
                 max = Convert.ToDouble(objArray[1]);
             }
             // Handle IList<object>
-            else if (range is IList<object> list && list.Count >= 2)
+            else if (range is IList<object> { Count: >= 2 } list)
             {
                 min = Convert.ToDouble(list[0]);
                 max = Convert.ToDouble(list[1]);
@@ -641,5 +471,174 @@ public static class SubscriptionSettingsFilterExtensions
         }
 
         return retval;
+    }
+
+    extension(FilterSetting filter)
+    {
+        /// <summary>
+        /// Checks if the filter accepts a SimulatorEvent (schema-agnostic).
+        /// </summary>
+        public bool AcceptsEvent(SimulatorEvent simulatorEvent)
+        {
+            if (filter == null)
+            {
+                return true;
+            }
+
+            var subject = simulatorEvent.Subject ?? "";
+
+            // Check event type filter
+            var retVal =
+                filter.IncludedEventTypes == null
+                || filter.IncludedEventTypes.Contains("All")
+                || filter.IncludedEventTypes.Contains(simulatorEvent.EventType);
+
+            // Check subject begins with filter
+            retVal =
+                retVal
+                && (
+                    string.IsNullOrWhiteSpace(filter.SubjectBeginsWith)
+                    || subject.StartsWith(
+                        filter.SubjectBeginsWith,
+                        filter.IsSubjectCaseSensitive
+                            ? StringComparison.Ordinal
+                            : StringComparison.OrdinalIgnoreCase
+                    )
+                );
+
+            // Check subject ends with filter
+            retVal =
+                retVal
+                && (
+                    string.IsNullOrWhiteSpace(filter.SubjectEndsWith)
+                    || subject.EndsWith(
+                        filter.SubjectEndsWith,
+                        filter.IsSubjectCaseSensitive
+                            ? StringComparison.Ordinal
+                            : StringComparison.OrdinalIgnoreCase
+                    )
+                );
+
+            // Check advanced filters
+            retVal =
+                retVal
+                && (filter.AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>()).All(af =>
+                    af.AcceptsEvent(simulatorEvent)
+                );
+
+            return retVal;
+        }
+
+        /// <summary>
+        /// Checks if the filter accepts an EventGridEvent (legacy support).
+        /// </summary>
+        public bool AcceptsEvent(EventGridEvent gridEvent)
+        {
+            var retVal = filter == null;
+
+            if (retVal)
+            {
+                return true;
+            }
+
+            // we have a filter to parse
+            retVal =
+                filter.IncludedEventTypes == null
+                || filter.IncludedEventTypes.Contains("All")
+                || filter.IncludedEventTypes.Contains(gridEvent.EventType);
+
+            // short circuit if we have decided the event type is not acceptable
+            retVal =
+                retVal
+                && (
+                    string.IsNullOrWhiteSpace(filter.SubjectBeginsWith)
+                    || gridEvent.Subject.StartsWith(
+                        filter.SubjectBeginsWith,
+                        filter.IsSubjectCaseSensitive
+                            ? StringComparison.Ordinal
+                            : StringComparison.OrdinalIgnoreCase
+                    )
+                );
+
+            // again, don't bother doing the comparison if we have already decided not to allow the event through the filter
+            retVal =
+                retVal
+                && (
+                    string.IsNullOrWhiteSpace(filter.SubjectEndsWith)
+                    || gridEvent.Subject.EndsWith(
+                        filter.SubjectEndsWith,
+                        filter.IsSubjectCaseSensitive
+                            ? StringComparison.Ordinal
+                            : StringComparison.OrdinalIgnoreCase
+                    )
+                );
+
+            retVal =
+                retVal
+                && (filter.AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>()).All(af =>
+                    af.AcceptsEvent(gridEvent)
+                );
+
+            return retVal;
+        }
+    }
+
+    extension(AdvancedFilterSetting filter)
+    {
+        private bool AcceptsEvent(SimulatorEvent simulatorEvent)
+        {
+            if (filter == null)
+            {
+                return true;
+            }
+
+            var keyExists = simulatorEvent.TryGetValue(filter.Key, out var value);
+            var valueIsNull = keyExists && value == null;
+
+            // Handle null check operators specially - they evaluate based on key existence
+            switch (filter.OperatorType)
+            {
+                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
+                    return !keyExists || valueIsNull;
+                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
+                    return keyExists && !valueIsNull;
+            }
+
+            // For "Not" operators, return true when key doesn't exist (per Azure docs)
+            if (!keyExists)
+            {
+                return IsNegationOperator(filter.OperatorType);
+            }
+
+            return EvaluateAdvancedFilter(filter, value);
+        }
+
+        private bool AcceptsEvent(EventGridEvent gridEvent)
+        {
+            if (filter == null)
+            {
+                return true;
+            }
+
+            var keyExists = gridEvent.TryGetValue(filter.Key, out var value);
+            var valueIsNull = keyExists && value == null;
+
+            // Handle null check operators specially - they evaluate based on key existence
+            switch (filter.OperatorType)
+            {
+                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
+                    return !keyExists || valueIsNull;
+                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
+                    return keyExists && !valueIsNull;
+            }
+
+            // For "Not" operators, return true when key doesn't exist (per Azure docs)
+            if (!keyExists)
+            {
+                return IsNegationOperator(filter.OperatorType);
+            }
+
+            return EvaluateAdvancedFilter(filter, value);
+        }
     }
 }

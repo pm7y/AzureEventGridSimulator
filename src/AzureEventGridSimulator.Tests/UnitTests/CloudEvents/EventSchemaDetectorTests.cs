@@ -1,7 +1,6 @@
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
-using Microsoft.AspNetCore.Http;
 using Shouldly;
 using Xunit;
 

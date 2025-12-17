@@ -1,8 +1,5 @@
-using System;
-using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
-using Microsoft.AspNetCore.Http;
 using Shouldly;
 using Xunit;
 
@@ -17,15 +14,16 @@ public class EventGridSchemaParserTests
     public void GivenValidEventGridEventsArray_WhenParsed_ThenEventsCreated()
     {
         var context = CreateEventGridContext();
-        var requestBody =
-            @"[{
-            ""id"": ""test-id-123"",
-            ""subject"": ""/test/subject"",
-            ""eventType"": ""Test.EventType"",
-            ""eventTime"": ""2025-01-15T10:30:00Z"",
-            ""dataVersion"": ""1.0"",
-            ""data"": { ""Property"": ""Value"" }
-        }]";
+        const string requestBody = """
+            [{
+                        "id": "test-id-123",
+                        "subject": "/test/subject",
+                        "eventType": "Test.EventType",
+                        "eventTime": "2025-01-15T10:30:00Z",
+                        "dataVersion": "1.0",
+                        "data": { "Property": "Value" }
+                    }]
+            """;
 
         var events = _parser.Parse(context, requestBody);
 
@@ -41,23 +39,24 @@ public class EventGridSchemaParserTests
     public void GivenMultipleEvents_WhenParsed_ThenAllEventsReturned()
     {
         var context = CreateEventGridContext();
-        var requestBody =
-            @"[
-            {
-                ""id"": ""event-1"",
-                ""subject"": ""/test/subject1"",
-                ""eventType"": ""Test.EventType1"",
-                ""eventTime"": ""2025-01-15T10:30:00Z"",
-                ""dataVersion"": ""1.0""
-            },
-            {
-                ""id"": ""event-2"",
-                ""subject"": ""/test/subject2"",
-                ""eventType"": ""Test.EventType2"",
-                ""eventTime"": ""2025-01-15T10:31:00Z"",
-                ""dataVersion"": ""2.0""
-            }
-        ]";
+        const string requestBody = """
+            [
+                        {
+                            "id": "event-1",
+                            "subject": "/test/subject1",
+                            "eventType": "Test.EventType1",
+                            "eventTime": "2025-01-15T10:30:00Z",
+                            "dataVersion": "1.0"
+                        },
+                        {
+                            "id": "event-2",
+                            "subject": "/test/subject2",
+                            "eventType": "Test.EventType2",
+                            "eventTime": "2025-01-15T10:31:00Z",
+                            "dataVersion": "2.0"
+                        }
+                    ]
+            """;
 
         var events = _parser.Parse(context, requestBody);
 
@@ -72,16 +71,17 @@ public class EventGridSchemaParserTests
     public void GivenEventWithAllOptionalFields_WhenParsed_ThenAllFieldsPopulated()
     {
         var context = CreateEventGridContext();
-        var requestBody =
-            @"[{
-            ""id"": ""test-id-123"",
-            ""subject"": ""/test/subject"",
-            ""eventType"": ""Test.EventType"",
-            ""eventTime"": ""2025-01-15T10:30:00Z"",
-            ""dataVersion"": ""1.0"",
-            ""metadataVersion"": ""1"",
-            ""data"": { ""Key1"": ""Value1"", ""Key2"": 42 }
-        }]";
+        const string requestBody = """
+            [{
+                        "id": "test-id-123",
+                        "subject": "/test/subject",
+                        "eventType": "Test.EventType",
+                        "eventTime": "2025-01-15T10:30:00Z",
+                        "dataVersion": "1.0",
+                        "metadataVersion": "1",
+                        "data": { "Key1": "Value1", "Key2": 42 }
+                    }]
+            """;
 
         var events = _parser.Parse(context, requestBody);
 
@@ -94,13 +94,14 @@ public class EventGridSchemaParserTests
     public void GivenEventWithMinimalFields_WhenParsed_ThenRequiredFieldsPresent()
     {
         var context = CreateEventGridContext();
-        var requestBody =
-            @"[{
-            ""id"": ""min-id"",
-            ""subject"": ""/min/subject"",
-            ""eventType"": ""Min.Type"",
-            ""eventTime"": ""2025-01-15T10:30:00Z""
-        }]";
+        const string requestBody = """
+            [{
+                        "id": "min-id",
+                        "subject": "/min/subject",
+                        "eventType": "Min.Type",
+                        "eventTime": "2025-01-15T10:30:00Z"
+                    }]
+            """;
 
         var events = _parser.Parse(context, requestBody);
 
@@ -114,7 +115,7 @@ public class EventGridSchemaParserTests
     public void GivenEmptyBody_WhenParsed_ThenExceptionThrown()
     {
         var context = CreateEventGridContext();
-        var requestBody = "";
+        const string requestBody = "";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
             _parser.Parse(context, requestBody)
@@ -126,7 +127,7 @@ public class EventGridSchemaParserTests
     public void GivenWhitespaceBody_WhenParsed_ThenExceptionThrown()
     {
         var context = CreateEventGridContext();
-        var requestBody = "   ";
+        const string requestBody = "   ";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
             _parser.Parse(context, requestBody)
@@ -147,7 +148,7 @@ public class EventGridSchemaParserTests
     public void GivenMalformedJson_WhenParsed_ThenExceptionThrown()
     {
         var context = CreateEventGridContext();
-        var requestBody = "[{ invalid json }]";
+        const string requestBody = "[{ invalid json }]";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
             _parser.Parse(context, requestBody)
@@ -159,7 +160,7 @@ public class EventGridSchemaParserTests
     public void GivenEmptyArray_WhenParsed_ThenExceptionThrown()
     {
         var context = CreateEventGridContext();
-        var requestBody = "[]";
+        const string requestBody = "[]";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
             _parser.Parse(context, requestBody)
@@ -171,13 +172,14 @@ public class EventGridSchemaParserTests
     public void GivenSingleObjectNotArray_WhenParsed_ThenExceptionThrown()
     {
         var context = CreateEventGridContext();
-        var requestBody =
-            @"{
-            ""id"": ""test-id"",
-            ""subject"": ""/test/subject"",
-            ""eventType"": ""Test.EventType"",
-            ""eventTime"": ""2025-01-15T10:30:00Z""
-        }";
+        const string requestBody = """
+            {
+                        "id": "test-id",
+                        "subject": "/test/subject",
+                        "eventType": "Test.EventType",
+                        "eventTime": "2025-01-15T10:30:00Z"
+                    }
+            """;
 
         // EventGrid schema expects an array, not a single object
         var exception = Should.Throw<InvalidOperationException>(() =>
@@ -256,20 +258,21 @@ public class EventGridSchemaParserTests
     public void GivenEventWithComplexData_WhenParsed_ThenDataPreserved()
     {
         var context = CreateEventGridContext();
-        var requestBody =
-            @"[{
-            ""id"": ""test-id-123"",
-            ""subject"": ""/test/subject"",
-            ""eventType"": ""Test.EventType"",
-            ""eventTime"": ""2025-01-15T10:30:00Z"",
-            ""data"": {
-                ""nested"": {
-                    ""value"": 123,
-                    ""array"": [1, 2, 3]
-                },
-                ""string"": ""test""
-            }
-        }]";
+        const string requestBody = """
+            [{
+                        "id": "test-id-123",
+                        "subject": "/test/subject",
+                        "eventType": "Test.EventType",
+                        "eventTime": "2025-01-15T10:30:00Z",
+                        "data": {
+                            "nested": {
+                                "value": 123,
+                                "array": [1, 2, 3]
+                            },
+                            "string": "test"
+                        }
+                    }]
+            """;
 
         var events = _parser.Parse(context, requestBody);
 
@@ -283,7 +286,7 @@ public class EventGridSchemaParserTests
         _parser.Schema.ShouldBe(EventSchema.EventGridSchema);
     }
 
-    private static HttpContext CreateEventGridContext()
+    private static DefaultHttpContext CreateEventGridContext()
     {
         return new DefaultHttpContext { Request = { ContentType = "application/json" } };
     }
