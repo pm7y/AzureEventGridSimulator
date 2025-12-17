@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.0](https://github.com/pm7y/AzureEventGridSimulator/compare/4.2.2...4.3.0) (2025-12-17)
+
+
+### Features
+
+* Add retry & dead letter support ([#220](https://github.com/pm7y/AzureEventGridSimulator/issues/220)) ([bff1bf1](https://github.com/pm7y/AzureEventGridSimulator/commit/bff1bf1fb32941840645061111736b9a56aa4d68))
+
 ## [4.2.2](https://github.com/pm7y/AzureEventGridSimulator/compare/4.2.1...4.2.2) (2025-12-17)
 
 
