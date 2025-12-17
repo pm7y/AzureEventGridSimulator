@@ -81,6 +81,7 @@ jobs:
         run: >-
           dotnet publish ${{ env.PROJECT_PATH }}
           --configuration ${{ env.CONFIGURATION }}
+          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-restore
           --self-contained true
