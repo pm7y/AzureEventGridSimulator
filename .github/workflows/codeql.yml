@@ -63,7 +63,7 @@ jobs:
       - name: Lint Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: Dockerfile
+          dockerfile: docker/Dockerfile
           failure-threshold: error
           format: sarif
           output-file: hadolint-results.sarif
