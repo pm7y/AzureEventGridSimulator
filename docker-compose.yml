@@ -24,6 +24,7 @@ services:
 
     depends_on:
       - servicebus-emulator
+      - azurite
 
     networks:
       - aegs-network
@@ -31,6 +32,21 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+
+  # Azurite - Azure Storage Emulator
+  # See: https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite
+  azurite:
+    container_name: azurite
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    ports:
+      - "10000:10000"   # Blob service
+      - "10001:10001"   # Queue service
+      - "10002:10002"   # Table service
+    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
+    networks:
+      aegs-network:
+        aliases:
+          - azurite
 
   # Azure Service Bus Emulator
   # See: https://learn.microsoft.com/en-us/azure/service-bus-messaging/test-locally-with-service-bus-emulator

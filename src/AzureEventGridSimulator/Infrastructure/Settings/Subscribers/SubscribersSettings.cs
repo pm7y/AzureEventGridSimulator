@@ -24,13 +24,21 @@ public class SubscribersSettings
         Array.Empty<ServiceBusSubscriberSettings>();
 
     /// <summary>
+    /// Gets or sets Azure Storage Queue subscribers.
+    /// </summary>
+    [JsonProperty(PropertyName = "storageQueue", Required = Required.Default)]
+    public StorageQueueSubscriberSettings[] StorageQueue { get; set; } =
+        Array.Empty<StorageQueueSubscriberSettings>();
+
+    /// <summary>
     /// Gets all subscribers of all types.
     /// </summary>
     [JsonIgnore]
     public IEnumerable<ISubscriberSettings> All =>
         (Http ?? Array.Empty<HttpSubscriberSettings>())
             .Cast<ISubscriberSettings>()
-            .Concat(ServiceBus ?? Array.Empty<ServiceBusSubscriberSettings>());
+            .Concat(ServiceBus ?? Array.Empty<ServiceBusSubscriberSettings>())
+            .Concat(StorageQueue ?? Array.Empty<StorageQueueSubscriberSettings>());
 
     /// <summary>
     /// Gets all HTTP subscribers.
@@ -45,6 +53,13 @@ public class SubscribersSettings
     [JsonIgnore]
     public IEnumerable<ServiceBusSubscriberSettings> ServiceBusSubscribers =>
         ServiceBus ?? Array.Empty<ServiceBusSubscriberSettings>();
+
+    /// <summary>
+    /// Gets all Storage Queue subscribers.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<StorageQueueSubscriberSettings> StorageQueueSubscribers =>
+        StorageQueue ?? Array.Empty<StorageQueueSubscriberSettings>();
 
     /// <summary>
     /// Gets whether there are any subscribers configured.

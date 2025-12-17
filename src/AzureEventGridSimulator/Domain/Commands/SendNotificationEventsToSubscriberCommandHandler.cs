@@ -25,18 +25,21 @@ public class SendNotificationEventsToSubscriberCommandHandler
     private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
     private readonly EventSchemaFormatterFactory _formatterFactory;
     private readonly ServiceBusEventDeliveryService _serviceBusDeliveryService;
+    private readonly StorageQueueEventDeliveryService _storageQueueDeliveryService;
 
     public SendNotificationEventsToSubscriberCommandHandler(
         IHttpClientFactory httpClientFactory,
         ILogger<SendNotificationEventsToSubscriberCommandHandler> logger,
         EventSchemaFormatterFactory formatterFactory,
-        ServiceBusEventDeliveryService serviceBusDeliveryService
+        ServiceBusEventDeliveryService serviceBusDeliveryService,
+        StorageQueueEventDeliveryService storageQueueDeliveryService
     )
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _formatterFactory = formatterFactory;
         _serviceBusDeliveryService = serviceBusDeliveryService;
+        _storageQueueDeliveryService = storageQueueDeliveryService;
     }
 
     public Task Handle(
@@ -124,6 +127,33 @@ public class SendNotificationEventsToSubscriberCommandHandler
                         {
                             _logger.LogDebug(
                                 "Event {EventId} filtered out for Service Bus subscriber '{SubscriberName}'",
+                                evt.Id,
+                                subscription.Name
+                            );
+                        }
+                    }
+                }
+
+                // Send to Storage Queue subscribers
+                foreach (var subscription in request.Topic.Subscribers.StorageQueueSubscribers)
+                {
+                    foreach (var evt in request.Events)
+                    {
+                        if (subscription.Filter.AcceptsEvent(evt))
+                        {
+#pragma warning disable 4014
+                            _storageQueueDeliveryService.SendAsync(
+                                subscription,
+                                evt,
+                                request.Topic,
+                                request.InputSchema
+                            );
+#pragma warning restore 4014
+                        }
+                        else
+                        {
+                            _logger.LogDebug(
+                                "Event {EventId} filtered out for Storage Queue subscriber '{SubscriberName}'",
                                 evt.Id,
                                 subscription.Name
                             );

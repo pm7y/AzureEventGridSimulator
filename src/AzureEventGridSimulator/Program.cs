@@ -204,6 +204,7 @@ public class Program
         // Register delivery services
         builder.Services.AddSingleton<DeliveryPropertyResolver>();
         builder.Services.AddSingleton<ServiceBusEventDeliveryService>();
+        builder.Services.AddSingleton<StorageQueueEventDeliveryService>();
 
         var httpClientBuilder = builder.Services.AddHttpClient(nameof(AzureEventGridSimulator));
         if (configuration.GetValue<bool>("dangerousAcceptAnyServerCertificateValidator"))

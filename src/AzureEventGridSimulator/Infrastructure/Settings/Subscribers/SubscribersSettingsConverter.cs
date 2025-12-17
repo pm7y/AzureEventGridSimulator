@@ -33,6 +33,7 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
             {
                 Http = httpSubscribers ?? Array.Empty<HttpSubscriberSettings>(),
                 ServiceBus = Array.Empty<ServiceBusSubscriberSettings>(),
+                StorageQueue = Array.Empty<StorageQueueSubscriberSettings>(),
             };
         }
 
@@ -55,6 +56,14 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
                 result.ServiceBus =
                     serviceBusToken.ToObject<ServiceBusSubscriberSettings[]>(serializer)
                     ?? Array.Empty<ServiceBusSubscriberSettings>();
+            }
+
+            var storageQueueToken = token["storageQueue"];
+            if (storageQueueToken != null)
+            {
+                result.StorageQueue =
+                    storageQueueToken.ToObject<StorageQueueSubscriberSettings[]>(serializer)
+                    ?? Array.Empty<StorageQueueSubscriberSettings>();
             }
 
             return result;
@@ -82,6 +91,11 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
         if (value.ServiceBus?.Length > 0)
         {
             obj["serviceBus"] = JArray.FromObject(value.ServiceBus, serializer);
+        }
+
+        if (value.StorageQueue?.Length > 0)
+        {
+            obj["storageQueue"] = JArray.FromObject(value.StorageQueue, serializer);
         }
 
         obj.WriteTo(writer);
