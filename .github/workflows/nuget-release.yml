@@ -1,0 +1,66 @@
+name: NuGet Release
+
+on:
+  release:
+    types: [published]
+
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag name (e.g., '1.0.1')"
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  VERSION_NUMBER: ${{ github.event.inputs.tag_name || github.event.release.tag_name }}
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  DOTNET_NOLOGO: "true"
+  PROJECT_PATH: ./src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
+  CONFIGURATION: Release
+
+jobs:
+  publish-nuget:
+    name: Publish to NuGet
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build
+        run: >-
+          dotnet build ${{ env.PROJECT_PATH }}
+          --configuration ${{ env.CONFIGURATION }}
+          --no-restore
+
+      - name: Pack
+        run: >-
+          dotnet pack ${{ env.PROJECT_PATH }}
+          --configuration ${{ env.CONFIGURATION }}
+          --no-build
+          /p:Version=${{ env.VERSION_NUMBER }}
+          --output ./nupkg
+
+      - name: Push to NuGet
+        run: >-
+          dotnet nuget push ./nupkg/*.nupkg
+          --api-key ${{ secrets.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
