@@ -12,6 +12,8 @@ of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) to
 with the `Microsoft.Azure.EventGrid` client library. Both the `EventGrid` schema and the `CloudEvents v1.0` schema are
 supported.
 
+> **Note:** This simulator is intended for **local development and testing only**. It is not designed for production use. For production workloads, use the official [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) service.
+
 ## Installation
 
 ### .NET Tool (Recommended)
