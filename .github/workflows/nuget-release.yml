@@ -49,6 +49,7 @@ jobs:
           dotnet build ${{ env.PROJECT_PATH }}
           --configuration ${{ env.CONFIGURATION }}
           --no-restore
+          /p:Version=${{ env.VERSION_NUMBER }}
 
       - name: Pack
         run: >-
