@@ -47,12 +47,133 @@ An example of one topic with one subscriber is shown below.
 
 ### Subscriber Settings
 
+The simulator supports two types of subscribers: **HTTP webhooks** and **Azure Service Bus** (queues and topics).
+
+#### Grouped Format (Recommended)
+
+```json
+{
+  "subscribers": {
+    "http": [
+      {
+        "name": "WebhookSubscription",
+        "endpoint": "https://example.com/webhook"
+      }
+    ],
+    "serviceBus": [
+      {
+        "name": "ServiceBusSubscription",
+        "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=...;SharedAccessKey=...",
+        "queue": "my-queue"
+      }
+    ]
+  }
+}
+```
+
+#### Legacy Format (Still Supported)
+
+For backwards compatibility, a flat array of HTTP subscribers is still supported:
+
+```json
+{
+  "subscribers": [
+    {
+      "name": "WebhookSubscription",
+      "endpoint": "https://example.com/webhook"
+    }
+  ]
+}
+```
+
+#### HTTP Subscriber Settings
+
 | Setting | Description |
 |---------|-------------|
 | `name` | The name of the subscriber. It can only contain letters, numbers, and dashes. |
 | `endpoint` | The subscription endpoint url. Events received by topic will be sent to this address. |
 | `disableValidation` | Set to `true` to disable subscription validation. Default is `false`, which means subscription validation will be attempted each time the simulator starts. |
 | `deliverySchema` | (Optional) Override the delivery schema for this specific subscriber. Values: `EventGridSchema` or `CloudEventV1_0`. Takes precedence over the topic's `outputSchema`. |
+
+#### Service Bus Subscriber Settings
+
+| Setting | Description |
+|---------|-------------|
+| `name` | The name of the subscriber. |
+| `connectionString` | The Service Bus connection string. Either this OR (`namespace` + `sharedAccessKeyName` + `sharedAccessKey`) must be provided. |
+| `namespace` | The Service Bus namespace (without `.servicebus.windows.net` suffix). |
+| `sharedAccessKeyName` | The shared access key name (e.g., `RootManageSharedAccessKey`). |
+| `sharedAccessKey` | The shared access key. |
+| `queue` | The queue name. Either `queue` or `topic` must be specified (not both). |
+| `topic` | The topic name. Either `queue` or `topic` must be specified (not both). |
+| `deliverySchema` | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`. |
+| `properties` | (Optional) Custom delivery properties to add to Service Bus messages. See below. |
+
+#### Service Bus Delivery Properties
+
+You can add custom application properties to Service Bus messages using static or dynamic values:
+
+```json
+{
+  "properties": {
+    "Region": {
+      "type": "static",
+      "value": "west-us"
+    },
+    "EventType": {
+      "type": "dynamic",
+      "value": "EventType"
+    },
+    "CustomerId": {
+      "type": "dynamic",
+      "value": "data.customerId"
+    }
+  }
+}
+```
+
+- **Static properties**: The `value` is used as-is.
+- **Dynamic properties**: The `value` is a path to extract from the event. Supported paths:
+  - Top-level fields: `Id`, `Subject`, `EventType`, `EventTime`, `DataVersion`, `Source`/`Topic`
+  - Data properties: `data.propertyName` or `data.nested.property`
+
+#### Complete Example
+
+```json
+{
+  "topics": [
+    {
+      "name": "OrdersTopic",
+      "port": 60101,
+      "key": "TheLocal+DevelopmentKey=",
+      "subscribers": {
+        "http": [
+          {
+            "name": "WebhookSubscription",
+            "endpoint": "https://myapp.com/webhooks/orders",
+            "disableValidation": true,
+            "filter": {
+              "includedEventTypes": ["Order.Created", "Order.Updated"]
+            }
+          }
+        ],
+        "serviceBus": [
+          {
+            "name": "OrdersQueueSubscription",
+            "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=...",
+            "queue": "orders-queue",
+            "properties": {
+              "OrderId": { "type": "dynamic", "value": "data.orderId" },
+              "EventType": { "type": "dynamic", "value": "EventType" },
+              "Source": { "type": "static", "value": "EventGridSimulator" }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
 
 ### App Settings
 
@@ -195,14 +316,18 @@ docker run `
 
 ### Docker Compose
 
-There is a `docker-compose.yml` file in the src folder that you can use (or modify) to build your own Docker image.
+There is a `docker-compose.yml` file in the repo root that you can use to build and run the simulator along with an Azure Service Bus emulator for local development.
 
 ```
-docker-compose up   --build `
-                    --force-recreate `
-                    --remove-orphans `
-                    --detach
+docker-compose up --build --detach
 ```
+
+The Docker Compose setup includes:
+- **Azure Event Grid Simulator** - The main simulator
+- **Azure Service Bus Emulator** - For testing Service Bus subscribers locally
+- **SQL Server** - Required by the Service Bus emulator
+
+See `docker/appsettings.docker.json` for an example configuration with both HTTP and Service Bus subscribers.
 
 ## Using the Simulator
 
@@ -372,10 +497,11 @@ dotnet csharpier format src
 
 ## Future Development
 
-Some features that could be added if there was a need for them: -
+Some features that could be added if there was a need for them:
 
 - Subscriber retries & dead lettering. https://docs.microsoft.com/en-us/azure/event-grid/delivery-and-retry
 - Certificate configuration in `appsettings.json`.
-- Subscriber token auth
-- Better Docker support.
-- Maybe a web based console for admin stats etc.
+- Subscriber token auth.
+- Azure Event Hub subscriber support.
+- Azure Storage Queue subscriber support.
+- Web-based console for admin stats etc.

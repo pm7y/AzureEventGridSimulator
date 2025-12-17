@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Linq;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Shouldly;
 using Xunit;
 
@@ -21,17 +21,21 @@ public class AdvancedFilterValidationTests
                     Key = "TopicKey",
                     Name = "TopicName",
                     Port = 12345,
-                    Subscribers = new List<SubscriptionSettings>
+                    Subscribers = new SubscribersSettings
                     {
-                        new()
+                        Http = new[]
                         {
-                            Name = "SubscriberName",
-                            Filter = new FilterSetting
+                            new HttpSubscriberSettings
                             {
-                                AdvancedFilters = new[] { advancedFilter },
+                                Name = "SubscriberName",
+                                Endpoint = "https://example.com/webhook",
+                                Filter = new FilterSetting
+                                {
+                                    AdvancedFilters = new[] { advancedFilter },
+                                },
                             },
                         },
-                    }.ToArray(),
+                    },
                 },
             },
         };

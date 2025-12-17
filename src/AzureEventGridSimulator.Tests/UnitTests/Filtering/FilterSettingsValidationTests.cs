@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Shouldly;
 using Xunit;
 
@@ -20,10 +21,18 @@ public class FilterSettingsValidationTests
                     Key = "TopicKey",
                     Name = "TopicName",
                     Port = 12345,
-                    Subscribers = new List<SubscriptionSettings>
+                    Subscribers = new SubscribersSettings
                     {
-                        new() { Name = "SubscriberName", Filter = filter },
-                    }.ToArray(),
+                        Http = new[]
+                        {
+                            new HttpSubscriberSettings
+                            {
+                                Name = "SubscriberName",
+                                Endpoint = "https://example.com/webhook",
+                                Filter = filter,
+                            },
+                        },
+                    },
                 },
             },
         };

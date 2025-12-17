@@ -1,6 +1,5 @@
-version: "3.9"
 services:
-  azureventgridsimulator:
+  azureeventgridsimulator:
     image: azureeventgridsimulator:dev
     container_name: azureeventgridsimulator-dev
     ports:
@@ -12,36 +11,61 @@ services:
       - ./docker:/aegs:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      # specify cert details note: can be generated like so: 
+      # specify cert details note: can be generated like so:
       # dotnet dev-certs https --export-path ./docker/azureEventGridSimulator.pfx --password Y0urSup3rCrypt1cPa55w0rd!
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/aegs/azureEventGridSimulator.pfx
       - ASPNETCORE_Kestrel__Certificates__Default__Password=Y0urSup3rCrypt1cPa55w0rd!
 
-      # example of how to configure a topic via environment variables
-      - AEGS_Topics__0__name=ExampleTopic
-      - AEGS_Topics__0__port=60101
-      - AEGS_Topics__0__key=TheLocal+DevelopmentKey=
-      # add 'request catcher' subscriber
-      - AEGS_Topics__0__subscribers__0__name=RequestCatcherSubscription
-      - AEGS_Topics__0__subscribers__0__endpoint=https://azureeventgridsimulator.requestcatcher.com/
-      - AEGS_Topics__0__subscribers__0__disableValidation=true
-      # add an Azure Function subscriber running on localhost (host.docker.internal)
-      - AEGS_Topics__0__subscribers__1__name=AzureFunctionSubscription
-      - AEGS_Topics__0__subscribers__1__endpoint=http://host.docker.internal:7071/runtime/webhooks/EventGrid?functionName=ExampleFunction
-      - AEGS_Topics__0__subscribers__1__disableValidation=false
+      # you could also define topics/subscribers via via a configfile
+      - AEGS_ConfigFile=/aegs/appsettings.docker.json
+
       # logging configuration
       - AEGS_Serilog__MinimumLevel__Default=Verbose
 
-      # you could also define topics/subscribers via via a configfile
-      # - AEGS_ConfigFile=/aegs/appsettings.docker.json
+    depends_on:
+      - servicebus-emulator
 
-    #env_file:
-      # you can also define environment variables via a file
-      #- ./my.env
+    networks:
+      - aegs-network
 
     build:
       context: .
       dockerfile: ./Dockerfile
+
+  # Azure Service Bus Emulator
+  # See: https://learn.microsoft.com/en-us/azure/service-bus-messaging/test-locally-with-service-bus-emulator
+  servicebus-emulator:
+    container_name: servicebus-emulator
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    pull_policy: always
+    volumes:
+      - ./docker/servicebus-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json
+    ports:
+      - "5672:5672"   # AMQP port
+    environment:
+      SQL_SERVER: mssql
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-YourStr0ngP@ssword!}
+      ACCEPT_EULA: "Y"
+    depends_on:
+      - mssql
+    networks:
+      aegs-network:
+        aliases:
+          - servicebus-emulator
+
+  mssql:
+    container_name: mssql
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-YourStr0ngP@ssword!}
+    networks:
+      aegs-network:
+        aliases:
+          - mssql
+
+networks:
+  aegs-network:
 
 volumes:
   docker:
