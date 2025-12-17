@@ -13,23 +13,35 @@ A simulator that provides endpoints to mimic the functionality of [Azure Event G
 
 ### .NET Tool (Recommended)
 
-Install as a global .NET tool:
+Requires .NET 8.0 SDK or later. Supports .NET 8.0, 9.0, and 10.0.
+
+#### Global Install
+
+Install once, use from anywhere:
 
 ```bash
 dotnet tool install -g AzureEventGridSimulator
-```
-
-Then run with:
-
-```bash
 azure-eventgrid-simulator
 ```
 
-To update to the latest version:
+To update: `dotnet tool update -g AzureEventGridSimulator`
+
+#### Local Install (Project-level)
+
+Install per-project for team consistency and version control:
 
 ```bash
-dotnet tool update -g AzureEventGridSimulator
+# Create tool manifest if it doesn't exist
+dotnet new tool-manifest
+
+# Install the tool
+dotnet tool install AzureEventGridSimulator
+
+# Run it
+dotnet tool run azure-eventgrid-simulator
 ```
+
+The tool manifest (`.config/dotnet-tools.json`) can be committed to source control. Team members just run `dotnet tool restore` after cloning.
 
 ### Docker
 

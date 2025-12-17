@@ -44,6 +44,8 @@ public class SubscriptionSettings
 
     public Guid GetValidationCode()
     {
-        return new Guid(Encoding.UTF8.GetBytes(Endpoint).Reverse().Take(16).ToArray());
+        return new Guid(
+            Encoding.UTF8.GetBytes(Endpoint).AsEnumerable().Reverse().Take(16).ToArray()
+        );
     }
 }

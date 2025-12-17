@@ -17,7 +17,7 @@
   <Target
     Name="CSharpier"
     BeforeTargets="BeforeBuild"
-    Condition="'$(DesignTimeBuild)' != 'true' And '$(MSBuildProjectName)' == 'AzureEventGridSimulator'"
+    Condition="'$(DesignTimeBuild)' != 'true' And '$(MSBuildProjectName)' == 'AzureEventGridSimulator' And '$(TargetFramework)' == 'net10.0'"
   >
     <Exec
       Command="dotnet tool restore"

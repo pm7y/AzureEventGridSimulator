@@ -24,10 +24,14 @@ public static class KestrelServerOptionsExtensions
         if (certificateFileSpecified && certificatePasswordSpecified)
         {
             // The certificate file and password was specified.
+#if NET9_0_OR_GREATER
             certificate = X509CertificateLoader.LoadPkcs12FromFile(
                 certificateFile,
                 certificatePassword
             );
+#else
+            certificate = new X509Certificate2(certificateFile, certificatePassword);
+#endif
         }
         else if (certificateFileSpecified && !certificatePasswordSpecified)
         {
