@@ -15,7 +15,6 @@ using AzureEventGridSimulator.Infrastructure.Settings;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Hosting;
-using ILogger = Serilog.ILogger;
 
 [assembly: InternalsVisibleTo("AzureEventGridSimulator.Tests")]
 

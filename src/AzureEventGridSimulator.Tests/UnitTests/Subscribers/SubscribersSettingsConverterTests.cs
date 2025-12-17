@@ -9,6 +9,8 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Subscribers;
 [Trait("Category", "unit")]
 public class SubscribersSettingsConverterTests
 {
+    private static readonly string[] _expected = ["Http1", "Http2", "SB1"];
+
     [Fact]
     public void LegacyArrayFormat_ShouldDeserializeAsHttpSubscribers()
     {
@@ -295,8 +297,6 @@ public class SubscribersSettingsConverterTests
         settings.Topics.First().Subscribers.HttpSubscribers.ShouldBeEmpty();
         settings.Topics.First().Subscribers.ServiceBusSubscribers.ShouldBeEmpty();
     }
-
-    private static readonly string[] _expected = ["Http1", "Http2", "SB1"];
 
     [Fact]
     public void AllSubscribers_ShouldReturnCombinedList()

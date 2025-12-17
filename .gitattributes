@@ -1,0 +1,9 @@
+# Normalize line endings
+* text=auto
+
+# Shell/Docker files need LF
+*.sh text eol=lf
+Dockerfile text eol=lf
+
+# Binary files
+*.pfx binary

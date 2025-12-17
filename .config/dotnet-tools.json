@@ -8,13 +8,6 @@
         "csharpier"
       ],
       "rollForward": false
-    },
-    "azureeventgridsimulator": {
-      "version": "4.2.2",
-      "commands": [
-        "azure-eventgrid-simulator"
-      ],
-      "rollForward": false
     }
   }
 }

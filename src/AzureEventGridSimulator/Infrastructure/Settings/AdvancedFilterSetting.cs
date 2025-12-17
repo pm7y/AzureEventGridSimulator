@@ -35,6 +35,8 @@ public class AdvancedFilterSetting
         IsNotNull,
     }
 
+    private static readonly string[] values = ["null"];
+
     [JsonPropertyName("operatorType")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public AdvancedFilterOperatorType OperatorType { get; set; }
@@ -47,8 +49,6 @@ public class AdvancedFilterSetting
 
     [JsonPropertyName("values")]
     public ICollection<object> Values { get; set; }
-
-    private static readonly string[] values = ["null"];
 
     internal void Validate()
     {

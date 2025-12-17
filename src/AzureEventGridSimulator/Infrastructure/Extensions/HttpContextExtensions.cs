@@ -21,14 +21,15 @@ public static class HttpContextExtensions
             string code
         )
         {
-            var error = new ErrorMessage(statusCode, errorMessage, code);
-
             context.Response.Headers[HeaderNames.ContentType] = "application/json";
 
             context.Response.StatusCode = (int)statusCode;
 
             await context.Response.WriteAsync(
-                JsonSerializer.Serialize(error, new JsonSerializerOptions { WriteIndented = true })
+                JsonSerializer.Serialize(
+                    new ErrorMessage(statusCode, errorMessage, code),
+                    new JsonSerializerOptions { WriteIndented = true }
+                )
             );
         }
     }
