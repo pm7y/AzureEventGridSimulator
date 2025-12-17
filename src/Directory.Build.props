@@ -32,4 +32,18 @@
       StandardOutputImportance="low"
     />
   </Target>
+
+  <Target
+    Name="ConfigureGitHooks"
+    BeforeTargets="BeforeBuild"
+    Condition="'$(DesignTimeBuild)' != 'true' And '$(MSBuildProjectName)' == 'AzureEventGridSimulator' And '$(TargetFramework)' == 'net10.0' And Exists('$(MSBuildThisFileDirectory)../.git') And '$(CI)' != 'true'"
+  >
+    <Exec
+      Command="git config core.hooksPath .githooks"
+      WorkingDirectory="$(MSBuildThisFileDirectory).."
+      StandardOutputImportance="low"
+      StandardErrorImportance="low"
+      ContinueOnError="true"
+    />
+  </Target>
 </Project>

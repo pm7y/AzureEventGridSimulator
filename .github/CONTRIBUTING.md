@@ -34,6 +34,7 @@ Thank you for your interest in contributing to Azure Event Grid Simulator! This 
    ```bash
    dotnet test src/AzureEventGridSimulator.sln
    ```
+Git hooks are configured automatically on first build to validate commit messages follow conventional commit format.
 
 ## Code Style
 
