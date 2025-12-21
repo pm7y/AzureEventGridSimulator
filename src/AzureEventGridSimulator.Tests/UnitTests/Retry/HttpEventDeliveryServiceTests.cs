@@ -276,6 +276,7 @@ public class HttpEventDeliveryServiceTests : IDisposable
         private readonly Action<HttpRequestHeaders> _captureHeaders;
         private readonly Exception _exception;
         private readonly Action _responseAction;
+        private readonly List<HttpResponseMessage> _responses = [];
         private readonly HttpStatusCode _statusCode;
 
         public MockHttpMessageHandler(
@@ -304,13 +305,29 @@ public class HttpEventDeliveryServiceTests : IDisposable
                 throw _exception;
             }
 
-            return Task.FromResult(
-                new HttpResponseMessage(_statusCode)
+            var response = new HttpResponseMessage(_statusCode)
+            {
+                Content = new StringContent(""),
+                ReasonPhrase = _statusCode.ToString(),
+            };
+            _responses.Add(response);
+
+            return Task.FromResult(response);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                foreach (var response in _responses)
                 {
-                    Content = new StringContent(""),
-                    ReasonPhrase = _statusCode.ToString(),
+                    response.Dispose();
                 }
-            );
+
+                _responses.Clear();
+            }
+
+            base.Dispose(disposing);
         }
     }
 }
