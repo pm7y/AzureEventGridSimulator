@@ -34,6 +34,13 @@ public class SendNotificationEventsToSubscriberCommandHandler(
 
         var allSubscribers = request.Topic.Subscribers.All.ToList();
 
+        logger.LogDebug(
+            "Topic '{TopicName}' has {Count} subscriber(s): {Subscribers}",
+            request.Topic.Name,
+            allSubscribers.Count,
+            string.Join(", ", allSubscribers.Select(s => $"{s.Name} ({s.SubscriberType})"))
+        );
+
         if (allSubscribers.Count == 0)
         {
             logger.LogWarning(

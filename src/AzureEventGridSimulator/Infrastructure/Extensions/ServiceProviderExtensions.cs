@@ -13,7 +13,7 @@ public static class ServiceProviderExtensions
 
         public IEnumerable<TopicSettings> EnabledTopics()
         {
-            return SimulatorSettings(provider).Topics.Where(o => !o.Disabled);
+            return provider.SimulatorSettings().Topics.Where(o => !o.Disabled);
         }
     }
 }

@@ -12,7 +12,9 @@ of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) to
 with the `Microsoft.Azure.EventGrid` client library. Both the `EventGrid` schema and the `CloudEvents v1.0` schema are
 supported.
 
-> **Note:** This simulator is intended for **local development and testing only**. It is not designed for production use. For production workloads, use the official [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) service.
+> **Note:** This simulator is intended for **local development and testing only**. It is not designed for production
+> use. For production workloads, use the
+> official [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) service.
 
 ## Installation
 
@@ -98,11 +100,15 @@ An example of one topic with one subscriber is shown below.
 | `serviceBusSharedAccessKeyName` | (Optional) Default shared access key name for Service Bus.                                                                                                         |
 | `serviceBusSharedAccessKey`     | (Optional) Default shared access key for Service Bus.                                                                                                              |
 | `storageQueueConnectionString`  | (Optional) Default Storage Queue connection string for all Storage Queue subscribers in this topic. Subscribers can override with their own.                       |
+| `eventHubConnectionString`      | (Optional) Default Event Hub connection string for all Event Hub subscribers in this topic. Subscribers can override with their own.                               |
+| `eventHubNamespace`             | (Optional) Default Event Hub namespace (without `.servicebus.windows.net`). Use with `eventHubSharedAccessKeyName` and `eventHubSharedAccessKey`.                  |
+| `eventHubSharedAccessKeyName`   | (Optional) Default shared access key name for Event Hub.                                                                                                           |
+| `eventHubSharedAccessKey`       | (Optional) Default shared access key for Event Hub.                                                                                                                |
 
 ### Subscriber Settings
 
-The simulator supports three subscriber types: **HTTP webhooks**, **Azure Service Bus** (queues and topics), and **Azure
-Storage Queues**.
+The simulator supports four subscriber types: **HTTP webhooks**, **Azure Service Bus** (queues and topics), **Azure
+Storage Queues**, and **Azure Event Hubs**.
 
 #### Grouped Format (Recommended)
 
@@ -127,6 +133,13 @@ Storage Queues**.
         "name": "StorageQueueSubscription",
         "connectionString": "DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net",
         "queueName": "my-queue"
+      }
+    ],
+    "eventHub": [
+      {
+        "name": "EventHubSubscription",
+        "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=...;SharedAccessKey=...",
+        "eventHubName": "my-event-hub"
       }
     ]
   }
@@ -214,6 +227,31 @@ You can add custom application properties to Service Bus messages using static o
 | `retryPolicy`      | (Optional) Retry policy settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                        |
 | `deadLetter`       | (Optional) Dead-letter settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                         |
 
+#### Event Hub Subscriber Settings
+
+| Setting               | Description                                                                                                                                   |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`                | The name of the subscriber.                                                                                                                   |
+| `connectionString`    | The Event Hub connection string. Can be omitted if `eventHubConnectionString` is set at the topic level.                                      |
+| `namespace`           | The Event Hub namespace (without `.servicebus.windows.net` suffix). Alternative to `connectionString`. Can inherit from topic-level settings. |
+| `sharedAccessKeyName` | The shared access key name (e.g., `RootManageSharedAccessKey`). Used with `namespace`.                                                        |
+| `sharedAccessKey`     | The shared access key. Used with `namespace`.                                                                                                 |
+| `eventHubName`        | The name of the Event Hub to send events to. (Required)                                                                                       |
+| `deliverySchema`      | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                                                       |
+| `properties`          | (Optional) Custom delivery properties to add to Event Hub messages. See Service Bus Delivery Properties above for format.                     |
+| `filter`              | (Optional) Event filtering configuration. See [Filtering Events](#filtering-events) section.                                                  |
+| `retryPolicy`         | (Optional) Retry policy settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                                                     |
+| `deadLetter`          | (Optional) Dead-letter settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                                                      |
+
+Event Hub messages include standard Event Grid headers as properties:
+
+- `aeg-event-type`: Always "Notification"
+- `aeg-subscription-name`: The subscriber name (uppercase)
+- `aeg-delivery-count`: The delivery attempt number
+- `aeg-output-event-id`: The event ID
+- `aeg-data-version`: The event data version (EventGrid schema only)
+- `aeg-metadata-version`: Always "1" (EventGrid schema only)
+
 #### Complete Example
 
 ```json
@@ -225,6 +263,7 @@ You can add custom application properties to Service Bus messages using static o
       "key": "TheLocal+DevelopmentKey=",
       "serviceBusConnectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=...",
       "storageQueueConnectionString": "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=...;EndpointSuffix=core.windows.net",
+      "eventHubConnectionString": "Endpoint=sb://my-eventhub-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=...",
       "subscribers": {
         "http": [
           {
@@ -252,6 +291,17 @@ You can add custom application properties to Service Bus messages using static o
             "name": "OrdersStorageQueueSubscription",
             "queueName": "orders-archive"
           }
+        ],
+        "eventHub": [
+          {
+            "name": "OrdersEventHubSubscription",
+            "eventHubName": "orders-events",
+            "deliverySchema": "CloudEventV1_0",
+            "properties": {
+              "OrderId": { "type": "dynamic", "value": "data.orderId" },
+              "Region": { "type": "static", "value": "west-us" }
+            }
+          }
         ]
       }
     }
@@ -259,7 +309,8 @@ You can add custom application properties to Service Bus messages using static o
 }
 ```
 
-Note: The `serviceBus` and `storageQueue` subscribers above inherit their connection strings from the topic-level
+Note: The `serviceBus`, `storageQueue`, and `eventHub` subscribers above inherit their connection strings from the
+topic-level
 settings. Subscribers can override these by specifying their own `connectionString`.
 
 ### App Settings
@@ -576,9 +627,13 @@ The Docker Compose setup includes:
 
 - **Azure Event Grid Simulator** - The main simulator
 - **Azure Service Bus Emulator** - For testing Service Bus subscribers locally
+- **Azure Event Hubs Emulator** - For testing Event Hub subscribers locally
+- **Azurite** - Azure Storage emulator (required by Event Hubs emulator, also for Storage Queue subscribers)
 - **SQL Server** - Required by the Service Bus emulator
+- **Seq** - Structured log viewer (accessible at http://localhost:8081)
 
-See `docker/appsettings.docker.json` for an example configuration with both HTTP and Service Bus subscribers.
+See `docker/appsettings.docker.json` for an example configuration with HTTP, Service Bus, Storage Queue, and Event Hub
+subscribers.
 
 ## Using the Simulator
 
@@ -775,5 +830,4 @@ Some features that could be added if there was a need for them:
 
 - Certificate configuration in `appsettings.json`.
 - Subscriber token auth.
-- Azure Event Hub subscriber support.
 - Web-based console for admin stats etc.

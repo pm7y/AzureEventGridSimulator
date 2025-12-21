@@ -36,6 +36,11 @@ public enum DeliveryOutcome
     StorageQueueError,
 
     /// <summary>
+    /// Error sending to Event Hub.
+    /// </summary>
+    EventHubError,
+
+    /// <summary>
     /// Request was cancelled.
     /// </summary>
     Cancelled,

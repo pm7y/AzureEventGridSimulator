@@ -66,6 +66,11 @@ public class SimulatorSettings
             {
                 subscriber.ParentTopic = topic;
             }
+
+            foreach (var subscriber in topic.Subscribers.EventHubSubscribers)
+            {
+                subscriber.ParentTopic = topic;
+            }
         }
 
         // Validate each subscriber

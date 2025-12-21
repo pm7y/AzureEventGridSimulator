@@ -104,6 +104,28 @@ public class Program
 
             await mediator.Send(new ValidateAllSubscriptionsCommand());
 
+            // Log all configured subscribers
+            foreach (var topic in simulatorSettings.Topics.Where(t => !t.Disabled))
+            {
+                var allSubscribers = topic.Subscribers.All.ToList();
+                Log.Information(
+                    "Topic '{TopicName}' (port {Port}) has {Count} subscriber(s)",
+                    topic.Name,
+                    topic.Port,
+                    allSubscribers.Count
+                );
+
+                foreach (var sub in allSubscribers)
+                {
+                    Log.Information(
+                        "  - {SubscriberName} ({SubscriberType}){Disabled}",
+                        sub.Name,
+                        sub.SubscriberType,
+                        sub.Disabled ? " [DISABLED]" : ""
+                    );
+                }
+            }
+
             Log.Information("It's alive !");
         }
         catch (Exception e)
@@ -231,6 +253,7 @@ public class Program
         builder.Services.AddSingleton<DeliveryPropertyResolver>();
         builder.Services.AddSingleton<ServiceBusEventDeliveryService>();
         builder.Services.AddSingleton<StorageQueueEventDeliveryService>();
+        builder.Services.AddSingleton<EventHubEventDeliveryService>();
         builder.Services.AddSingleton<HttpEventDeliveryService>();
 
         // Register retry and dead-letter services

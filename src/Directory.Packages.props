@@ -15,6 +15,7 @@
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.0.0" />
     <!-- Azure -->
     <PackageVersion Include="Azure.Messaging.EventGrid" Version="5.0.0" />
+    <PackageVersion Include="Azure.Messaging.EventHubs" Version="5.12.2" />
     <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
     <PackageVersion Include="Azure.Storage.Queues" Version="12.24.0" />
     <!-- Testing -->
