@@ -26,6 +26,12 @@ public class SubscribersSettings
     public StorageQueueSubscriberSettings[] StorageQueue { get; set; } = [];
 
     /// <summary>
+    /// Gets or sets Azure Event Hub subscribers.
+    /// </summary>
+    [JsonPropertyName("eventHub")]
+    public EventHubSubscriberSettings[] EventHub { get; set; } = [];
+
+    /// <summary>
     /// Gets all subscribers of all types.
     /// </summary>
     [JsonIgnore]
@@ -33,7 +39,8 @@ public class SubscribersSettings
         (Http ?? [])
             .Cast<ISubscriberSettings>()
             .Concat(ServiceBus ?? [])
-            .Concat(StorageQueue ?? []);
+            .Concat(StorageQueue ?? [])
+            .Concat(EventHub ?? []);
 
     /// <summary>
     /// Gets all HTTP subscribers.
@@ -53,6 +60,12 @@ public class SubscribersSettings
     [JsonIgnore]
     public IEnumerable<StorageQueueSubscriberSettings> StorageQueueSubscribers =>
         StorageQueue ?? [];
+
+    /// <summary>
+    /// Gets all Event Hub subscribers.
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<EventHubSubscriberSettings> EventHubSubscribers => EventHub ?? [];
 
     /// <summary>
     /// Gets whether there are any subscribers configured.

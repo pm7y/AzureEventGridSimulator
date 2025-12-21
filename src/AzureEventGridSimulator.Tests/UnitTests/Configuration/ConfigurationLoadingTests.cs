@@ -1,5 +1,7 @@
+using System.Text;
 using System.Text.Json;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using Microsoft.Extensions.Configuration;
 using Shouldly;
 using Xunit;
 
@@ -9,7 +11,54 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Configuration;
 public class ConfigurationLoadingTests
 {
     [Fact]
-    public void TestConfigurationLoad()
+    public void IConfigurationBind_ShouldLoadEventHubSubscribers()
+    {
+        const string json = """
+            {
+                "topics": [{
+                    "name": "TestTopic",
+                    "port": 60101,
+                    "key": "TheLocal+DevelopmentKey=",
+                    "subscribers": {
+                        "http": [{
+                            "name": "HttpSubscriber",
+                            "endpoint": "https://example.com/webhook",
+                            "disableValidation": true
+                        }],
+                        "eventHub": [{
+                            "name": "EventHubSubscriber",
+                            "connectionString": "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=testkey",
+                            "eventHubName": "test-hub"
+                        }]
+                    }
+                }]
+            }
+            """;
+
+        var configuration = new ConfigurationBuilder()
+            .AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(json)))
+            .Build();
+
+        var settings = new SimulatorSettings();
+        configuration.Bind(settings);
+
+        settings.ShouldNotBeNull();
+        settings.Topics.ShouldNotBeNull();
+        settings.Topics.Length.ShouldBe(1);
+
+        var topic = settings.Topics.First();
+        topic.Subscribers.HttpSubscribers.Count().ShouldBe(1);
+        topic.Subscribers.HttpSubscribers.First().Name.ShouldBe("HttpSubscriber");
+
+        topic.Subscribers.EventHubSubscribers.Count().ShouldBe(1);
+        var eventHubSubscriber = topic.Subscribers.EventHubSubscribers.First();
+        eventHubSubscriber.Name.ShouldBe("EventHubSubscriber");
+        eventHubSubscriber.EventHubName.ShouldBe("test-hub");
+        eventHubSubscriber.ConnectionString.ShouldContain("sb://test.servicebus.windows.net");
+    }
+
+    [Fact]
+    public void JsonDeserialize_LegacyFormat_ShouldLoadHttpSubscribers()
     {
         // This test uses the legacy format (array of subscribers) to verify backwards compatibility
         const string json = """

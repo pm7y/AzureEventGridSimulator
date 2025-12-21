@@ -74,4 +74,30 @@ public class TopicSettings
     /// </summary>
     [JsonPropertyName("storageQueueConnectionString")]
     public string StorageQueueConnectionString { get; set; }
+
+    /// <summary>
+    /// Gets or sets the default Event Hub connection string for subscribers.
+    /// Subscribers can override this by specifying their own connection string or namespace credentials.
+    /// </summary>
+    [JsonPropertyName("eventHubConnectionString")]
+    public string EventHubConnectionString { get; set; }
+
+    /// <summary>
+    /// Gets or sets the default Event Hub namespace (without .servicebus.windows.net suffix).
+    /// Used with EventHubSharedAccessKeyName and EventHubSharedAccessKey to build a connection string.
+    /// </summary>
+    [JsonPropertyName("eventHubNamespace")]
+    public string EventHubNamespace { get; set; }
+
+    /// <summary>
+    /// Gets or sets the default Event Hub shared access key name.
+    /// </summary>
+    [JsonPropertyName("eventHubSharedAccessKeyName")]
+    public string EventHubSharedAccessKeyName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the default Event Hub shared access key.
+    /// </summary>
+    [JsonPropertyName("eventHubSharedAccessKey")]
+    public string EventHubSharedAccessKey { get; set; }
 }

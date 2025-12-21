@@ -23,6 +23,7 @@ services:
 
     depends_on:
       - servicebus-emulator
+      - eventhubs-emulator
       - azurite
       - seq
 
@@ -84,6 +85,27 @@ services:
       aegs-network:
         aliases:
           - servicebus-emulator
+
+  # Azure Event Hubs Emulator
+  # See: https://learn.microsoft.com/en-us/azure/event-hubs/test-locally-with-event-hub-emulator
+  eventhubs-emulator:
+    container_name: eventhubs-emulator
+    image: mcr.microsoft.com/azure-messaging/eventhubs-emulator:latest
+    pull_policy: always
+    volumes:
+      - ./eventhub-config.json:/Eventhubs_Emulator/ConfigFiles/Config.json
+    ports:
+      - "5673:5672"   # AMQP port (5673 external to avoid conflict with Service Bus)
+    environment:
+      BLOB_SERVER: azurite
+      METADATA_SERVER: azurite
+      ACCEPT_EULA: "Y"
+    depends_on:
+      - azurite
+    networks:
+      aegs-network:
+        aliases:
+          - eventhubs-emulator
 
   mssql:
     container_name: mssql

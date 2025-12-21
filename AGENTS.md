@@ -14,7 +14,7 @@ Azure Event Grid Simulator is a local development simulator that provides HTTPS 
 **Key Features:**
 
 - Multi-topic support with individual HTTPS endpoints
-- HTTP webhook, Azure Service Bus, and Storage Queue subscriber delivery
+- HTTP webhook, Azure Service Bus, Storage Queue, and Event Hub subscriber delivery
 - Azure Event Grid-compatible retry with exponential backoff
 - Dead-letter support with local JSON file output
 - Event filtering (subject-based and advanced)
@@ -50,7 +50,7 @@ dotnet dev-certs https --trust
 The simulator uses `appsettings.json` for topic and subscriber configuration. Key settings:
 
 - **Topics**: Each topic requires `name`, `port`, and optional `key` for authentication
-- **Subscribers**: Supports HTTP webhooks, Azure Service Bus (queues/topics), and Storage Queues
+- **Subscribers**: Supports HTTP webhooks, Azure Service Bus (queues/topics), Storage Queues, and Event Hubs
 - **Filtering**: Event type, subject-based, and advanced filtering per subscriber
 - **Retry Policy**: Configurable per subscriber (maxDeliveryAttempts, eventTimeToLiveInMinutes, enabled)
 - **Dead-Letter**: Configurable per subscriber (enabled, folderPath for JSON output)
@@ -127,7 +127,7 @@ docker-compose -f /src/AzureEventGridSimulator/docker-compose.yml down
 │   │   ├── Commands/                  # Command handlers
 │   │   ├── Entities/                  # Domain models (including PendingDelivery, DeadLetterEvent)
 │   │   └── Services/                  # Domain services
-│   │       ├── Delivery/              # Event delivery services (HTTP, ServiceBus, StorageQueue)
+│   │       ├── Delivery/              # Event delivery services (HTTP, ServiceBus, StorageQueue, EventHub)
 │   │       └── Retry/                 # Retry infrastructure (queue, scheduler, dead-letter)
 │   ├── Infrastructure/                # Cross-cutting concerns
 │   │   ├── Extensions/                # Extension methods
@@ -259,12 +259,33 @@ Edit `appsettings.json` or `docker/appsettings.docker.json`:
             "endpoint": "https://example.com/webhook",
             "disableValidation": false
           }
+        ],
+        "eventHub": [
+          {
+            "name": "MyEventHubSubscriber",
+            "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            "eventHubName": "my-event-hub",
+            "deliverySchema": "CloudEventV1_0",
+            "properties": {
+              "Label": { "type": "dynamic", "value": "Subject" },
+              "Region": { "type": "static", "value": "west-us" }
+            }
+          }
         ]
       }
     }
   ]
 }
 ```
+
+Event Hub subscribers support:
+- **connectionString**: Full connection string (or use namespace/sharedAccessKeyName/sharedAccessKey separately)
+- **eventHubName**: Target Event Hub name (required)
+- **deliverySchema**: Output schema (EventGridSchema or CloudEventV1_0)
+- **properties**: Custom properties added to EventData (static or dynamic values from event fields)
+- **filter**: Subject-based and advanced event filtering
+- **retryPolicy**: Retry configuration (maxDeliveryAttempts, eventTimeToLiveInMinutes)
+- **deadLetter**: Dead-letter configuration for failed deliveries
 
 ### Testing Event Publishing
 

@@ -35,7 +35,7 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
             };
         }
 
-        // New format: object with http, serviceBus, storageQueue arrays
+        // New format: object with http, serviceBus, storageQueue, eventHub arrays
         if (reader.TokenType == JsonTokenType.StartObject)
         {
             var result = new SubscribersSettings();
@@ -66,6 +66,15 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
                 result.StorageQueue =
                     JsonSerializer.Deserialize<StorageQueueSubscriberSettings[]>(
                         storageQueueElement.GetRawText(),
+                        options
+                    ) ?? [];
+            }
+
+            if (root.TryGetProperty("eventHub", out var eventHubElement))
+            {
+                result.EventHub =
+                    JsonSerializer.Deserialize<EventHubSubscriberSettings[]>(
+                        eventHubElement.GetRawText(),
                         options
                     ) ?? [];
             }
@@ -102,6 +111,12 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
         {
             writer.WritePropertyName("storageQueue");
             JsonSerializer.Serialize(writer, value.StorageQueue, options);
+        }
+
+        if (value.EventHub?.Length > 0)
+        {
+            writer.WritePropertyName("eventHub");
+            JsonSerializer.Serialize(writer, value.EventHub, options);
         }
 
         writer.WriteEndObject();

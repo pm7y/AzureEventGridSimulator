@@ -161,6 +161,11 @@ public class RetryDeliveryBackgroundService(
                 delivery,
                 cancellationToken
             ),
+            EventHubSubscriberSettings => await DeliverToEventHubAsync(
+                scope,
+                delivery,
+                cancellationToken
+            ),
             _ => new DeliveryResult(
                 false,
                 DeliveryOutcome.NetworkError,
@@ -237,6 +242,35 @@ public class RetryDeliveryBackgroundService(
             return new DeliveryResult(
                 false,
                 DeliveryOutcome.StorageQueueError,
+                ErrorMessage: ex.Message
+            );
+        }
+    }
+
+    /// <summary>
+    /// Delivers to Event Hub.
+    /// </summary>
+    private async Task<DeliveryResult> DeliverToEventHubAsync(
+        IServiceScope scope,
+        PendingDelivery delivery,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            var service = scope.ServiceProvider.GetRequiredService<EventHubEventDeliveryService>();
+            return await service.DeliverAsync(delivery, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Event Hub delivery failed for event {EventId}",
+                delivery.Event.Id
+            );
+            return new DeliveryResult(
+                false,
+                DeliveryOutcome.EventHubError,
                 ErrorMessage: ex.Message
             );
         }
