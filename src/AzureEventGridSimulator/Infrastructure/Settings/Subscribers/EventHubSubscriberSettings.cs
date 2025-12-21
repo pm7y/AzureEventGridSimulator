@@ -85,16 +85,13 @@ public class EventHubSubscriberSettings : ISubscriberSettings
             }
 
             // Fall back to topic-level namespace components
-            if (HasTopicNamespaceCredentials())
+            if (HasTopicNamespaceCredentials() && ParentTopic != null)
             {
-                if (ParentTopic != null)
-                {
-                    return BuildConnectionString(
-                        ParentTopic.EventHubNamespace,
-                        ParentTopic.EventHubSharedAccessKeyName,
-                        ParentTopic.EventHubSharedAccessKey
-                    );
-                }
+                return BuildConnectionString(
+                    ParentTopic.EventHubNamespace,
+                    ParentTopic.EventHubSharedAccessKeyName,
+                    ParentTopic.EventHubSharedAccessKey
+                );
             }
 
             // No connection string available - will fail validation

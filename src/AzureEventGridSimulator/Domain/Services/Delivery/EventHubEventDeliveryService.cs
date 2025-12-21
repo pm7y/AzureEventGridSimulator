@@ -261,7 +261,7 @@ public class EventHubEventDeliveryService(
                     "SharedAccessKey=",
                     StringComparison.OrdinalIgnoreCase
                 );
-                if (keyIndex > 0)
+                if (keyIndex >= 0)
                 {
                     connectionForLogging =
                         connectionForLogging[..(keyIndex.Value + 16)] + "***REDACTED***";
