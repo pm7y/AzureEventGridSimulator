@@ -1,4 +1,4 @@
-name: Docker Release
+name: "AEGS: Docker Release"
 
 on:
   release:
@@ -25,7 +25,7 @@ env:
 
 jobs:
   build-and-push:
-    name: Build and Push Docker Images
+    name: "AEGS: Docker Build & Push"
     runs-on: ubuntu-latest
 
     steps:
