@@ -35,9 +35,8 @@ public class ConfigurationLoadingTests
             }
             """;
 
-        var configuration = new ConfigurationBuilder()
-            .AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(json)))
-            .Build();
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+        var configuration = new ConfigurationBuilder().AddJsonStream(stream).Build();
 
         var settings = new SimulatorSettings();
         configuration.Bind(settings);
