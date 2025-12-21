@@ -13,9 +13,10 @@ using Xunit;
 namespace AzureEventGridSimulator.Tests.UnitTests.Retry;
 
 [Trait("Category", "unit")]
-public class HttpEventDeliveryServiceTests
+public class HttpEventDeliveryServiceTests : IDisposable
 {
     private readonly EventSchemaFormatterFactory _formatterFactory;
+    private readonly List<HttpClient> _httpClients = [];
     private readonly ILogger<HttpEventDeliveryService> _logger;
 
     public HttpEventDeliveryServiceTests()
@@ -25,6 +26,16 @@ public class HttpEventDeliveryServiceTests
             new EventGridSchemaFormatter(),
             new CloudEventSchemaFormatter()
         );
+    }
+
+    public void Dispose()
+    {
+        foreach (var client in _httpClients)
+        {
+            client.Dispose();
+        }
+
+        _httpClients.Clear();
     }
 
     [Theory]
@@ -194,7 +205,7 @@ public class HttpEventDeliveryServiceTests
         result.ErrorMessage.ShouldContain("No such host");
     }
 
-    private static IHttpClientFactory CreateMockHttpClientFactory(
+    private IHttpClientFactory CreateMockHttpClientFactory(
         HttpStatusCode statusCode = HttpStatusCode.OK,
         Exception throwException = null,
         Action responseAction = null,
@@ -208,6 +219,7 @@ public class HttpEventDeliveryServiceTests
             captureHeaders
         );
         var httpClient = new HttpClient(handler);
+        _httpClients.Add(httpClient);
 
         var factory = Substitute.For<IHttpClientFactory>();
         factory.CreateClient(Arg.Any<string>()).Returns(httpClient);
@@ -264,6 +276,7 @@ public class HttpEventDeliveryServiceTests
         private readonly Action<HttpRequestHeaders> _captureHeaders;
         private readonly Exception _exception;
         private readonly Action _responseAction;
+        private readonly List<HttpResponseMessage> _responses = [];
         private readonly HttpStatusCode _statusCode;
 
         public MockHttpMessageHandler(
@@ -292,13 +305,29 @@ public class HttpEventDeliveryServiceTests
                 throw _exception;
             }
 
-            return Task.FromResult(
-                new HttpResponseMessage(_statusCode)
+            var response = new HttpResponseMessage(_statusCode)
+            {
+                Content = new StringContent(""),
+                ReasonPhrase = _statusCode.ToString(),
+            };
+            _responses.Add(response);
+
+            return Task.FromResult(response);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                foreach (var response in _responses)
                 {
-                    Content = new StringContent(""),
-                    ReasonPhrase = _statusCode.ToString(),
+                    response.Dispose();
                 }
-            );
+
+                _responses.Clear();
+            }
+
+            base.Dispose(disposing);
         }
     }
 }

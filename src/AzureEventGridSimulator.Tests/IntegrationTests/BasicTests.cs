@@ -42,7 +42,7 @@ public class BasicTests(IntegrationContextFixture factory)
         );
 
         // Act
-        var jsonContent = new StringContent(json, Encoding.UTF8, "application/json");
+        using var jsonContent = new StringContent(json, Encoding.UTF8, "application/json");
         var response = await client.PostAsync("/api/events", jsonContent);
 
         // Assert

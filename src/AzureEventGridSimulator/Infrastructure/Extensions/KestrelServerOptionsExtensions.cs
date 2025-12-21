@@ -30,7 +30,7 @@ public static class KestrelServerOptionsExtensions
             certificate = new X509Certificate2(certificateFile, certificatePassword);
 #endif
         }
-        else if (certificateFileSpecified && !certificatePasswordSpecified)
+        else if (certificateFileSpecified)
         {
             // The certificate file was specified but the password wasn't.
             throw new InvalidOperationException("A certificate with a password is required.");
