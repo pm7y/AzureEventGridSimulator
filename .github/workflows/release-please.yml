@@ -1,4 +1,4 @@
-name: Release Please
+name: "AEGS: Release Please"
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   release-please:
-    name: Release Please
+    name: "AEGS: Release Please"
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
@@ -29,7 +29,7 @@ jobs:
           manifest-file: .github/.release-please-manifest.json
 
   trigger-release-workflows:
-    name: Trigger Release Workflows
+    name: "AEGS: Trigger Release Workflows"
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest

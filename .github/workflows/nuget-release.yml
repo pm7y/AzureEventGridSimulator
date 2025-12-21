@@ -1,4 +1,4 @@
-name: NuGet Release
+name: "AEGS: NuGet Release"
 
 on:
   release:
@@ -29,7 +29,7 @@ env:
 
 jobs:
   publish-nuget:
-    name: Publish to NuGet
+    name: "AEGS: Publish to NuGet"
     runs-on: ubuntu-latest
 
     steps:
