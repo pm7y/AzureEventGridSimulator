@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.4.0](https://github.com/pm7y/AzureEventGridSimulator/compare/4.3.0...4.4.0) (2025-12-21)
+
+
+### Features
+
+* Add Event Hub Subscriber support ([#227](https://github.com/pm7y/AzureEventGridSimulator/issues/227)) ([c164b62](https://github.com/pm7y/AzureEventGridSimulator/commit/c164b620c87aba090b6a4566a2115c068221b006))
+
+
+### Bug Fixes
+
+* Code scanning alerts ([#228](https://github.com/pm7y/AzureEventGridSimulator/issues/228)) ([07bc08b](https://github.com/pm7y/AzureEventGridSimulator/commit/07bc08b6e2a0592c98d0a49de5b713d08344a40d))
+* Docker.md path fix ([#223](https://github.com/pm7y/AzureEventGridSimulator/issues/223)) ([d732346](https://github.com/pm7y/AzureEventGridSimulator/commit/d732346179da606ac976ec9f37b331b664001bd8))
+
 ## [4.3.0](https://github.com/pm7y/AzureEventGridSimulator/compare/4.2.2...4.3.0) (2025-12-17)
 
 
