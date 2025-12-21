@@ -1,8 +1,12 @@
 name: Security Analysis
 
 on:
+  workflow_dispatch:
   push:
-    branches: [master, main]
+    branches:
+      - master
+      - main
+      - "release-please--**"
   pull_request:
     branches: [master, main]
   schedule:
