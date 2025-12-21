@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using AzureEventGridSimulator.Infrastructure.Settings;
-using Microsoft.Extensions.Configuration;
 using Shouldly;
 using Xunit;
 

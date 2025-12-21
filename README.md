@@ -12,7 +12,9 @@ of [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) to
 with the `Microsoft.Azure.EventGrid` client library. Both the `EventGrid` schema and the `CloudEvents v1.0` schema are
 supported.
 
-> **Note:** This simulator is intended for **local development and testing only**. It is not designed for production use. For production workloads, use the official [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) service.
+> **Note:** This simulator is intended for **local development and testing only**. It is not designed for production
+> use. For production workloads, use the
+> official [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) service.
 
 ## Installation
 
@@ -227,21 +229,22 @@ You can add custom application properties to Service Bus messages using static o
 
 #### Event Hub Subscriber Settings
 
-| Setting               | Description                                                                                                                                 |
-|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| `name`                | The name of the subscriber.                                                                                                                 |
-| `connectionString`    | The Event Hub connection string. Can be omitted if `eventHubConnectionString` is set at the topic level.                                    |
+| Setting               | Description                                                                                                                                   |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`                | The name of the subscriber.                                                                                                                   |
+| `connectionString`    | The Event Hub connection string. Can be omitted if `eventHubConnectionString` is set at the topic level.                                      |
 | `namespace`           | The Event Hub namespace (without `.servicebus.windows.net` suffix). Alternative to `connectionString`. Can inherit from topic-level settings. |
-| `sharedAccessKeyName` | The shared access key name (e.g., `RootManageSharedAccessKey`). Used with `namespace`.                                                      |
-| `sharedAccessKey`     | The shared access key. Used with `namespace`.                                                                                               |
-| `eventHubName`        | The name of the Event Hub to send events to. (Required)                                                                                     |
-| `deliverySchema`      | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                                                     |
-| `properties`          | (Optional) Custom delivery properties to add to Event Hub messages. See Service Bus Delivery Properties above for format.                  |
-| `filter`              | (Optional) Event filtering configuration. See [Filtering Events](#filtering-events) section.                                               |
-| `retryPolicy`         | (Optional) Retry policy settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                                                  |
-| `deadLetter`          | (Optional) Dead-letter settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                                                   |
+| `sharedAccessKeyName` | The shared access key name (e.g., `RootManageSharedAccessKey`). Used with `namespace`.                                                        |
+| `sharedAccessKey`     | The shared access key. Used with `namespace`.                                                                                                 |
+| `eventHubName`        | The name of the Event Hub to send events to. (Required)                                                                                       |
+| `deliverySchema`      | (Optional) Override the delivery schema. Values: `EventGridSchema` or `CloudEventV1_0`.                                                       |
+| `properties`          | (Optional) Custom delivery properties to add to Event Hub messages. See Service Bus Delivery Properties above for format.                     |
+| `filter`              | (Optional) Event filtering configuration. See [Filtering Events](#filtering-events) section.                                                  |
+| `retryPolicy`         | (Optional) Retry policy settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                                                     |
+| `deadLetter`          | (Optional) Dead-letter settings. See [Retry & Dead-Letter](#retry--dead-letter) section.                                                      |
 
 Event Hub messages include standard Event Grid headers as properties:
+
 - `aeg-event-type`: Always "Notification"
 - `aeg-subscription-name`: The subscriber name (uppercase)
 - `aeg-delivery-count`: The delivery attempt number
@@ -306,7 +309,8 @@ Event Hub messages include standard Event Grid headers as properties:
 }
 ```
 
-Note: The `serviceBus`, `storageQueue`, and `eventHub` subscribers above inherit their connection strings from the topic-level
+Note: The `serviceBus`, `storageQueue`, and `eventHub` subscribers above inherit their connection strings from the
+topic-level
 settings. Subscribers can override these by specifying their own `connectionString`.
 
 ### App Settings
@@ -628,7 +632,8 @@ The Docker Compose setup includes:
 - **SQL Server** - Required by the Service Bus emulator
 - **Seq** - Structured log viewer (accessible at http://localhost:8081)
 
-See `docker/appsettings.docker.json` for an example configuration with HTTP, Service Bus, Storage Queue, and Event Hub subscribers.
+See `docker/appsettings.docker.json` for an example configuration with HTTP, Service Bus, Storage Queue, and Event Hub
+subscribers.
 
 ## Using the Simulator
 
