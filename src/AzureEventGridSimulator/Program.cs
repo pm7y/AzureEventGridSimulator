@@ -6,9 +6,11 @@ using Asp.Versioning;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Domain.Services;
+using AzureEventGridSimulator.Domain.Services.Dashboard;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Domain.Services.Retry;
 using AzureEventGridSimulator.Infrastructure;
+using AzureEventGridSimulator.Infrastructure.Dashboard;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Middleware;
@@ -35,8 +37,21 @@ public class Program
                 options.GetLevel = (_, _, _) => LogEventLevel.Debug;
             });
             app.UseEventGridMiddleware();
+
+            // Conditionally enable dashboard based on settings
+            var simulatorSettings = app.Services.GetService<SimulatorSettings>();
+            if (simulatorSettings?.DashboardEnabled ?? true)
+            {
+                app.UseDashboard();
+            }
+
             app.UseRouting();
             app.MapControllers();
+
+            if (simulatorSettings?.DashboardEnabled ?? true)
+            {
+                app.MapDashboardEndpoints();
+            }
 
             await StartSimulator(app);
         }
@@ -122,6 +137,20 @@ public class Program
                         sub.Name,
                         sub.SubscriberType,
                         sub.Disabled ? " [DISABLED]" : ""
+                    );
+                }
+            }
+
+            // Log dashboard availability
+            if (simulatorSettings.DashboardEnabled)
+            {
+                var firstEnabledTopic = simulatorSettings.Topics.FirstOrDefault(t => !t.Disabled);
+                var dashboardPort = simulatorSettings.DashboardPort ?? firstEnabledTopic?.Port ?? 0;
+                if (dashboardPort > 0)
+                {
+                    Log.Information(
+                        "Dashboard available at https://localhost:{Port}/dashboard",
+                        dashboardPort
                     );
                 }
             }
@@ -260,6 +289,10 @@ public class Program
         builder.Services.AddSingleton<IDeliveryQueue, InMemoryDeliveryQueue>();
         builder.Services.AddSingleton<DeadLetterService>();
         builder.Services.AddHostedService<RetryDeliveryBackgroundService>();
+
+        // Register dashboard services
+        builder.Services.AddSingleton<EventHistoryStore>();
+        builder.Services.AddSingleton<IEventHistoryService, EventHistoryService>();
 
         var httpClientBuilder = builder.Services.AddHttpClient(nameof(AzureEventGridSimulator));
         if (configuration.GetValue<bool>("dangerousAcceptAnyServerCertificateValidator"))

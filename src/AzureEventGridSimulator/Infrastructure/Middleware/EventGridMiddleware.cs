@@ -1,8 +1,12 @@
-﻿using System.Net;
+﻿#nullable enable
+
+using System.Net;
 using System.Text.Json;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Entities.Dashboard;
 using AzureEventGridSimulator.Domain.Services;
+using AzureEventGridSimulator.Domain.Services.Dashboard;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 
@@ -17,6 +21,7 @@ public class EventGridMiddleware(RequestDelegate next)
         SasKeyValidator sasHeaderValidator,
         EventSchemaDetector schemaDetector,
         EventSchemaParserFactory parserFactory,
+        IEventHistoryService eventHistoryService,
         ILogger<EventGridMiddleware> logger
     )
     {
@@ -28,6 +33,7 @@ public class EventGridMiddleware(RequestDelegate next)
                 sasHeaderValidator,
                 schemaDetector,
                 parserFactory,
+                eventHistoryService,
                 logger
             );
             return;
@@ -45,8 +51,71 @@ public class EventGridMiddleware(RequestDelegate next)
             return;
         }
 
-        // This is the end of the line.
-        await context.WriteErrorResponse(HttpStatusCode.BadRequest, "Request not supported.", null);
+        if (IsDashboardRequest(context))
+        {
+            await next(context);
+            return;
+        }
+
+        // Ignore favicon requests - browsers request this automatically
+        if (context.Request.Path.Equals("/favicon.ico", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+
+        // This is the end of the line
+        // Only record rejections for POST requests (events are always sent via POST)
+        // GET requests for unknown paths (like source maps) should just return 404
+        if (context.Request.Method != HttpMethods.Post)
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+
+        var errorMessage = "Request not supported.";
+        var topic = simulatorSettings.Topics.FirstOrDefault(t =>
+            t.Port == context.Request.Host.Port
+        );
+        if (topic != null)
+        {
+            context.Request.EnableBuffering();
+            var rawBody = await TryReadBody(context);
+            var contentType = context.Request.Headers.ContentType.FirstOrDefault();
+            RecordRejection(
+                eventHistoryService,
+                topic.Name,
+                topic.Port,
+                HttpStatusCode.BadRequest,
+                errorMessage,
+                rawBody,
+                contentType
+            );
+        }
+
+        await context.WriteErrorResponse(HttpStatusCode.BadRequest, errorMessage, null);
+    }
+
+    private static async Task<string?> TryReadBody(HttpContext context)
+    {
+        try
+        {
+            using var reader = new StreamReader(context.Request.Body, leaveOpen: true);
+            reader.BaseStream.Seek(0, SeekOrigin.Begin);
+            return await reader.ReadToEndAsync();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static bool IsDashboardRequest(HttpContext context)
+    {
+        return context.Request.Path.StartsWithSegments(
+            "/dashboard",
+            StringComparison.OrdinalIgnoreCase
+        );
     }
 
     private async Task ValidateSubscriptionValidationRequest(HttpContext context)
@@ -72,10 +141,12 @@ public class EventGridMiddleware(RequestDelegate next)
         SasKeyValidator sasHeaderValidator,
         EventSchemaDetector schemaDetector,
         EventSchemaParserFactory parserFactory,
+        IEventHistoryService eventHistoryService,
         ILogger logger
     )
     {
         var topic = simulatorSettings.Topics.First(t => t.Port == context.Request.Host.Port);
+        var contentType = context.Request.Headers.ContentType.FirstOrDefault();
 
         //
         // Validate the key/ token supplied in the header.
@@ -106,9 +177,20 @@ public class EventGridMiddleware(RequestDelegate next)
         {
             logger.LogError("Payload is larger than the allowed maximum");
 
+            var errorMessage = "Payload is larger than the allowed maximum.";
+            RecordRejection(
+                eventHistoryService,
+                topic.Name,
+                topic.Port,
+                HttpStatusCode.RequestEntityTooLarge,
+                errorMessage,
+                requestBody,
+                contentType
+            );
+
             await context.WriteErrorResponse(
                 HttpStatusCode.RequestEntityTooLarge,
-                "Payload is larger than the allowed maximum.",
+                errorMessage,
                 null
             );
             return;
@@ -128,17 +210,35 @@ public class EventGridMiddleware(RequestDelegate next)
         catch (InvalidOperationException ex)
         {
             logger.LogError(ex, "Failed to parse events");
+
+            RecordRejection(
+                eventHistoryService,
+                topic.Name,
+                topic.Port,
+                HttpStatusCode.BadRequest,
+                ex.Message,
+                requestBody,
+                contentType
+            );
+
             await context.WriteErrorResponse(HttpStatusCode.BadRequest, ex.Message, null);
             return;
         }
 
         if (events == null || events.Length == 0)
         {
-            await context.WriteErrorResponse(
+            var errorMessage = "No events found in the request body.";
+            RecordRejection(
+                eventHistoryService,
+                topic.Name,
+                topic.Port,
                 HttpStatusCode.BadRequest,
-                "No events found in the request body.",
-                null
+                errorMessage,
+                requestBody,
+                contentType
             );
+
+            await context.WriteErrorResponse(HttpStatusCode.BadRequest, errorMessage, null);
             return;
         }
 
@@ -156,9 +256,20 @@ public class EventGridMiddleware(RequestDelegate next)
             {
                 logger.LogError("Event is larger than the allowed maximum");
 
+                var errorMessage = "Event is larger than the allowed maximum.";
+                RecordRejection(
+                    eventHistoryService,
+                    topic.Name,
+                    topic.Port,
+                    HttpStatusCode.RequestEntityTooLarge,
+                    errorMessage,
+                    requestBody,
+                    contentType
+                );
+
                 await context.WriteErrorResponse(
                     HttpStatusCode.RequestEntityTooLarge,
-                    "Event is larger than the allowed maximum.",
+                    errorMessage,
                     null
                 );
                 return;
@@ -176,6 +287,16 @@ public class EventGridMiddleware(RequestDelegate next)
         {
             logger.LogError(ex, "Event was not valid");
 
+            RecordRejection(
+                eventHistoryService,
+                topic.Name,
+                topic.Port,
+                HttpStatusCode.BadRequest,
+                ex.Message,
+                requestBody,
+                contentType
+            );
+
             await context.WriteErrorResponse(HttpStatusCode.BadRequest, ex.Message, null);
             return;
         }
@@ -185,6 +306,27 @@ public class EventGridMiddleware(RequestDelegate next)
         context.Items["DetectedSchema"] = detectedSchema;
 
         await next(context);
+    }
+
+    private static void RecordRejection(
+        IEventHistoryService eventHistoryService,
+        string topicName,
+        int topicPort,
+        HttpStatusCode statusCode,
+        string errorMessage,
+        string? rawBody,
+        string? contentType
+    )
+    {
+        var rejection = RejectedEventRecord.Create(
+            topicName,
+            topicPort,
+            statusCode,
+            errorMessage,
+            rawBody,
+            contentType
+        );
+        eventHistoryService.RecordEventRejected(rejection);
     }
 
     private async Task ValidateHealthRequest(HttpContext context)

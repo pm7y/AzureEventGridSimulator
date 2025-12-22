@@ -7,6 +7,18 @@ public class SimulatorSettings
     [JsonPropertyName("topics")]
     public TopicSettings[] Topics { get; set; } = Array.Empty<TopicSettings>();
 
+    /// <summary>
+    /// Enable or disable the dashboard. Defaults to true.
+    /// </summary>
+    [JsonPropertyName("dashboardEnabled")]
+    public bool DashboardEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Optional port for the dashboard. If not set, dashboard is served on each topic's port.
+    /// </summary>
+    [JsonPropertyName("dashboardPort")]
+    public int? DashboardPort { get; set; }
+
     public void Validate()
     {
         if (Topics.GroupBy(o => o.Port).Count() != Topics.Length)

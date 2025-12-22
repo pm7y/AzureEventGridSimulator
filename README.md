@@ -318,6 +318,8 @@ settings. Subscribers can override these by specifying their own `connectionStri
 | Setting                                        | Description                                                                                        |
 |------------------------------------------------|----------------------------------------------------------------------------------------------------|
 | `dangerousAcceptAnyServerCertificateValidator` | Set to `true` to accept any server certificate. Useful when testing with self-signed certificates. |
+| `dashboardEnabled`                             | Enable the web-based dashboard UI for viewing event history and diagnostics. Default: `true`.      |
+| `dashboardPort`                                | Optional dedicated port for the dashboard. If not set, dashboard is served on each topic's port.   |
 
 #### Subscription Validation
 
@@ -719,6 +721,67 @@ await client.PublishEventsWithHttpMessagesAsync(
     events: new List<EventGridEvent> { <your event> });
 ```
 
+## Dashboard
+
+The simulator includes an optional web-based dashboard for monitoring events and debugging issues.
+
+### Configuration
+
+The dashboard is enabled by default. To disable it, add `dashboardEnabled: false` to your `appsettings.json`:
+
+```json
+{
+  "dashboardEnabled": false,
+  "topics": [
+    ...
+  ]
+}
+```
+
+You can optionally configure a dedicated port for the dashboard:
+
+```json
+{
+  "dashboardPort": 5000,
+  "topics": [
+    ...
+  ]
+}
+```
+
+### Accessing the Dashboard
+
+The dashboard is available at `/dashboard` on any topic port. For example, if you have a topic configured on port 60101:
+
+```
+https://localhost:60101/dashboard
+```
+
+If you've configured a dedicated `dashboardPort`, use that port instead.
+
+### Features
+
+- **Event History**: View the last 100 events received by the simulator
+- **Delivery Status**: Track delivery attempts to each subscriber (Delivered, Failed, Pending, Retrying)
+- **Rejected Events**: View events that failed validation with error details and the raw request body
+- **Topic Filtering**: Filter events by topic name
+- **Auto-refresh**: Dashboard automatically refreshes every 2 seconds (can be toggled off)
+- **Clear History**: Reset all event history and statistics
+
+### Dashboard Statistics
+
+The dashboard displays real-time statistics:
+
+| Stat           | Description                                      |
+|----------------|--------------------------------------------------|
+| Total Received | Total events received since startup              |
+| In History     | Events currently in the history buffer (max 100) |
+| Delivered      | Successful deliveries to subscribers             |
+| Failed         | Failed delivery attempts                         |
+| Pending        | Deliveries in progress or awaiting retry         |
+| Rejected       | Events that failed validation (400 errors)       |
+| Active Topics  | Number of configured topics                      |
+
 ## Notes
 
 ### HTTPs
@@ -830,4 +893,3 @@ Some features that could be added if there was a need for them:
 
 - Certificate configuration in `appsettings.json`.
 - Subscriber token auth.
-- Web-based console for admin stats etc.

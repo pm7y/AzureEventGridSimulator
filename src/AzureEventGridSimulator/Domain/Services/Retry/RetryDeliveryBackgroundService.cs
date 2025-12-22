@@ -1,4 +1,6 @@
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Entities.Dashboard;
+using AzureEventGridSimulator.Domain.Services.Dashboard;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
@@ -11,6 +13,7 @@ public class RetryDeliveryBackgroundService(
     IDeliveryQueue queue,
     IServiceProvider serviceProvider,
     DeadLetterService deadLetterService,
+    IEventHistoryService eventHistoryService,
     ILogger<RetryDeliveryBackgroundService> logger
 ) : BackgroundService
 {
@@ -90,6 +93,12 @@ public class RetryDeliveryBackgroundService(
             );
 
             await deadLetterService.WriteDeadLetterAsync(delivery, "EventTimeToLiveExpired");
+            eventHistoryService.RecordDeliveryCompleted(
+                delivery.Event.Id,
+                delivery.Subscriber.Name,
+                DeliveryStatus.DeadLettered,
+                DateTimeOffset.UtcNow
+            );
             return;
         }
 
@@ -104,6 +113,12 @@ public class RetryDeliveryBackgroundService(
             );
 
             await deadLetterService.WriteDeadLetterAsync(delivery, "MaxDeliveryAttemptsExceeded");
+            eventHistoryService.RecordDeliveryCompleted(
+                delivery.Event.Id,
+                delivery.Subscriber.Name,
+                DeliveryStatus.DeadLettered,
+                DateTimeOffset.UtcNow
+            );
             return;
         }
 
@@ -112,15 +127,21 @@ public class RetryDeliveryBackgroundService(
 
         // Record the attempt
         delivery.AttemptCount++;
-        delivery.Attempts.Add(
-            new DeliveryAttempt
-            {
-                AttemptTime = DateTime.UtcNow,
-                AttemptNumber = delivery.AttemptCount,
-                Outcome = result.Outcome,
-                HttpStatusCode = result.HttpStatusCode,
-                ErrorMessage = result.ErrorMessage,
-            }
+        var attempt = new DeliveryAttempt
+        {
+            AttemptTime = DateTime.UtcNow,
+            AttemptNumber = delivery.AttemptCount,
+            Outcome = result.Outcome,
+            HttpStatusCode = result.HttpStatusCode,
+            ErrorMessage = result.ErrorMessage,
+        };
+        delivery.Attempts.Add(attempt);
+
+        // Record attempt for dashboard
+        eventHistoryService.RecordDeliveryAttempt(
+            delivery.Event.Id,
+            delivery.Subscriber.Name,
+            attempt
         );
 
         if (result.Success)
@@ -130,6 +151,12 @@ public class RetryDeliveryBackgroundService(
                 delivery.Event.Id,
                 delivery.Subscriber.Name,
                 delivery.AttemptCount
+            );
+            eventHistoryService.RecordDeliveryCompleted(
+                delivery.Event.Id,
+                delivery.Subscriber.Name,
+                DeliveryStatus.Delivered,
+                DateTimeOffset.UtcNow
             );
             return;
         }
@@ -303,6 +330,12 @@ public class RetryDeliveryBackgroundService(
             );
 
             await deadLetterService.WriteDeadLetterAsync(delivery, reason);
+            eventHistoryService.RecordDeliveryCompleted(
+                delivery.Event.Id,
+                delivery.Subscriber.Name,
+                DeliveryStatus.DeadLettered,
+                DateTimeOffset.UtcNow
+            );
             return;
         }
 
@@ -316,6 +349,12 @@ public class RetryDeliveryBackgroundService(
             );
 
             await deadLetterService.WriteDeadLetterAsync(delivery, "RetryDisabled_DeliveryFailed");
+            eventHistoryService.RecordDeliveryCompleted(
+                delivery.Event.Id,
+                delivery.Subscriber.Name,
+                DeliveryStatus.DeadLettered,
+                DateTimeOffset.UtcNow
+            );
             return;
         }
 
@@ -329,6 +368,12 @@ public class RetryDeliveryBackgroundService(
             );
 
             await deadLetterService.WriteDeadLetterAsync(delivery, "MaxDeliveryAttemptsExceeded");
+            eventHistoryService.RecordDeliveryCompleted(
+                delivery.Event.Id,
+                delivery.Subscriber.Name,
+                DeliveryStatus.DeadLettered,
+                DateTimeOffset.UtcNow
+            );
             return;
         }
 
@@ -342,6 +387,12 @@ public class RetryDeliveryBackgroundService(
             );
 
             await deadLetterService.WriteDeadLetterAsync(delivery, "EventTimeToLiveExpired");
+            eventHistoryService.RecordDeliveryCompleted(
+                delivery.Event.Id,
+                delivery.Subscriber.Name,
+                DeliveryStatus.DeadLettered,
+                DateTimeOffset.UtcNow
+            );
             return;
         }
 
