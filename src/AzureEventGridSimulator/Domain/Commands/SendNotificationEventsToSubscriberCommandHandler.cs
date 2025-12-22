@@ -1,4 +1,5 @@
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Services.Dashboard;
 using AzureEventGridSimulator.Domain.Services.Retry;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Mediator;
@@ -14,6 +15,7 @@ namespace AzureEventGridSimulator.Domain.Commands;
 // ReSharper disable once UnusedMember.Global
 public class SendNotificationEventsToSubscriberCommandHandler(
     IDeliveryQueue deliveryQueue,
+    IEventHistoryService eventHistoryService,
     ILogger<SendNotificationEventsToSubscriberCommandHandler> logger
 ) : IRequestHandler<SendNotificationEventsToSubscriberCommand>
 {
@@ -28,6 +30,12 @@ public class SendNotificationEventsToSubscriberCommandHandler(
             request.Topic.Name,
             request.InputSchema
         );
+
+        // Record events for dashboard
+        foreach (var evt in request.Events)
+        {
+            eventHistoryService.RecordEventReceived(evt, request.Topic, request.InputSchema);
+        }
 
         // Enrich events with topic information
         EnrichEvents(request.Events, request.Topic.Name);
@@ -129,6 +137,9 @@ public class SendNotificationEventsToSubscriberCommandHandler(
 
                 deliveryQueue.Enqueue(pendingDelivery);
                 enqueuedCount++;
+
+                // Record delivery queued for dashboard
+                eventHistoryService.RecordDeliveryQueued(evt.Id, subscriber);
             }
         }
 

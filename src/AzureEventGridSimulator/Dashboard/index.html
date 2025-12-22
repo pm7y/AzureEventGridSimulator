@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Azure Event Grid Simulator - Dashboard</title>
+    <link href="/dashboard/styles.css" rel="stylesheet">
+</head>
+<body>
+<header class="header">
+    <h1>Azure Event Grid Simulator</h1>
+    <div class="header-controls">
+        <button class="clear-btn" id="clearBtn">Clear</button>
+        <label class="auto-refresh-toggle">
+            <input checked id="autoRefresh" type="checkbox">
+            <span>Auto-refresh</span>
+        </label>
+        <span class="refresh-indicator" id="refreshIndicator"></span>
+    </div>
+</header>
+
+<main class="main-content">
+    <section class="stats-section" id="statsSection">
+        <div class="stat-card">
+            <span class="stat-value" id="statTotalReceived">0</span>
+            <span class="stat-label">Total Received</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="statInHistory">0</span>
+            <span class="stat-label">In History</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="statDelivered">0</span>
+            <span class="stat-label">Delivered</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="statFailed">0</span>
+            <span class="stat-label">Failed</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="statPending">0</span>
+            <span class="stat-label">Pending</span>
+        </div>
+        <div class="stat-card stat-card-rejected">
+            <span class="stat-value" id="statRejected">0</span>
+            <span class="stat-label">Rejected</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="statTopics">0</span>
+            <span class="stat-label">Active Topics</span>
+        </div>
+    </section>
+
+    <section class="events-section">
+        <div class="events-header">
+            <div class="tab-container">
+                <button class="tab-btn active" data-tab="events" id="tabEvents">Events</button>
+                <button class="tab-btn" data-tab="rejections" id="tabRejections">Rejections <span
+                    class="rejection-count" id="rejectionCount"></span></button>
+            </div>
+            <select class="topic-filter" id="topicFilter">
+                <option value="">All Topics</option>
+            </select>
+        </div>
+
+        <div class="tab-content" id="eventsTab">
+            <div class="empty-state" id="emptyState">
+                <div class="empty-state-icon">&#128235;</div>
+                <h3>No events received yet</h3>
+                <p>Events will appear here when they are published to the simulator.</p>
+            </div>
+            <div class="events-list" id="eventsList"></div>
+        </div>
+
+        <div class="tab-content hidden" id="rejectionsTab">
+            <div class="empty-state" id="emptyRejectionsState">
+                <div class="empty-state-icon">&#10003;</div>
+                <h3>No rejected events</h3>
+                <p>Validation errors will appear here when invalid events are sent to the simulator.</p>
+            </div>
+            <div class="events-list" id="rejectionsList"></div>
+        </div>
+    </section>
+
+    <aside class="detail-panel" id="detailPanel">
+        <div class="detail-header">
+            <h3>Event Details</h3>
+            <button class="close-btn" id="closeDetail">&times;</button>
+        </div>
+        <div class="detail-content" id="detailContent">
+            <p class="detail-placeholder">Select an event to view details</p>
+        </div>
+    </aside>
+</main>
+
+<script src="/dashboard/app.js"></script>
+</body>
+</html>

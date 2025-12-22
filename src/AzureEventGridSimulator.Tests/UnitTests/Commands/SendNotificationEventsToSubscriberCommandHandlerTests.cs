@@ -1,5 +1,6 @@
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Services.Dashboard;
 using AzureEventGridSimulator.Domain.Services.Retry;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
@@ -13,6 +14,7 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Commands;
 public class SendNotificationEventsToSubscriberCommandHandlerTests
 {
     private readonly IDeliveryQueue _deliveryQueue;
+    private readonly IEventHistoryService _eventHistoryService;
     private readonly SendNotificationEventsToSubscriberCommandHandler _handler;
     private readonly ILogger<SendNotificationEventsToSubscriberCommandHandler> _logger;
 
@@ -20,8 +22,13 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
     {
         _logger = Substitute.For<ILogger<SendNotificationEventsToSubscriberCommandHandler>>();
         _deliveryQueue = Substitute.For<IDeliveryQueue>();
+        _eventHistoryService = Substitute.For<IEventHistoryService>();
 
-        _handler = new SendNotificationEventsToSubscriberCommandHandler(_deliveryQueue, _logger);
+        _handler = new SendNotificationEventsToSubscriberCommandHandler(
+            _deliveryQueue,
+            _eventHistoryService,
+            _logger
+        );
     }
 
     [Fact]

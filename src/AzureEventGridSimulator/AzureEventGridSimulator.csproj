@@ -52,4 +52,8 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Dashboard\**" />
+  </ItemGroup>
 </Project>

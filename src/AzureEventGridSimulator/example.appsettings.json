@@ -1,4 +1,5 @@
 {
+  "dashboardEnabled": true,
   "topics": [
     {
       "name": "MyAwesomeTopic",
