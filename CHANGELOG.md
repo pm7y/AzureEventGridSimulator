@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.5.0](https://github.com/pm7y/AzureEventGridSimulator/compare/4.4.0...4.5.0) (2025-12-22)
+
+
+### Features
+
+* Dashboard MVP ([#231](https://github.com/pm7y/AzureEventGridSimulator/issues/231)) ([4559a3c](https://github.com/pm7y/AzureEventGridSimulator/commit/4559a3c5c40894c1eced0b2566b8526671d59420))
+
 ## [4.4.0](https://github.com/pm7y/AzureEventGridSimulator/compare/4.3.0...4.4.0) (2025-12-21)
 
 
