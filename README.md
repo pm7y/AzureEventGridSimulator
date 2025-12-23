@@ -1,11 +1,20 @@
 # Azure Event Grid Simulator
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/pm7y/AzureEventGridSimulator/ci.yml)
+![License](https://img.shields.io/github/license/pm7y/AzureEventGridSimulator)
+![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-512BD4)
+![Platform](https://img.shields.io/badge/platform-windows%20%7C%20macos%20%7C%20linux-lightgrey)
+
+![NuGet Version](https://img.shields.io/nuget/v/AzureEventGridSimulator)
+![NuGet Downloads](https://img.shields.io/nuget/dt/AzureEventGridSimulator)
+![Docker Pulls](https://img.shields.io/docker/pulls/pmcilreavy/azureeventgridsimulator)
+![Docker Image Size](https://img.shields.io/docker/image-size/pmcilreavy/azureeventgridsimulator)
+
+![GitHub Stars](https://img.shields.io/github/stars/pm7y/AzureEventGridSimulator)
 ![GitHub contributors](https://img.shields.io/github/contributors-anon/pm7y/AzureEventGridSimulator)
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pm7y/AzureEventGridSimulator?label=latest)
 ![GitHub all releases](https://img.shields.io/github/downloads/pm7y/AzureEventGridSimulator/total)
-![Docker Pulls](https://img.shields.io/docker/pulls/pmcilreavy/azureeventgridsimulator)
-![NuGet Version](https://img.shields.io/nuget/v/AzureEventGridSimulator)
+![Last Commit](https://img.shields.io/github/last-commit/pm7y/AzureEventGridSimulator)
 
 A simulator that provides HTTPS endpoints to mimic [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers. Compatible with the `Microsoft.Azure.EventGrid` client library and supports both EventGrid and CloudEvents v1.0 schemas.
 
