@@ -16,7 +16,9 @@
 ![GitHub all releases](https://img.shields.io/github/downloads/pm7y/AzureEventGridSimulator/total)
 ![Last Commit](https://img.shields.io/github/last-commit/pm7y/AzureEventGridSimulator)
 
-A simulator that provides HTTPS endpoints to mimic [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers. Compatible with the `Microsoft.Azure.EventGrid` client library and supports both EventGrid and CloudEvents v1.0 schemas.
+A simulator that provides HTTPS endpoints to
+mimic [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers. Compatible with
+the `Microsoft.Azure.EventGrid` client library and supports both EventGrid and CloudEvents v1.0 schemas.
 
 > **Note:** This simulator is intended for **local development and testing only**.
 
@@ -54,7 +56,8 @@ cd src
 dotnet run --project AzureEventGridSimulator.AppHost
 ```
 
-This starts the simulator along with Azure Storage (Azurite), Service Bus, Event Hubs, and SQL Server emulators. The Aspire Dashboard provides distributed traces, logs, and metrics.
+This starts the simulator along with Azure Storage (Azurite), Service Bus, Event Hubs, and SQL Server emulators. The
+Aspire Dashboard provides distributed traces, logs, and metrics.
 
 See the [Aspire](https://github.com/pm7y/AzureEventGridSimulator/wiki/Aspire) wiki page for details.
 
@@ -98,10 +101,13 @@ Access the built-in dashboard at `https://localhost:<port>/dashboard` to view ev
 
 For detailed documentation, see the **[Wiki](https://github.com/pm7y/AzureEventGridSimulator/wiki)**:
 
-- [Configuration](https://github.com/pm7y/AzureEventGridSimulator/wiki/Configuration) - Topics, subscribers, and app settings
+- [Configuration](https://github.com/pm7y/AzureEventGridSimulator/wiki/Configuration) - Topics, subscribers, and app
+  settings
 - [HTTP Subscribers](https://github.com/pm7y/AzureEventGridSimulator/wiki/HTTP-Subscribers) - Webhook configuration
-- [Service Bus Subscribers](https://github.com/pm7y/AzureEventGridSimulator/wiki/Service-Bus-Subscribers) - Azure Service Bus
-- [Storage Queue Subscribers](https://github.com/pm7y/AzureEventGridSimulator/wiki/Storage-Queue-Subscribers) - Azure Storage Queues
+- [Service Bus Subscribers](https://github.com/pm7y/AzureEventGridSimulator/wiki/Service-Bus-Subscribers) - Azure
+  Service Bus
+- [Storage Queue Subscribers](https://github.com/pm7y/AzureEventGridSimulator/wiki/Storage-Queue-Subscribers) - Azure
+  Storage Queues
 - [Event Hub Subscribers](https://github.com/pm7y/AzureEventGridSimulator/wiki/Event-Hub-Subscribers) - Azure Event Hubs
 - [Filtering](https://github.com/pm7y/AzureEventGridSimulator/wiki/Filtering) - Event filtering
 - [Retry and Dead-Letter](https://github.com/pm7y/AzureEventGridSimulator/wiki/Retry-and-Dead-Letter) - Retry policies
@@ -112,4 +118,5 @@ For detailed documentation, see the **[Wiki](https://github.com/pm7y/AzureEventG
 
 ## Contributing
 
-See the [Architecture](https://github.com/pm7y/AzureEventGridSimulator/wiki/Architecture) page for system design details and the [Wiki](https://github.com/pm7y/AzureEventGridSimulator/wiki) for development guidelines.
+See the [Architecture](https://github.com/pm7y/AzureEventGridSimulator/wiki/Architecture) page for system design details
+and the [Wiki](https://github.com/pm7y/AzureEventGridSimulator/wiki) for development guidelines.

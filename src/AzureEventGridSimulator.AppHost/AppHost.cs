@@ -1,10 +1,9 @@
+using Projects;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 // Path to simulator configuration file
-var configFile = Path.Combine(
-    Projects.AzureEventGridSimulator_AppHost.ProjectPath,
-    "simulator-config.json"
-);
+var configFile = Path.Combine(AzureEventGridSimulator_AppHost.ProjectPath, "simulator-config.json");
 
 // Azure emulators for local development
 var storage = builder.AddAzureStorage("storage").RunAsEmulator();
@@ -23,8 +22,8 @@ var sql = builder.AddSqlServer("sql");
 // Use isProxied: false because the simulator listens on multiple ports (one per topic)
 // and Aspire's default reverse proxy doesn't support this scenario
 builder
-    .AddProject<Projects.AzureEventGridSimulator>("simulator", launchProfileName: null)
-    .WithHttpsEndpoint(port: 60101, name: "default", isProxied: false)
+    .AddProject<AzureEventGridSimulator>("simulator", launchProfileName: null)
+    .WithHttpsEndpoint(60101, name: "default", isProxied: false)
     .WithReference(queues)
     .WithReference(blobs)
     .WithReference(serviceBusQueue)
