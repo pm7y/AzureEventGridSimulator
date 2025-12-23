@@ -14,6 +14,8 @@ public class RetryDeliveryBackgroundService(
     IServiceProvider serviceProvider,
     DeadLetterService deadLetterService,
     IEventHistoryService eventHistoryService,
+    RetryScheduler retryScheduler,
+    TimeProvider timeProvider,
     ILogger<RetryDeliveryBackgroundService> logger
 ) : BackgroundService
 {
@@ -84,7 +86,7 @@ public class RetryDeliveryBackgroundService(
     )
     {
         // Check if event has expired (TTL)
-        if (delivery.IsExpired)
+        if (delivery.IsExpired(timeProvider.GetUtcNow()))
         {
             logger.LogWarning(
                 "Event {EventId} expired for subscriber '{SubscriberName}'. TTL exceeded",
@@ -97,7 +99,7 @@ public class RetryDeliveryBackgroundService(
                 delivery.Event.Id,
                 delivery.Subscriber.Name,
                 DeliveryStatus.DeadLettered,
-                DateTimeOffset.UtcNow
+                timeProvider.GetUtcNow()
             );
             return;
         }
@@ -117,7 +119,7 @@ public class RetryDeliveryBackgroundService(
                 delivery.Event.Id,
                 delivery.Subscriber.Name,
                 DeliveryStatus.DeadLettered,
-                DateTimeOffset.UtcNow
+                timeProvider.GetUtcNow()
             );
             return;
         }
@@ -129,7 +131,7 @@ public class RetryDeliveryBackgroundService(
         delivery.AttemptCount++;
         var attempt = new DeliveryAttempt
         {
-            AttemptTime = DateTime.UtcNow,
+            AttemptTime = timeProvider.GetUtcNow(),
             AttemptNumber = delivery.AttemptCount,
             Outcome = result.Outcome,
             HttpStatusCode = result.HttpStatusCode,
@@ -156,7 +158,7 @@ public class RetryDeliveryBackgroundService(
                 delivery.Event.Id,
                 delivery.Subscriber.Name,
                 DeliveryStatus.Delivered,
-                DateTimeOffset.UtcNow
+                timeProvider.GetUtcNow()
             );
             return;
         }
@@ -315,10 +317,10 @@ public class RetryDeliveryBackgroundService(
         // Check for immediate dead-letter conditions (HTTP 400, 401, 403, 413)
         if (
             result.HttpStatusCode.HasValue
-            && RetryScheduler.ShouldImmediatelyDeadLetter(result.HttpStatusCode.Value)
+            && retryScheduler.ShouldImmediatelyDeadLetter(result.HttpStatusCode.Value)
         )
         {
-            var reason = RetryScheduler.GetDeadLetterReasonForStatusCode(
+            var reason = retryScheduler.GetDeadLetterReasonForStatusCode(
                 result.HttpStatusCode.Value
             );
 
@@ -334,7 +336,7 @@ public class RetryDeliveryBackgroundService(
                 delivery.Event.Id,
                 delivery.Subscriber.Name,
                 DeliveryStatus.DeadLettered,
-                DateTimeOffset.UtcNow
+                timeProvider.GetUtcNow()
             );
             return;
         }
@@ -353,7 +355,7 @@ public class RetryDeliveryBackgroundService(
                 delivery.Event.Id,
                 delivery.Subscriber.Name,
                 DeliveryStatus.DeadLettered,
-                DateTimeOffset.UtcNow
+                timeProvider.GetUtcNow()
             );
             return;
         }
@@ -372,13 +374,13 @@ public class RetryDeliveryBackgroundService(
                 delivery.Event.Id,
                 delivery.Subscriber.Name,
                 DeliveryStatus.DeadLettered,
-                DateTimeOffset.UtcNow
+                timeProvider.GetUtcNow()
             );
             return;
         }
 
         // Check if TTL will be exceeded before next retry
-        if (delivery.IsExpired)
+        if (delivery.IsExpired(timeProvider.GetUtcNow()))
         {
             logger.LogWarning(
                 "Event {EventId} TTL expired during retry for '{SubscriberName}'",
@@ -391,13 +393,13 @@ public class RetryDeliveryBackgroundService(
                 delivery.Event.Id,
                 delivery.Subscriber.Name,
                 DeliveryStatus.DeadLettered,
-                DateTimeOffset.UtcNow
+                timeProvider.GetUtcNow()
             );
             return;
         }
 
         // Schedule retry
-        delivery.NextAttemptTime = RetryScheduler.GetNextRetryTime(
+        delivery.NextAttemptTime = retryScheduler.GetNextRetryTime(
             delivery.AttemptCount,
             result.HttpStatusCode
         );

@@ -9,7 +9,7 @@ namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 /// </summary>
 public class HttpSubscriberSettings : ISubscriberSettings
 {
-    private readonly DateTime _expired = DateTime.UtcNow.AddMinutes(5);
+    private readonly DateTimeOffset _createdAt = DateTimeOffset.UtcNow;
 
     [JsonPropertyName("endpoint")]
     public string Endpoint { get; set; }
@@ -22,9 +22,6 @@ public class HttpSubscriberSettings : ISubscriberSettings
 
     [JsonIgnore]
     public Guid ValidationCode => GetValidationCode();
-
-    [JsonIgnore]
-    public bool ValidationPeriodExpired => DateTime.UtcNow > _expired;
 
     [JsonPropertyName("name")]
     public string Name { get; set; }
@@ -89,6 +86,20 @@ public class HttpSubscriberSettings : ISubscriberSettings
         Filter?.Validate();
         RetryPolicy?.Validate();
         DeadLetter?.Validate();
+    }
+
+    /// <summary>
+    /// Determines if the validation period has expired.
+    /// </summary>
+    /// <param name="now" >
+    /// The current UTC time.
+    /// </param>
+    /// <returns>
+    /// True if the 5-minute validation window has expired.
+    /// </returns>
+    public bool ValidationPeriodExpired(DateTimeOffset now)
+    {
+        return now > _createdAt.AddMinutes(5);
     }
 
     public Guid GetValidationCode()

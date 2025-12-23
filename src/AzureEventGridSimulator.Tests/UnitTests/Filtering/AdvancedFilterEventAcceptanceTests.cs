@@ -9,25 +9,31 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Filtering;
 [Trait("Category", "unit")]
 public class AdvancedFilterEventAcceptanceTests
 {
-    private static readonly EventGridEvent _gridEvent = new()
+    private static readonly EventGridEvent _gridEvent = CreateTestEvent();
+
+    private static EventGridEvent CreateTestEvent()
     {
-        Id = "EventId",
-        Data = new
+        var evt = new EventGridEvent
         {
-            NumberValue = 1,
-            IsTrue = true,
-            Name = "StringValue",
-            DoubleValue = 0.12345d,
-            NumberMaxValue = ulong.MaxValue,
-            SubObject = new { Id = 1, Name = "Test" },
-        },
-        DataVersion = "5.0",
-        EventTime = DateTime.UtcNow.ToString("O"),
-        EventType = "this.is.a.test.event.type",
-        MetadataVersion = "2.3.4",
-        Subject = "TheEventSubject",
-        Topic = "THE_EVENT_TOPIC",
-    };
+            Id = "EventId",
+            Data = new
+            {
+                NumberValue = 1,
+                IsTrue = true,
+                Name = "StringValue",
+                DoubleValue = 0.12345d,
+                NumberMaxValue = ulong.MaxValue,
+                SubObject = new { Id = 1, Name = "Test" },
+            },
+            DataVersion = "5.0",
+            EventTime = DateTimeOffset.UtcNow.ToString("O"),
+            EventType = "this.is.a.test.event.type",
+            MetadataVersion = "2.3.4",
+            Subject = "TheEventSubject",
+        };
+        evt.SetTopic("THE_EVENT_TOPIC");
+        return evt;
+    }
 
     [Theory]
     [ClassData(typeof(PositiveFilterTestCaseContainer))]

@@ -2,6 +2,7 @@ using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services.Retry;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using AzureEventGridSimulator.Tests.Helpers;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -11,16 +12,18 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Retry;
 [Trait("Category", "unit")]
 public class InMemoryDeliveryQueueTests
 {
+    private static readonly DateTimeOffset FixedTime = new(2025, 1, 15, 12, 0, 0, TimeSpan.Zero);
     private readonly ILogger<InMemoryDeliveryQueue> _logger;
     private readonly InMemoryDeliveryQueue _queue;
+    private readonly FakeTimeProvider _timeProvider = new(FixedTime);
 
     public InMemoryDeliveryQueueTests()
     {
         _logger = Substitute.For<ILogger<InMemoryDeliveryQueue>>();
-        _queue = new InMemoryDeliveryQueue(_logger);
+        _queue = new InMemoryDeliveryQueue(_timeProvider, _logger);
     }
 
-    private static PendingDelivery CreatePendingDelivery()
+    private static PendingDelivery CreatePendingDelivery(DateTimeOffset? nextAttemptTime = null)
     {
         var subscriber = new HttpSubscriberSettings
         {
@@ -43,7 +46,7 @@ public class InMemoryDeliveryQueueTests
                 Id = Guid.NewGuid().ToString(),
                 Subject = "test/subject",
                 EventType = "Test.EventType",
-                EventTime = DateTime.UtcNow.ToString("o"),
+                EventTime = FixedTime.ToString("o"),
                 DataVersion = "1.0",
                 Data = new { test = "data" },
             }
@@ -55,6 +58,8 @@ public class InMemoryDeliveryQueueTests
             Subscriber = subscriber,
             Topic = topic,
             InputSchema = EventSchema.EventGridSchema,
+            EnqueuedTime = FixedTime,
+            NextAttemptTime = nextAttemptTime ?? FixedTime,
         };
     }
 
@@ -131,7 +136,7 @@ public class InMemoryDeliveryQueueTests
         var delivery = CreatePendingDelivery();
         _queue.Enqueue(delivery);
 
-        var newNextAttemptTime = DateTime.UtcNow.AddMinutes(5);
+        var newNextAttemptTime = FixedTime.AddMinutes(5);
         delivery.NextAttemptTime = newNextAttemptTime;
         delivery.AttemptCount = 2;
 
@@ -163,8 +168,7 @@ public class InMemoryDeliveryQueueTests
     [Fact]
     public void GivenDeliveryDueNow_WhenGettingDueDeliveries_ThenReturnsDelivery()
     {
-        var delivery = CreatePendingDelivery();
-        delivery.NextAttemptTime = DateTime.UtcNow.AddSeconds(-1); // Due 1 second ago
+        var delivery = CreatePendingDelivery(FixedTime.AddSeconds(-1));
         _queue.Enqueue(delivery);
 
         var dueDeliveries = _queue.GetDueDeliveries().ToList();
@@ -176,8 +180,7 @@ public class InMemoryDeliveryQueueTests
     [Fact]
     public void GivenDeliveryNotYetDue_WhenGettingDueDeliveries_ThenReturnsEmpty()
     {
-        var delivery = CreatePendingDelivery();
-        delivery.NextAttemptTime = DateTime.UtcNow.AddMinutes(5); // Due in 5 minutes
+        var delivery = CreatePendingDelivery(FixedTime.AddMinutes(5));
         _queue.Enqueue(delivery);
 
         var dueDeliveries = _queue.GetDueDeliveries().ToList();
@@ -188,14 +191,9 @@ public class InMemoryDeliveryQueueTests
     [Fact]
     public void GivenMixedDueAndNotDue_WhenGettingDueDeliveries_ThenReturnsOnlyDue()
     {
-        var dueDelivery1 = CreatePendingDelivery();
-        dueDelivery1.NextAttemptTime = DateTime.UtcNow.AddSeconds(-10);
-
-        var dueDelivery2 = CreatePendingDelivery();
-        dueDelivery2.NextAttemptTime = DateTime.UtcNow.AddSeconds(-5);
-
-        var notDueDelivery = CreatePendingDelivery();
-        notDueDelivery.NextAttemptTime = DateTime.UtcNow.AddMinutes(5);
+        var dueDelivery1 = CreatePendingDelivery(FixedTime.AddSeconds(-10));
+        var dueDelivery2 = CreatePendingDelivery(FixedTime.AddSeconds(-5));
+        var notDueDelivery = CreatePendingDelivery(FixedTime.AddMinutes(5));
 
         _queue.Enqueue(dueDelivery1);
         _queue.Enqueue(dueDelivery2);
@@ -212,14 +210,9 @@ public class InMemoryDeliveryQueueTests
     [Fact]
     public void GivenMultipleDueDeliveries_WhenGettingDueDeliveries_ThenOrderedByNextAttemptTime()
     {
-        var delivery1 = CreatePendingDelivery();
-        delivery1.NextAttemptTime = DateTime.UtcNow.AddSeconds(-5);
-
-        var delivery2 = CreatePendingDelivery();
-        delivery2.NextAttemptTime = DateTime.UtcNow.AddSeconds(-10); // Earlier
-
-        var delivery3 = CreatePendingDelivery();
-        delivery3.NextAttemptTime = DateTime.UtcNow.AddSeconds(-1); // Latest
+        var delivery1 = CreatePendingDelivery(FixedTime.AddSeconds(-5));
+        var delivery2 = CreatePendingDelivery(FixedTime.AddSeconds(-10)); // Earliest
+        var delivery3 = CreatePendingDelivery(FixedTime.AddSeconds(-1)); // Latest
 
         _queue.Enqueue(delivery1);
         _queue.Enqueue(delivery2);
@@ -231,5 +224,23 @@ public class InMemoryDeliveryQueueTests
         dueDeliveries[0].Id.ShouldBe(delivery2.Id); // Earliest first
         dueDeliveries[1].Id.ShouldBe(delivery1.Id);
         dueDeliveries[2].Id.ShouldBe(delivery3.Id); // Latest last
+    }
+
+    [Fact]
+    public void GivenDeliveryInFuture_WhenTimeAdvances_ThenBecomesDue()
+    {
+        var delivery = CreatePendingDelivery(FixedTime.AddMinutes(5));
+        _queue.Enqueue(delivery);
+
+        // Initially not due
+        _queue.GetDueDeliveries().ShouldBeEmpty();
+
+        // Advance time by 6 minutes
+        _timeProvider.Advance(TimeSpan.FromMinutes(6));
+
+        // Now should be due
+        var dueDeliveries = _queue.GetDueDeliveries().ToList();
+        dueDeliveries.Count.ShouldBe(1);
+        dueDeliveries[0].Id.ShouldBe(delivery.Id);
     }
 }

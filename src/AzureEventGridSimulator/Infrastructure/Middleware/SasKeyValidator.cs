@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 using AzureEventGridSimulator.Domain;
@@ -6,7 +7,7 @@ using Microsoft.Net.Http.Headers;
 
 namespace AzureEventGridSimulator.Infrastructure.Middleware;
 
-public class SasKeyValidator(ILogger<SasKeyValidator> logger)
+public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator> logger)
 {
     public bool IsValid(IHeaderDictionary requestHeaders, string topicKey)
     {
@@ -77,8 +78,12 @@ public class SasKeyValidator(ILogger<SasKeyValidator> logger)
         var encodedSignature = query["s"];
 
         if (
-            !DateTime.TryParse(decodedExpiration, out var tokenExpiryDateTime)
-            || tokenExpiryDateTime.ToUniversalTime() <= DateTime.UtcNow
+            !DateTimeOffset.TryParse(
+                decodedExpiration,
+                CultureInfo.InvariantCulture,
+                out var tokenExpiryDateTime
+            )
+            || tokenExpiryDateTime.ToUniversalTime() <= timeProvider.GetUtcNow()
         )
         {
             return false;

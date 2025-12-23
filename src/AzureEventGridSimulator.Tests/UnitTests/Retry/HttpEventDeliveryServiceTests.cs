@@ -23,7 +23,7 @@ public class HttpEventDeliveryServiceTests : IDisposable
     {
         _logger = Substitute.For<ILogger<HttpEventDeliveryService>>();
         _formatterFactory = new EventSchemaFormatterFactory(
-            new EventGridSchemaFormatter(),
+            new EventGridSchemaFormatter(TimeProvider.System),
             new CloudEventSchemaFormatter()
         );
     }
@@ -264,7 +264,7 @@ public class HttpEventDeliveryServiceTests : IDisposable
                 Id = Guid.NewGuid().ToString(),
                 Subject = "test/subject",
                 EventType = "Test.EventType",
-                EventTime = DateTime.UtcNow.ToString("o"),
+                EventTime = DateTimeOffset.UtcNow.ToString("o"),
                 DataVersion = "1.0",
                 Data = new { test = "data" },
             }

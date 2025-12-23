@@ -1,4 +1,5 @@
 using AzureEventGridSimulator.Domain.Services.Retry;
+using AzureEventGridSimulator.Tests.Helpers;
 using Shouldly;
 using Xunit;
 
@@ -7,6 +8,15 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Retry;
 [Trait("Category", "unit")]
 public class RetrySchedulerTests
 {
+    private static readonly DateTimeOffset FixedTime = new(2025, 1, 15, 12, 0, 0, TimeSpan.Zero);
+    private readonly RetryScheduler _scheduler;
+    private readonly FakeTimeProvider _timeProvider = new(FixedTime);
+
+    public RetrySchedulerTests()
+    {
+        _scheduler = new RetryScheduler(_timeProvider);
+    }
+
     [Theory]
     [InlineData(1, 10)] // 10 seconds
     [InlineData(2, 30)] // 30 seconds
@@ -23,16 +33,10 @@ public class RetrySchedulerTests
         int expectedDelaySeconds
     )
     {
-        var before = DateTime.UtcNow;
+        var nextRetryTime = _scheduler.GetNextRetryTime(attemptNumber);
 
-        var nextRetryTime = RetryScheduler.GetNextRetryTime(attemptNumber);
-
-        var after = DateTime.UtcNow;
-        var expectedMin = before.AddSeconds(expectedDelaySeconds);
-        var expectedMax = after.AddSeconds(expectedDelaySeconds + 1); // Allow 1 second tolerance
-
-        nextRetryTime.ShouldBeGreaterThanOrEqualTo(expectedMin);
-        nextRetryTime.ShouldBeLessThanOrEqualTo(expectedMax);
+        var expectedTime = FixedTime.AddSeconds(expectedDelaySeconds);
+        nextRetryTime.ShouldBe(expectedTime);
     }
 
     [Theory]
@@ -44,17 +48,12 @@ public class RetrySchedulerTests
         int attemptNumber
     )
     {
-        var before = DateTime.UtcNow;
         var expectedDelaySeconds = 12 * 60 * 60; // 12 hours
 
-        var nextRetryTime = RetryScheduler.GetNextRetryTime(attemptNumber);
+        var nextRetryTime = _scheduler.GetNextRetryTime(attemptNumber);
 
-        var after = DateTime.UtcNow;
-        var expectedMin = before.AddSeconds(expectedDelaySeconds);
-        var expectedMax = after.AddSeconds(expectedDelaySeconds + 1);
-
-        nextRetryTime.ShouldBeGreaterThanOrEqualTo(expectedMin);
-        nextRetryTime.ShouldBeLessThanOrEqualTo(expectedMax);
+        var expectedTime = FixedTime.AddSeconds(expectedDelaySeconds);
+        nextRetryTime.ShouldBe(expectedTime);
     }
 
     [Theory]
@@ -64,59 +63,57 @@ public class RetrySchedulerTests
         int attemptNumber
     )
     {
-        var before = DateTime.UtcNow;
+        var nextRetryTime = _scheduler.GetNextRetryTime(attemptNumber);
 
-        var nextRetryTime = RetryScheduler.GetNextRetryTime(attemptNumber);
-
-        nextRetryTime.ShouldBeLessThanOrEqualTo(before.AddSeconds(1));
+        nextRetryTime.ShouldBe(FixedTime);
     }
 
     [Fact]
     public void GivenHttp404_WhenGettingNextRetryTime_ThenMinimum5MinuteDelay()
     {
-        var before = DateTime.UtcNow;
         var expectedMinDelaySeconds = 5 * 60; // 5 minutes
 
         // First attempt would normally be 10s, but 404 requires minimum 5 minutes
-        var nextRetryTime = RetryScheduler.GetNextRetryTime(1, 404);
+        var nextRetryTime = _scheduler.GetNextRetryTime(1, 404);
 
-        nextRetryTime.ShouldBeGreaterThanOrEqualTo(before.AddSeconds(expectedMinDelaySeconds));
+        var expectedTime = FixedTime.AddSeconds(expectedMinDelaySeconds);
+        nextRetryTime.ShouldBe(expectedTime);
     }
 
     [Fact]
     public void GivenHttp408_WhenGettingNextRetryTime_ThenMinimum2MinuteDelay()
     {
-        var before = DateTime.UtcNow;
         var expectedMinDelaySeconds = 2 * 60; // 2 minutes
 
         // First attempt would normally be 10s, but 408 requires minimum 2 minutes
-        var nextRetryTime = RetryScheduler.GetNextRetryTime(1, 408);
+        var nextRetryTime = _scheduler.GetNextRetryTime(1, 408);
 
-        nextRetryTime.ShouldBeGreaterThanOrEqualTo(before.AddSeconds(expectedMinDelaySeconds));
+        var expectedTime = FixedTime.AddSeconds(expectedMinDelaySeconds);
+        nextRetryTime.ShouldBe(expectedTime);
     }
 
     [Fact]
     public void GivenHttp503_WhenGettingNextRetryTime_ThenMinimum30SecondDelay()
     {
-        var before = DateTime.UtcNow;
         var expectedMinDelaySeconds = 30; // 30 seconds
 
         // First attempt would normally be 10s, but 503 requires minimum 30 seconds
-        var nextRetryTime = RetryScheduler.GetNextRetryTime(1, 503);
+        var nextRetryTime = _scheduler.GetNextRetryTime(1, 503);
 
-        nextRetryTime.ShouldBeGreaterThanOrEqualTo(before.AddSeconds(expectedMinDelaySeconds));
+        var expectedTime = FixedTime.AddSeconds(expectedMinDelaySeconds);
+        nextRetryTime.ShouldBe(expectedTime);
     }
 
     [Fact]
     public void GivenHttp503OnLaterAttempt_WhenStandardDelayIsLarger_ThenUsesStandardDelay()
     {
-        var before = DateTime.UtcNow;
         var expectedMinDelaySeconds = 5 * 60; // 5 minutes (attempt 4 standard delay)
 
         // Attempt 4 standard delay is 5 minutes, which is larger than 503's 30 seconds
-        var nextRetryTime = RetryScheduler.GetNextRetryTime(4, 503);
+        var nextRetryTime = _scheduler.GetNextRetryTime(4, 503);
 
-        nextRetryTime.ShouldBeGreaterThanOrEqualTo(before.AddSeconds(expectedMinDelaySeconds));
+        var expectedTime = FixedTime.AddSeconds(expectedMinDelaySeconds);
+        nextRetryTime.ShouldBe(expectedTime);
     }
 
     [Theory]
@@ -127,7 +124,7 @@ public class RetrySchedulerTests
     [InlineData(204)]
     public void GivenSuccessStatusCode_WhenChecking_ThenReturnsTrue(int statusCode)
     {
-        RetryScheduler.IsSuccessStatusCode(statusCode).ShouldBeTrue();
+        _scheduler.IsSuccessStatusCode(statusCode).ShouldBeTrue();
     }
 
     [Theory]
@@ -140,7 +137,7 @@ public class RetrySchedulerTests
     [InlineData(503)]
     public void GivenNonSuccessStatusCode_WhenChecking_ThenReturnsFalse(int statusCode)
     {
-        RetryScheduler.IsSuccessStatusCode(statusCode).ShouldBeFalse();
+        _scheduler.IsSuccessStatusCode(statusCode).ShouldBeFalse();
     }
 
     [Theory]
@@ -150,7 +147,7 @@ public class RetrySchedulerTests
     [InlineData(413)]
     public void GivenImmediateDeadLetterStatusCode_WhenChecking_ThenReturnsTrue(int statusCode)
     {
-        RetryScheduler.ShouldImmediatelyDeadLetter(statusCode).ShouldBeTrue();
+        _scheduler.ShouldImmediatelyDeadLetter(statusCode).ShouldBeTrue();
     }
 
     [Theory]
@@ -163,7 +160,7 @@ public class RetrySchedulerTests
     [InlineData(504)]
     public void GivenRetryableStatusCode_WhenChecking_ThenReturnsFalse(int statusCode)
     {
-        RetryScheduler.ShouldImmediatelyDeadLetter(statusCode).ShouldBeFalse();
+        _scheduler.ShouldImmediatelyDeadLetter(statusCode).ShouldBeFalse();
     }
 
     [Theory]
@@ -176,7 +173,7 @@ public class RetrySchedulerTests
         string expectedReason
     )
     {
-        RetryScheduler.GetDeadLetterReasonForStatusCode(statusCode).ShouldBe(expectedReason);
+        _scheduler.GetDeadLetterReasonForStatusCode(statusCode).ShouldBe(expectedReason);
     }
 
     [Theory]
@@ -188,6 +185,6 @@ public class RetrySchedulerTests
         string expectedReason
     )
     {
-        RetryScheduler.GetDeadLetterReasonForStatusCode(statusCode).ShouldBe(expectedReason);
+        _scheduler.GetDeadLetterReasonForStatusCode(statusCode).ShouldBe(expectedReason);
     }
 }

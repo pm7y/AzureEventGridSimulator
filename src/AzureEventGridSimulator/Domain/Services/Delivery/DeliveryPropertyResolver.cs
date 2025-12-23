@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
@@ -202,7 +203,7 @@ public class DeliveryPropertyResolver
         };
     }
 
-    private static bool TryParseDateTime(string value, out DateTime result)
+    private static bool TryParseDateTime(string value, out DateTimeOffset result)
     {
         result = default;
         if (string.IsNullOrEmpty(value))
@@ -210,7 +211,7 @@ public class DeliveryPropertyResolver
             return false;
         }
 
-        return DateTime.TryParse(value, out result);
+        return DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, out result);
     }
 
     private static bool TryParseGuid(string value, out Guid result)

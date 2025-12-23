@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Domain.Entities;
@@ -76,10 +77,22 @@ public class CloudEvent
     public string DataBase64 { get; set; }
 
     [JsonIgnore]
-    private DateTime? TimeParsed => string.IsNullOrEmpty(Time) ? null : DateTime.Parse(Time);
+    private DateTimeOffset? TimeParsed =>
+        string.IsNullOrEmpty(Time)
+            ? null
+            : DateTimeOffset.Parse(Time, CultureInfo.InvariantCulture);
 
     [JsonIgnore]
-    private bool TimeIsValid => string.IsNullOrEmpty(Time) || DateTime.TryParse(Time, out _);
+    private bool TimeIsValid =>
+        string.IsNullOrEmpty(Time)
+        || DateTimeOffset.TryParse(Time, CultureInfo.InvariantCulture, out _);
+
+    [JsonIgnore]
+    private bool TimeHasTimezone =>
+        string.IsNullOrEmpty(Time)
+        || Time.Contains('Z')
+        || Time.Contains('+')
+        || (Time.Length > 10 && Time[10..].Contains('-'));
 
     /// <summary>
     /// Validate the CloudEvent according to the CloudEvents v1.0 specification.
@@ -141,10 +154,10 @@ public class CloudEvent
                 );
             }
 
-            if (TimeParsed is { Kind: DateTimeKind.Unspecified })
+            if (!TimeHasTimezone)
             {
                 throw new InvalidOperationException(
-                    $"Property '{nameof(Time)}' must include timezone information."
+                    $"Property '{nameof(Time)}' must include timezone information (e.g., 'Z' for UTC or an offset like '+00:00')."
                 );
             }
         }

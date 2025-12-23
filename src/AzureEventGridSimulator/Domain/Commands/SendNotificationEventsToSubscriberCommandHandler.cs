@@ -164,7 +164,7 @@ public class SendNotificationEventsToSubscriberCommandHandler(
         {
             if (evt.Schema == EventSchema.EventGridSchema && evt.EventGridEvent != null)
             {
-                evt.EventGridEvent.Topic = topicPath;
+                evt.EventGridEvent.SetTopic(topicPath);
                 evt.EventGridEvent.MetadataVersion = "1";
             }
             else if (evt.Schema == EventSchema.CloudEventV1_0 && evt.CloudEvent != null)

@@ -16,7 +16,8 @@ public class ValidateAllSubscriptionsCommandHandler(
     ILogger<ValidateAllSubscriptionsCommandHandler> logger,
     IHttpClientFactory httpClientFactory,
     SimulatorSettings simulatorSettings,
-    ValidationIpAddressProvider validationIpAddress
+    ValidationIpAddressProvider validationIpAddress,
+    TimeProvider timeProvider
 ) : IRequestHandler<ValidateAllSubscriptionsCommand>
 {
     public async Task Handle(
@@ -55,7 +56,7 @@ public class ValidateAllSubscriptionsCommandHandler(
 
             var evt = new EventGridEvent
             {
-                EventTime = DateTime.UtcNow.ToString("O"),
+                EventTime = timeProvider.GetUtcNow().ToString("o"),
                 DataVersion = "1",
                 EventType = "Microsoft.EventGrid.SubscriptionValidationEvent",
                 Id = Guid.NewGuid().ToString(),

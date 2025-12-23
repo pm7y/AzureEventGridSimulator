@@ -3,7 +3,7 @@ namespace AzureEventGridSimulator.Domain.Services.Retry;
 /// <summary>
 /// Calculates next retry time based on Azure Event Grid retry schedule.
 /// </summary>
-public static class RetryScheduler
+public class RetryScheduler
 {
     /// <summary>
     /// Azure Event Grid retry schedule with exponential backoff.
@@ -32,6 +32,13 @@ public static class RetryScheduler
     /// </summary>
     private static readonly int[] ImmediateDeadLetterStatusCodes = [400, 401, 403, 413];
 
+    private readonly TimeProvider _timeProvider;
+
+    public RetryScheduler(TimeProvider timeProvider)
+    {
+        _timeProvider = timeProvider;
+    }
+
     /// <summary>
     /// Calculates the next retry time based on attempt number and HTTP status code.
     /// </summary>
@@ -44,10 +51,10 @@ public static class RetryScheduler
     /// <returns>
     /// The next retry time.
     /// </returns>
-    public static DateTime GetNextRetryTime(int attemptNumber, int? httpStatusCode = null)
+    public DateTimeOffset GetNextRetryTime(int attemptNumber, int? httpStatusCode = null)
     {
         var delay = GetRetryDelay(attemptNumber, httpStatusCode);
-        return DateTime.UtcNow.Add(delay);
+        return _timeProvider.GetUtcNow().Add(delay);
     }
 
     /// <summary>
@@ -101,7 +108,7 @@ public static class RetryScheduler
     /// <returns>
     /// True if the status code indicates success.
     /// </returns>
-    public static bool IsSuccessStatusCode(int statusCode)
+    public bool IsSuccessStatusCode(int statusCode)
     {
         return SuccessStatusCodes.Contains(statusCode);
     }
@@ -115,7 +122,7 @@ public static class RetryScheduler
     /// <returns>
     /// True if the event should be immediately dead-lettered.
     /// </returns>
-    public static bool ShouldImmediatelyDeadLetter(int statusCode)
+    public bool ShouldImmediatelyDeadLetter(int statusCode)
     {
         return ImmediateDeadLetterStatusCodes.Contains(statusCode);
     }
@@ -129,7 +136,7 @@ public static class RetryScheduler
     /// <returns>
     /// The dead-letter reason string.
     /// </returns>
-    public static string GetDeadLetterReasonForStatusCode(int statusCode)
+    public string GetDeadLetterReasonForStatusCode(int statusCode)
     {
         return statusCode switch
         {

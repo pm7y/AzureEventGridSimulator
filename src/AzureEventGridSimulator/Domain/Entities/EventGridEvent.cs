@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Domain.Entities;
@@ -38,10 +39,18 @@ public class EventGridEvent
     public string EventTime { get; set; }
 
     [JsonIgnore]
-    private DateTime EventTimeParsed => DateTime.Parse(EventTime);
+    private DateTimeOffset EventTimeParsed =>
+        DateTimeOffset.Parse(EventTime, CultureInfo.InvariantCulture);
 
     [JsonIgnore]
-    private bool EventTimeIsValid => DateTime.TryParse(EventTime, out _);
+    private bool EventTimeIsValid =>
+        DateTimeOffset.TryParse(EventTime, CultureInfo.InvariantCulture, out _);
+
+    [JsonIgnore]
+    private bool EventTimeHasTimezone =>
+        EventTime.Contains('Z')
+        || EventTime.Contains('+')
+        || (EventTime.Length > 10 && EventTime[10..].Contains('-'));
 
     /// <summary>
     /// Gets or sets the schema version of the data object.
@@ -56,10 +65,27 @@ public class EventGridEvent
     public string MetadataVersion { get; set; }
 
     /// <summary>
-    /// Gets or sets the resource path of the event source.
+    /// Gets the resource path of the event source.
+    /// This property is set by Event Grid, not by publishers.
     /// </summary>
     [JsonPropertyName("topic")]
-    public string Topic { get; set; }
+    [JsonInclude]
+    public string Topic { get; private set; }
+
+    /// <summary>
+    /// Indicates whether the Topic has been set by the simulator.
+    /// </summary>
+    [JsonIgnore]
+    internal bool TopicHasBeenSet { get; private set; }
+
+    /// <summary>
+    /// Sets the topic path. This should only be called by the simulator.
+    /// </summary>
+    internal void SetTopic(string topic)
+    {
+        Topic = topic;
+        TopicHasBeenSet = true;
+    }
 
     /// <summary>
     /// Validate the object.
@@ -102,10 +128,10 @@ public class EventGridEvent
             );
         }
 
-        if (EventTimeParsed.Kind == DateTimeKind.Unspecified)
+        if (!EventTimeHasTimezone)
         {
             throw new InvalidOperationException(
-                $"Property '{nameof(EventTime)}' must be either Local or UTC."
+                $"Property '{nameof(EventTime)}' must include a timezone indicator (e.g., 'Z' for UTC or an offset like '+00:00')."
             );
         }
 
@@ -116,7 +142,9 @@ public class EventGridEvent
             );
         }
 
-        if (!string.IsNullOrEmpty(Topic))
+        // Topic must NOT be set by the publisher - Event Grid sets this automatically
+        // Skip this check if the simulator has already set the topic via SetTopic()
+        if (!TopicHasBeenSet && !string.IsNullOrEmpty(Topic))
         {
             throw new InvalidOperationException(
                 $"Property '{nameof(Topic)}' was found to be set to '{Topic}', but was expected to either be null/empty."
