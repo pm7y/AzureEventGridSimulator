@@ -36,12 +36,12 @@ public class PendingDelivery
     /// <summary>
     /// Gets or sets the time the event was enqueued.
     /// </summary>
-    public DateTime EnqueuedTime { get; init; } = DateTime.UtcNow;
+    public DateTimeOffset EnqueuedTime { get; init; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// Gets or sets the next scheduled attempt time.
     /// </summary>
-    public DateTime NextAttemptTime { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset NextAttemptTime { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// Gets or sets the number of delivery attempts made.
@@ -60,12 +60,6 @@ public class PendingDelivery
         Subscriber.RetryPolicy ?? new RetryPolicySettings();
 
     /// <summary>
-    /// Gets whether the event has expired based on TTL.
-    /// </summary>
-    public bool IsExpired =>
-        DateTime.UtcNow > EnqueuedTime.AddMinutes(EffectiveRetryPolicy.EventTimeToLiveInMinutes);
-
-    /// <summary>
     /// Gets whether the maximum delivery attempts have been reached.
     /// </summary>
     public bool HasReachedMaxAttempts => AttemptCount >= EffectiveRetryPolicy.MaxDeliveryAttempts;
@@ -79,4 +73,18 @@ public class PendingDelivery
     /// Gets the last delivery attempt, if any.
     /// </summary>
     public DeliveryAttempt LastAttempt => Attempts.Count > 0 ? Attempts[^1] : null;
+
+    /// <summary>
+    /// Determines whether the event has expired based on TTL.
+    /// </summary>
+    /// <param name="now" >
+    /// The current UTC time.
+    /// </param>
+    /// <returns>
+    /// True if the event has expired.
+    /// </returns>
+    public bool IsExpired(DateTimeOffset now)
+    {
+        return now > EnqueuedTime.AddMinutes(EffectiveRetryPolicy.EventTimeToLiveInMinutes);
+    }
 }

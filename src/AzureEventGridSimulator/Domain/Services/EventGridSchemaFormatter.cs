@@ -6,7 +6,7 @@ namespace AzureEventGridSimulator.Domain.Services;
 /// <summary>
 /// Formats events in the Azure Event Grid schema for delivery.
 /// </summary>
-public class EventGridSchemaFormatter : IEventSchemaFormatter
+public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaFormatter
 {
     /// <inheritdoc />
     public EventSchema Schema => EventSchema.EventGridSchema;
@@ -62,17 +62,18 @@ public class EventGridSchemaFormatter : IEventSchemaFormatter
     /// </summary>
     private EventGridEvent ConvertCloudEventToEventGrid(CloudEvent cloudEvent)
     {
-        return new EventGridEvent
+        var eventGridEvent = new EventGridEvent
         {
             Id = cloudEvent.Id,
             Subject = cloudEvent.Subject ?? cloudEvent.Source,
             EventType = cloudEvent.Type,
-            EventTime = cloudEvent.Time ?? DateTime.UtcNow.ToString("o"),
+            EventTime = cloudEvent.Time ?? timeProvider.GetUtcNow().ToString("o"),
             Data = cloudEvent.Data,
             DataVersion = ExtractDataVersion(cloudEvent.DataSchema),
-            Topic = cloudEvent.Source,
             MetadataVersion = "1",
         };
+        eventGridEvent.SetTopic(cloudEvent.Source);
+        return eventGridEvent;
     }
 
     /// <summary>

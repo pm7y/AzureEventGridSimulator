@@ -258,7 +258,7 @@ public class EventHistoryStoreTests
             EventType = "Test.EventType",
             Subject = "/test/subject",
             Source = "/test/source",
-            EventTime = DateTime.UtcNow.ToString("o"),
+            EventTime = DateTimeOffset.UtcNow.ToString("o"),
             InputSchema = EventSchema.EventGridSchema,
             PayloadJson = "{}",
         };

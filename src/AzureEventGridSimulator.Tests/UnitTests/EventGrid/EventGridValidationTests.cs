@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using Shouldly;
 using Xunit;
@@ -258,34 +259,53 @@ public class EventGridValidationTests
     public void GivenEventWithNonNullTopic_WhenValidated_ThenExceptionThrown()
     {
         // Topic should be null/empty when publishing - it's set by the service
-        var eventGridEvent = new EventGridEvent
-        {
-            Id = "test-id-123",
-            Subject = "/test/subject",
-            EventType = "Test.EventType",
-            EventTime = "2025-01-15T10:30:00Z",
-            Topic = "/subscriptions/some/topic",
-        };
+        // Use JSON deserialization to simulate a publisher sending a Topic value
+        var json = """
+            {
+                "id": "test-id-123",
+                "subject": "/test/subject",
+                "eventType": "Test.EventType",
+                "eventTime": "2025-01-15T10:30:00Z",
+                "topic": "/subscriptions/some/topic"
+            }
+            """;
+        var eventGridEvent = JsonSerializer.Deserialize<EventGridEvent>(json);
 
-        var exception = Should.Throw<InvalidOperationException>(() => eventGridEvent.Validate());
+        var exception = Should.Throw<InvalidOperationException>(() => eventGridEvent!.Validate());
         exception.Message.ShouldContain("Topic");
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    public void GivenEventWithNullOrEmptyTopic_WhenValidated_ThenNoExceptionThrown(string topic)
+    [Fact]
+    public void GivenEventWithNullTopic_WhenValidated_ThenNoExceptionThrown()
     {
+        // Topic defaults to null when not set
         var eventGridEvent = new EventGridEvent
         {
             Id = "test-id-123",
             Subject = "/test/subject",
             EventType = "Test.EventType",
             EventTime = "2025-01-15T10:30:00Z",
-            Topic = topic,
         };
 
         Should.NotThrow(() => eventGridEvent.Validate());
+    }
+
+    [Fact]
+    public void GivenEventWithEmptyTopic_WhenValidated_ThenNoExceptionThrown()
+    {
+        // Use JSON deserialization to set empty Topic
+        var json = """
+            {
+                "id": "test-id-123",
+                "subject": "/test/subject",
+                "eventType": "Test.EventType",
+                "eventTime": "2025-01-15T10:30:00Z",
+                "topic": ""
+            }
+            """;
+        var eventGridEvent = JsonSerializer.Deserialize<EventGridEvent>(json);
+
+        Should.NotThrow(() => eventGridEvent!.Validate());
     }
 
     [Fact]

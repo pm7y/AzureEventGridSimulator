@@ -16,7 +16,7 @@ public class ValidateSubscriptionCommandHandlerTests
     public ValidateSubscriptionCommandHandlerTests()
     {
         _logger = Substitute.For<ILogger<ValidateSubscriptionCommandHandler>>();
-        _handler = new ValidateSubscriptionCommandHandler(_logger);
+        _handler = new ValidateSubscriptionCommandHandler(TimeProvider.System, _logger);
     }
 
     [Fact]

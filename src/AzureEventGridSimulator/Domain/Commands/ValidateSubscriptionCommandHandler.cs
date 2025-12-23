@@ -3,8 +3,10 @@ using AzureEventGridSimulator.Infrastructure.Settings;
 
 namespace AzureEventGridSimulator.Domain.Commands;
 
-public class ValidateSubscriptionCommandHandler(ILogger<ValidateSubscriptionCommandHandler> logger)
-    : IRequestHandler<ValidateSubscriptionCommand, bool>
+public class ValidateSubscriptionCommandHandler(
+    TimeProvider timeProvider,
+    ILogger<ValidateSubscriptionCommandHandler> logger
+) : IRequestHandler<ValidateSubscriptionCommand, bool>
 {
     public Task<bool> Handle(
         ValidateSubscriptionCommand request,
@@ -19,7 +21,7 @@ public class ValidateSubscriptionCommandHandler(ILogger<ValidateSubscriptionComm
         if (
             subscriber != null
             && subscriber.ValidationCode == request.ValidationCode
-            && !subscriber.ValidationPeriodExpired
+            && !subscriber.ValidationPeriodExpired(timeProvider.GetUtcNow())
         )
         {
             subscriber.ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful;

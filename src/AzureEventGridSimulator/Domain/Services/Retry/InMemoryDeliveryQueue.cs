@@ -7,7 +7,8 @@ namespace AzureEventGridSimulator.Domain.Services.Retry;
 /// Thread-safe in-memory implementation of the delivery queue.
 /// Events are lost on restart (acceptable for a simulator).
 /// </summary>
-public class InMemoryDeliveryQueue(ILogger<InMemoryDeliveryQueue> logger) : IDeliveryQueue
+public class InMemoryDeliveryQueue(TimeProvider timeProvider, ILogger<InMemoryDeliveryQueue> logger)
+    : IDeliveryQueue
 {
     private readonly ConcurrentDictionary<string, PendingDelivery> _queue = new();
 
@@ -55,7 +56,7 @@ public class InMemoryDeliveryQueue(ILogger<InMemoryDeliveryQueue> logger) : IDel
     /// <inheritdoc />
     public IEnumerable<PendingDelivery> GetDueDeliveries()
     {
-        var now = DateTime.UtcNow;
+        var now = timeProvider.GetUtcNow();
 
         return _queue
             .Values.Where(d => d.NextAttemptTime <= now)

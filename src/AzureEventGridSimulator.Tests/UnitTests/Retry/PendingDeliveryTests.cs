@@ -9,11 +9,13 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Retry;
 [Trait("Category", "unit")]
 public class PendingDeliveryTests
 {
+    private static readonly DateTimeOffset FixedTime = new(2025, 1, 15, 12, 0, 0, TimeSpan.Zero);
+
     private static PendingDelivery CreatePendingDelivery(
         int? ttlMinutes = 1440,
         int? maxAttempts = 30,
         bool? retryEnabled = true,
-        DateTime? enqueuedTime = null
+        DateTimeOffset? enqueuedTime = null
     )
     {
         RetryPolicySettings retryPolicy = null;
@@ -50,59 +52,46 @@ public class PendingDeliveryTests
                 Id = Guid.NewGuid().ToString(),
                 Subject = "test/subject",
                 EventType = "Test.EventType",
-                EventTime = DateTime.UtcNow.ToString("o"),
+                EventTime = FixedTime.ToString("o"),
                 DataVersion = "1.0",
                 Data = new { test = "data" },
             }
         );
 
-        var delivery = new PendingDelivery
+        return new PendingDelivery
         {
             Event = evt,
             Subscriber = subscriber,
             Topic = topic,
             InputSchema = EventSchema.EventGridSchema,
+            EnqueuedTime = enqueuedTime ?? FixedTime,
+            NextAttemptTime = enqueuedTime ?? FixedTime,
         };
-
-        // Set EnqueuedTime if provided (using object initializer since it's init-only)
-        if (enqueuedTime.HasValue)
-        {
-            return new PendingDelivery
-            {
-                Event = evt,
-                Subscriber = subscriber,
-                Topic = topic,
-                InputSchema = EventSchema.EventGridSchema,
-                EnqueuedTime = enqueuedTime.Value,
-            };
-        }
-
-        return delivery;
     }
 
     [Fact]
     public void GivenNewDelivery_WhenChecking_ThenIsNotExpired()
     {
-        var delivery = CreatePendingDelivery(60);
+        var delivery = CreatePendingDelivery(60, enqueuedTime: FixedTime);
 
-        delivery.IsExpired.ShouldBeFalse();
+        delivery.IsExpired(FixedTime).ShouldBeFalse();
     }
 
     [Fact]
     public void GivenDeliveryOlderThanTtl_WhenChecking_ThenIsExpired()
     {
-        var delivery = CreatePendingDelivery(60, enqueuedTime: DateTime.UtcNow.AddMinutes(-61));
+        var delivery = CreatePendingDelivery(60, enqueuedTime: FixedTime.AddMinutes(-61));
 
-        delivery.IsExpired.ShouldBeTrue();
+        delivery.IsExpired(FixedTime).ShouldBeTrue();
     }
 
     [Fact]
     public void GivenDeliveryJustBeforeTtl_WhenChecking_ThenIsNotExpired()
     {
-        var delivery = CreatePendingDelivery(60, enqueuedTime: DateTime.UtcNow.AddMinutes(-59));
+        var delivery = CreatePendingDelivery(60, enqueuedTime: FixedTime.AddMinutes(-59));
 
         // Just before TTL, should not be expired yet
-        delivery.IsExpired.ShouldBeFalse();
+        delivery.IsExpired(FixedTime).ShouldBeFalse();
     }
 
     [Fact]
@@ -111,10 +100,10 @@ public class PendingDeliveryTests
         // Default TTL is 1440 minutes (24 hours)
         var delivery = CreatePendingDelivery(
             null, // Use default
-            enqueuedTime: DateTime.UtcNow.AddMinutes(-1441)
+            enqueuedTime: FixedTime.AddMinutes(-1441)
         );
 
-        delivery.IsExpired.ShouldBeTrue();
+        delivery.IsExpired(FixedTime).ShouldBeTrue();
     }
 
     [Fact]
@@ -122,10 +111,10 @@ public class PendingDeliveryTests
     {
         var delivery = CreatePendingDelivery(
             1, // 1 minute TTL
-            enqueuedTime: DateTime.UtcNow.AddMinutes(-2)
+            enqueuedTime: FixedTime.AddMinutes(-2)
         );
 
-        delivery.IsExpired.ShouldBeTrue();
+        delivery.IsExpired(FixedTime).ShouldBeTrue();
     }
 
     [Fact]
@@ -225,7 +214,7 @@ public class PendingDeliveryTests
         var attempt = new DeliveryAttempt
         {
             AttemptNumber = 1,
-            AttemptTime = DateTime.UtcNow,
+            AttemptTime = FixedTime,
             Outcome = DeliveryOutcome.HttpError,
             HttpStatusCode = 500,
         };
@@ -241,20 +230,20 @@ public class PendingDeliveryTests
         var attempt1 = new DeliveryAttempt
         {
             AttemptNumber = 1,
-            AttemptTime = DateTime.UtcNow.AddMinutes(-10),
+            AttemptTime = FixedTime.AddMinutes(-10),
             Outcome = DeliveryOutcome.HttpError,
             HttpStatusCode = 500,
         };
         var attempt2 = new DeliveryAttempt
         {
             AttemptNumber = 2,
-            AttemptTime = DateTime.UtcNow.AddMinutes(-5),
+            AttemptTime = FixedTime.AddMinutes(-5),
             Outcome = DeliveryOutcome.Timeout,
         };
         var attempt3 = new DeliveryAttempt
         {
             AttemptNumber = 3,
-            AttemptTime = DateTime.UtcNow,
+            AttemptTime = FixedTime,
             Outcome = DeliveryOutcome.HttpError,
             HttpStatusCode = 503,
         };
@@ -283,13 +272,7 @@ public class PendingDeliveryTests
 
         delivery.AttemptCount.ShouldBe(0);
         delivery.Attempts.ShouldBeEmpty();
-        delivery.EnqueuedTime.ShouldBeInRange(
-            DateTime.UtcNow.AddSeconds(-1),
-            DateTime.UtcNow.AddSeconds(1)
-        );
-        delivery.NextAttemptTime.ShouldBeInRange(
-            DateTime.UtcNow.AddSeconds(-1),
-            DateTime.UtcNow.AddSeconds(1)
-        );
+        delivery.EnqueuedTime.ShouldBe(FixedTime);
+        delivery.NextAttemptTime.ShouldBe(FixedTime);
     }
 }

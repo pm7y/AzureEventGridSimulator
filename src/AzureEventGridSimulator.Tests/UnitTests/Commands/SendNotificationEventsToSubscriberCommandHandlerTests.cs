@@ -407,7 +407,7 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
                 Id = id,
                 Subject = "/test/subject",
                 EventType = "Test.EventType",
-                EventTime = DateTime.UtcNow.ToString("o"),
+                EventTime = DateTimeOffset.UtcNow.ToString("o"),
                 DataVersion = "1.0",
                 Data = new { Property = "Value" },
             }

@@ -18,8 +18,8 @@ public class SimulatorEventTests
             EventTime = "2025-01-15T10:30:00Z",
             Data = new { Property = "Value" },
             DataVersion = "1.0",
-            Topic = "/test/topic",
         };
+        eventGridEvent.SetTopic("/test/topic");
 
         var simulatorEvent = SimulatorEvent.FromEventGridEvent(eventGridEvent);
 

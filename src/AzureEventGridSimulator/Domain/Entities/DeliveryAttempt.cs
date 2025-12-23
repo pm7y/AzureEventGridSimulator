@@ -8,7 +8,7 @@ public class DeliveryAttempt
     /// <summary>
     /// Gets or sets the time of the attempt.
     /// </summary>
-    public DateTime AttemptTime { get; init; } = DateTime.UtcNow;
+    public DateTimeOffset AttemptTime { get; init; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// Gets or sets the attempt number (1-based).

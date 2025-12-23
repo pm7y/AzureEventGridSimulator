@@ -15,12 +15,16 @@ public abstract class SasKeyValidatorTestBase
     protected SasKeyValidatorTestBase()
     {
         Logger = Substitute.For<ILogger<SasKeyValidator>>();
-        Validator = new SasKeyValidator(Logger);
+        Validator = new SasKeyValidator(TimeProvider.System, Logger);
     }
 
-    protected static string GenerateValidSasToken(string key, string resource, DateTime expiry)
+    protected static string GenerateValidSasToken(
+        string key,
+        string resource,
+        DateTimeOffset expiry
+    )
     {
-        var decodedExpiration = expiry.ToString("o");
+        var decodedExpiration = expiry.UtcDateTime.ToString("o");
 
         var encodedResource = HttpUtility.UrlEncode(resource);
         var encodedExpiration = HttpUtility.UrlEncode(decodedExpiration);

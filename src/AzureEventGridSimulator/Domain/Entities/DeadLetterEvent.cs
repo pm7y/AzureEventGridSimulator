@@ -44,13 +44,13 @@ public class DeadLetterEvent
     /// Gets or sets the time the event was originally published.
     /// </summary>
     [JsonPropertyName("publishTime")]
-    public DateTime PublishTime { get; init; }
+    public DateTimeOffset PublishTime { get; init; }
 
     /// <summary>
     /// Gets or sets the time of the last delivery attempt.
     /// </summary>
     [JsonPropertyName("lastDeliveryAttemptTime")]
-    public DateTime LastDeliveryAttemptTime { get; init; }
+    public DateTimeOffset LastDeliveryAttemptTime { get; init; }
 
     /// <summary>
     /// Gets or sets the topic name.

@@ -21,7 +21,7 @@ public class EventHubEventDeliveryServiceTests
     {
         _logger = Substitute.For<ILogger<EventHubEventDeliveryService>>();
         _formatterFactory = new EventSchemaFormatterFactory(
-            new EventGridSchemaFormatter(),
+            new EventGridSchemaFormatter(TimeProvider.System),
             new CloudEventSchemaFormatter()
         );
         _propertyResolver = new DeliveryPropertyResolver();

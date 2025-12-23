@@ -279,6 +279,9 @@ public class Program
         builder.Services.AddSimulatorSettings(configuration);
         builder.Services.AddMediator(Assembly.GetExecutingAssembly());
 
+        // Register TimeProvider for testability
+        builder.Services.AddSingleton(TimeProvider.System);
+
         // Register event schema services (stateless, can be singletons)
         builder.Services.AddSingleton<EventSchemaDetector>();
         builder.Services.AddSingleton<EventGridSchemaParser>();
@@ -296,6 +299,7 @@ public class Program
         builder.Services.AddSingleton<HttpEventDeliveryService>();
 
         // Register retry and dead-letter services
+        builder.Services.AddSingleton<RetryScheduler>();
         builder.Services.AddSingleton<IDeliveryQueue, InMemoryDeliveryQueue>();
         builder.Services.AddSingleton<DeadLetterService>();
         builder.Services.AddHostedService<RetryDeliveryBackgroundService>();

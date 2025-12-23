@@ -115,7 +115,7 @@ public class EventHistoryServiceTests
         var attempt = new DeliveryAttempt
         {
             AttemptNumber = 1,
-            AttemptTime = DateTime.UtcNow,
+            AttemptTime = DateTimeOffset.UtcNow,
             Outcome = DeliveryOutcome.Success,
             HttpStatusCode = 200,
         };
@@ -136,7 +136,7 @@ public class EventHistoryServiceTests
         var attempt = new DeliveryAttempt
         {
             AttemptNumber = 1,
-            AttemptTime = DateTime.UtcNow,
+            AttemptTime = DateTimeOffset.UtcNow,
             Outcome = DeliveryOutcome.Success,
         };
 
@@ -283,7 +283,7 @@ public class EventHistoryServiceTests
                 Id = id,
                 Subject = "/test/subject",
                 EventType = "Test.EventType",
-                EventTime = DateTime.UtcNow.ToString("o"),
+                EventTime = DateTimeOffset.UtcNow.ToString("o"),
                 DataVersion = "1.0",
                 Data = new { Property = "Value" },
             }

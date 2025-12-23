@@ -21,7 +21,7 @@ public class StorageQueueEventDeliveryServiceTests
     {
         _logger = Substitute.For<ILogger<StorageQueueEventDeliveryService>>();
         _formatterFactory = new EventSchemaFormatterFactory(
-            new EventGridSchemaFormatter(),
+            new EventGridSchemaFormatter(TimeProvider.System),
             new CloudEventSchemaFormatter()
         );
         _service = new StorageQueueEventDeliveryService(_logger, _formatterFactory);

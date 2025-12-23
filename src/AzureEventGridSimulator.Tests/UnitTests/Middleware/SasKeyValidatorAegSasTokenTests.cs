@@ -14,7 +14,7 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
         var token = GenerateValidSasToken(
             ValidTopicKey,
             "http://localhost",
-            DateTime.UtcNow.AddMinutes(5)
+            DateTimeOffset.UtcNow.AddMinutes(5)
         );
         var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
 
@@ -29,7 +29,7 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
         var token = GenerateValidSasToken(
             ValidTopicKey,
             "http://localhost",
-            DateTime.UtcNow.AddMinutes(-5)
+            DateTimeOffset.UtcNow.AddMinutes(-5)
         );
         var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
 
@@ -44,7 +44,7 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
         var token = GenerateValidSasToken(
             "WrongKey123456789012345=",
             "http://localhost",
-            DateTime.UtcNow.AddMinutes(5)
+            DateTimeOffset.UtcNow.AddMinutes(5)
         );
         var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
 
@@ -59,7 +59,7 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
         var token = GenerateValidSasToken(
             "WrongKey123456789012345=",
             "http://localhost",
-            DateTime.UtcNow.AddMinutes(5)
+            DateTimeOffset.UtcNow.AddMinutes(5)
         );
         var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
 
@@ -82,7 +82,7 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
         var token = GenerateValidSasToken(
             ValidTopicKey,
             "http://localhost",
-            DateTime.UtcNow.AddMinutes(5)
+            DateTimeOffset.UtcNow.AddMinutes(5)
         );
         var headers = new HeaderDictionary { { "AEG-SAS-TOKEN", token } };
 
@@ -94,7 +94,7 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
     [Fact]
     public void GivenTokenExpiringExactlyNow_WhenValidated_ThenReturnsFalse()
     {
-        var token = GenerateValidSasToken(ValidTopicKey, "http://localhost", DateTime.UtcNow);
+        var token = GenerateValidSasToken(ValidTopicKey, "http://localhost", DateTimeOffset.UtcNow);
         var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
 
         var result = Validator.IsValid(headers, ValidTopicKey);

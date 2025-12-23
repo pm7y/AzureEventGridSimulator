@@ -9,7 +9,7 @@ namespace AzureEventGridSimulator.Tests.UnitTests.EventGrid;
 [Trait("Category", "unit")]
 public class EventGridSchemaFormatterTests
 {
-    private readonly EventGridSchemaFormatter _formatter = new();
+    private readonly EventGridSchemaFormatter _formatter = new(TimeProvider.System);
 
     [Fact]
     public void GivenEventGridEvent_WhenSerialized_ThenJsonContainsAllFields()
@@ -22,9 +22,9 @@ public class EventGridSchemaFormatterTests
             EventTime = "2025-01-15T10:30:00Z",
             Data = new { Property = "Value" },
             DataVersion = "1.0",
-            Topic = "/test/topic",
             MetadataVersion = "1",
         };
+        eventGridEvent.SetTopic("/test/topic");
 
         var simulatorEvent = SimulatorEvent.FromEventGridEvent(eventGridEvent);
         var json = _formatter.Serialize(simulatorEvent);

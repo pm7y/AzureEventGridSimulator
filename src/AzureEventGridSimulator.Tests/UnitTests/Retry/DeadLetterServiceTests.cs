@@ -68,7 +68,7 @@ public class DeadLetterServiceTests : IDisposable
                 Id = eventId ?? Guid.NewGuid().ToString(),
                 Subject = "test/subject",
                 EventType = "Test.EventType",
-                EventTime = DateTime.UtcNow.ToString("o"),
+                EventTime = DateTimeOffset.UtcNow.ToString("o"),
                 DataVersion = "1.0",
                 Data = new { test = "data" },
             }
@@ -130,7 +130,7 @@ public class DeadLetterServiceTests : IDisposable
             new DeliveryAttempt
             {
                 AttemptNumber = 5,
-                AttemptTime = DateTime.UtcNow,
+                AttemptTime = DateTimeOffset.UtcNow,
                 Outcome = DeliveryOutcome.HttpError,
                 HttpStatusCode = 503,
                 ErrorMessage = "Service Unavailable",

@@ -15,7 +15,7 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
         var token = GenerateValidSasToken(
             ValidTopicKey,
             "http://localhost",
-            DateTime.UtcNow.AddMinutes(5)
+            DateTimeOffset.UtcNow.AddMinutes(5)
         );
         var headers = new HeaderDictionary
         {
@@ -33,7 +33,7 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
         var token = GenerateValidSasToken(
             ValidTopicKey,
             "http://localhost",
-            DateTime.UtcNow.AddMinutes(-5)
+            DateTimeOffset.UtcNow.AddMinutes(-5)
         );
         var headers = new HeaderDictionary
         {
@@ -51,7 +51,7 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
         var token = GenerateValidSasToken(
             "WrongKey123456789012345=",
             "http://localhost",
-            DateTime.UtcNow.AddMinutes(5)
+            DateTimeOffset.UtcNow.AddMinutes(5)
         );
         var headers = new HeaderDictionary
         {
@@ -69,7 +69,7 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
         var token = GenerateValidSasToken(
             "WrongKey123456789012345=",
             "http://localhost",
-            DateTime.UtcNow.AddMinutes(5)
+            DateTimeOffset.UtcNow.AddMinutes(5)
         );
         var headers = new HeaderDictionary
         {
@@ -108,7 +108,7 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
         var token = GenerateValidSasToken(
             ValidTopicKey,
             "http://localhost",
-            DateTime.UtcNow.AddMinutes(5)
+            DateTimeOffset.UtcNow.AddMinutes(5)
         );
         var headers = new HeaderDictionary
         {
