@@ -18,8 +18,8 @@
     <Authors>Paul McIlreavy</Authors>
     <Description>A simulator that provides endpoints to mimic the functionality of Azure Event Grid topics and subscribers. Compatible with the Microsoft.Azure.EventGrid client library. Supports both EventGrid and CloudEvents v1.0 schemas.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/pmcilreavy/AzureEventGridSimulator</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/pmcilreavy/AzureEventGridSimulator</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/pm7y/AzureEventGridSimulator</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/pm7y/AzureEventGridSimulator</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>azure;eventgrid;event-grid;simulator;emulator;development;testing</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -55,5 +55,14 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Dashboard\**" />
+  </ItemGroup>
+
+  <!-- ServiceDefaults is only used when running under Aspire (local development) -->
+  <PropertyGroup Condition="'$(ASPIRE_ENABLED)' == 'true'">
+    <DefineConstants>$(DefineConstants);ASPIRE_ENABLED</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(ASPIRE_ENABLED)' == 'true'">
+    <ProjectReference Include="..\AzureEventGridSimulator.ServiceDefaults\AzureEventGridSimulator.ServiceDefaults.csproj" />
   </ItemGroup>
 </Project>

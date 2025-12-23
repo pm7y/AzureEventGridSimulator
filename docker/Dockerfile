@@ -8,6 +8,7 @@ COPY /src/Directory.Packages.props .
 
 # copy source
 COPY /src/AzureEventGridSimulator ./AzureEventGridSimulator
+COPY /src/AzureEventGridSimulator.ServiceDefaults ./AzureEventGridSimulator.ServiceDefaults
 
 ARG TARGETARCH
 RUN rid="linux-musl-arm64" \

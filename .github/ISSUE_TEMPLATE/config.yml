@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Documentation
-    url: https://github.com/pmcilreavy/AzureEventGridSimulator#readme
+    url: https://github.com/pm7y/AzureEventGridSimulator#readme
     about: Check the README for documentation and examples
   - name: Discussions
-    url: https://github.com/pmcilreavy/AzureEventGridSimulator/discussions
+    url: https://github.com/pm7y/AzureEventGridSimulator/discussions
     about: Ask questions and discuss ideas

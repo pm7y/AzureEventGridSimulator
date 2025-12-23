@@ -48,6 +48,11 @@ public class Program
             app.UseRouting();
             app.MapControllers();
 
+#if ASPIRE_ENABLED
+            // Map Aspire health check endpoints (/health, /alive)
+            app.MapDefaultEndpoints();
+#endif
+
             if (simulatorSettings?.DashboardEnabled ?? true)
             {
                 app.MapDashboardEndpoints();
@@ -206,7 +211,7 @@ public class Program
         );
         Console.WriteLine();
         Console.WriteLine(
-            "For more information, visit: https://github.com/pmcilreavy/AzureEventGridSimulator"
+            "For more information, visit: https://github.com/pm7y/AzureEventGridSimulator"
         );
         Console.WriteLine();
     }
@@ -265,6 +270,11 @@ public class Program
     )
     {
         var builder = WebApplication.CreateBuilder(args);
+
+#if ASPIRE_ENABLED
+        // Add Aspire service defaults (OpenTelemetry, health checks, service discovery)
+        builder.AddServiceDefaults();
+#endif
 
         builder.Services.AddSimulatorSettings(configuration);
         builder.Services.AddMediator(Assembly.GetExecutingAssembly());

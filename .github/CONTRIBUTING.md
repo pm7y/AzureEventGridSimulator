@@ -11,7 +11,7 @@ Thank you for your interest in contributing! This simulator is intended for **lo
 
 ## Documentation
 
-For detailed guidelines on contributing, CI/CD workflows, release process, and conventional commits, see the **[Contributing wiki page](https://github.com/pmcilreavy/AzureEventGridSimulator/wiki/Contributing)**.
+For detailed guidelines on contributing, CI/CD workflows, release process, and conventional commits, see the **[Contributing wiki page](https://github.com/pm7y/AzureEventGridSimulator/wiki/Contributing)**.
 
 ## Code of Conduct
 
