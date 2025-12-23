@@ -123,6 +123,6 @@ and the [Wiki](https://github.com/pm7y/AzureEventGridSimulator/wiki) for develop
 
 ## Star History
 
-This is small project but has seen steady growth over time. Thank you to everyone who has starred the repository!
+This is a small project but has seen steady growth over time. Thank you to everyone who has starred the repository!
 
 [![Star History Chart](https://api.star-history.com/svg?repos=pm7y/AzureEventGridSimulator&type=date&legend=bottom-right)](https://www.star-history.com/#pm7y/AzureEventGridSimulator&type=date&legend=bottom-right)
