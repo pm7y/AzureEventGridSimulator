@@ -1,0 +1,36 @@
+{
+  "topics": [
+    {
+      "name": "DemoTopic",
+      "port": 60101,
+      "key": "TheLocal+DevelopmentKey=",
+      "subscribers": {
+        "http": [
+          {
+            "name": "HttpSubscriber",
+            "endpoint": "https://azureeventgridsimulator.requestcatcher.com/",
+            "disableValidation": true
+          }
+        ],
+        "storageQueue": [
+          {
+            "name": "StorageQueueSubscriber",
+            "queueName": "events"
+          }
+        ],
+        "serviceBus": [
+          {
+            "name": "ServiceBusSubscriber",
+            "queue": "sb-events"
+          }
+        ],
+        "eventHub": [
+          {
+            "name": "EventHubSubscriber",
+            "eventHubName": "eh-events"
+          }
+        ]
+      }
+    }
+  ]
+}

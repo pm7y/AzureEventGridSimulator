@@ -2,7 +2,7 @@
 
 The Azure Event Grid Simulator provides a local development environment that mimics Azure Event Grid functionality. This guide covers everything you need to run the simulator using Docker.
 
-**GitHub Repository**: [https://github.com/pmcilreavy/AzureEventGridSimulator](https://github.com/pmcilreavy/AzureEventGridSimulator)
+**GitHub Repository**: [https://github.com/pm7y/AzureEventGridSimulator](https://github.com/pm7y/AzureEventGridSimulator)
 
 **Docker Hub**: [pmcilreavy/azureeventgridsimulator](https://hub.docker.com/r/pmcilreavy/azureeventgridsimulator)
 
@@ -820,7 +820,7 @@ For external endpoints, ensure the container can reach them (check DNS, firewall
 
 ## Additional Resources
 
-- **GitHub Repository**: [https://github.com/pmcilreavy/AzureEventGridSimulator](https://github.com/pmcilreavy/AzureEventGridSimulator)
+- **GitHub Repository**: [https://github.com/pm7y/AzureEventGridSimulator](https://github.com/pm7y/AzureEventGridSimulator)
 - **Docker Hub**: [https://hub.docker.com/r/pmcilreavy/azureeventgridsimulator](https://hub.docker.com/r/pmcilreavy/azureeventgridsimulator)
 - **Azure Event Grid Documentation**: [https://docs.microsoft.com/azure/event-grid/](https://docs.microsoft.com/azure/event-grid/)
 - **CloudEvents Specification**: [https://cloudevents.io/](https://cloudevents.io/)

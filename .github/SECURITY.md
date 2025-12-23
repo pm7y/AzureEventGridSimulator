@@ -19,7 +19,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 
 Instead, please report them using GitHub's private vulnerability reporting feature:
 
-1. Go to the [Security tab](https://github.com/pmcilreavy/AzureEventGridSimulator/security) of this repository
+1. Go to the [Security tab](https://github.com/pm7y/AzureEventGridSimulator/security) of this repository
 2. Click "Report a vulnerability"
 3. Fill in the details of the vulnerability
 
