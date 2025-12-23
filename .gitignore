@@ -353,3 +353,5 @@ my.env
 .DS_Store
 .sonarqube
 .scannerwork
+.claude
+.specify
