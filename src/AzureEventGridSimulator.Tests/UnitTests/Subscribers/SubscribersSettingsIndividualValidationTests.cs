@@ -32,9 +32,13 @@ public class SubscribersSettingsIndividualValidationTests
     [Fact]
     public void GivenInvalidStorageQueueSubscriber_WhenValidated_ThenThrowsException()
     {
+        // Missing ConnectionString - should fail validation
         var settings = new SubscribersSettings
         {
-            StorageQueue = [new StorageQueueSubscriberSettings { Name = "Test" }],
+            StorageQueue =
+            [
+                new StorageQueueSubscriberSettings { Name = "Test", QueueName = "test-queue" },
+            ],
         };
 
         Should.Throw<ArgumentException>(() => settings.Validate());

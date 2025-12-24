@@ -80,7 +80,7 @@ public class EventHubEventDeliveryService(
             var eventData = new EventData(Encoding.UTF8.GetBytes(json))
             {
                 ContentType = formatter.ContentType,
-                MessageId = delivery.Event.Id ?? Guid.NewGuid().ToString(),
+                MessageId = delivery.Event.Id,
             };
 
             // Add delivery properties
@@ -106,10 +106,7 @@ public class EventHubEventDeliveryService(
             }
 
             // Send the event with partition key based on event ID
-            var sendOptions = new SendEventOptions
-            {
-                PartitionKey = delivery.Event.Id ?? Guid.NewGuid().ToString(),
-            };
+            var sendOptions = new SendEventOptions { PartitionKey = delivery.Event.Id };
 
             await producer.SendAsync([eventData], sendOptions, cancellationToken);
 
@@ -197,7 +194,7 @@ public class EventHubEventDeliveryService(
             var eventData = new EventData(Encoding.UTF8.GetBytes(json))
             {
                 ContentType = formatter.ContentType,
-                MessageId = evt.Id ?? Guid.NewGuid().ToString(),
+                MessageId = evt.Id,
             };
 
             // Add delivery properties
@@ -220,10 +217,7 @@ public class EventHubEventDeliveryService(
             }
 
             // Send the event with partition key based on event ID
-            var sendOptions = new SendEventOptions
-            {
-                PartitionKey = evt.Id ?? Guid.NewGuid().ToString(),
-            };
+            var sendOptions = new SendEventOptions { PartitionKey = evt.Id };
 
             await producer.SendAsync([eventData], sendOptions);
 
@@ -257,14 +251,17 @@ public class EventHubEventDeliveryService(
             {
                 // Mask the connection string for logging (show endpoint but hide key)
                 var connectionForLogging = subscription.EffectiveConnectionString;
-                var keyIndex = connectionForLogging?.IndexOf(
-                    "SharedAccessKey=",
-                    StringComparison.OrdinalIgnoreCase
-                );
-                if (keyIndex >= 0)
+                if (connectionForLogging != null)
                 {
-                    connectionForLogging =
-                        connectionForLogging[..(keyIndex.Value + 16)] + "***REDACTED***";
+                    var keyIndex = connectionForLogging.IndexOf(
+                        "SharedAccessKey=",
+                        StringComparison.OrdinalIgnoreCase
+                    );
+                    if (keyIndex > 0)
+                    {
+                        connectionForLogging =
+                            connectionForLogging[..(keyIndex + 16)] + "***REDACTED***";
+                    }
                 }
 
                 logger.LogInformation(
@@ -274,10 +271,17 @@ public class EventHubEventDeliveryService(
                     connectionForLogging
                 );
 
-                return new EventHubProducerClient(
-                    subscription.EffectiveConnectionString,
+                var effectiveConnectionString =
+                    subscription.EffectiveConnectionString
+                    ?? throw new InvalidOperationException(
+                        $"No connection string for Event Hub subscription '{subscription.Name}'"
+                    );
+                var eventHubName =
                     subscription.EventHubName
-                );
+                    ?? throw new InvalidOperationException(
+                        $"No Event Hub name for subscription '{subscription.Name}'"
+                    );
+                return new EventHubProducerClient(effectiveConnectionString, eventHubName);
             }
         );
     }

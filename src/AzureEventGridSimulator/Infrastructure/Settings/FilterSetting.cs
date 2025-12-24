@@ -5,19 +5,27 @@ namespace AzureEventGridSimulator.Infrastructure.Settings;
 public class FilterSetting
 {
     [JsonPropertyName("includedEventTypes")]
-    public ICollection<string> IncludedEventTypes { get; set; }
+    public ICollection<string>? IncludedEventTypes { get; init; }
 
     [JsonPropertyName("isSubjectCaseSensitive")]
-    public bool IsSubjectCaseSensitive { get; set; }
+    public bool IsSubjectCaseSensitive { get; init; }
 
     [JsonPropertyName("subjectBeginsWith")]
-    public string SubjectBeginsWith { get; set; }
+    public string? SubjectBeginsWith { get; init; }
 
     [JsonPropertyName("subjectEndsWith")]
-    public string SubjectEndsWith { get; set; }
+    public string? SubjectEndsWith { get; init; }
 
     [JsonPropertyName("advancedFilters")]
-    public ICollection<AdvancedFilterSetting> AdvancedFilters { get; set; }
+    public ICollection<AdvancedFilterSetting>? AdvancedFilters { get; init; }
+
+    /// <summary>
+    /// When true, advanced filters can match against array values in the event data.
+    /// If the event property is an array, the filter matches if ANY element satisfies the condition.
+    /// Added in API version 2020-10-15-preview.
+    /// </summary>
+    [JsonPropertyName("enableAdvancedFilteringOnArrays")]
+    public bool EnableAdvancedFilteringOnArrays { get; init; }
 
     internal void Validate()
     {
@@ -30,7 +38,7 @@ public class FilterSetting
             );
         }
 
-        foreach (var advancedFilter in AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>())
+        foreach (var advancedFilter in AdvancedFilters ?? [])
         {
             advancedFilter.Validate();
         }

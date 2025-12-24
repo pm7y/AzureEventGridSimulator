@@ -19,7 +19,7 @@ public static class SubscriptionSettingsFilterExtensions
                 or AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotEndsWith;
     }
 
-    private static bool EvaluateAdvancedFilter(AdvancedFilterSetting filter, object value)
+    private static bool EvaluateAdvancedFilter(AdvancedFilterSetting filter, object? value)
     {
         bool retVal;
 
@@ -64,7 +64,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.Contains(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -82,7 +82,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.StartsWith(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -100,7 +100,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.EndsWith(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -137,7 +137,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.Contains(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -154,7 +154,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.StartsWith(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -171,7 +171,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.EndsWith(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -198,8 +198,8 @@ public static class SubscriptionSettingsFilterExtensions
 
     private static bool TryGetValue(
         this SimulatorEvent simulatorEvent,
-        string key,
-        out object value
+        string? key,
+        out object? value
     )
     {
         value = null;
@@ -266,7 +266,7 @@ public static class SubscriptionSettingsFilterExtensions
         object data,
         string[] pathParts,
         int startIndex,
-        out object value
+        out object? value
     )
     {
         value = null;
@@ -317,7 +317,7 @@ public static class SubscriptionSettingsFilterExtensions
         }
     }
 
-    private static object ConvertJsonElement(JsonElement element)
+    private static object? ConvertJsonElement(JsonElement element)
     {
         return element.ValueKind switch
         {
@@ -327,11 +327,71 @@ public static class SubscriptionSettingsFilterExtensions
             JsonValueKind.True => true,
             JsonValueKind.False => false,
             JsonValueKind.Null => null,
+            JsonValueKind.Array => ConvertJsonArray(element),
             _ => element.GetRawText(),
         };
     }
 
-    private static double ToNumber(this object value)
+    private static List<object?> ConvertJsonArray(JsonElement arrayElement)
+    {
+        var result = new List<object?>();
+        foreach (var item in arrayElement.EnumerateArray())
+        {
+            result.Add(ConvertJsonElement(item));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Attempts to extract array elements from a value for array filtering.
+    /// Returns null if the value is not an array.
+    /// </summary>
+    private static IEnumerable<object?>? TryGetArrayElements(object? value)
+    {
+        return value switch
+        {
+            List<object?> list => list,
+            IEnumerable<object> enumerable => enumerable.Cast<object?>(),
+            JsonElement { ValueKind: JsonValueKind.Array } jsonArray => ConvertJsonArray(jsonArray),
+            _ => null,
+        };
+    }
+
+    /// <summary>
+    /// Evaluates an advanced filter against a value, with optional array filtering support.
+    /// When enableArrayFiltering is true and the value is an array, returns true if ANY element matches.
+    /// </summary>
+    private static bool EvaluateWithArraySupport(
+        AdvancedFilterSetting filter,
+        object? value,
+        bool enableArrayFiltering
+    )
+    {
+        if (!enableArrayFiltering)
+        {
+            return EvaluateAdvancedFilter(filter, value);
+        }
+
+        // Check if the value is an array
+        var arrayElements = TryGetArrayElements(value);
+        if (arrayElements == null)
+        {
+            // Not an array, evaluate normally
+            return EvaluateAdvancedFilter(filter, value);
+        }
+
+        // For negation operators on arrays, ALL elements must satisfy the condition
+        if (IsNegationOperator(filter.OperatorType))
+        {
+            return arrayElements.All(element => EvaluateAdvancedFilter(filter, element));
+        }
+
+        // For positive operators on arrays, ANY element must satisfy the condition
+        return arrayElements.Any(element => EvaluateAdvancedFilter(filter, element));
+    }
+
+    private static double ToNumber(this object? value)
     {
         if (value == null)
         {
@@ -360,7 +420,7 @@ public static class SubscriptionSettingsFilterExtensions
     /// Checks if a number is within any of the specified ranges.
     /// Ranges are specified as arrays like [[min1, max1], [min2, max2]] in the Values collection.
     /// </summary>
-    private static bool IsNumberInRanges(double value, ICollection<object> ranges)
+    private static bool IsNumberInRanges(double value, ICollection<object>? ranges)
     {
         if (ranges == null || ranges.Count == 0)
         {
@@ -414,7 +474,7 @@ public static class SubscriptionSettingsFilterExtensions
         return false;
     }
 
-    private static bool TryGetValue(this EventGridEvent gridEvent, string key, out object value)
+    private static bool TryGetValue(this EventGridEvent gridEvent, string? key, out object? value)
     {
         var retval = false;
         value = null;
@@ -485,7 +545,7 @@ public static class SubscriptionSettingsFilterExtensions
                 return true;
             }
 
-            var subject = simulatorEvent.Subject ?? "";
+            var subject = simulatorEvent.Subject;
 
             // Check event type filter
             var retVal =
@@ -523,7 +583,11 @@ public static class SubscriptionSettingsFilterExtensions
             retVal =
                 retVal
                 && (filter.AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>()).All(af =>
-                    af.AcceptsEvent(simulatorEvent)
+                    AcceptsAdvancedFilter(
+                        af,
+                        simulatorEvent,
+                        filter.EnableAdvancedFilteringOnArrays
+                    )
                 );
 
             return retVal;
@@ -534,25 +598,25 @@ public static class SubscriptionSettingsFilterExtensions
         /// </summary>
         public bool AcceptsEvent(EventGridEvent gridEvent)
         {
-            var retVal = filter == null;
-
-            if (retVal)
+            if (filter == null)
             {
                 return true;
             }
 
             // we have a filter to parse
-            retVal =
+            var retVal =
                 filter.IncludedEventTypes == null
                 || filter.IncludedEventTypes.Contains("All")
                 || filter.IncludedEventTypes.Contains(gridEvent.EventType);
+
+            var subject = gridEvent.Subject;
 
             // short circuit if we have decided the event type is not acceptable
             retVal =
                 retVal
                 && (
                     string.IsNullOrWhiteSpace(filter.SubjectBeginsWith)
-                    || gridEvent.Subject.StartsWith(
+                    || subject.StartsWith(
                         filter.SubjectBeginsWith,
                         filter.IsSubjectCaseSensitive
                             ? StringComparison.Ordinal
@@ -565,7 +629,7 @@ public static class SubscriptionSettingsFilterExtensions
                 retVal
                 && (
                     string.IsNullOrWhiteSpace(filter.SubjectEndsWith)
-                    || gridEvent.Subject.EndsWith(
+                    || subject.EndsWith(
                         filter.SubjectEndsWith,
                         filter.IsSubjectCaseSensitive
                             ? StringComparison.Ordinal
@@ -576,69 +640,70 @@ public static class SubscriptionSettingsFilterExtensions
             retVal =
                 retVal
                 && (filter.AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>()).All(af =>
-                    af.AcceptsEvent(gridEvent)
+                    AcceptsAdvancedFilter(af, gridEvent, filter.EnableAdvancedFilteringOnArrays)
                 );
 
             return retVal;
         }
     }
 
-    extension(AdvancedFilterSetting filter)
+    /// <summary>
+    /// Evaluates an advanced filter against a SimulatorEvent with array filtering support.
+    /// </summary>
+    private static bool AcceptsAdvancedFilter(
+        AdvancedFilterSetting filter,
+        SimulatorEvent simulatorEvent,
+        bool enableArrayFiltering
+    )
     {
-        private bool AcceptsEvent(SimulatorEvent simulatorEvent)
+        var keyExists = simulatorEvent.TryGetValue(filter.Key, out var value);
+        var valueIsNull = keyExists && value == null;
+
+        // Handle null check operators specially - they evaluate based on key existence
+        switch (filter.OperatorType)
         {
-            if (filter == null)
-            {
-                return true;
-            }
-
-            var keyExists = simulatorEvent.TryGetValue(filter.Key, out var value);
-            var valueIsNull = keyExists && value == null;
-
-            // Handle null check operators specially - they evaluate based on key existence
-            switch (filter.OperatorType)
-            {
-                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
-                    return !keyExists || valueIsNull;
-                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
-                    return keyExists && !valueIsNull;
-            }
-
-            // For "Not" operators, return true when key doesn't exist (per Azure docs)
-            if (!keyExists)
-            {
-                return IsNegationOperator(filter.OperatorType);
-            }
-
-            return EvaluateAdvancedFilter(filter, value);
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
+                return !keyExists || valueIsNull;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
+                return keyExists && !valueIsNull;
         }
 
-        private bool AcceptsEvent(EventGridEvent gridEvent)
+        // For "Not" operators, return true when key doesn't exist (per Azure docs)
+        if (!keyExists)
         {
-            if (filter == null)
-            {
-                return true;
-            }
-
-            var keyExists = gridEvent.TryGetValue(filter.Key, out var value);
-            var valueIsNull = keyExists && value == null;
-
-            // Handle null check operators specially - they evaluate based on key existence
-            switch (filter.OperatorType)
-            {
-                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
-                    return !keyExists || valueIsNull;
-                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
-                    return keyExists && !valueIsNull;
-            }
-
-            // For "Not" operators, return true when key doesn't exist (per Azure docs)
-            if (!keyExists)
-            {
-                return IsNegationOperator(filter.OperatorType);
-            }
-
-            return EvaluateAdvancedFilter(filter, value);
+            return IsNegationOperator(filter.OperatorType);
         }
+
+        return EvaluateWithArraySupport(filter, value, enableArrayFiltering);
+    }
+
+    /// <summary>
+    /// Evaluates an advanced filter against an EventGridEvent with array filtering support.
+    /// </summary>
+    private static bool AcceptsAdvancedFilter(
+        AdvancedFilterSetting filter,
+        EventGridEvent gridEvent,
+        bool enableArrayFiltering
+    )
+    {
+        var keyExists = gridEvent.TryGetValue(filter.Key, out var value);
+        var valueIsNull = keyExists && value == null;
+
+        // Handle null check operators specially - they evaluate based on key existence
+        switch (filter.OperatorType)
+        {
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
+                return !keyExists || valueIsNull;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
+                return keyExists && !valueIsNull;
+        }
+
+        // For "Not" operators, return true when key doesn't exist (per Azure docs)
+        if (!keyExists)
+        {
+            return IsNegationOperator(filter.OperatorType);
+        }
+
+        return EvaluateWithArraySupport(filter, value, enableArrayFiltering);
     }
 }

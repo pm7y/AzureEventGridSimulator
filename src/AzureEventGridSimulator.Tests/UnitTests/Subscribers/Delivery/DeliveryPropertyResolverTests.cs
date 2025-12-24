@@ -185,7 +185,7 @@ public class DeliveryPropertyResolverTests
     [Fact]
     public void ResolveProperty_WithNullSetting_ShouldReturnNull()
     {
-        var result = _resolver.ResolveProperty(null, CreateTestEvent());
+        var result = _resolver.ResolveProperty(null!, CreateTestEvent());
 
         result.ShouldBeNull();
     }

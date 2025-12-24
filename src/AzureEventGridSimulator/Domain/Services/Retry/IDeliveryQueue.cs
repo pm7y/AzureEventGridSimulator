@@ -46,4 +46,17 @@ public interface IDeliveryQueue
     /// Enumerable of due deliveries.
     /// </returns>
     IEnumerable<PendingDelivery> GetDueDeliveries();
+
+    /// <summary>
+    /// Gets all deliveries that are due for processing as an async stream.
+    /// </summary>
+    /// <param name="cancellationToken" >
+    /// Cancellation token.
+    /// </param>
+    /// <returns>
+    /// Async enumerable of due deliveries.
+    /// </returns>
+    IAsyncEnumerable<PendingDelivery> GetDueDeliveriesAsync(
+        CancellationToken cancellationToken = default
+    );
 }

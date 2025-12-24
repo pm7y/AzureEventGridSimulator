@@ -61,15 +61,8 @@ public class RetryDeliveryBackgroundService(
     /// </summary>
     private async Task ProcessDueDeliveriesAsync(CancellationToken cancellationToken)
     {
-        var dueDeliveries = queue.GetDueDeliveries().ToList();
-
-        foreach (var delivery in dueDeliveries)
+        await foreach (var delivery in queue.GetDueDeliveriesAsync(cancellationToken))
         {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-
             // Remove from queue before processing (we'll re-add if retry needed)
             queue.Remove(delivery.Id);
 
@@ -129,14 +122,13 @@ public class RetryDeliveryBackgroundService(
 
         // Record the attempt
         delivery.AttemptCount++;
-        var attempt = new DeliveryAttempt
-        {
-            AttemptTime = timeProvider.GetUtcNow(),
-            AttemptNumber = delivery.AttemptCount,
-            Outcome = result.Outcome,
-            HttpStatusCode = result.HttpStatusCode,
-            ErrorMessage = result.ErrorMessage,
-        };
+        var attempt = new DeliveryAttempt(
+            delivery.AttemptCount,
+            result.Outcome,
+            timeProvider.GetUtcNow(),
+            result.HttpStatusCode,
+            result.ErrorMessage
+        );
         delivery.Attempts.Add(attempt);
 
         // Record attempt for dashboard

@@ -11,25 +11,25 @@ public class SubscribersSettings
     /// Gets or sets HTTP webhook subscribers.
     /// </summary>
     [JsonPropertyName("http")]
-    public HttpSubscriberSettings[] Http { get; set; } = [];
+    public HttpSubscriberSettings[]? Http { get; set; }
 
     /// <summary>
     /// Gets or sets Azure Service Bus subscribers.
     /// </summary>
     [JsonPropertyName("serviceBus")]
-    public ServiceBusSubscriberSettings[] ServiceBus { get; set; } = [];
+    public ServiceBusSubscriberSettings[]? ServiceBus { get; set; }
 
     /// <summary>
     /// Gets or sets Azure Storage Queue subscribers.
     /// </summary>
     [JsonPropertyName("storageQueue")]
-    public StorageQueueSubscriberSettings[] StorageQueue { get; set; } = [];
+    public StorageQueueSubscriberSettings[]? StorageQueue { get; set; }
 
     /// <summary>
     /// Gets or sets Azure Event Hub subscribers.
     /// </summary>
     [JsonPropertyName("eventHub")]
-    public EventHubSubscriberSettings[] EventHub { get; set; } = [];
+    public EventHubSubscriberSettings[]? EventHub { get; set; }
 
     /// <summary>
     /// Gets all subscribers of all types.

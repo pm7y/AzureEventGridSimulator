@@ -1,5 +1,6 @@
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;
 using Xunit;
 
@@ -29,10 +30,10 @@ public class EventGridSchemaParserTests
 
         events.ShouldHaveSingleItem();
         events[0].Schema.ShouldBe(EventSchema.EventGridSchema);
-        events[0].EventGridEvent.Id.ShouldBe("test-id-123");
-        events[0].EventGridEvent.Subject.ShouldBe("/test/subject");
-        events[0].EventGridEvent.EventType.ShouldBe("Test.EventType");
-        events[0].EventGridEvent.DataVersion.ShouldBe("1.0");
+        events[0].EventGridEvent.ShouldNotBeNullAnd().Id.ShouldBe("test-id-123");
+        events[0].EventGridEvent.ShouldNotBeNullAnd().Subject.ShouldBe("/test/subject");
+        events[0].EventGridEvent.ShouldNotBeNullAnd().EventType.ShouldBe("Test.EventType");
+        events[0].EventGridEvent.ShouldNotBeNullAnd().DataVersion.ShouldBe("1.0");
     }
 
     [Fact]
@@ -61,10 +62,10 @@ public class EventGridSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.Length.ShouldBe(2);
-        events[0].EventGridEvent.Id.ShouldBe("event-1");
-        events[0].EventGridEvent.EventType.ShouldBe("Test.EventType1");
-        events[1].EventGridEvent.Id.ShouldBe("event-2");
-        events[1].EventGridEvent.EventType.ShouldBe("Test.EventType2");
+        events[0].EventGridEvent.ShouldNotBeNullAnd().Id.ShouldBe("event-1");
+        events[0].EventGridEvent.ShouldNotBeNullAnd().EventType.ShouldBe("Test.EventType1");
+        events[1].EventGridEvent.ShouldNotBeNullAnd().Id.ShouldBe("event-2");
+        events[1].EventGridEvent.ShouldNotBeNullAnd().EventType.ShouldBe("Test.EventType2");
     }
 
     [Fact]
@@ -86,8 +87,8 @@ public class EventGridSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.ShouldHaveSingleItem();
-        events[0].EventGridEvent.MetadataVersion.ShouldBe("1");
-        events[0].EventGridEvent.Data.ShouldNotBeNull();
+        events[0].EventGridEvent.ShouldNotBeNullAnd().MetadataVersion.ShouldBe("1");
+        events[0].EventGridEvent.ShouldNotBeNullAnd().Data.ShouldNotBeNull();
     }
 
     [Fact]
@@ -106,9 +107,9 @@ public class EventGridSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.ShouldHaveSingleItem();
-        events[0].EventGridEvent.Id.ShouldBe("min-id");
-        events[0].EventGridEvent.Subject.ShouldBe("/min/subject");
-        events[0].EventGridEvent.EventType.ShouldBe("Min.Type");
+        events[0].EventGridEvent.ShouldNotBeNullAnd().Id.ShouldBe("min-id");
+        events[0].EventGridEvent.ShouldNotBeNullAnd().Subject.ShouldBe("/min/subject");
+        events[0].EventGridEvent.ShouldNotBeNullAnd().EventType.ShouldBe("Min.Type");
     }
 
     [Fact]
@@ -140,7 +141,9 @@ public class EventGridSchemaParserTests
     {
         var context = CreateEventGridContext();
 
-        var exception = Should.Throw<InvalidOperationException>(() => _parser.Parse(context, null));
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            _parser.Parse(context, null!)
+        );
         exception.Message.ShouldContain("empty");
     }
 
@@ -208,50 +211,39 @@ public class EventGridSchemaParserTests
     }
 
     [Fact]
-    public void GivenInvalidEvents_WhenValidated_ThenExceptionThrown()
+    public void GivenEventJsonWithMissingId_WhenParsed_ThenExceptionThrown()
     {
-        var events = new[]
-        {
-            SimulatorEvent.FromEventGridEvent(
-                new EventGridEvent
-                {
-                    // Missing required Id field
-                    Subject = "/test/subject",
-                    EventType = "Test.EventType",
-                    EventTime = "2025-01-15T10:30:00Z",
-                }
-            ),
-        };
+        var context = CreateEventGridContext();
+        const string requestBody = """
+            [{
+                "subject": "/test/subject",
+                "eventType": "Test.EventType",
+                "eventTime": "2025-01-15T10:30:00Z"
+            }]
+            """;
 
-        Should.Throw<InvalidOperationException>(() => _parser.Validate(events));
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            _parser.Parse(context, requestBody)
+        );
+        exception.Message.ShouldContain("parse");
     }
 
     [Fact]
-    public void GivenMultipleEventsWithOneInvalid_WhenValidated_ThenExceptionThrown()
+    public void GivenEventJsonWithMissingSubject_WhenParsed_ThenExceptionThrown()
     {
-        var events = new[]
-        {
-            SimulatorEvent.FromEventGridEvent(
-                new EventGridEvent
-                {
-                    Id = "valid-id",
-                    Subject = "/test/subject",
-                    EventType = "Test.EventType",
-                    EventTime = "2025-01-15T10:30:00Z",
-                }
-            ),
-            SimulatorEvent.FromEventGridEvent(
-                new EventGridEvent
-                {
-                    Id = "invalid-id",
-                    // Missing Subject
-                    EventType = "Test.EventType",
-                    EventTime = "2025-01-15T10:30:00Z",
-                }
-            ),
-        };
+        var context = CreateEventGridContext();
+        const string requestBody = """
+            [{
+                "id": "test-id",
+                "eventType": "Test.EventType",
+                "eventTime": "2025-01-15T10:30:00Z"
+            }]
+            """;
 
-        Should.Throw<InvalidOperationException>(() => _parser.Validate(events));
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            _parser.Parse(context, requestBody)
+        );
+        exception.Message.ShouldContain("parse");
     }
 
     [Fact]
@@ -277,7 +269,7 @@ public class EventGridSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.ShouldHaveSingleItem();
-        events[0].EventGridEvent.Data.ShouldNotBeNull();
+        events[0].EventGridEvent.ShouldNotBeNullAnd().Data.ShouldNotBeNull();
     }
 
     [Fact]

@@ -66,8 +66,14 @@ public class StorageQueueEventDeliveryServiceTests
     [Fact]
     public async Task GivenDisabledSubscription_WhenSending_ThenLogsWarningAndReturnsEarly()
     {
-        var subscription = CreateValidSettings();
-        subscription.Disabled = true;
+        var subscription = new StorageQueueSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
+            QueueName = "my-queue",
+            Disabled = true,
+        };
         var topic = CreateTopicSettings();
         var evt = CreateTestEvent();
 
@@ -79,9 +85,9 @@ public class StorageQueueEventDeliveryServiceTests
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("disabled")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("disabled")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 
@@ -107,8 +113,14 @@ public class StorageQueueEventDeliveryServiceTests
     [Fact]
     public void GivenSubscriptionWithDeliverySchema_WhenConfigured_ThenSchemaIsUsed()
     {
-        var subscription = CreateValidSettings();
-        subscription.DeliverySchema = EventSchema.CloudEventV1_0;
+        var subscription = new StorageQueueSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
+            QueueName = "my-queue",
+            DeliverySchema = EventSchema.CloudEventV1_0,
+        };
 
         subscription.DeliverySchema.ShouldBe(EventSchema.CloudEventV1_0);
     }

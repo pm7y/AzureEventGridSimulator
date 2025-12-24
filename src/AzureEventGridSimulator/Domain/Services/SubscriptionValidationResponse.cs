@@ -2,8 +2,12 @@
 
 namespace AzureEventGridSimulator.Domain.Services;
 
-public class SubscriptionValidationResponse
-{
-    [JsonPropertyName("validationResponse")]
-    public Guid ValidationResponse { get; set; }
-}
+/// <summary>
+/// Response for subscription validation.
+/// </summary>
+/// <param name="ValidationResponse" >
+/// The validation response code.
+/// </param>
+public record SubscriptionValidationResponse(
+    [property: JsonPropertyName("validationResponse")] Guid ValidationResponse
+);

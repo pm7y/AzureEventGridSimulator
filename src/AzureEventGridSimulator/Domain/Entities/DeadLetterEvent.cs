@@ -21,10 +21,11 @@ public class DeadLetterEvent
     public int DeliveryAttempts { get; init; }
 
     /// <summary>
-    /// Gets or sets the outcome of the last delivery attempt.
+    /// Gets or sets the outcome of the last delivery attempt, if any.
     /// </summary>
     [JsonPropertyName("lastDeliveryOutcome")]
-    public string LastDeliveryOutcome { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LastDeliveryOutcome { get; init; }
 
     /// <summary>
     /// Gets or sets the HTTP status code of the last attempt, if applicable.
@@ -38,7 +39,7 @@ public class DeadLetterEvent
     /// </summary>
     [JsonPropertyName("lastErrorMessage")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string LastErrorMessage { get; init; }
+    public string? LastErrorMessage { get; init; }
 
     /// <summary>
     /// Gets or sets the time the event was originally published.
@@ -47,10 +48,11 @@ public class DeadLetterEvent
     public DateTimeOffset PublishTime { get; init; }
 
     /// <summary>
-    /// Gets or sets the time of the last delivery attempt.
+    /// Gets or sets the time of the last delivery attempt, if any.
     /// </summary>
     [JsonPropertyName("lastDeliveryAttemptTime")]
-    public DateTimeOffset LastDeliveryAttemptTime { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DateTimeOffset? LastDeliveryAttemptTime { get; init; }
 
     /// <summary>
     /// Gets or sets the topic name.

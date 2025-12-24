@@ -39,16 +39,16 @@ public class AdvancedFilterSetting
 
     [JsonPropertyName("operatorType")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public AdvancedFilterOperatorType OperatorType { get; set; }
+    public AdvancedFilterOperatorType OperatorType { get; init; }
 
     [JsonPropertyName("key")]
-    public string Key { get; set; }
+    public string? Key { get; init; }
 
     [JsonPropertyName("value")]
-    public object Value { get; set; }
+    public object? Value { get; init; }
 
     [JsonPropertyName("values")]
-    public ICollection<object> Values { get; set; }
+    public ICollection<object>? Values { get; init; }
 
     internal void Validate()
     {
@@ -134,7 +134,7 @@ public class AdvancedFilterSetting
             Key,
             OperatorType,
             Value ?? "null",
-            string.Join(", ", Values.HasItems() ? Values.Select(v => v.ToString()) : values),
+            string.Join(", ", Values?.Select(v => v.ToString()) ?? values),
             Guid.NewGuid()
         );
     }

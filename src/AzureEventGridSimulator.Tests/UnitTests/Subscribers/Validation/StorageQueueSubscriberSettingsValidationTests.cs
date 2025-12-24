@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Shouldly;
@@ -56,18 +57,28 @@ public class StorageQueueSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithoutName_ShouldThrow()
     {
-        var settings = CreateValidSettings();
-        settings.Name = null;
+        var json = """
+            {
+                "connectionString": "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
+                "queueName": "my-queue"
+            }
+            """;
 
-        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
-        exception.Message.ShouldContain("name");
+        Should.Throw<JsonException>(() =>
+            JsonSerializer.Deserialize<StorageQueueSubscriberSettings>(json)
+        );
     }
 
     [Fact]
     public void Validate_WithEmptyName_ShouldThrow()
     {
-        var settings = CreateValidSettings();
-        settings.Name = "   ";
+        var settings = new StorageQueueSubscriberSettings
+        {
+            Name = "   ",
+            ConnectionString =
+                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
+            QueueName = "my-queue",
+        };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
         exception.Message.ShouldContain("name");
@@ -90,18 +101,28 @@ public class StorageQueueSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithoutQueueName_ShouldThrow()
     {
-        var settings = CreateValidSettings();
-        settings.QueueName = null;
+        var json = """
+            {
+                "name": "TestSubscriber",
+                "connectionString": "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net"
+            }
+            """;
 
-        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
-        exception.Message.ShouldContain("queueName");
+        Should.Throw<JsonException>(() =>
+            JsonSerializer.Deserialize<StorageQueueSubscriberSettings>(json)
+        );
     }
 
     [Fact]
     public void Validate_WithEmptyQueueName_ShouldThrow()
     {
-        var settings = CreateValidSettings();
-        settings.QueueName = "   ";
+        var settings = new StorageQueueSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
+            QueueName = "   ",
+        };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
         exception.Message.ShouldContain("queueName");
@@ -110,11 +131,17 @@ public class StorageQueueSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithValidFilter_ShouldPass()
     {
-        var settings = CreateValidSettings();
-        settings.Filter = new FilterSetting
+        var settings = new StorageQueueSubscriberSettings
         {
-            IncludedEventTypes = new List<string> { "MyEvent" },
-            SubjectBeginsWith = "test/",
+            Name = "TestSubscriber",
+            ConnectionString =
+                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
+            QueueName = "my-queue",
+            Filter = new FilterSetting
+            {
+                IncludedEventTypes = new List<string> { "MyEvent" },
+                SubjectBeginsWith = "test/",
+            },
         };
 
         Should.NotThrow(() => settings.Validate());
@@ -172,8 +199,14 @@ public class StorageQueueSubscriberSettingsValidationTests
     [Fact]
     public void Disabled_WhenSetToTrue_ShouldBeTrue()
     {
-        var settings = CreateValidSettings();
-        settings.Disabled = true;
+        var settings = new StorageQueueSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
+            QueueName = "my-queue",
+            Disabled = true,
+        };
 
         settings.Disabled.ShouldBeTrue();
     }

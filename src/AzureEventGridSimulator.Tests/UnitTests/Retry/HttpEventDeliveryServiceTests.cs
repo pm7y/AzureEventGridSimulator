@@ -6,6 +6,7 @@ using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -149,13 +150,13 @@ public class HttpEventDeliveryServiceTests : IDisposable
 
         result.Success.ShouldBeFalse();
         result.Outcome.ShouldBe(DeliveryOutcome.NetworkError);
-        result.ErrorMessage.ShouldContain("Invalid subscriber type");
+        result.ErrorMessage.ShouldNotBeNullAnd().ShouldContain("Invalid subscriber type");
     }
 
     [Fact]
     public async Task GivenMultipleAttempts_WhenDelivering_ThenIncludesDeliveryCountHeader()
     {
-        string capturedDeliveryCount = null;
+        string? capturedDeliveryCount = null;
         var httpClientFactory = CreateMockHttpClientFactory(captureHeaders: headers =>
         {
             if (headers.TryGetValues(Constants.AegDeliveryCountHeader, out var values))
@@ -186,7 +187,7 @@ public class HttpEventDeliveryServiceTests : IDisposable
 
         result.Success.ShouldBeFalse();
         result.Outcome.ShouldBe(DeliveryOutcome.NetworkError);
-        result.ErrorMessage.ShouldContain("Connection refused");
+        result.ErrorMessage.ShouldNotBeNullAnd().ShouldContain("Connection refused");
     }
 
     [Fact]
@@ -202,14 +203,14 @@ public class HttpEventDeliveryServiceTests : IDisposable
 
         result.Success.ShouldBeFalse();
         result.Outcome.ShouldBe(DeliveryOutcome.NetworkError);
-        result.ErrorMessage.ShouldContain("No such host");
+        result.ErrorMessage.ShouldNotBeNullAnd().ShouldContain("No such host");
     }
 
     private IHttpClientFactory CreateMockHttpClientFactory(
         HttpStatusCode statusCode = HttpStatusCode.OK,
-        Exception throwException = null,
-        Action responseAction = null,
-        Action<HttpRequestHeaders> captureHeaders = null
+        Exception? throwException = null,
+        Action? responseAction = null,
+        Action<HttpRequestHeaders>? captureHeaders = null
     )
     {
         var handler = new MockHttpMessageHandler(
@@ -273,17 +274,17 @@ public class HttpEventDeliveryServiceTests : IDisposable
 
     private class MockHttpMessageHandler : HttpMessageHandler
     {
-        private readonly Action<HttpRequestHeaders> _captureHeaders;
-        private readonly Exception _exception;
-        private readonly Action _responseAction;
+        private readonly Action<HttpRequestHeaders>? _captureHeaders;
+        private readonly Exception? _exception;
+        private readonly Action? _responseAction;
         private readonly List<HttpResponseMessage> _responses = [];
         private readonly HttpStatusCode _statusCode;
 
         public MockHttpMessageHandler(
             HttpStatusCode statusCode,
-            Exception exception = null,
-            Action responseAction = null,
-            Action<HttpRequestHeaders> captureHeaders = null
+            Exception? exception = null,
+            Action? responseAction = null,
+            Action<HttpRequestHeaders>? captureHeaders = null
         )
         {
             _statusCode = statusCode;

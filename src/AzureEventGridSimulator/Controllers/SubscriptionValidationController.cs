@@ -33,7 +33,8 @@ public class SubscriptionValidationController(
                 new ErrorMessage(
                     HttpStatusCode.BadRequest,
                     "The validation code was not correct.",
-                    null
+                    null,
+                    ErrorDetailCodes.InputJsonInvalid
                 )
             );
         }

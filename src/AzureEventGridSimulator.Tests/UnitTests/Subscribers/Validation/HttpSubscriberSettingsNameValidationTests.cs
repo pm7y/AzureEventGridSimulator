@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Shouldly;
 using Xunit;
@@ -8,12 +9,11 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Subscribers.Validation;
 public class HttpSubscriberSettingsNameValidationTests
 {
     [Fact]
-    public void GivenMissingName_WhenValidated_ThenThrowsException()
+    public void GivenMissingName_WhenDeserialized_ThenThrowsException()
     {
-        var settings = new HttpSubscriberSettings { Name = null, Endpoint = "https://example.com" };
+        var json = """{ "endpoint": "https://example.com" }""";
 
-        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
-        exception.Message.ShouldContain("name");
+        Should.Throw<JsonException>(() => JsonSerializer.Deserialize<HttpSubscriberSettings>(json));
     }
 
     [Fact]

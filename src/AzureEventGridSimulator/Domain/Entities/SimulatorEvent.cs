@@ -14,12 +14,12 @@ public class SimulatorEvent
     /// <summary>
     /// Gets or sets the underlying EventGridEvent (when Schema is EventGridSchema).
     /// </summary>
-    public EventGridEvent EventGridEvent { get; set; }
+    public EventGridEvent? EventGridEvent { get; set; }
 
     /// <summary>
     /// Gets or sets the underlying CloudEvent (when Schema is CloudEventV1_0).
     /// </summary>
-    public CloudEvent CloudEvent { get; set; }
+    public CloudEvent? CloudEvent { get; set; }
 
     /// <summary>
     /// Gets the unique event identifier.
@@ -27,8 +27,10 @@ public class SimulatorEvent
     public string Id =>
         Schema switch
         {
-            EventSchema.EventGridSchema => EventGridEvent?.Id,
-            EventSchema.CloudEventV1_0 => CloudEvent?.Id,
+            EventSchema.EventGridSchema => EventGridEvent?.Id
+                ?? throw new InvalidOperationException("EventGridEvent is null"),
+            EventSchema.CloudEventV1_0 => CloudEvent?.Id
+                ?? throw new InvalidOperationException("CloudEvent is null"),
             _ => throw new InvalidOperationException($"Unknown schema: {Schema}"),
         };
 
@@ -39,8 +41,11 @@ public class SimulatorEvent
     public string Subject =>
         Schema switch
         {
-            EventSchema.EventGridSchema => EventGridEvent?.Subject,
-            EventSchema.CloudEventV1_0 => CloudEvent?.Subject ?? CloudEvent?.Source,
+            EventSchema.EventGridSchema => EventGridEvent?.Subject
+                ?? throw new InvalidOperationException("EventGridEvent is null"),
+            EventSchema.CloudEventV1_0 => CloudEvent?.Subject
+                ?? CloudEvent?.Source
+                ?? throw new InvalidOperationException("CloudEvent is null"),
             _ => throw new InvalidOperationException($"Unknown schema: {Schema}"),
         };
 
@@ -50,15 +55,17 @@ public class SimulatorEvent
     public string EventType =>
         Schema switch
         {
-            EventSchema.EventGridSchema => EventGridEvent?.EventType,
-            EventSchema.CloudEventV1_0 => CloudEvent?.Type,
+            EventSchema.EventGridSchema => EventGridEvent?.EventType
+                ?? throw new InvalidOperationException("EventGridEvent is null"),
+            EventSchema.CloudEventV1_0 => CloudEvent?.Type
+                ?? throw new InvalidOperationException("CloudEvent is null"),
             _ => throw new InvalidOperationException($"Unknown schema: {Schema}"),
         };
 
     /// <summary>
     /// Gets the event timestamp.
     /// </summary>
-    public string EventTime =>
+    public string? EventTime =>
         Schema switch
         {
             EventSchema.EventGridSchema => EventGridEvent?.EventTime,
@@ -69,7 +76,7 @@ public class SimulatorEvent
     /// <summary>
     /// Gets the event data payload.
     /// </summary>
-    public object Data =>
+    public object? Data =>
         Schema switch
         {
             EventSchema.EventGridSchema => EventGridEvent?.Data,
@@ -80,7 +87,7 @@ public class SimulatorEvent
     /// <summary>
     /// Gets the event source/topic.
     /// </summary>
-    public string Source =>
+    public string? Source =>
         Schema switch
         {
             EventSchema.EventGridSchema => EventGridEvent?.Topic,
@@ -91,7 +98,7 @@ public class SimulatorEvent
     /// <summary>
     /// Gets the data version/schema.
     /// </summary>
-    public string DataVersion =>
+    public string? DataVersion =>
         Schema switch
         {
             EventSchema.EventGridSchema => EventGridEvent?.DataVersion,

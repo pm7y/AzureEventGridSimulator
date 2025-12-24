@@ -4,6 +4,6 @@ public static class ConfigurationExtensions
 {
     public static string EnvironmentName(this IConfiguration configuration)
     {
-        return configuration["ENVIRONMENT"].Otherwise("Production");
+        return (configuration["ENVIRONMENT"] ?? "Production").Otherwise("Production");
     }
 }

@@ -2,21 +2,18 @@
 
 public static class CollectionExtensions
 {
-    extension<T>(ICollection<T> collection)
+    extension<T>(ICollection<T>? collection)
     {
         public bool HasItems()
         {
             return collection != null && collection.Count != 0;
         }
 
-        public string Separate(string separator = ", ", Func<T, string> toStringFunction = null)
+        public string Separate(string separator = ", ", Func<T, string>? toStringFunction = null)
         {
-            toStringFunction ??= t => t.ToString();
+            toStringFunction ??= t => t?.ToString() ?? string.Empty;
 
-            return string.Join(
-                separator,
-                (collection ?? Array.Empty<T>()).Select(c => toStringFunction(c))
-            );
+            return string.Join(separator, (collection ?? []).Select(c => toStringFunction(c)));
         }
     }
 }

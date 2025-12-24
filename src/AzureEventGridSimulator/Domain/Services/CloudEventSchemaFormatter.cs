@@ -92,7 +92,7 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     /// <summary>
     /// Converts a data version to a CloudEvents dataschema URI.
     /// </summary>
-    private string ConvertDataVersionToSchema(string dataVersion)
+    private string? ConvertDataVersionToSchema(string? dataVersion)
     {
         if (string.IsNullOrEmpty(dataVersion))
         {

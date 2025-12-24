@@ -92,9 +92,17 @@ public class SimulatorSettings
         }
 
         // Validate filters
-        foreach (var filter in allSubscribers.Where(s => s.Filter != null).Select(s => s.Filter))
+        foreach (var filter in allSubscribers.Where(s => s.Filter != null).Select(s => s.Filter!))
         {
             filter.Validate();
+        }
+
+        // Validate dashboard port is determinable if dashboard is enabled
+        if (DashboardEnabled && DashboardPort is null && !Topics.Any(t => !t.Disabled))
+        {
+            throw new InvalidOperationException(
+                "Dashboard is enabled but no port is available. Either set 'dashboardPort' or enable at least one topic."
+            );
         }
     }
 }

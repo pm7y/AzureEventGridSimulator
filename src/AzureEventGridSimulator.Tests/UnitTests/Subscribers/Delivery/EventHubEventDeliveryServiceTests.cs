@@ -3,6 +3,7 @@ using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -65,9 +66,9 @@ public class EventHubEventDeliveryServiceTests
     }
 
     private static PendingDelivery CreatePendingDelivery(
-        EventHubSubscriberSettings subscriber = null,
-        SimulatorEvent evt = null,
-        TopicSettings topic = null
+        EventHubSubscriberSettings? subscriber = null,
+        SimulatorEvent? evt = null,
+        TopicSettings? topic = null
     )
     {
         return new PendingDelivery
@@ -82,15 +83,21 @@ public class EventHubEventDeliveryServiceTests
     [Fact]
     public async Task GivenDisabledSubscription_WhenDelivering_ThenReturnsEventHubError()
     {
-        var subscription = CreateValidSettings();
-        subscription.Disabled = true;
+        var subscription = new EventHubSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            EventHubName = "my-event-hub",
+            Disabled = true,
+        };
         var delivery = CreatePendingDelivery(subscription);
 
         var result = await _service.DeliverAsync(delivery, CancellationToken.None);
 
         result.Success.ShouldBeFalse();
         result.Outcome.ShouldBe(DeliveryOutcome.EventHubError);
-        result.ErrorMessage.ShouldContain("disabled");
+        result.ErrorMessage.ShouldNotBeNullAnd().ShouldContain("disabled");
     }
 
     [Fact]
@@ -116,7 +123,7 @@ public class EventHubEventDeliveryServiceTests
 
         result.Success.ShouldBeFalse();
         result.Outcome.ShouldBe(DeliveryOutcome.EventHubError);
-        result.ErrorMessage.ShouldContain("Invalid subscriber type");
+        result.ErrorMessage.ShouldNotBeNullAnd().ShouldContain("Invalid subscriber type");
     }
 
     [Fact]
@@ -143,8 +150,14 @@ public class EventHubEventDeliveryServiceTests
     [Fact]
     public void GivenSubscriptionWithDeliverySchema_WhenConfigured_ThenSchemaIsUsed()
     {
-        var subscription = CreateValidSettings();
-        subscription.DeliverySchema = EventSchema.CloudEventV1_0;
+        var subscription = new EventHubSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            EventHubName = "my-event-hub",
+            DeliverySchema = EventSchema.CloudEventV1_0,
+        };
 
         subscription.DeliverySchema.ShouldBe(EventSchema.CloudEventV1_0);
     }

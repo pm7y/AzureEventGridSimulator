@@ -1,6 +1,7 @@
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;
 using Xunit;
 
@@ -32,10 +33,11 @@ public class CloudEventSchemaParserTests
 
         events.ShouldHaveSingleItem();
         events[0].Schema.ShouldBe(EventSchema.CloudEventV1_0);
-        events[0].CloudEvent.SpecVersion.ShouldBe("1.0");
-        events[0].CloudEvent.Type.ShouldBe("com.example.test");
-        events[0].CloudEvent.Source.ShouldBe("/test/source");
-        events[0].CloudEvent.Id.ShouldBe("test-id-123");
+        var cloudEvent = events[0].CloudEvent.ShouldNotBeNullAnd();
+        cloudEvent.SpecVersion.ShouldBe("1.0");
+        cloudEvent.Type.ShouldBe("com.example.test");
+        cloudEvent.Source.ShouldBe("/test/source");
+        cloudEvent.Id.ShouldBe("test-id-123");
     }
 
     [Fact]
@@ -56,10 +58,11 @@ public class CloudEventSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.ShouldHaveSingleItem();
-        events[0].CloudEvent.Time.ShouldBe("2025-01-15T10:30:00Z");
-        events[0].CloudEvent.Subject.ShouldBe("/test/subject");
-        events[0].CloudEvent.DataContentType.ShouldBe("application/json");
-        events[0].CloudEvent.DataSchema.ShouldBe("https://example.com/schema");
+        var cloudEvent = events[0].CloudEvent.ShouldNotBeNullAnd();
+        cloudEvent.Time.ShouldBe("2025-01-15T10:30:00Z");
+        cloudEvent.Subject.ShouldBe("/test/subject");
+        cloudEvent.DataContentType.ShouldBe("application/json");
+        cloudEvent.DataSchema.ShouldBe("https://example.com/schema");
     }
 
     [Fact]
@@ -75,7 +78,7 @@ public class CloudEventSchemaParserTests
 
         var events = _parser.Parse(context, requestBody);
 
-        events[0].CloudEvent.Data.ShouldNotBeNull();
+        events[0].CloudEvent.ShouldNotBeNullAnd().Data.ShouldNotBeNull();
     }
 
     [Fact]
@@ -91,7 +94,7 @@ public class CloudEventSchemaParserTests
 
         var events = _parser.Parse(context, requestBody);
 
-        events[0].CloudEvent.Data.ShouldBe("plain text data");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Data.ShouldBe("plain text data");
     }
 
     [Fact]
@@ -107,7 +110,7 @@ public class CloudEventSchemaParserTests
 
         var events = _parser.Parse(context, requestBody);
 
-        events[0].CloudEvent.Data.ShouldBeNull();
+        events[0].CloudEvent.ShouldNotBeNullAnd().Data.ShouldBeNull();
     }
 
     [Fact]
@@ -127,10 +130,10 @@ public class CloudEventSchemaParserTests
 
         events.ShouldHaveSingleItem();
         events[0].Schema.ShouldBe(EventSchema.CloudEventV1_0);
-        events[0].CloudEvent.SpecVersion.ShouldBe("1.0");
-        events[0].CloudEvent.Type.ShouldBe("com.example.test");
-        events[0].CloudEvent.Source.ShouldBe("/test/source");
-        events[0].CloudEvent.Id.ShouldBe("test-id-456");
+        events[0].CloudEvent.ShouldNotBeNullAnd().SpecVersion.ShouldBe("1.0");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Type.ShouldBe("com.example.test");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Source.ShouldBe("/test/source");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Id.ShouldBe("test-id-456");
     }
 
     [Fact]
@@ -154,11 +157,11 @@ public class CloudEventSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.ShouldHaveSingleItem();
-        events[0].CloudEvent.Time.ShouldBe("2025-01-15T10:30:00Z");
-        events[0].CloudEvent.Subject.ShouldBe("/test/subject");
-        events[0].CloudEvent.DataContentType.ShouldBe("application/json");
-        events[0].CloudEvent.DataSchema.ShouldBe("https://example.com/schema");
-        events[0].CloudEvent.Data.ShouldNotBeNull();
+        events[0].CloudEvent.ShouldNotBeNullAnd().Time.ShouldBe("2025-01-15T10:30:00Z");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Subject.ShouldBe("/test/subject");
+        events[0].CloudEvent.ShouldNotBeNullAnd().DataContentType.ShouldBe("application/json");
+        events[0].CloudEvent.ShouldNotBeNullAnd().DataSchema.ShouldBe("https://example.com/schema");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Data.ShouldNotBeNull();
     }
 
     [Fact]
@@ -177,7 +180,7 @@ public class CloudEventSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.ShouldHaveSingleItem();
-        events[0].CloudEvent.Id.ShouldBe("test-id-789");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Id.ShouldBe("test-id-789");
     }
 
     [Fact]
@@ -240,10 +243,10 @@ public class CloudEventSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.Length.ShouldBe(2);
-        events[0].CloudEvent.Id.ShouldBe("event-1");
-        events[0].CloudEvent.Type.ShouldBe("com.example.test1");
-        events[1].CloudEvent.Id.ShouldBe("event-2");
-        events[1].CloudEvent.Type.ShouldBe("com.example.test2");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Id.ShouldBe("event-1");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Type.ShouldBe("com.example.test1");
+        events[1].CloudEvent.ShouldNotBeNullAnd().Id.ShouldBe("event-2");
+        events[1].CloudEvent.ShouldNotBeNullAnd().Type.ShouldBe("com.example.test2");
     }
 
     [Fact]
@@ -262,7 +265,7 @@ public class CloudEventSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.ShouldHaveSingleItem();
-        events[0].CloudEvent.Id.ShouldBe("single-event");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Id.ShouldBe("single-event");
     }
 
     [Fact]
@@ -321,20 +324,20 @@ public class CloudEventSchemaParserTests
     }
 
     [Fact]
-    public void GivenInvalidEvents_WhenValidated_ThenExceptionThrown()
+    public void GivenCloudEventJsonWithMissingRequiredFields_WhenParsed_ThenExceptionThrown()
     {
-        var events = new[]
-        {
-            SimulatorEvent.FromCloudEvent(
-                new CloudEvent
-                {
-                    // Missing required fields
-                    SpecVersion = "1.0",
-                }
-            ),
-        };
+        // CloudEvents with missing required fields should fail during JSON deserialization
+        var context = CreateStructuredModeContext();
+        const string requestBody = """
+            {
+                "specversion": "1.0"
+            }
+            """;
 
-        Should.Throw<InvalidOperationException>(() => _parser.Validate(events));
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            _parser.Parse(context, requestBody)
+        );
+        exception.Message.ShouldContain("parse");
     }
 
     [Fact]
@@ -353,8 +356,8 @@ public class CloudEventSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.ShouldHaveSingleItem();
-        events[0].CloudEvent.Source.ShouldBe("/test/source with spaces");
-        events[0].CloudEvent.Subject.ShouldBe("Euro €");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Source.ShouldBe("/test/source with spaces");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Subject.ShouldBe("Euro €");
     }
 
     [Fact]
@@ -371,7 +374,7 @@ public class CloudEventSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.ShouldHaveSingleItem();
-        events[0].CloudEvent.Source.ShouldBe("/test/source");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Source.ShouldBe("/test/source");
     }
 
     private static DefaultHttpContext CreateBinaryModeContext(
@@ -379,10 +382,10 @@ public class CloudEventSchemaParserTests
         string type,
         string source,
         string id,
-        string time = null,
-        string subject = null,
-        string dataContentType = null,
-        string dataSchema = null
+        string? time = null,
+        string? subject = null,
+        string? dataContentType = null,
+        string? dataSchema = null
     )
     {
         var context = new DefaultHttpContext
@@ -446,7 +449,7 @@ public class CloudEventSchemaParserTests
         string type,
         string source,
         string id,
-        string subject = null
+        string? subject = null
     )
     {
         var context = new DefaultHttpContext

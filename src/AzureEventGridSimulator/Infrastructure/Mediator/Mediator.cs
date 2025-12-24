@@ -10,15 +10,7 @@ public class Mediator(IServiceProvider serviceProvider) : IMediator
     public Task Send<TRequest>(TRequest request, CancellationToken cancellationToken = default)
         where TRequest : IRequest
     {
-        var handler = serviceProvider.GetService<IRequestHandler<TRequest>>();
-
-        if (handler is null)
-        {
-            throw new InvalidOperationException(
-                $"No handler registered for request type {typeof(TRequest).Name}"
-            );
-        }
-
+        var handler = serviceProvider.GetRequiredService<IRequestHandler<TRequest>>();
         return handler.Handle(request, cancellationToken);
     }
 
@@ -33,16 +25,17 @@ public class Mediator(IServiceProvider serviceProvider) : IMediator
             requestType,
             typeof(TResponse)
         );
-        var handler = serviceProvider.GetService(handlerType);
-
-        if (handler is null)
-        {
-            throw new InvalidOperationException(
-                $"No handler registered for request type {requestType.Name}"
+        var handler = serviceProvider.GetRequiredService(handlerType);
+        var handleMethod =
+            handlerType.GetMethod("Handle")
+            ?? throw new InvalidOperationException(
+                $"Handle method not found on handler type {handlerType.Name}"
             );
-        }
 
-        var handleMethod = handlerType.GetMethod("Handle");
-        return (Task<TResponse>)handleMethod!.Invoke(handler, [request, cancellationToken])!;
+        var result =
+            handleMethod.Invoke(handler, [request, cancellationToken])
+            ?? throw new InvalidOperationException($"Handler for {requestType.Name} returned null");
+
+        return (Task<TResponse>)result;
     }
 }

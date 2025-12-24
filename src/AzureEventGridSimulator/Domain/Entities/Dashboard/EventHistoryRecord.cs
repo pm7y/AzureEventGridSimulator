@@ -1,5 +1,3 @@
-#nullable enable
-
 using System.Text.Json;
 
 namespace AzureEventGridSimulator.Domain.Entities.Dashboard;
@@ -99,7 +97,7 @@ public class EventHistoryRecord
             ReceivedAt = DateTimeOffset.UtcNow,
             TopicName = topicName,
             TopicPort = topicPort,
-            EventType = evt.EventType ?? "Unknown",
+            EventType = evt.EventType,
             Subject = evt.Subject,
             Source = evt.Source,
             EventTime = evt.EventTime,

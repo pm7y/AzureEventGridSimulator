@@ -35,7 +35,7 @@ public class DeadLetterServiceTests : IDisposable
     private static PendingDelivery CreatePendingDelivery(
         bool? deadLetterEnabled = true,
         string folderPath = "./dead-letters",
-        string eventId = null,
+        string? eventId = null,
         string topicName = "TestTopic",
         string subscriberName = "TestSubscriber"
     )
@@ -92,8 +92,8 @@ public class DeadLetterServiceTests : IDisposable
 
         var expectedFolder = Path.Combine(
             _tempFolder,
-            delivery.Topic.Name,
-            delivery.Subscriber.Name
+            delivery.Topic.Name!,
+            delivery.Subscriber.Name!
         );
         Directory.Exists(expectedFolder).ShouldBeTrue();
 
@@ -127,22 +127,21 @@ public class DeadLetterServiceTests : IDisposable
         var delivery = CreatePendingDelivery(true, _tempFolder);
         delivery.AttemptCount = 5;
         delivery.Attempts.Add(
-            new DeliveryAttempt
-            {
-                AttemptNumber = 5,
-                AttemptTime = DateTimeOffset.UtcNow,
-                Outcome = DeliveryOutcome.HttpError,
-                HttpStatusCode = 503,
-                ErrorMessage = "Service Unavailable",
-            }
+            new DeliveryAttempt(
+                5,
+                DeliveryOutcome.HttpError,
+                DateTimeOffset.UtcNow,
+                503,
+                "Service Unavailable"
+            )
         );
 
         await _service.WriteDeadLetterAsync(delivery, "MaxDeliveryAttemptsExceeded");
 
         var expectedFolder = Path.Combine(
             _tempFolder,
-            delivery.Topic.Name,
-            delivery.Subscriber.Name
+            delivery.Topic.Name!,
+            delivery.Subscriber.Name!
         );
         var files = Directory.GetFiles(expectedFolder, "*.json");
         var content = await File.ReadAllTextAsync(files[0]);
@@ -173,8 +172,8 @@ public class DeadLetterServiceTests : IDisposable
 
         var expectedFolder = Path.Combine(
             _tempFolder,
-            delivery.Topic.Name,
-            delivery.Subscriber.Name
+            delivery.Topic.Name!,
+            delivery.Subscriber.Name!
         );
         var files = Directory.GetFiles(expectedFolder, "*.json");
         var content = await File.ReadAllTextAsync(files[0]);
@@ -196,8 +195,8 @@ public class DeadLetterServiceTests : IDisposable
 
         var expectedFolder = Path.Combine(
             _tempFolder,
-            delivery.Topic.Name,
-            delivery.Subscriber.Name
+            delivery.Topic.Name!,
+            delivery.Subscriber.Name!
         );
         var files = Directory.GetFiles(expectedFolder, "*.json");
         var fileName = Path.GetFileName(files[0]);
@@ -220,8 +219,8 @@ public class DeadLetterServiceTests : IDisposable
 
         var expectedFolder = Path.Combine(
             _tempFolder,
-            delivery.Topic.Name,
-            delivery.Subscriber.Name
+            delivery.Topic.Name!,
+            delivery.Subscriber.Name!
         );
         var files = Directory.GetFiles(expectedFolder, "*.json");
         files.Length.ShouldBe(1); // File was created successfully
@@ -241,8 +240,8 @@ public class DeadLetterServiceTests : IDisposable
 
         var expectedFolder = Path.Combine(
             _tempFolder,
-            delivery.Topic.Name,
-            delivery.Subscriber.Name
+            delivery.Topic.Name!,
+            delivery.Subscriber.Name!
         );
         var files = Directory.GetFiles(expectedFolder, "*.json");
         files.Length.ShouldBe(1);
@@ -280,8 +279,8 @@ public class DeadLetterServiceTests : IDisposable
 
         var expectedFolder = Path.Combine(
             _tempFolder,
-            delivery1.Topic.Name,
-            delivery1.Subscriber.Name
+            delivery1.Topic.Name!,
+            delivery1.Subscriber.Name!
         );
         var files = Directory.GetFiles(expectedFolder, "*.json");
         files.Length.ShouldBe(2);
@@ -299,9 +298,9 @@ public class DeadLetterServiceTests : IDisposable
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("dead-lettered")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("dead-lettered")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 
@@ -317,9 +316,9 @@ public class DeadLetterServiceTests : IDisposable
             .Log(
                 LogLevel.Debug,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("disabled")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("disabled")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 }

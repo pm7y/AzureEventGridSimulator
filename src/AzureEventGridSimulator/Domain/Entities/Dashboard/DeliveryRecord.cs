@@ -1,5 +1,3 @@
-#nullable enable
-
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
 namespace AzureEventGridSimulator.Domain.Entities.Dashboard;
@@ -55,7 +53,9 @@ public class DeliveryRecord
             ServiceBusSubscriberSettings sb => sb.DestinationName,
             StorageQueueSubscriberSettings sq => sq.QueueName,
             EventHubSubscriberSettings eh => eh.EventHubName,
-            _ => "Unknown",
+            _ => throw new InvalidOperationException(
+                $"Unknown subscriber type: {subscriber.GetType().Name}"
+            ),
         };
 
         return new DeliveryRecord

@@ -83,9 +83,9 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
             .Log(
                 LogLevel.Error,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("SharedAccessSignature")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("SharedAccessSignature")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 

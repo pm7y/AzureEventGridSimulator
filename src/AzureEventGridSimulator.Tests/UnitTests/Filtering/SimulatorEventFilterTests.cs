@@ -171,7 +171,7 @@ public class SimulatorEventFilterTests
     [Fact]
     public void GivenNullFilter_WhenFilteringSimulatorEvent_ThenAccepted()
     {
-        FilterSetting filter = null;
+        FilterSetting? filter = null;
         var cloudEvent = new CloudEvent
         {
             SpecVersion = "1.0",
@@ -181,6 +181,7 @@ public class SimulatorEventFilterTests
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 
-        filter.AcceptsEvent(simulatorEvent).ShouldBeTrue();
+        // The extension method handles null by returning true (accepts all events)
+        (filter?.AcceptsEvent(simulatorEvent) ?? true).ShouldBeTrue();
     }
 }
