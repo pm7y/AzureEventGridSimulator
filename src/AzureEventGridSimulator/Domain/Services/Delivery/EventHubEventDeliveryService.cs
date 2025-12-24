@@ -251,14 +251,17 @@ public class EventHubEventDeliveryService(
             {
                 // Mask the connection string for logging (show endpoint but hide key)
                 var connectionForLogging = subscription.EffectiveConnectionString;
-                var keyIndex = connectionForLogging?.IndexOf(
-                    "SharedAccessKey=",
-                    StringComparison.OrdinalIgnoreCase
-                );
-                if (keyIndex is > 0 && connectionForLogging != null)
+                if (connectionForLogging != null)
                 {
-                    connectionForLogging =
-                        connectionForLogging[..(keyIndex.Value + 16)] + "***REDACTED***";
+                    var keyIndex = connectionForLogging.IndexOf(
+                        "SharedAccessKey=",
+                        StringComparison.OrdinalIgnoreCase
+                    );
+                    if (keyIndex > 0)
+                    {
+                        connectionForLogging =
+                            connectionForLogging[..(keyIndex + 16)] + "***REDACTED***";
+                    }
                 }
 
                 logger.LogInformation(

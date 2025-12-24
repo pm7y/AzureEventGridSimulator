@@ -303,9 +303,10 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
 
         await _handler.Handle(command, CancellationToken.None);
 
-        foreach (var evt in events)
+        foreach (
+            var eventGridEvent in events.Select(evt => evt.EventGridEvent.ShouldNotBeNullAnd())
+        )
         {
-            var eventGridEvent = evt.EventGridEvent.ShouldNotBeNullAnd();
             eventGridEvent.Topic.ShouldNotBeNullAnd().ShouldContain("MyTestTopic");
             eventGridEvent.MetadataVersion.ShouldBe("1");
         }

@@ -159,10 +159,9 @@ public class EventGridMiddleware(RequestDelegate next)
             var validationResult = sasHeaderValidator.Validate(context.Request.Headers, topic.Key);
             if (!validationResult.IsValid)
             {
-                var errorMessage = GetAuthErrorMessage(validationResult.FailureReason, topic.Name);
                 await context.WriteErrorResponse(
                     HttpStatusCode.Unauthorized,
-                    errorMessage,
+                    GetAuthErrorMessage(validationResult.FailureReason, topic.Name),
                     ErrorDetailCodes.Unauthorized,
                     ErrorDetailCodes.Unauthorized
                 );
