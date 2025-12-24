@@ -52,11 +52,11 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
             {
                 DeadLetterReason = reason,
                 DeliveryAttempts = delivery.AttemptCount,
-                LastDeliveryOutcome = lastAttempt?.Outcome.ToString() ?? "Unknown",
+                LastDeliveryOutcome = lastAttempt?.Outcome.ToString(),
                 LastHttpStatusCode = lastAttempt?.HttpStatusCode,
                 LastErrorMessage = lastAttempt?.ErrorMessage,
                 PublishTime = delivery.EnqueuedTime,
-                LastDeliveryAttemptTime = lastAttempt?.AttemptTime ?? delivery.EnqueuedTime,
+                LastDeliveryAttemptTime = lastAttempt?.AttemptTime,
                 TopicName = delivery.Topic.Name,
                 SubscriberName = delivery.Subscriber.Name,
                 SubscriberType = delivery.Subscriber.SubscriberType,
@@ -64,7 +64,7 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
             };
 
             var timestamp = delivery.EnqueuedTime.ToString("yyyyMMdd_HHmmss");
-            var eventId = SanitizeFileName(delivery.Event.Id ?? Guid.NewGuid().ToString());
+            var eventId = SanitizeFileName(delivery.Event.Id);
             var fileName = $"{timestamp}_{eventId}.json";
             var filePath = Path.Combine(folder, fileName);
 
@@ -97,19 +97,23 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
     {
         return delivery.Event.Schema switch
         {
-            EventSchema.EventGridSchema => delivery.Event.EventGridEvent,
-            EventSchema.CloudEventV1_0 => delivery.Event.CloudEvent,
-            _ => new
-            {
-                delivery.Event.Id,
-                delivery.Event.EventType,
-                delivery.Event.Subject,
-            },
+            EventSchema.EventGridSchema => delivery.Event.EventGridEvent
+                ?? throw new InvalidOperationException(
+                    "EventGridEvent is null for EventGridSchema"
+                ),
+            EventSchema.CloudEventV1_0 => delivery.Event.CloudEvent
+                ?? throw new InvalidOperationException(
+                    "CloudEvent is null for CloudEventV1_0 schema"
+                ),
+            _ => throw new InvalidOperationException(
+                $"Unsupported event schema: {delivery.Event.Schema}"
+            ),
         };
     }
 
     /// <summary>
     /// Sanitizes a string to be safe for use as a file name.
+    /// Note: Event IDs are GUIDs which only contain valid path characters.
     /// </summary>
     private static string SanitizeFileName(string name)
     {
@@ -117,26 +121,16 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
         var sanitized = new string(name.Where(c => !invalidChars.Contains(c)).ToArray());
 
         // Limit length
-        if (sanitized.Length > 50)
-        {
-            sanitized = sanitized[..50];
-        }
-
-        return string.IsNullOrWhiteSpace(sanitized) ? "unknown" : sanitized;
+        return sanitized.Length > 50 ? sanitized[..50] : sanitized;
     }
 
     /// <summary>
     /// Sanitizes a string to be safe for use as a directory name.
-    /// Removes path separators and invalid characters to prevent path traversal.
+    /// Note: Topic and subscriber names are validated to only contain letters, numbers, and dashes.
     /// </summary>
     private static string SanitizeDirectoryName(string name)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return "unknown";
-        }
-
-        // Remove path separators and invalid path characters
+        // Remove path separators and invalid path characters (defense in depth)
         var invalidChars = Path.GetInvalidFileNameChars()
             .Concat([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar])
             .ToHashSet();
@@ -144,11 +138,6 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
         var sanitized = new string(name.Where(c => !invalidChars.Contains(c)).ToArray());
 
         // Limit length
-        if (sanitized.Length > 100)
-        {
-            sanitized = sanitized[..100];
-        }
-
-        return string.IsNullOrWhiteSpace(sanitized) ? "unknown" : sanitized;
+        return sanitized.Length > 100 ? sanitized[..100] : sanitized;
     }
 }

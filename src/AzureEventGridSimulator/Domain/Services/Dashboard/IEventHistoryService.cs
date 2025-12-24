@@ -1,5 +1,3 @@
-#nullable enable
-
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Entities.Dashboard;
 using AzureEventGridSimulator.Infrastructure.Settings;
@@ -20,19 +18,19 @@ public interface IEventHistoryService
     /// <summary>
     /// Records that a delivery was queued for a subscriber.
     /// </summary>
-    void RecordDeliveryQueued(string eventId, ISubscriberSettings subscriber);
+    void RecordDeliveryQueued(string? eventId, ISubscriberSettings subscriber);
 
     /// <summary>
     /// Records a delivery attempt.
     /// </summary>
-    void RecordDeliveryAttempt(string eventId, string subscriberName, DeliveryAttempt attempt);
+    void RecordDeliveryAttempt(string? eventId, string? subscriberName, DeliveryAttempt attempt);
 
     /// <summary>
     /// Records that delivery completed (success or failure).
     /// </summary>
     void RecordDeliveryCompleted(
-        string eventId,
-        string subscriberName,
+        string? eventId,
+        string? subscriberName,
         DeliveryStatus status,
         DateTimeOffset completedAt
     );

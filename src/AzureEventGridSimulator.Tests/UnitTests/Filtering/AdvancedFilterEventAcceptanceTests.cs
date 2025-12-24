@@ -1,6 +1,7 @@
-﻿using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;
 using Xunit;
 
@@ -16,6 +17,9 @@ public class AdvancedFilterEventAcceptanceTests
         var evt = new EventGridEvent
         {
             Id = "EventId",
+            Subject = "TheEventSubject",
+            EventType = "this.is.a.test.event.type",
+            EventTime = DateTimeOffset.UtcNow.ToString("O"),
             Data = new
             {
                 NumberValue = 1,
@@ -26,10 +30,7 @@ public class AdvancedFilterEventAcceptanceTests
                 SubObject = new { Id = 1, Name = "Test" },
             },
             DataVersion = "5.0",
-            EventTime = DateTimeOffset.UtcNow.ToString("O"),
-            EventType = "this.is.a.test.event.type",
-            MetadataVersion = "2.3.4",
-            Subject = "TheEventSubject",
+            MetadataVersion = "1",
         };
         evt.SetTopic("THE_EVENT_TOPIC");
         return evt;
@@ -66,17 +67,17 @@ public class AdvancedFilterEventAcceptanceTests
     {
         var filterConfig = new FilterSetting
         {
-            AdvancedFilters = new[]
-            {
+            AdvancedFilters =
+            [
                 new AdvancedFilterSetting
                 {
                     Key = "Data",
                     OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn,
-                    Values = new object[] { 1 },
+                    Values = [1],
                 },
-            },
+            ],
         };
-        var gridEvent = new EventGridEvent { Data = 1 };
+        var gridEvent = TestHelpers.CreateValidEventGridEvent(data: 1);
 
         filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
     }
@@ -86,8 +87,8 @@ public class AdvancedFilterEventAcceptanceTests
     {
         var filterConfig = new FilterSetting
         {
-            AdvancedFilters = new[]
-            {
+            AdvancedFilters =
+            [
                 new AdvancedFilterSetting
                 {
                     Key = "Data",
@@ -104,9 +105,9 @@ public class AdvancedFilterEventAcceptanceTests
                         .NumberLessThanOrEquals,
                     Value = 1,
                 },
-            },
+            ],
         };
-        var gridEvent = new EventGridEvent { Data = 1 };
+        var gridEvent = TestHelpers.CreateValidEventGridEvent(data: 1);
 
         filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
     }
@@ -116,17 +117,17 @@ public class AdvancedFilterEventAcceptanceTests
     {
         var filterConfig = new FilterSetting
         {
-            AdvancedFilters = new[]
-            {
+            AdvancedFilters =
+            [
                 new AdvancedFilterSetting
                 {
                     Key = "Data",
                     OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn,
                     Value = 1,
                 },
-            },
+            ],
         };
-        var gridEvent = new EventGridEvent { Data = 1 };
+        var gridEvent = TestHelpers.CreateValidEventGridEvent(data: 1);
 
         filterConfig.AcceptsEvent(gridEvent).ShouldBeFalse();
     }

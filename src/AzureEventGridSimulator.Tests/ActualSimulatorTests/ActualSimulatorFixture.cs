@@ -9,9 +9,8 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
     private const int MaxStartupWaitTimeMs = 30000;
     private const int PollingIntervalMs = 100;
     private bool _disposed;
-    private string _simulatorExePath;
-
-    private Process _simulatorProcess;
+    private string? _simulatorExePath;
+    private Process? _simulatorProcess;
 
     public async Task InitializeAsync()
     {
@@ -30,7 +29,7 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
                 CreateNoWindow = true,
                 Environment =
                 {
-                    new KeyValuePair<string, string>("ASPNETCORE_ENVIRONMENT", "Test"),
+                    new KeyValuePair<string, string?>("ASPNETCORE_ENVIRONMENT", "Test"),
                 },
             }
         );
@@ -98,6 +97,11 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
 
     private void KillExistingSimulators()
     {
+        if (_simulatorExePath == null)
+        {
+            return;
+        }
+
         try
         {
             // Kill any existing instances of the test simulator that may still be hanging around.

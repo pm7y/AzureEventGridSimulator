@@ -2,8 +2,26 @@ using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using Shouldly;
 
 namespace AzureEventGridSimulator.Tests.UnitTests.Common;
+
+/// <summary>
+/// Extension methods for null assertions in tests.
+/// </summary>
+public static class NullAssertionExtensions
+{
+    /// <summary>
+    /// Asserts that the value is not null and returns it.
+    /// This allows null-safe property access without using the null-forgiving operator.
+    /// </summary>
+    public static T ShouldNotBeNullAnd<T>(this T? value, string? customMessage = null)
+        where T : class
+    {
+        value.ShouldNotBeNull(customMessage);
+        return value;
+    }
+}
 
 /// <summary>
 /// Shared test helper methods for creating test objects.
@@ -26,10 +44,10 @@ public static class TestHelpers
         string type = "com.example.test",
         string source = "/test/source",
         string id = "test-id-123",
-        string time = null,
-        string subject = null,
-        string dataContentType = null,
-        string dataSchema = null
+        string? time = null,
+        string? subject = null,
+        string? dataContentType = null,
+        string? dataSchema = null
     )
     {
         var context = new DefaultHttpContext
@@ -101,7 +119,7 @@ public static class TestHelpers
         string eventType = "Test.EventType",
         string eventTime = "2025-01-15T10:30:00Z",
         string dataVersion = "1.0",
-        object data = null
+        object? data = null
     )
     {
         return new EventGridEvent
@@ -123,9 +141,9 @@ public static class TestHelpers
         string type = "com.example.test",
         string source = "/test/source",
         string id = "test-id-123",
-        string time = null,
-        string subject = null,
-        object data = null
+        string? time = null,
+        string? subject = null,
+        object? data = null
     )
     {
         return new CloudEvent
@@ -149,7 +167,7 @@ public static class TestHelpers
         string eventType = "Test.EventType",
         string eventTime = "2025-01-15T10:30:00Z",
         string dataVersion = "1.0",
-        object data = null
+        object? data = null
     )
     {
         return SimulatorEvent.FromEventGridEvent(
@@ -165,9 +183,9 @@ public static class TestHelpers
         string type = "com.example.test",
         string source = "/test/source",
         string id = "test-id-123",
-        string time = null,
-        string subject = null,
-        object data = null
+        string? time = null,
+        string? subject = null,
+        object? data = null
     )
     {
         return SimulatorEvent.FromCloudEvent(
@@ -181,7 +199,7 @@ public static class TestHelpers
     public static ServiceBusSubscriberSettings CreateValidServiceBusSettings(
         string name = "TestSubscriber",
         string queue = "my-queue",
-        string topic = null
+        string? topic = null
     )
     {
         return new ServiceBusSubscriberSettings

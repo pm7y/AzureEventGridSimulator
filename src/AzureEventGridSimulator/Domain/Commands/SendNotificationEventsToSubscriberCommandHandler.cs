@@ -71,7 +71,9 @@ public class SendNotificationEventsToSubscriberCommandHandler(
 
         // Log events that are filtered out by all subscribers
         var eventsFilteredOutByAllSubscribers = request
-            .Events.Where(e => allSubscribers.All(s => !s.Filter.AcceptsEvent(e)))
+            .Events.Where(e =>
+                allSubscribers.All(s => !(s.Filter ?? new FilterSetting()).AcceptsEvent(e))
+            )
             .ToArray();
 
         foreach (var filteredEvent in eventsFilteredOutByAllSubscribers)
@@ -116,7 +118,7 @@ public class SendNotificationEventsToSubscriberCommandHandler(
 
             foreach (var evt in request.Events)
             {
-                if (!subscriber.Filter.AcceptsEvent(evt))
+                if (!(subscriber.Filter ?? new FilterSetting()).AcceptsEvent(evt))
                 {
                     logger.LogDebug(
                         "Event {EventId} filtered out for subscriber '{SubscriberName}'",

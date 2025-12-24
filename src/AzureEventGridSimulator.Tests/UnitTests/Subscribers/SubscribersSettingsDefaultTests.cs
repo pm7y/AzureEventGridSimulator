@@ -16,14 +16,21 @@ public class SubscribersSettingsDefaultTests : SubscribersSettingsTestBase
     }
 
     [Fact]
-    public void GivenDefaultSettings_ThenAllArraysAreEmpty()
+    public void GivenDefaultSettings_ThenAllArraysAreNull()
     {
         var settings = new SubscribersSettings();
 
-        settings.Http.ShouldBeEmpty();
-        settings.ServiceBus.ShouldBeEmpty();
-        settings.StorageQueue.ShouldBeEmpty();
+        settings.Http.ShouldBeNull();
+        settings.ServiceBus.ShouldBeNull();
+        settings.StorageQueue.ShouldBeNull();
+        settings.EventHub.ShouldBeNull();
+
+        // Computed properties should still work correctly with null arrays
         settings.All.ShouldBeEmpty();
+        settings.HttpSubscribers.ShouldBeEmpty();
+        settings.ServiceBusSubscribers.ShouldBeEmpty();
+        settings.StorageQueueSubscribers.ShouldBeEmpty();
+        settings.EventHubSubscribers.ShouldBeEmpty();
         settings.Any.ShouldBeFalse();
         settings.Count.ShouldBe(0);
     }

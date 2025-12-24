@@ -5,19 +5,19 @@ namespace AzureEventGridSimulator.Infrastructure.Settings;
 public class FilterSetting
 {
     [JsonPropertyName("includedEventTypes")]
-    public ICollection<string> IncludedEventTypes { get; set; }
+    public ICollection<string>? IncludedEventTypes { get; init; }
 
     [JsonPropertyName("isSubjectCaseSensitive")]
-    public bool IsSubjectCaseSensitive { get; set; }
+    public bool IsSubjectCaseSensitive { get; init; }
 
     [JsonPropertyName("subjectBeginsWith")]
-    public string SubjectBeginsWith { get; set; }
+    public string? SubjectBeginsWith { get; init; }
 
     [JsonPropertyName("subjectEndsWith")]
-    public string SubjectEndsWith { get; set; }
+    public string? SubjectEndsWith { get; init; }
 
     [JsonPropertyName("advancedFilters")]
-    public ICollection<AdvancedFilterSetting> AdvancedFilters { get; set; }
+    public ICollection<AdvancedFilterSetting>? AdvancedFilters { get; init; }
 
     internal void Validate()
     {
@@ -30,7 +30,7 @@ public class FilterSetting
             );
         }
 
-        foreach (var advancedFilter in AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>())
+        foreach (var advancedFilter in AdvancedFilters ?? [])
         {
             advancedFilter.Validate();
         }

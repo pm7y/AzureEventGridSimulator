@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Shouldly;
@@ -50,19 +51,28 @@ public class EventHubSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithoutName_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Name = null;
+        var json = """
+            {
+                "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+                "eventHubName": "my-event-hub"
+            }
+            """;
 
-        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
-        exception.ParamName.ShouldBe("Name");
-        exception.Message.ShouldContain("name is required");
+        Should.Throw<JsonException>(() =>
+            JsonSerializer.Deserialize<EventHubSubscriberSettings>(json)
+        );
     }
 
     [Fact]
     public void Validate_WithEmptyName_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Name = "   ";
+        var settings = new EventHubSubscriberSettings
+        {
+            Name = "   ",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            EventHubName = "my-event-hub",
+        };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
         exception.ParamName.ShouldBe("Name");
@@ -71,18 +81,28 @@ public class EventHubSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithoutEventHubName_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.EventHubName = null;
+        var json = """
+            {
+                "name": "TestSubscriber",
+                "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123"
+            }
+            """;
 
-        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
-        exception.Message.ShouldContain("eventHubName");
+        Should.Throw<JsonException>(() =>
+            JsonSerializer.Deserialize<EventHubSubscriberSettings>(json)
+        );
     }
 
     [Fact]
     public void Validate_WithEmptyEventHubName_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.EventHubName = "   ";
+        var settings = new EventHubSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            EventHubName = "   ",
+        };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
         exception.Message.ShouldContain("eventHubName");
@@ -105,10 +125,16 @@ public class EventHubSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithBothConnectionStringAndNamespaceCredentials_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Namespace = "my-namespace";
-        settings.SharedAccessKeyName = "RootManageSharedAccessKey";
-        settings.SharedAccessKey = "abc123";
+        var settings = new EventHubSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Namespace = "my-namespace",
+            SharedAccessKeyName = "RootManageSharedAccessKey",
+            SharedAccessKey = "abc123",
+            EventHubName = "my-event-hub",
+        };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
         exception.Message.ShouldContain("not both");
@@ -132,11 +158,17 @@ public class EventHubSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithValidDeliveryProperties_ShouldPass()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Properties = new Dictionary<string, DeliveryPropertySettings>
+        var settings = new EventHubSubscriberSettings
         {
-            ["Label"] = new() { Type = "dynamic", Value = "Subject" },
-            ["Region"] = new() { Type = "static", Value = "west-us" },
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            EventHubName = "my-event-hub",
+            Properties = new Dictionary<string, DeliveryPropertySettings>
+            {
+                ["Label"] = new() { Type = "dynamic", Value = "Subject" },
+                ["Region"] = new() { Type = "static", Value = "west-us" },
+            },
         };
 
         Should.NotThrow(() => settings.Validate());
@@ -145,10 +177,16 @@ public class EventHubSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithInvalidPropertyType_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Properties = new Dictionary<string, DeliveryPropertySettings>
+        var settings = new EventHubSubscriberSettings
         {
-            ["Label"] = new() { Type = "invalid", Value = "Subject" },
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            EventHubName = "my-event-hub",
+            Properties = new Dictionary<string, DeliveryPropertySettings>
+            {
+                ["Label"] = new() { Type = "invalid", Value = "Subject" },
+            },
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
@@ -160,10 +198,16 @@ public class EventHubSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithEmptyPropertyType_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Properties = new Dictionary<string, DeliveryPropertySettings>
+        var settings = new EventHubSubscriberSettings
         {
-            ["Label"] = new() { Type = "", Value = "Subject" },
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            EventHubName = "my-event-hub",
+            Properties = new Dictionary<string, DeliveryPropertySettings>
+            {
+                ["Label"] = new() { Type = "", Value = "Subject" },
+            },
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
@@ -174,10 +218,16 @@ public class EventHubSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithEmptyPropertyValue_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Properties = new Dictionary<string, DeliveryPropertySettings>
+        var settings = new EventHubSubscriberSettings
         {
-            ["Label"] = new() { Type = "static", Value = "" },
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            EventHubName = "my-event-hub",
+            Properties = new Dictionary<string, DeliveryPropertySettings>
+            {
+                ["Label"] = new() { Type = "static", Value = "" },
+            },
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
@@ -209,6 +259,8 @@ public class EventHubSubscriberSettingsValidationTests
         var parentTopic = new TopicSettings
         {
             Name = "test-topic",
+            Port = 60101,
+            Key = "TestKey",
             EventHubConnectionString =
                 "Endpoint=sb://topic-namespace.servicebus.windows.net/;SharedAccessKeyName=TopicKey;SharedAccessKey=topicabc123",
         };
@@ -229,6 +281,8 @@ public class EventHubSubscriberSettingsValidationTests
         var parentTopic = new TopicSettings
         {
             Name = "test-topic",
+            Port = 60101,
+            Key = "TestKey",
             EventHubNamespace = "topic-namespace",
             EventHubSharedAccessKeyName = "TopicKey",
             EventHubSharedAccessKey = "topicabc123",
@@ -257,11 +311,17 @@ public class EventHubSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithFilter_ShouldValidateFilter()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Filter = new FilterSetting
+        var settings = new EventHubSubscriberSettings
         {
-            IncludedEventTypes = new List<string> { "MyEvent" },
-            SubjectBeginsWith = "test/",
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            EventHubName = "my-event-hub",
+            Filter = new FilterSetting
+            {
+                IncludedEventTypes = new List<string> { "MyEvent" },
+                SubjectBeginsWith = "test/",
+            },
         };
 
         Should.NotThrow(() => settings.Validate());
@@ -273,6 +333,8 @@ public class EventHubSubscriberSettingsValidationTests
         var parentTopic = new TopicSettings
         {
             Name = "test-topic",
+            Port = 60101,
+            Key = "TestKey",
             EventHubConnectionString =
                 "Endpoint=sb://topic-namespace.servicebus.windows.net/;SharedAccessKeyName=TopicKey;SharedAccessKey=topicabc123",
         };

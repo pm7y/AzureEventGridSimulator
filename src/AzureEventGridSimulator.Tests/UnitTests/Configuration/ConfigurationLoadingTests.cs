@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;
 using Xunit;
 
@@ -52,7 +53,9 @@ public class ConfigurationLoadingTests
         var eventHubSubscriber = topic.Subscribers.EventHubSubscribers.First();
         eventHubSubscriber.Name.ShouldBe("EventHubSubscriber");
         eventHubSubscriber.EventHubName.ShouldBe("test-hub");
-        eventHubSubscriber.ConnectionString.ShouldContain("sb://test.servicebus.windows.net");
+        eventHubSubscriber
+            .ConnectionString.ShouldNotBeNullAnd()
+            .ShouldContain("sb://test.servicebus.windows.net");
     }
 
     [Fact]

@@ -9,19 +9,19 @@ public class SubscriptionSettings
     private readonly DateTimeOffset _createdAt = DateTimeOffset.UtcNow;
 
     [JsonPropertyName("name")]
-    public string Name { get; set; }
+    public required string Name { get; init; }
 
     [JsonPropertyName("endpoint")]
-    public string Endpoint { get; set; }
+    public required string Endpoint { get; init; }
 
     [JsonPropertyName("filter")]
-    public FilterSetting Filter { get; set; }
+    public FilterSetting? Filter { get; init; }
 
     [JsonPropertyName("disableValidation")]
-    public bool DisableValidation { get; set; }
+    public bool DisableValidation { get; init; }
 
     [JsonPropertyName("disabled")]
-    public bool Disabled { get; set; }
+    public bool Disabled { get; init; }
 
     /// <summary>
     /// Gets or sets the delivery schema for events sent to this subscriber.
@@ -29,7 +29,7 @@ public class SubscriptionSettings
     /// </summary>
     [JsonPropertyName("deliverySchema")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public EventSchema? DeliverySchema { get; set; }
+    public EventSchema? DeliverySchema { get; init; }
 
     [JsonIgnore]
     public SubscriptionValidationStatus ValidationStatus { get; set; }

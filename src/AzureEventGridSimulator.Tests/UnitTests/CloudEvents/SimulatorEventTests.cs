@@ -109,18 +109,19 @@ public class SimulatorEventTests
     }
 
     [Fact]
-    public void GivenSimulatorEventWithInvalidCloudEvent_WhenValidateCalled_ThenExceptionThrown()
+    public void GivenSimulatorEventWithAnySpecVersion_WhenValidateCalled_ThenNoExceptionThrown()
     {
+        // Azure Event Grid does not validate specversion value - it accepts any value
         var cloudEvent = new CloudEvent
         {
             Id = "event-456",
             Type = "com.example.test",
-            // Missing Source
-            SpecVersion = "1.0",
+            Source = "/test/source",
+            SpecVersion = "0.3", // Azure accepts any value
         };
 
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 
-        Should.Throw<InvalidOperationException>(() => simulatorEvent.Validate());
+        Should.NotThrow(() => simulatorEvent.Validate());
     }
 }

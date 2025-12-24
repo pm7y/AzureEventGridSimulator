@@ -7,9 +7,55 @@ using Microsoft.Net.Http.Headers;
 
 namespace AzureEventGridSimulator.Infrastructure.Middleware;
 
+/// <summary>
+/// Result of SAS key validation.
+/// </summary>
+public record SasValidationResult(bool IsValid, SasValidationFailureReason? FailureReason = null);
+
+/// <summary>
+/// Reasons for SAS validation failure.
+/// </summary>
+public enum SasValidationFailureReason
+{
+    /// <summary>
+    /// No authorization header was provided.
+    /// </summary>
+    MissingKey,
+
+    /// <summary>
+    /// The aeg-sas-key value did not match.
+    /// </summary>
+    KeyMismatch,
+
+    /// <summary>
+    /// The key is not a valid Base-64 string.
+    /// </summary>
+    InvalidBase64,
+
+    /// <summary>
+    /// The token has expired.
+    /// </summary>
+    TokenExpired,
+
+    /// <summary>
+    /// The token signature did not match.
+    /// </summary>
+    SignatureMismatch,
+
+    /// <summary>
+    /// The token format is invalid.
+    /// </summary>
+    InvalidTokenFormat,
+}
+
 public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator> logger)
 {
     public bool IsValid(IHeaderDictionary requestHeaders, string topicKey)
+    {
+        return Validate(requestHeaders, topicKey).IsValid;
+    }
+
+    public SasValidationResult Validate(IHeaderDictionary requestHeaders, string topicKey)
     {
         if (
             requestHeaders.Any(h =>
@@ -20,10 +66,10 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             if (!string.Equals(requestHeaders[Constants.AegSasKeyHeader], topicKey))
             {
                 logger.LogError("'aeg-sas-key' value did not match the expected value!");
-                return false;
+                return new SasValidationResult(false, SasValidationFailureReason.KeyMismatch);
             }
 
-            return true;
+            return new SasValidationResult(true);
         }
 
         if (
@@ -36,14 +82,20 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             )
         )
         {
-            var token = requestHeaders[Constants.AegSasTokenHeader].First();
-            if (!TokenIsValid(token, topicKey))
+            var token = requestHeaders[Constants.AegSasTokenHeader].FirstOrDefault();
+            if (token == null)
             {
-                logger.LogError("'aeg-sas-token' value did not match the expected value!");
-                return false;
+                return new SasValidationResult(false, SasValidationFailureReason.MissingKey);
             }
 
-            return true;
+            var tokenResult = ValidateToken(token, topicKey);
+            if (!tokenResult.IsValid)
+            {
+                logger.LogError("'aeg-sas-token' value did not match the expected value!");
+                return tokenResult;
+            }
+
+            return new SasValidationResult(true);
         }
 
         if (
@@ -54,28 +106,42 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
         {
             var token = requestHeaders[HeaderNames.Authorization].ToString();
             if (
-                token.StartsWith(Constants.SasAuthorizationType)
-                && !TokenIsValid(token.Replace(Constants.SasAuthorizationType, "").Trim(), topicKey)
+                token.StartsWith(Constants.SasAuthorizationType, StringComparison.OrdinalIgnoreCase)
             )
             {
-                logger.LogError(
-                    "'Authorization: SharedAccessSignature' value did not match the expected value!"
-                );
-                return false;
+                var tokenValue = token
+                    .Replace(Constants.SasAuthorizationType, "", StringComparison.OrdinalIgnoreCase)
+                    .Trim();
+
+                var tokenResult = ValidateToken(tokenValue, topicKey);
+                if (!tokenResult.IsValid)
+                {
+                    logger.LogError(
+                        "'Authorization: SharedAccessSignature' value did not match the expected value!"
+                    );
+                    return tokenResult;
+                }
+
+                return new SasValidationResult(true);
             }
 
-            return true;
+            return new SasValidationResult(true);
         }
 
-        return false;
+        return new SasValidationResult(false, SasValidationFailureReason.MissingKey);
     }
 
-    private bool TokenIsValid(string token, string key)
+    private SasValidationResult ValidateToken(string token, string key)
     {
         var query = HttpUtility.ParseQueryString(token);
         var decodedResource = HttpUtility.UrlDecode(query["r"], Encoding.UTF8);
         var decodedExpiration = HttpUtility.UrlDecode(query["e"], Encoding.UTF8);
         var encodedSignature = query["s"];
+
+        if (string.IsNullOrEmpty(decodedExpiration) || string.IsNullOrEmpty(encodedSignature))
+        {
+            return new SasValidationResult(false, SasValidationFailureReason.InvalidTokenFormat);
+        }
 
         if (
             !DateTimeOffset.TryParse(
@@ -86,7 +152,7 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             || tokenExpiryDateTime.ToUniversalTime() <= timeProvider.GetUtcNow()
         )
         {
-            return false;
+            return new SasValidationResult(false, SasValidationFailureReason.TokenExpired);
         }
 
         var encodedResource = HttpUtility.UrlEncode(decodedResource);
@@ -94,23 +160,30 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
 
         var unsignedSas = $"r={encodedResource}&e={encodedExpiration}";
 
-        using var hmac = new HMACSHA256(Convert.FromBase64String(key));
-        var signature = Convert.ToBase64String(
-            hmac.ComputeHash(Encoding.UTF8.GetBytes(unsignedSas))
-        );
-        var encodedComputedSignature = HttpUtility.UrlEncode(signature);
-
-        if (encodedSignature == signature)
+        try
         {
-            return true;
+            using var hmac = new HMACSHA256(Convert.FromBase64String(key));
+            var signature = Convert.ToBase64String(
+                hmac.ComputeHash(Encoding.UTF8.GetBytes(unsignedSas))
+            );
+            var encodedComputedSignature = HttpUtility.UrlEncode(signature);
+
+            if (encodedSignature == signature)
+            {
+                return new SasValidationResult(true);
+            }
+
+            logger.LogWarning(
+                "{ExpectedSignature} != {MessageSignature}",
+                encodedComputedSignature,
+                signature
+            );
+
+            return new SasValidationResult(false, SasValidationFailureReason.SignatureMismatch);
         }
-
-        logger.LogWarning(
-            "{ExpectedSignature} != {MessageSignature}",
-            encodedComputedSignature,
-            signature
-        );
-
-        return false;
+        catch (FormatException)
+        {
+            return new SasValidationResult(false, SasValidationFailureReason.InvalidBase64);
+        }
     }
 }

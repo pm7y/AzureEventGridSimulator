@@ -79,7 +79,7 @@ public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaF
     /// <summary>
     /// Extracts a data version from a CloudEvents dataschema URI.
     /// </summary>
-    private string ExtractDataVersion(string dataSchema)
+    private string ExtractDataVersion(string? dataSchema)
     {
         if (string.IsNullOrEmpty(dataSchema))
         {

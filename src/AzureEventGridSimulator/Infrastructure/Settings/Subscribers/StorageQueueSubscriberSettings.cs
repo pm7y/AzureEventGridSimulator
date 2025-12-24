@@ -13,37 +13,37 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
     /// Set during validation in SimulatorSettings.
     /// </summary>
     [JsonIgnore]
-    internal TopicSettings ParentTopic { get; set; }
+    internal TopicSettings? ParentTopic { get; set; }
 
     /// <summary>
     /// Gets or sets the Storage Queue connection string.
     /// </summary>
     [JsonPropertyName("connectionString")]
-    public string ConnectionString { get; set; }
+    public string? ConnectionString { get; init; }
 
     /// <summary>
     /// Gets or sets the queue name.
     /// </summary>
     [JsonPropertyName("queueName")]
-    public string QueueName { get; set; }
+    public required string QueueName { get; init; }
 
     /// <summary>
     /// Gets the effective connection string, either from subscriber or topic level.
     /// </summary>
     [JsonIgnore]
-    public string EffectiveConnectionString =>
+    public string? EffectiveConnectionString =>
         !string.IsNullOrWhiteSpace(ConnectionString)
             ? ConnectionString
             : ParentTopic?.StorageQueueConnectionString;
 
     [JsonPropertyName("name")]
-    public string Name { get; set; }
+    public required string Name { get; init; }
 
     [JsonPropertyName("filter")]
-    public FilterSetting Filter { get; set; }
+    public FilterSetting? Filter { get; init; }
 
     [JsonPropertyName("disabled")]
-    public bool Disabled { get; set; }
+    public bool Disabled { get; init; }
 
     /// <summary>
     /// Gets or sets the delivery schema for events sent to this subscriber.
@@ -51,21 +51,21 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
     /// </summary>
     [JsonPropertyName("deliverySchema")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public EventSchema? DeliverySchema { get; set; }
+    public EventSchema? DeliverySchema { get; init; }
 
     /// <summary>
     /// Gets or sets the retry policy for this subscriber.
     /// If null, default Azure Event Grid retry behavior is used (enabled with 30 attempts, 24h TTL).
     /// </summary>
     [JsonPropertyName("retryPolicy")]
-    public RetryPolicySettings RetryPolicy { get; set; } = new();
+    public RetryPolicySettings? RetryPolicy { get; init; }
 
     /// <summary>
     /// Gets or sets the dead-letter settings for this subscriber.
     /// Events that cannot be delivered are written to the dead-letter destination.
     /// </summary>
     [JsonPropertyName("deadLetter")]
-    public DeadLetterSettings DeadLetter { get; set; } = new();
+    public DeadLetterSettings? DeadLetter { get; init; }
 
     [JsonIgnore]
     public string SubscriberType => "storageQueue";

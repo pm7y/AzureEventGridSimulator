@@ -47,10 +47,10 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
 
         var cloudEvent = new CloudEvent
         {
-            SpecVersion = GetHeaderValue(headers, Constants.CeSpecVersionHeader),
-            Id = GetHeaderValue(headers, Constants.CeIdHeader),
-            Source = GetHeaderValue(headers, Constants.CeSourceHeader),
-            Type = GetHeaderValue(headers, Constants.CeTypeHeader),
+            SpecVersion = GetRequiredHeaderValue(headers, Constants.CeSpecVersionHeader),
+            Id = GetRequiredHeaderValue(headers, Constants.CeIdHeader),
+            Source = GetRequiredHeaderValue(headers, Constants.CeSourceHeader),
+            Type = GetRequiredHeaderValue(headers, Constants.CeTypeHeader),
             Time = GetHeaderValue(headers, Constants.CeTimeHeader),
             Subject = GetHeaderValue(headers, Constants.CeSubjectHeader),
             DataContentType =
@@ -88,7 +88,7 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
             throw new InvalidOperationException("Request body is empty.");
         }
 
-        CloudEvent cloudEvent;
+        CloudEvent? cloudEvent;
 
         try
         {
@@ -104,7 +104,7 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
 
                 // Handle single event in array format
                 var events = JsonSerializer.Deserialize<CloudEvent[]>(requestBody);
-                return events.Select(SimulatorEvent.FromCloudEvent).ToArray();
+                return events?.Select(SimulatorEvent.FromCloudEvent).ToArray() ?? [];
             }
 
             cloudEvent = JsonSerializer.Deserialize<CloudEvent>(requestBody);
@@ -132,7 +132,7 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
             throw new InvalidOperationException("Request body is empty.");
         }
 
-        CloudEvent[] events;
+        CloudEvent[]? events;
 
         try
         {
@@ -157,7 +157,7 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
     /// <summary>
     /// Gets and decodes a header value, handling percent-encoding per CloudEvents HTTP binding spec.
     /// </summary>
-    private static string GetHeaderValue(IHeaderDictionary headers, string headerName)
+    private static string? GetHeaderValue(IHeaderDictionary headers, string headerName)
     {
         if (!headers.TryGetValue(headerName, out var values))
         {
@@ -170,6 +170,38 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
             return value;
         }
 
+        return DecodeHeaderValue(value);
+    }
+
+    /// <summary>
+    /// Gets and decodes a required header value.
+    /// Throws if the header is missing or empty.
+    /// </summary>
+    private static string GetRequiredHeaderValue(IHeaderDictionary headers, string headerName)
+    {
+        if (!headers.TryGetValue(headerName, out var values))
+        {
+            throw new InvalidOperationException(
+                $"Required CloudEvents header '{headerName}' is missing."
+            );
+        }
+
+        var value = values.FirstOrDefault();
+        if (string.IsNullOrEmpty(value))
+        {
+            throw new InvalidOperationException(
+                $"Required CloudEvents header '{headerName}' is empty."
+            );
+        }
+
+        return DecodeHeaderValue(value);
+    }
+
+    /// <summary>
+    /// Decodes a header value, handling percent-encoding per CloudEvents HTTP binding spec.
+    /// </summary>
+    private static string DecodeHeaderValue(string value)
+    {
         // CloudEvents HTTP Protocol Binding requires percent-encoding for certain characters
         // in header values (spaces, non-ASCII, etc.). We need to decode them.
         try

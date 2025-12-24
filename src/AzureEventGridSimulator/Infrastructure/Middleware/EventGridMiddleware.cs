@@ -1,6 +1,4 @@
-﻿#nullable enable
-
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
@@ -93,7 +91,12 @@ public class EventGridMiddleware(RequestDelegate next)
             );
         }
 
-        await context.WriteErrorResponse(HttpStatusCode.BadRequest, errorMessage, null);
+        await context.WriteErrorResponse(
+            HttpStatusCode.BadRequest,
+            errorMessage,
+            null,
+            ErrorDetailCodes.InputJsonInvalid
+        );
     }
 
     private static async Task<string?> TryReadBody(HttpContext context)
@@ -151,17 +154,20 @@ public class EventGridMiddleware(RequestDelegate next)
         //
         // Validate the key/ token supplied in the header.
         //
-        if (
-            !string.IsNullOrWhiteSpace(topic.Key)
-            && !sasHeaderValidator.IsValid(context.Request.Headers, topic.Key)
-        )
+        if (!string.IsNullOrWhiteSpace(topic.Key))
         {
-            await context.WriteErrorResponse(
-                HttpStatusCode.Unauthorized,
-                "The request did not contain a valid aeg-sas-key or aeg-sas-token.",
-                null
-            );
-            return;
+            var validationResult = sasHeaderValidator.Validate(context.Request.Headers, topic.Key);
+            if (!validationResult.IsValid)
+            {
+                var errorMessage = GetAuthErrorMessage(validationResult.FailureReason, topic.Name);
+                await context.WriteErrorResponse(
+                    HttpStatusCode.Unauthorized,
+                    errorMessage,
+                    ErrorDetailCodes.Unauthorized,
+                    ErrorDetailCodes.Unauthorized
+                );
+                return;
+            }
         }
 
         context.Request.EnableBuffering();
@@ -200,6 +206,69 @@ public class EventGridMiddleware(RequestDelegate next)
         // Detect the schema (use configured input schema or auto-detect)
         //
         var detectedSchema = topic.InputSchema ?? schemaDetector.DetectSchema(context);
+
+        //
+        // Validate content-type for CloudEvents schema
+        //
+        if (detectedSchema == EventSchema.CloudEventV1_0)
+        {
+            if (IsCloudEventsBinaryMode(context))
+            {
+                // Binary mode: Content-Type is the data's content type
+                // Azure accepts application/json but rejects text/plain
+                if (!IsValidBinaryModeContentType(contentType))
+                {
+                    var errorMessage =
+                        "The Content-Type header is either missing or it doesn't have a valid value. The content type header must either be application/cloudevents+json; charset=utf-8 or application/cloudevents-batch+json; charset=UTF-8.";
+
+                    RecordRejection(
+                        eventHistoryService,
+                        topic.Name,
+                        topic.Port,
+                        HttpStatusCode.UnsupportedMediaType,
+                        errorMessage,
+                        requestBody,
+                        contentType
+                    );
+
+                    await context.WriteErrorResponse(
+                        HttpStatusCode.UnsupportedMediaType,
+                        errorMessage,
+                        null,
+                        ErrorDetailCodes.InvalidContentType
+                    );
+                    return;
+                }
+            }
+            else
+            {
+                // Structured/batch mode: require CloudEvents content types
+                if (!IsValidCloudEventsContentType(contentType))
+                {
+                    var errorMessage =
+                        "The Content-Type header is either missing or it doesn't have a valid value. The content type header must either be application/cloudevents+json; charset=utf-8 or application/cloudevents-batch+json; charset=UTF-8.";
+
+                    RecordRejection(
+                        eventHistoryService,
+                        topic.Name,
+                        topic.Port,
+                        HttpStatusCode.UnsupportedMediaType,
+                        errorMessage,
+                        requestBody,
+                        contentType
+                    );
+
+                    await context.WriteErrorResponse(
+                        HttpStatusCode.UnsupportedMediaType,
+                        errorMessage,
+                        null,
+                        ErrorDetailCodes.InvalidContentType
+                    );
+                    return;
+                }
+            }
+        }
+
         var parser = parserFactory.GetParser(detectedSchema);
 
         SimulatorEvent[] events;
@@ -221,7 +290,12 @@ public class EventGridMiddleware(RequestDelegate next)
                 contentType
             );
 
-            await context.WriteErrorResponse(HttpStatusCode.BadRequest, ex.Message, null);
+            await context.WriteErrorResponse(
+                HttpStatusCode.BadRequest,
+                ex.Message,
+                null,
+                ErrorDetailCodes.InputJsonInvalid
+            );
             return;
         }
 
@@ -238,7 +312,12 @@ public class EventGridMiddleware(RequestDelegate next)
                 contentType
             );
 
-            await context.WriteErrorResponse(HttpStatusCode.BadRequest, errorMessage, null);
+            await context.WriteErrorResponse(
+                HttpStatusCode.BadRequest,
+                errorMessage,
+                null,
+                ErrorDetailCodes.InputJsonInvalid
+            );
             return;
         }
 
@@ -297,7 +376,12 @@ public class EventGridMiddleware(RequestDelegate next)
                 contentType
             );
 
-            await context.WriteErrorResponse(HttpStatusCode.BadRequest, ex.Message, null);
+            await context.WriteErrorResponse(
+                HttpStatusCode.BadRequest,
+                ex.Message,
+                null,
+                ErrorDetailCodes.InputJsonInvalid
+            );
             return;
         }
 
@@ -408,5 +492,61 @@ public class EventGridMiddleware(RequestDelegate next)
                 "/api/health",
                 StringComparison.OrdinalIgnoreCase
             );
+    }
+
+    private static bool IsValidCloudEventsContentType(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            return false;
+        }
+
+        return contentType.Contains(
+                Constants.CloudEventsContentTypeBase,
+                StringComparison.OrdinalIgnoreCase
+            )
+            || contentType.Contains(
+                Constants.CloudEventsBatchContentTypeBase,
+                StringComparison.OrdinalIgnoreCase
+            );
+    }
+
+    private static bool IsValidBinaryModeContentType(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            return false;
+        }
+
+        // In binary mode, Content-Type represents the data's content type
+        // Azure accepts application/json but rejects text/plain
+        return contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase)
+            || contentType.Contains("application/xml", StringComparison.OrdinalIgnoreCase)
+            || contentType.Contains("application/octet-stream", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GetAuthErrorMessage(
+        SasValidationFailureReason? failureReason,
+        string topicName
+    )
+    {
+        var upperTopicName = topicName.ToUpperInvariant();
+        return failureReason switch
+        {
+            SasValidationFailureReason.MissingKey =>
+                "Request must contain one of the following authorization signature: aeg-sas-token, aeg-sas-key.",
+            SasValidationFailureReason.KeyMismatch =>
+                $"The specified aeg-sas-key is invalid for topic '{upperTopicName}'.",
+            SasValidationFailureReason.InvalidBase64 =>
+                $"The SAS key is not a valid Base-64 string for topic '{upperTopicName}'.",
+            SasValidationFailureReason.TokenExpired =>
+                $"The specified SAS token has expired for topic '{upperTopicName}'.",
+            SasValidationFailureReason.SignatureMismatch =>
+                $"The specified SAS token signature is invalid for topic '{upperTopicName}'.",
+            SasValidationFailureReason.InvalidTokenFormat =>
+                $"The specified SAS token format is invalid for topic '{upperTopicName}'.",
+            _ =>
+                "Request must contain one of the following authorization signature: aeg-sas-token, aeg-sas-key.",
+        };
     }
 }

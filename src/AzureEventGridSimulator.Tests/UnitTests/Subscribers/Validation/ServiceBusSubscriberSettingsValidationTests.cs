@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using Shouldly;
@@ -8,18 +9,25 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Subscribers.Validation;
 [Trait("Category", "unit")]
 public class ServiceBusSubscriberSettingsValidationTests
 {
-    private static ServiceBusSubscriberSettings CreateValidConnectionStringSettings()
+    private static ServiceBusSubscriberSettings CreateValidConnectionStringSettings(
+        string? queue = "my-queue",
+        string? topic = null
+    )
     {
         return new ServiceBusSubscriberSettings
         {
             Name = "TestSubscriber",
             ConnectionString =
                 "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
-            Queue = "my-queue",
+            Queue = queue,
+            Topic = topic,
         };
     }
 
-    private static ServiceBusSubscriberSettings CreateValidNamespaceSettings()
+    private static ServiceBusSubscriberSettings CreateValidNamespaceSettings(
+        string? queue = "my-queue",
+        string? topic = null
+    )
     {
         return new ServiceBusSubscriberSettings
         {
@@ -27,7 +35,8 @@ public class ServiceBusSubscriberSettingsValidationTests
             Namespace = "my-namespace",
             SharedAccessKeyName = "RootManageSharedAccessKey",
             SharedAccessKey = "abc123",
-            Queue = "my-queue",
+            Queue = queue,
+            Topic = topic,
         };
     }
 
@@ -42,9 +51,7 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithConnectionStringAndTopic_ShouldPass()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Queue = null;
-        settings.Topic = "my-topic";
+        var settings = CreateValidConnectionStringSettings(null, "my-topic");
 
         Should.NotThrow(() => settings.Validate());
     }
@@ -60,9 +67,7 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithNamespaceCredentialsAndTopic_ShouldPass()
     {
-        var settings = CreateValidNamespaceSettings();
-        settings.Queue = null;
-        settings.Topic = "my-topic";
+        var settings = CreateValidNamespaceSettings(null, "my-topic");
 
         Should.NotThrow(() => settings.Validate());
     }
@@ -70,19 +75,28 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithoutName_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Name = null;
+        var json = """
+            {
+                "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+                "queue": "my-queue"
+            }
+            """;
 
-        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
-        exception.ParamName.ShouldBe("Name");
-        exception.Message.ShouldContain("name is required");
+        Should.Throw<JsonException>(() =>
+            JsonSerializer.Deserialize<ServiceBusSubscriberSettings>(json)
+        );
     }
 
     [Fact]
     public void Validate_WithEmptyName_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Name = "   ";
+        var settings = new ServiceBusSubscriberSettings
+        {
+            Name = "   ",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Queue = "my-queue",
+        };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
         exception.ParamName.ShouldBe("Name");
@@ -105,10 +119,16 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithBothConnectionStringAndNamespaceCredentials_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Namespace = "my-namespace";
-        settings.SharedAccessKeyName = "RootManageSharedAccessKey";
-        settings.SharedAccessKey = "abc123";
+        var settings = new ServiceBusSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Namespace = "my-namespace",
+            SharedAccessKeyName = "RootManageSharedAccessKey",
+            SharedAccessKey = "abc123",
+            Queue = "my-queue",
+        };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
         exception.Message.ShouldContain("not both");
@@ -132,9 +152,14 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithoutDestination_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Queue = null;
-        settings.Topic = null;
+        var settings = new ServiceBusSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Queue = null,
+            Topic = null,
+        };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
         exception.Message.ShouldContain("topic or queue");
@@ -143,8 +168,14 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithBothQueueAndTopic_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Topic = "my-topic";
+        var settings = new ServiceBusSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Queue = "my-queue",
+            Topic = "my-topic",
+        };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
         exception.Message.ShouldContain("not both");
@@ -153,11 +184,17 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithValidDeliveryProperties_ShouldPass()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Properties = new Dictionary<string, DeliveryPropertySettings>
+        var settings = new ServiceBusSubscriberSettings
         {
-            ["Label"] = new() { Type = "dynamic", Value = "Subject" },
-            ["Region"] = new() { Type = "static", Value = "west-us" },
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Queue = "my-queue",
+            Properties = new Dictionary<string, DeliveryPropertySettings>
+            {
+                ["Label"] = new() { Type = "dynamic", Value = "Subject" },
+                ["Region"] = new() { Type = "static", Value = "west-us" },
+            },
         };
 
         Should.NotThrow(() => settings.Validate());
@@ -166,10 +203,16 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithInvalidPropertyType_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Properties = new Dictionary<string, DeliveryPropertySettings>
+        var settings = new ServiceBusSubscriberSettings
         {
-            ["Label"] = new() { Type = "invalid", Value = "Subject" },
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Queue = "my-queue",
+            Properties = new Dictionary<string, DeliveryPropertySettings>
+            {
+                ["Label"] = new() { Type = "invalid", Value = "Subject" },
+            },
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
@@ -181,10 +224,16 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithEmptyPropertyType_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Properties = new Dictionary<string, DeliveryPropertySettings>
+        var settings = new ServiceBusSubscriberSettings
         {
-            ["Label"] = new() { Type = "", Value = "Subject" },
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Queue = "my-queue",
+            Properties = new Dictionary<string, DeliveryPropertySettings>
+            {
+                ["Label"] = new() { Type = "", Value = "Subject" },
+            },
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
@@ -195,10 +244,16 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithEmptyPropertyValue_ShouldThrow()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Properties = new Dictionary<string, DeliveryPropertySettings>
+        var settings = new ServiceBusSubscriberSettings
         {
-            ["Label"] = new() { Type = "static", Value = "" },
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Queue = "my-queue",
+            Properties = new Dictionary<string, DeliveryPropertySettings>
+            {
+                ["Label"] = new() { Type = "static", Value = "" },
+            },
         };
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
@@ -209,9 +264,7 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void IsTopic_WithTopicSet_ShouldReturnTrue()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Queue = null;
-        settings.Topic = "my-topic";
+        var settings = CreateValidConnectionStringSettings(null, "my-topic");
 
         settings.IsTopic.ShouldBeTrue();
     }
@@ -227,9 +280,7 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void DestinationName_WithTopic_ShouldReturnTopicName()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Queue = null;
-        settings.Topic = "my-topic";
+        var settings = CreateValidConnectionStringSettings(null, "my-topic");
 
         settings.DestinationName.ShouldBe("my-topic");
     }
@@ -271,11 +322,17 @@ public class ServiceBusSubscriberSettingsValidationTests
     [Fact]
     public void Validate_WithFilter_ShouldValidateFilter()
     {
-        var settings = CreateValidConnectionStringSettings();
-        settings.Filter = new FilterSetting
+        var settings = new ServiceBusSubscriberSettings
         {
-            IncludedEventTypes = new List<string> { "MyEvent" },
-            SubjectBeginsWith = "test/",
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Queue = "my-queue",
+            Filter = new FilterSetting
+            {
+                IncludedEventTypes = new List<string> { "MyEvent" },
+                SubjectBeginsWith = "test/",
+            },
         };
 
         Should.NotThrow(() => settings.Validate());

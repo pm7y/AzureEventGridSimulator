@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using AzureEventGridSimulator.Domain.Entities;
 
 namespace AzureEventGridSimulator.Domain.Services.Retry;
@@ -62,6 +63,32 @@ public class InMemoryDeliveryQueue(TimeProvider timeProvider, ILogger<InMemoryDe
             .Values.Where(d => d.NextAttemptTime <= now)
             .OrderBy(d => d.NextAttemptTime)
             .ToList(); // Materialize to avoid modification during enumeration
+    }
+
+    /// <inheritdoc />
+    public async IAsyncEnumerable<PendingDelivery> GetDueDeliveriesAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
+    )
+    {
+        var now = timeProvider.GetUtcNow();
+
+        var dueDeliveries = _queue
+            .Values.Where(d => d.NextAttemptTime <= now)
+            .OrderBy(d => d.NextAttemptTime)
+            .ToList();
+
+        foreach (var delivery in dueDeliveries)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                yield break;
+            }
+
+            yield return delivery;
+
+            // Yield to allow other async operations
+            await Task.Yield();
+        }
     }
 
     /// <inheritdoc />

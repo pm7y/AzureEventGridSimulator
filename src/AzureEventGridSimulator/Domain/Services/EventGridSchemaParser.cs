@@ -19,7 +19,7 @@ public class EventGridSchemaParser : IEventSchemaParser
             throw new InvalidOperationException("Request body is empty.");
         }
 
-        EventGridEvent[] events;
+        EventGridEvent[]? events;
 
         try
         {

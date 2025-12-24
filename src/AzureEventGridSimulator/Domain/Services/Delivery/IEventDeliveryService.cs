@@ -44,5 +44,5 @@ public record DeliveryResult(
     bool Success,
     DeliveryOutcome Outcome,
     int? HttpStatusCode = null,
-    string ErrorMessage = null
+    string? ErrorMessage = null
 );

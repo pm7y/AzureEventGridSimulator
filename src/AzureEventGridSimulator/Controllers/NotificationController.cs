@@ -21,9 +21,20 @@ public class NotificationController(SimulatorSettings simulatorSettings, IMediat
             t.Port == HttpContext.Request.Host.Port
         );
 
-        // Events are parsed and validated in the middleware
-        var events = (SimulatorEvent[])HttpContext.Items["ParsedEvents"];
-        var detectedSchema = (EventSchema)HttpContext.Items["DetectedSchema"];
+        // Events are parsed and validated by EventParsingMiddleware
+        if (HttpContext.Items["ParsedEvents"] is not SimulatorEvent[] events)
+        {
+            throw new InvalidOperationException(
+                "ParsedEvents not found in HttpContext. Ensure EventParsingMiddleware is configured."
+            );
+        }
+
+        if (HttpContext.Items["DetectedSchema"] is not EventSchema detectedSchema)
+        {
+            throw new InvalidOperationException(
+                "DetectedSchema not found in HttpContext. Ensure EventParsingMiddleware is configured."
+            );
+        }
 
         await mediator.Send(
             new SendNotificationEventsToSubscriberCommand(

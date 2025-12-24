@@ -39,8 +39,8 @@ public class Program
             app.UseEventGridMiddleware();
 
             // Conditionally enable dashboard based on settings
-            var simulatorSettings = app.Services.GetService<SimulatorSettings>();
-            if (simulatorSettings?.DashboardEnabled ?? true)
+            var simulatorSettings = app.Services.GetRequiredService<SimulatorSettings>();
+            if (simulatorSettings.DashboardEnabled)
             {
                 app.UseDashboard();
             }
@@ -53,7 +53,7 @@ public class Program
             app.MapDefaultEndpoints();
 #endif
 
-            if (simulatorSettings?.DashboardEnabled ?? true)
+            if (simulatorSettings.DashboardEnabled)
             {
                 app.MapDashboardEndpoints();
             }
@@ -95,9 +95,9 @@ public class Program
         {
             Log.Verbose("Started");
 
-            var simulatorSettings = app.ApplicationServices.GetService<SimulatorSettings>();
+            var simulatorSettings = app.ApplicationServices.GetRequiredService<SimulatorSettings>();
 
-            if (simulatorSettings is null || simulatorSettings.Topics.Length == 0)
+            if (simulatorSettings.Topics.Length == 0)
             {
                 DisplayConfigurationHelp();
                 lifetime.StopApplication();
@@ -113,14 +113,7 @@ public class Program
                 return;
             }
 
-            var mediator = app.ApplicationServices.GetService<IMediator>();
-
-            if (mediator is null)
-            {
-                Log.Fatal("Required component was not found. The application will now exit");
-                lifetime.StopApplication();
-                return;
-            }
+            var mediator = app.ApplicationServices.GetRequiredService<IMediator>();
 
             await mediator.Send(new ValidateAllSubscriptionsCommand());
 
@@ -147,17 +140,17 @@ public class Program
             }
 
             // Log dashboard availability
+            // Note: Validation ensures DashboardPort is set or at least one topic is enabled
             if (simulatorSettings.DashboardEnabled)
             {
-                var firstEnabledTopic = simulatorSettings.Topics.FirstOrDefault(t => !t.Disabled);
-                var dashboardPort = simulatorSettings.DashboardPort ?? firstEnabledTopic?.Port ?? 0;
-                if (dashboardPort > 0)
-                {
-                    Log.Information(
-                        "Dashboard available at https://localhost:{Port}/dashboard",
-                        dashboardPort
-                    );
-                }
+                var dashboardPort =
+                    simulatorSettings.DashboardPort
+                    ?? simulatorSettings.Topics.First(t => !t.Disabled).Port;
+
+                Log.Information(
+                    "Dashboard available at https://localhost:{Port}/dashboard",
+                    dashboardPort
+                );
             }
 
             Log.Information("It's alive !");
@@ -171,7 +164,7 @@ public class Program
 
     private static void DisplayConfigurationHelp()
     {
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "Unknown";
+        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
 
         Console.WriteLine();
         Console.WriteLine($"Azure Event Grid Simulator v{version}");
@@ -253,7 +246,7 @@ public class Program
             .AddCustomSimulatorConfigFileIfSpecified(environmentAndCommandLineConfiguration)
             .AddEnvironmentVariablesAndCommandLine(args)
             .AddInMemoryCollection(
-                new Dictionary<string, string>
+                new Dictionary<string, string?>
                 {
                     ["AEGS_Serilog__Using__0"] = "Serilog.Sinks.Console",
                     ["AEGS_Serilog__Using__1"] = "Serilog.Sinks.File",
@@ -365,7 +358,7 @@ public class Program
                     .Enrich.WithProperty("Application", nameof(AzureEventGridSimulator))
                     .Enrich.WithProperty(
                         "Version",
-                        Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown"
+                        Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0"
                     )
                     // The sensible defaults
                     .MinimumLevel.Is(LogEventLevel.Information)

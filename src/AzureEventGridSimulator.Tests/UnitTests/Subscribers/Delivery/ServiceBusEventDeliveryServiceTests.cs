@@ -82,8 +82,14 @@ public class ServiceBusEventDeliveryServiceTests
     [Fact]
     public async Task GivenDisabledSubscription_WhenSending_ThenLogsWarningAndReturnsEarly()
     {
-        var subscription = CreateValidQueueSettings();
-        subscription.Disabled = true;
+        var subscription = new ServiceBusSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Queue = "my-queue",
+            Disabled = true,
+        };
         var topic = CreateTopicSettings();
         var evt = CreateTestEvent();
 
@@ -95,9 +101,9 @@ public class ServiceBusEventDeliveryServiceTests
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("disabled")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("disabled")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 
@@ -145,8 +151,14 @@ public class ServiceBusEventDeliveryServiceTests
     [Fact]
     public void GivenSubscriptionWithDeliverySchema_WhenConfigured_ThenSchemaIsUsed()
     {
-        var subscription = CreateValidQueueSettings();
-        subscription.DeliverySchema = EventSchema.CloudEventV1_0;
+        var subscription = new ServiceBusSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Queue = "my-queue",
+            DeliverySchema = EventSchema.CloudEventV1_0,
+        };
 
         subscription.DeliverySchema.ShouldBe(EventSchema.CloudEventV1_0);
     }

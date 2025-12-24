@@ -6,7 +6,7 @@ namespace AzureEventGridSimulator.Infrastructure;
 
 public class ValidationIpAddressProvider
 {
-    private static string _ipAddress;
+    private static string? _ipAddress;
     private static readonly object _lock = new();
 
     public string Create()
@@ -17,7 +17,7 @@ public class ValidationIpAddressProvider
                 .SelectMany(o => o.GetIPProperties().DnsAddresses)
                 .FirstOrDefault(ip =>
                     ip.AddressFamily == AddressFamily.InterNetwork
-                    && !ip.ToString().StartsWith("172")
+                    && !ip.ToString().StartsWith("172", StringComparison.Ordinal)
                     && !IPAddress.IsLoopback(ip)
                 )
             ?? IPAddress.Loopback

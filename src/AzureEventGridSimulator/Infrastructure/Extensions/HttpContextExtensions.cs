@@ -18,7 +18,8 @@ public static class HttpContextExtensions
         public async Task WriteErrorResponse(
             HttpStatusCode statusCode,
             string errorMessage,
-            string code
+            string? code,
+            string? detailCode = null
         )
         {
             context.Response.Headers[HeaderNames.ContentType] = "application/json";
@@ -27,7 +28,7 @@ public static class HttpContextExtensions
 
             await context.Response.WriteAsync(
                 JsonSerializer.Serialize(
-                    new ErrorMessage(statusCode, errorMessage, code),
+                    new ErrorMessage(statusCode, errorMessage, code, detailCode),
                     new JsonSerializerOptions { WriteIndented = true }
                 )
             );

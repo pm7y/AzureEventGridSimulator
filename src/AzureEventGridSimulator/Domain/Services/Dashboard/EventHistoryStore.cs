@@ -1,5 +1,3 @@
-#nullable enable
-
 using System.Collections.Concurrent;
 using AzureEventGridSimulator.Domain.Entities.Dashboard;
 
@@ -90,9 +88,9 @@ public class EventHistoryStore
     /// <summary>
     /// Updates delivery information for an event.
     /// </summary>
-    public void UpdateDelivery(string eventId, DeliveryRecord delivery)
+    public void UpdateDelivery(string? eventId, DeliveryRecord delivery)
     {
-        if (_records.TryGetValue(eventId, out var record))
+        if (eventId != null && _records.TryGetValue(eventId, out var record))
         {
             record.AddOrUpdateDelivery(delivery);
         }
@@ -101,9 +99,9 @@ public class EventHistoryStore
     /// <summary>
     /// Gets an event by ID.
     /// </summary>
-    public EventHistoryRecord? Get(string eventId)
+    public EventHistoryRecord? Get(string? eventId)
     {
-        return _records.TryGetValue(eventId, out var record) ? record : null;
+        return eventId != null && _records.TryGetValue(eventId, out var record) ? record : null;
     }
 
     /// <summary>
@@ -160,18 +158,17 @@ public class EventHistoryStore
             }
         }
 
-        return new DashboardStats
-        {
-            TotalEventsReceived = _totalEventsReceived,
-            EventsInHistory = records.Count,
-            TotalDelivered = totalDelivered,
-            TotalFailed = totalFailed,
-            TotalPending = totalPending,
-            TotalRejected = _totalRejections,
-            TopicsActive = topicsActive,
-            OldestEventTime = records.MinBy(r => r.ReceivedAt)?.ReceivedAt,
-            NewestEventTime = records.MaxBy(r => r.ReceivedAt)?.ReceivedAt,
-        };
+        return new DashboardStats(
+            _totalEventsReceived,
+            records.Count,
+            totalDelivered,
+            totalFailed,
+            totalPending,
+            _totalRejections,
+            topicsActive,
+            records.MinBy(r => r.ReceivedAt)?.ReceivedAt,
+            records.MaxBy(r => r.ReceivedAt)?.ReceivedAt
+        );
     }
 
     /// <summary>

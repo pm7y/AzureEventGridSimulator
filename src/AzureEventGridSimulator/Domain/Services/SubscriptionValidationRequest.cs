@@ -8,5 +8,5 @@ public class SubscriptionValidationRequest
     public Guid ValidationCode { get; set; }
 
     [JsonPropertyName("validationUrl")]
-    public string ValidationUrl { get; set; }
+    public required string ValidationUrl { get; set; }
 }

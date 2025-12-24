@@ -1,5 +1,3 @@
-#nullable enable
-
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Entities.Dashboard;
 using AzureEventGridSimulator.Infrastructure.Settings;
@@ -30,7 +28,7 @@ public class EventHistoryService(
     }
 
     /// <inheritdoc />
-    public void RecordDeliveryQueued(string eventId, ISubscriberSettings subscriber)
+    public void RecordDeliveryQueued(string? eventId, ISubscriberSettings subscriber)
     {
         var delivery = DeliveryRecord.FromSubscriber(subscriber);
         store.UpdateDelivery(eventId, delivery);
@@ -44,8 +42,8 @@ public class EventHistoryService(
 
     /// <inheritdoc />
     public void RecordDeliveryAttempt(
-        string eventId,
-        string subscriberName,
+        string? eventId,
+        string? subscriberName,
         DeliveryAttempt attempt
     )
     {
@@ -96,8 +94,8 @@ public class EventHistoryService(
 
     /// <inheritdoc />
     public void RecordDeliveryCompleted(
-        string eventId,
-        string subscriberName,
+        string? eventId,
+        string? subscriberName,
         DeliveryStatus status,
         DateTimeOffset completedAt
     )

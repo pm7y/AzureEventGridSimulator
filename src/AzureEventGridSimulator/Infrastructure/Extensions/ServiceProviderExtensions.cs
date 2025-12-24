@@ -8,7 +8,7 @@ public static class ServiceProviderExtensions
     {
         public SimulatorSettings SimulatorSettings()
         {
-            return provider.GetService<SimulatorSettings>();
+            return provider.GetRequiredService<SimulatorSettings>();
         }
 
         public IEnumerable<TopicSettings> EnabledTopics()

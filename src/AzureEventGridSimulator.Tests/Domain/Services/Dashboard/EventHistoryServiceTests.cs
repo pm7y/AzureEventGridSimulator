@@ -112,13 +112,7 @@ public class EventHistoryServiceTests
         _service.RecordDeliveryQueued("event-1", subscriber);
 
         // Act
-        var attempt = new DeliveryAttempt
-        {
-            AttemptNumber = 1,
-            AttemptTime = DateTimeOffset.UtcNow,
-            Outcome = DeliveryOutcome.Success,
-            HttpStatusCode = 200,
-        };
+        var attempt = new DeliveryAttempt(1, DeliveryOutcome.Success, DateTimeOffset.UtcNow, 200);
         _service.RecordDeliveryAttempt("event-1", "http-subscriber", attempt);
 
         // Assert
@@ -133,12 +127,7 @@ public class EventHistoryServiceTests
     [Fact]
     public void RecordDeliveryAttempt_NonExistingEvent_DoesNotThrow()
     {
-        var attempt = new DeliveryAttempt
-        {
-            AttemptNumber = 1,
-            AttemptTime = DateTimeOffset.UtcNow,
-            Outcome = DeliveryOutcome.Success,
-        };
+        var attempt = new DeliveryAttempt(1, DeliveryOutcome.Success, DateTimeOffset.UtcNow);
 
         Should.NotThrow(() =>
             _service.RecordDeliveryAttempt("non-existing", "subscriber", attempt)

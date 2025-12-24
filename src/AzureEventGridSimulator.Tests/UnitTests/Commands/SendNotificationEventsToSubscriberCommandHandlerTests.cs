@@ -4,6 +4,7 @@ using AzureEventGridSimulator.Domain.Services.Dashboard;
 using AzureEventGridSimulator.Domain.Services.Retry;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -49,17 +50,16 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("has no subscribers")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("has no subscribers")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 
     [Fact]
     public async Task GivenAllSubscribersDisabled_WhenHandled_ThenLogsWarning()
     {
-        var subscriber = CreateHttpSubscriber();
-        subscriber.Disabled = true;
+        var subscriber = CreateHttpSubscriber(true);
         var topic = CreateTopicWithHttpSubscriber(subscriber);
         var events = CreateTestEvents();
         var command = new SendNotificationEventsToSubscriberCommand(
@@ -75,20 +75,18 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("has no enabled subscribers")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("has no enabled subscribers")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 
     [Fact]
     public async Task GivenEventFilteredByAllSubscribers_WhenHandled_ThenLogsWarningForFilteredEvent()
     {
-        var subscriber = CreateHttpSubscriber();
-        subscriber.Filter = new FilterSetting
-        {
-            IncludedEventTypes = new[] { "Some.Other.EventType" },
-        };
+        var subscriber = CreateHttpSubscriber(
+            filter: new FilterSetting { IncludedEventTypes = new[] { "Some.Other.EventType" } }
+        );
         var topic = CreateTopicWithHttpSubscriber(subscriber);
         var events = CreateTestEvents();
         var command = new SendNotificationEventsToSubscriberCommand(
@@ -104,17 +102,16 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("filtered out")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("filtered out")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 
     [Fact]
     public async Task GivenEventGridEvent_WhenHandled_ThenEventIsEnriched()
     {
-        var topic = CreateTopicWithoutSubscribers();
-        topic.Name = "MyTestTopic";
+        var topic = CreateTopicWithoutSubscribers("MyTestTopic");
         var events = CreateTestEvents();
         var command = new SendNotificationEventsToSubscriberCommand(
             events,
@@ -124,15 +121,17 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
 
         await _handler.Handle(command, CancellationToken.None);
 
-        events[0].EventGridEvent.Topic.ShouldContain("MyTestTopic");
-        events[0].EventGridEvent.MetadataVersion.ShouldBe("1");
+        events[0]
+            .EventGridEvent.ShouldNotBeNullAnd()
+            .Topic.ShouldNotBeNullAnd()
+            .ShouldContain("MyTestTopic");
+        events[0].EventGridEvent.ShouldNotBeNullAnd().MetadataVersion.ShouldBe("1");
     }
 
     [Fact]
     public async Task GivenCloudEvent_WhenHandled_ThenSourceIsPreservedIfSet()
     {
-        var topic = CreateTopicWithoutSubscribers();
-        topic.Name = "MyTestTopic";
+        var topic = CreateTopicWithoutSubscribers("MyTestTopic");
         var cloudEvent = new CloudEvent
         {
             SpecVersion = "1.0",
@@ -149,38 +148,13 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
 
         await _handler.Handle(command, CancellationToken.None);
 
-        events[0].CloudEvent.Source.ShouldBe("/original/source");
-    }
-
-    [Fact]
-    public async Task GivenCloudEventWithoutSource_WhenHandled_ThenSourceIsSetToTopicPath()
-    {
-        var topic = CreateTopicWithoutSubscribers();
-        topic.Name = "MyTestTopic";
-        var cloudEvent = new CloudEvent
-        {
-            SpecVersion = "1.0",
-            Type = "Test.EventType",
-            Source = null,
-            Id = "test-id",
-        };
-        var events = new[] { SimulatorEvent.FromCloudEvent(cloudEvent) };
-        var command = new SendNotificationEventsToSubscriberCommand(
-            events,
-            topic,
-            EventSchema.CloudEventV1_0
-        );
-
-        await _handler.Handle(command, CancellationToken.None);
-
-        events[0].CloudEvent.Source.ShouldContain("MyTestTopic");
+        events[0].CloudEvent.ShouldNotBeNullAnd().Source.ShouldBe("/original/source");
     }
 
     [Fact]
     public async Task GivenCloudEventWithEmptySource_WhenHandled_ThenSourceIsSetToTopicPath()
     {
-        var topic = CreateTopicWithoutSubscribers();
-        topic.Name = "MyTestTopic";
+        var topic = CreateTopicWithoutSubscribers("MyTestTopic");
         var cloudEvent = new CloudEvent
         {
             SpecVersion = "1.0",
@@ -197,7 +171,10 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
 
         await _handler.Handle(command, CancellationToken.None);
 
-        events[0].CloudEvent.Source.ShouldContain("MyTestTopic");
+        events[0]
+            .CloudEvent.ShouldNotBeNullAnd()
+            .Source.ShouldNotBeNullAnd()
+            .ShouldContain("MyTestTopic");
     }
 
     [Fact]
@@ -222,17 +199,16 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Information,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("2 event(s) received")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("2 event(s) received")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 
     [Fact]
     public async Task GivenDisabledHttpSubscriber_WhenHandled_ThenLogsDebugAndSkips()
     {
-        var subscriber = CreateHttpSubscriber();
-        subscriber.Disabled = true;
+        var subscriber = CreateHttpSubscriber(true);
         var topic = CreateTopicWithMixedSubscribers(subscriber);
         var events = CreateTestEvents();
         var command = new SendNotificationEventsToSubscriberCommand(
@@ -248,9 +224,9 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Debug,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("Skipping disabled subscriber")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("Skipping disabled subscriber")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 
@@ -272,9 +248,9 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Information,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("EventGridSchema")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("EventGridSchema")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 
@@ -303,17 +279,16 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Information,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString().Contains("CloudEventV1_0")),
-                Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>()
+                Arg.Is<object>(o => (o.ToString() ?? "").Contains("CloudEventV1_0")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
             );
     }
 
     [Fact]
     public async Task GivenMultipleEvents_WhenHandled_ThenAllEventsAreEnriched()
     {
-        var topic = CreateTopicWithoutSubscribers();
-        topic.Name = "MyTestTopic";
+        var topic = CreateTopicWithoutSubscribers("MyTestTopic");
         var events = new[]
         {
             CreateTestEventGridEvent("event-1"),
@@ -330,12 +305,16 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
 
         foreach (var evt in events)
         {
-            evt.EventGridEvent.Topic.ShouldContain("MyTestTopic");
-            evt.EventGridEvent.MetadataVersion.ShouldBe("1");
+            var eventGridEvent = evt.EventGridEvent.ShouldNotBeNullAnd();
+            eventGridEvent.Topic.ShouldNotBeNullAnd().ShouldContain("MyTestTopic");
+            eventGridEvent.MetadataVersion.ShouldBe("1");
         }
     }
 
-    private static HttpSubscriberSettings CreateHttpSubscriber()
+    private static HttpSubscriberSettings CreateHttpSubscriber(
+        bool disabled = false,
+        FilterSetting? filter = null
+    )
     {
         return new HttpSubscriberSettings
         {
@@ -343,14 +322,16 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             Endpoint = "https://example.com/webhook",
             DisableValidation = true,
             ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful,
+            Disabled = disabled,
+            Filter = filter,
         };
     }
 
-    private static TopicSettings CreateTopicWithoutSubscribers()
+    private static TopicSettings CreateTopicWithoutSubscribers(string name = "TestTopic")
     {
         return new TopicSettings
         {
-            Name = "TestTopic",
+            Name = name,
             Port = 60101,
             Key = "TestKey",
             Subscribers = new SubscribersSettings(),

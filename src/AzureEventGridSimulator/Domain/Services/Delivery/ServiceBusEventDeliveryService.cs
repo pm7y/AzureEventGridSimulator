@@ -76,7 +76,7 @@ public class ServiceBusEventDeliveryService(
             var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(json))
             {
                 ContentType = formatter.ContentType,
-                MessageId = delivery.Event.Id ?? Guid.NewGuid().ToString(),
+                MessageId = delivery.Event.Id,
             };
 
             // Add delivery properties
@@ -191,7 +191,7 @@ public class ServiceBusEventDeliveryService(
             var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(json))
             {
                 ContentType = formatter.ContentType,
-                MessageId = evt.Id ?? Guid.NewGuid().ToString(),
+                MessageId = evt.Id,
             };
 
             // Add delivery properties
@@ -254,16 +254,22 @@ public class ServiceBusEventDeliveryService(
 
     private ServiceBusClient GetOrCreateClient(ServiceBusSubscriberSettings subscription)
     {
+        var connectionString =
+            subscription.EffectiveConnectionString
+            ?? throw new InvalidOperationException(
+                $"No connection string available for subscription '{subscription.Name}'"
+            );
+
         return _clients.GetOrAdd(
-            subscription.EffectiveConnectionString,
-            connectionString =>
+            connectionString,
+            cs =>
             {
                 logger.LogDebug(
                     "Creating Service Bus client for subscription '{SubscriberName}'",
                     subscription.Name
                 );
 
-                return new ServiceBusClient(connectionString);
+                return new ServiceBusClient(cs);
             }
         );
     }

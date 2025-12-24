@@ -1,1666 +1,1910 @@
 {
-	"info": {
-		"_postman_id": "5931e5ae-86d5-4bd9-8f70-b1dff37cde9c",
-		"name": "Azure Event Grid Simulator",
-		"description": "A comprehensive collection for testing the Azure Event Grid Simulator.\n\nSupports both Event Grid Schema and CloudEvents v1.0 Schema.\n\n## Environment Variables\n- `baseUrl`: The simulator base URL (default: https://127.0.0.1:60101)\n- `sasKey`: The SAS key for authentication (default: TheLocal+DevelopmentKey=)\n\n## Schema Types\n1. **Event Grid Schema**: The original Azure Event Grid format\n2. **CloudEvents Schema**: CloudEvents v1.0 specification with structured, batch, and binary modes",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "Event Grid Schema",
-			"item": [
-				{
-					"name": "Single Event",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"var uuid = require('uuid');",
-									"",
-									"pm.collectionVariables.set('eventId', uuid.v4());",
-									"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test('Status code is 200 OK', function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test('Response time is acceptable', function () {",
-									"    pm.expect(pm.response.responseTime).to.be.below(5000);",
-									"});",
-									"",
-									"pm.test('Response body is empty or valid JSON', function () {",
-									"    if (pm.response.text()) {",
-									"        pm.response.to.be.json;",
-									"    }",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "aeg-sas-key",
-								"value": "{{sasKey}}",
-								"type": "text"
-							},
-							{
-								"key": "aeg-event-type",
-								"value": "Notification",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {\n      \"MyProperty\": \"This is my awesome data!\",\n      \"Count\": 42\n    },\n    \"eventType\": \"Example.EventType\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"events"
-							],
-							"query": [
-								{
-									"key": "api-version",
-									"value": "2018-01-01"
-								}
-							]
-						},
-						"description": "Sends a single event using the Event Grid schema.\n\nRequired fields:\n- `id`: Unique event identifier\n- `subject`: Resource path relative to topic\n- `eventType`: Type of event that occurred\n- `eventTime`: UTC timestamp (ISO 8601)\n- `dataVersion`: Schema version of data object\n\nOptional fields:\n- `data`: Event-specific payload\n- `metadataVersion`: Must be \"1\" or null"
-					},
-					"response": []
-				},
-				{
-					"name": "Batch Events",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"var uuid = require('uuid');",
-									"",
-									"pm.collectionVariables.set('eventId1', uuid.v4());",
-									"pm.collectionVariables.set('eventId2', uuid.v4());",
-									"pm.collectionVariables.set('eventId3', uuid.v4());",
-									"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test('Status code is 200 OK', function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test('Batch of events processed successfully', function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "aeg-sas-key",
-								"value": "{{sasKey}}",
-								"type": "text"
-							},
-							{
-								"key": "aeg-event-type",
-								"value": "Notification",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "[\n  {\n    \"id\": \"{{eventId1}}\",\n    \"subject\": \"/orders/order-123\",\n    \"data\": {\n      \"orderId\": \"order-123\",\n      \"status\": \"created\"\n    },\n    \"eventType\": \"Order.Created\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  },\n  {\n    \"id\": \"{{eventId2}}\",\n    \"subject\": \"/orders/order-123\",\n    \"data\": {\n      \"orderId\": \"order-123\",\n      \"status\": \"processing\"\n    },\n    \"eventType\": \"Order.Updated\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  },\n  {\n    \"id\": \"{{eventId3}}\",\n    \"subject\": \"/orders/order-123\",\n    \"data\": {\n      \"orderId\": \"order-123\",\n      \"status\": \"completed\"\n    },\n    \"eventType\": \"Order.Completed\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"events"
-							],
-							"query": [
-								{
-									"key": "api-version",
-									"value": "2018-01-01"
-								}
-							]
-						},
-						"description": "Sends multiple events in a single batch request using the Event Grid schema.\n\nThis demonstrates the typical order lifecycle events pattern."
-					},
-					"response": []
-				},
-				{
-					"name": "With Metadata Version",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"var uuid = require('uuid');",
-									"",
-									"pm.collectionVariables.set('eventId', uuid.v4());",
-									"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test('Status code is 200 OK', function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "aeg-sas-key",
-								"value": "{{sasKey}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {\n      \"message\": \"Event with explicit metadata version\"\n    },\n    \"eventType\": \"Example.MetadataTest\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"2.0\",\n    \"metadataVersion\": \"1\"\n  }\n]"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"events"
-							],
-							"query": [
-								{
-									"key": "api-version",
-									"value": "2018-01-01"
-								}
-							]
-						},
-						"description": "Sends an event with explicit metadataVersion set to \"1\".\n\nNote: metadataVersion must be either \"1\" or null."
-					},
-					"response": []
-				},
-				{
-					"name": "Complex Data Payload",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"var uuid = require('uuid');",
-									"",
-									"pm.collectionVariables.set('eventId', uuid.v4());",
-									"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test('Status code is 200 OK', function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "aeg-sas-key",
-								"value": "{{sasKey}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/users/user-456\",\n    \"data\": {\n      \"user\": {\n        \"id\": \"user-456\",\n        \"name\": \"John Doe\",\n        \"email\": \"john.doe@example.com\",\n        \"roles\": [\"admin\", \"user\"]\n      },\n      \"metadata\": {\n        \"ipAddress\": \"192.168.1.100\",\n        \"userAgent\": \"Mozilla/5.0\",\n        \"timestamp\": \"{{eventTime}}\"\n      },\n      \"changes\": [\n        {\n          \"field\": \"email\",\n          \"oldValue\": \"john@old.com\",\n          \"newValue\": \"john.doe@example.com\"\n        }\n      ]\n    },\n    \"eventType\": \"User.ProfileUpdated\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"events"
-							],
-							"query": [
-								{
-									"key": "api-version",
-									"value": "2018-01-01"
-								}
-							]
-						},
-						"description": "Demonstrates an event with a complex, nested data payload including arrays and objects."
-					},
-					"response": []
-				},
-				{
-					"name": "Validation Error - Missing Required Fields",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test('Status code is 400 Bad Request', function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									"",
-									"pm.test('Response contains validation error', function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.error).to.exist;",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "aeg-sas-key",
-								"value": "{{sasKey}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "[\n  {\n    \"data\": {\n      \"message\": \"Missing required fields\"\n    }\n  }\n]"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"events"
-							],
-							"query": [
-								{
-									"key": "api-version",
-									"value": "2018-01-01"
-								}
-							]
-						},
-						"description": "Demonstrates validation error when required fields are missing.\n\nRequired fields: id, subject, eventType, eventTime, dataVersion"
-					},
-					"response": []
-				},
-				{
-					"name": "Validation Error - Invalid Metadata Version",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"var uuid = require('uuid');",
-									"",
-									"pm.collectionVariables.set('eventId', uuid.v4());",
-									"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test('Status code is 400 Bad Request', function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									"",
-									"pm.test('Response contains metadata version error', function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.error.message.toLowerCase()).to.include('metadataversion');",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "aeg-sas-key",
-								"value": "{{sasKey}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {},\n    \"eventType\": \"Example.Test\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\",\n    \"metadataVersion\": \"2\"\n  }\n]"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"events"
-							],
-							"query": [
-								{
-									"key": "api-version",
-									"value": "2018-01-01"
-								}
-							]
-						},
-						"description": "Demonstrates validation error when metadataVersion is not \"1\".\n\nmetadataVersion must be either \"1\" or null."
-					},
-					"response": []
-				}
-			],
-			"description": "Requests using the Azure Event Grid native schema format.\n\nThe Event Grid schema requires:\n- `id` (string): Unique event identifier\n- `subject` (string): Resource path relative to topic path\n- `eventType` (string): Type of event that occurred\n- `eventTime` (string): UTC timestamp in ISO 8601 format\n- `data` (object): Event-specific data payload\n- `dataVersion` (string): Schema version of data object"
-		},
-		{
-			"name": "CloudEvents Schema",
-			"item": [
-				{
-					"name": "Structured Mode",
-					"item": [
-						{
-							"name": "Single Event",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"",
-											"pm.collectionVariables.set('eventId', uuid.v4());",
-											"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 200 OK', function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test('Response time is acceptable', function () {",
-											"    pm.expect(pm.response.responseTime).to.be.below(5000);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/cloudevents+json; charset=utf-8",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"com.example.someevent\",\n  \"source\": \"/mycontext/subcontext\",\n  \"id\": \"{{eventId}}\",\n  \"time\": \"{{eventTime}}\",\n  \"subject\": \"/example/subject\",\n  \"datacontenttype\": \"application/json\",\n  \"data\": {\n    \"MyProperty\": \"This is my awesome data!\",\n    \"Count\": 42\n  }\n}"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "Sends a single CloudEvent in structured mode.\n\nStructured mode sends the entire CloudEvent as a JSON object with:\n- Content-Type: `application/cloudevents+json`\n\nRequired fields:\n- `specversion`: Must be \"1.0\"\n- `type`: Event type\n- `source`: Event source (URI-reference)\n- `id`: Unique event identifier\n\nOptional fields:\n- `time`: RFC 3339 timestamp\n- `subject`: Event subject\n- `datacontenttype`: Content type of data\n- `dataschema`: URI reference to data schema\n- `data`: Event payload"
-							},
-							"response": []
-						},
-						{
-							"name": "With Data Schema",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"",
-											"pm.collectionVariables.set('eventId', uuid.v4());",
-											"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 200 OK', function () {",
-											"    pm.response.to.have.status(200);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/cloudevents+json; charset=utf-8",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"com.example.order.created\",\n  \"source\": \"/orders\",\n  \"id\": \"{{eventId}}\",\n  \"time\": \"{{eventTime}}\",\n  \"subject\": \"/orders/order-123\",\n  \"datacontenttype\": \"application/json\",\n  \"dataschema\": \"https://example.com/schemas/order/v1.0\",\n  \"data\": {\n    \"orderId\": \"order-123\",\n    \"customerId\": \"cust-456\",\n    \"items\": [\n      {\n        \"productId\": \"prod-789\",\n        \"quantity\": 2,\n        \"price\": 29.99\n      }\n    ],\n    \"total\": 59.98\n  }\n}"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "CloudEvent with an explicit dataschema field pointing to a schema URI.\n\nThe dataschema must be a valid URI."
-							},
-							"response": []
-						},
-						{
-							"name": "Minimal Event (Required Fields Only)",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"",
-											"pm.collectionVariables.set('eventId', uuid.v4());"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 200 OK', function () {",
-											"    pm.response.to.have.status(200);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/cloudevents+json; charset=utf-8",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"com.example.minimal\",\n  \"source\": \"/minimal\",\n  \"id\": \"{{eventId}}\"\n}"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "A minimal CloudEvent with only required fields.\n\nRequired fields:\n- specversion\n- type\n- source\n- id"
-							},
-							"response": []
-						}
-					],
-					"description": "CloudEvents sent in structured mode where the entire event is serialized as JSON.\n\nContent-Type: `application/cloudevents+json; charset=utf-8`\n\nNote: For sending multiple events, use Batch Mode with `application/cloudevents-batch+json`."
-				},
-				{
-					"name": "Batch Mode",
-					"item": [
-						{
-							"name": "Multiple Events",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"",
-											"pm.collectionVariables.set('eventId1', uuid.v4());",
-											"pm.collectionVariables.set('eventId2', uuid.v4());",
-											"pm.collectionVariables.set('eventId3', uuid.v4());",
-											"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 200 OK', function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test('Batch processed successfully', function () {",
-											"    pm.response.to.have.status(200);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/cloudevents-batch+json; charset=utf-8",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "[\n  {\n    \"specversion\": \"1.0\",\n    \"type\": \"com.example.order.created\",\n    \"source\": \"/orders\",\n    \"id\": \"{{eventId1}}\",\n    \"time\": \"{{eventTime}}\",\n    \"subject\": \"/orders/order-001\",\n    \"data\": {\n      \"orderId\": \"order-001\",\n      \"status\": \"created\"\n    }\n  },\n  {\n    \"specversion\": \"1.0\",\n    \"type\": \"com.example.order.processing\",\n    \"source\": \"/orders\",\n    \"id\": \"{{eventId2}}\",\n    \"time\": \"{{eventTime}}\",\n    \"subject\": \"/orders/order-001\",\n    \"data\": {\n      \"orderId\": \"order-001\",\n      \"status\": \"processing\"\n    }\n  },\n  {\n    \"specversion\": \"1.0\",\n    \"type\": \"com.example.order.completed\",\n    \"source\": \"/orders\",\n    \"id\": \"{{eventId3}}\",\n    \"time\": \"{{eventTime}}\",\n    \"subject\": \"/orders/order-001\",\n    \"data\": {\n      \"orderId\": \"order-001\",\n      \"status\": \"completed\"\n    }\n  }\n]"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "Sends multiple CloudEvents in batch mode.\n\nContent-Type: `application/cloudevents-batch+json`\n\nThe body must be a JSON array of CloudEvent objects."
-							},
-							"response": []
-						}
-					],
-					"description": "CloudEvents sent in batch mode as a JSON array.\n\nContent-Type: `application/cloudevents-batch+json; charset=utf-8`"
-				},
-				{
-					"name": "Binary Mode",
-					"item": [
-						{
-							"name": "Simple Event",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"",
-											"pm.collectionVariables.set('eventId', uuid.v4());",
-											"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 200 OK', function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test('Binary mode event processed', function () {",
-											"    pm.response.to.have.status(200);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									},
-									{
-										"key": "ce-specversion",
-										"value": "1.0",
-										"type": "text"
-									},
-									{
-										"key": "ce-type",
-										"value": "com.example.binaryevent",
-										"type": "text"
-									},
-									{
-										"key": "ce-source",
-										"value": "/binary/source",
-										"type": "text"
-									},
-									{
-										"key": "ce-id",
-										"value": "{{eventId}}",
-										"type": "text"
-									},
-									{
-										"key": "ce-time",
-										"value": "{{eventTime}}",
-										"type": "text"
-									},
-									{
-										"key": "ce-subject",
-										"value": "/binary/subject",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"MyProperty\": \"This is data sent in binary mode!\",\n  \"Count\": 123\n}"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "Sends a CloudEvent in binary mode.\n\nIn binary mode:\n- CloudEvent attributes are sent as HTTP headers with `ce-` prefix\n- The request body contains only the event data\n- Content-Type indicates the data type (typically application/json)\n\nRequired headers:\n- `ce-specversion`: \"1.0\"\n- `ce-type`: Event type\n- `ce-source`: Event source\n- `ce-id`: Unique event ID\n\nOptional headers:\n- `ce-time`: RFC 3339 timestamp\n- `ce-subject`: Event subject\n- `ce-datacontenttype`: Content type of body\n- `ce-dataschema`: Schema URI"
-							},
-							"response": []
-						},
-						{
-							"name": "With All Optional Headers",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"",
-											"pm.collectionVariables.set('eventId', uuid.v4());",
-											"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 200 OK', function () {",
-											"    pm.response.to.have.status(200);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									},
-									{
-										"key": "ce-specversion",
-										"value": "1.0",
-										"type": "text"
-									},
-									{
-										"key": "ce-type",
-										"value": "com.example.fullbinary",
-										"type": "text"
-									},
-									{
-										"key": "ce-source",
-										"value": "/full/binary/source",
-										"type": "text"
-									},
-									{
-										"key": "ce-id",
-										"value": "{{eventId}}",
-										"type": "text"
-									},
-									{
-										"key": "ce-time",
-										"value": "{{eventTime}}",
-										"type": "text"
-									},
-									{
-										"key": "ce-subject",
-										"value": "/users/user-789",
-										"type": "text"
-									},
-									{
-										"key": "ce-datacontenttype",
-										"value": "application/json",
-										"type": "text"
-									},
-									{
-										"key": "ce-dataschema",
-										"value": "https://example.com/schemas/user/v2.0",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"user\": {\n    \"id\": \"user-789\",\n    \"name\": \"Jane Smith\",\n    \"email\": \"jane@example.com\"\n  },\n  \"action\": \"profile_updated\",\n  \"previousValues\": {\n    \"name\": \"Jane Doe\"\n  }\n}"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "CloudEvent in binary mode with all optional headers populated."
-							},
-							"response": []
-						},
-						{
-							"name": "Minimal (Required Headers Only)",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"",
-											"pm.collectionVariables.set('eventId', uuid.v4());"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 200 OK', function () {",
-											"    pm.response.to.have.status(200);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									},
-									{
-										"key": "ce-specversion",
-										"value": "1.0",
-										"type": "text"
-									},
-									{
-										"key": "ce-type",
-										"value": "com.example.minimal",
-										"type": "text"
-									},
-									{
-										"key": "ce-source",
-										"value": "/minimal",
-										"type": "text"
-									},
-									{
-										"key": "ce-id",
-										"value": "{{eventId}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"simple\": \"data\"\n}"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "Minimal CloudEvent in binary mode with only required headers."
-							},
-							"response": []
-						},
-						{
-							"name": "Plain Text Data",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"",
-											"pm.collectionVariables.set('eventId', uuid.v4());",
-											"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 200 OK', function () {",
-											"    pm.response.to.have.status(200);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "text/plain",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									},
-									{
-										"key": "ce-specversion",
-										"value": "1.0",
-										"type": "text"
-									},
-									{
-										"key": "ce-type",
-										"value": "com.example.textevent",
-										"type": "text"
-									},
-									{
-										"key": "ce-source",
-										"value": "/text/source",
-										"type": "text"
-									},
-									{
-										"key": "ce-id",
-										"value": "{{eventId}}",
-										"type": "text"
-									},
-									{
-										"key": "ce-time",
-										"value": "{{eventTime}}",
-										"type": "text"
-									},
-									{
-										"key": "ce-datacontenttype",
-										"value": "text/plain",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "This is plain text event data. It doesn't have to be JSON!"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "CloudEvent in binary mode with plain text data instead of JSON."
-							},
-							"response": []
-						}
-					],
-					"description": "CloudEvents sent in binary mode where:\n- Event attributes are sent as HTTP headers (ce-* prefix)\n- Request body contains only the event data\n\nRequired headers:\n- `ce-specversion`: \"1.0\"\n- `ce-type`: Event type\n- `ce-source`: Event source URI\n- `ce-id`: Unique event identifier"
-				},
-				{
-					"name": "Validation Errors",
-					"item": [
-						{
-							"name": "Invalid Spec Version",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"",
-											"pm.collectionVariables.set('eventId', uuid.v4());"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 400 Bad Request', function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test('Response contains specversion error', function () {",
-											"    var jsonData = pm.response.json();",
-											"    pm.expect(jsonData.error.message.toLowerCase()).to.include('specversion');",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/cloudevents+json; charset=utf-8",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"specversion\": \"2.0\",\n  \"type\": \"com.example.test\",\n  \"source\": \"/test\",\n  \"id\": \"{{eventId}}\"\n}"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "Demonstrates validation error when specversion is not \"1.0\"."
-							},
-							"response": []
-						},
-						{
-							"name": "Missing Required Fields",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 400 Bad Request', function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test('Response contains validation error', function () {",
-											"    var jsonData = pm.response.json();",
-											"    pm.expect(jsonData.error).to.exist;",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/cloudevents+json; charset=utf-8",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"specversion\": \"1.0\",\n  \"data\": {\n    \"message\": \"Missing type, source, and id\"\n  }\n}"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "Demonstrates validation error when required fields are missing.\n\nRequired: specversion, type, source, id"
-							},
-							"response": []
-						},
-						{
-							"name": "Missing Source",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"",
-											"pm.collectionVariables.set('eventId', uuid.v4());"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 400 Bad Request', function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test('Response contains source error', function () {",
-											"    var jsonData = pm.response.json();",
-											"    pm.expect(jsonData.error.message.toLowerCase()).to.include('source');",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/cloudevents+json; charset=utf-8",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"com.example.test\",\n  \"source\": \"\",\n  \"id\": \"{{eventId}}\"\n}"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "Demonstrates validation error when source is empty.\n\nThe source field is required and must be a non-empty URI-reference."
-							},
-							"response": []
-						},
-						{
-							"name": "Invalid Time Format",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"",
-											"pm.collectionVariables.set('eventId', uuid.v4());"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test('Status code is 400 Bad Request', function () {",
-											"    pm.response.to.have.status(400);",
-											"});",
-											"",
-											"pm.test('Response contains time error', function () {",
-											"    var jsonData = pm.response.json();",
-											"    pm.expect(jsonData.error.message.toLowerCase()).to.include('time');",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/cloudevents+json; charset=utf-8",
-										"type": "text"
-									},
-									{
-										"key": "aeg-sas-key",
-										"value": "{{sasKey}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"com.example.test\",\n  \"source\": \"/test\",\n  \"id\": \"{{eventId}}\",\n  \"time\": \"not-a-valid-timestamp\"\n}"
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"events"
-									],
-									"query": [
-										{
-											"key": "api-version",
-											"value": "2018-01-01"
-										}
-									]
-								},
-								"description": "Demonstrates validation error when time is not a valid RFC 3339 timestamp."
-							},
-							"response": []
-						}
-					],
-					"description": "Examples of CloudEvents validation errors."
-				}
-			],
-			"description": "Requests using the CloudEvents v1.0 schema format.\n\nCloudEvents can be sent in three modes:\n1. **Structured Mode**: Entire event as JSON (Content-Type: application/cloudevents+json)\n2. **Batch Mode**: Array of events (Content-Type: application/cloudevents-batch+json)\n3. **Binary Mode**: Attributes in headers, data in body (ce-* headers)"
-		},
-		{
-			"name": "Authentication",
-			"item": [
-				{
-					"name": "Missing SAS Key (401)",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"var uuid = require('uuid');",
-									"",
-									"pm.collectionVariables.set('eventId', uuid.v4());",
-									"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test('Status code is 401 Unauthorized', function () {",
-									"    pm.response.to.have.status(401);",
-									"});",
-									"",
-									"pm.test('Response indicates authentication failure', function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.error).to.exist;",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {},\n    \"eventType\": \"Example.Test\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"events"
-							],
-							"query": [
-								{
-									"key": "api-version",
-									"value": "2018-01-01"
-								}
-							]
-						},
-						"description": "Demonstrates 401 Unauthorized when SAS key is missing (assuming topic has key configured)."
-					},
-					"response": []
-				},
-				{
-					"name": "Invalid SAS Key (401)",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"var uuid = require('uuid');",
-									"",
-									"pm.collectionVariables.set('eventId', uuid.v4());",
-									"pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test('Status code is 401 Unauthorized', function () {",
-									"    pm.response.to.have.status(401);",
-									"});",
-									"",
-									"pm.test('Response indicates authentication failure', function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.error).to.exist;",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "aeg-sas-key",
-								"value": "InvalidKey123=",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {},\n    \"eventType\": \"Example.Test\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"events"
-							],
-							"query": [
-								{
-									"key": "api-version",
-									"value": "2018-01-01"
-								}
-							]
-						},
-						"description": "Demonstrates 401 Unauthorized when SAS key is invalid."
-					},
-					"response": []
-				}
-			],
-			"description": "Examples demonstrating authentication behavior.\n\nThe simulator supports two authentication methods:\n- `aeg-sas-key`: Simple SAS key matching\n- `aeg-sas-token`: SHA256-hashed SAS token"
-		},
-		{
-			"name": "Subscription Validation",
-			"item": [
-				{
-					"name": "Manual Validation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test('Status code is 200 OK or 400 Bad Request', function () {",
-									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
-									"});",
-									"",
-									"pm.test('Response is text or JSON', function () {",
-									"    var contentType = pm.response.headers.get('Content-Type');",
-									"    pm.expect(contentType).to.match(/text|json/);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/validate?id=d9ebebb7-f884-40b5-8c0d-9ec72f6f19cd",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"validate"
-							],
-							"query": [
-								{
-									"key": "id",
-									"value": "d9ebebb7-f884-40b5-8c0d-9ec72f6f19cd"
-								}
-							]
-						},
-						"description": "Manually validates a subscription using a validation ID.\n\nWhen a webhook endpoint doesn't automatically respond to the validation challenge, the validation URL can be accessed manually to complete the subscription validation.\n\nThe `id` parameter should be the GUID from the validation URL provided during subscription setup."
-					},
-					"response": []
-				}
-			],
-			"description": "Subscription validation endpoints.\n\nWhen a new subscription is created, Event Grid sends a validation request to the webhook endpoint. The endpoint must respond with the validation code to confirm ownership."
-		},
-		{
-			"name": "Health Check",
-			"item": [
-				{
-					"name": "Health",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test('Status code is 200 OK', function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test('Response body is OK', function () {",
-									"    pm.expect(pm.response.text()).to.equal('OK');",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/health",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"health"
-							]
-						},
-						"description": "Health check endpoint to verify the simulator is running.\n\nReturns \"OK\" if the service is healthy."
-					},
-					"response": []
-				}
-			],
-			"description": "Health check endpoints for monitoring the simulator status."
-		}
-	],
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
-		}
-	],
-	"variable": [
-		{
-			"key": "baseUrl",
-			"value": "https://127.0.0.1:60101",
-			"type": "string"
-		},
-		{
-			"key": "sasKey",
-			"value": "TheLocal+DevelopmentKey=",
-			"type": "string"
-		},
-		{
-			"key": "eventId",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "eventTime",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "eventId1",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "eventId2",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "eventId3",
-			"value": "",
-			"type": "string"
-		}
-	],
-	"protocolProfileBehavior": {}
+  "info": {
+    "_postman_id": "5931e5ae-86d5-4bd9-8f70-b1dff37cde9c",
+    "name": "Azure Event Grid Simulator",
+    "description": "A comprehensive collection for testing the Azure Event Grid Simulator.\n\nSupports both Event Grid Schema and CloudEvents v1.0 Schema.\n\n## Environment Variables\n- `baseUrl`: The simulator base URL (default: https://127.0.0.1:60101)\n- `sasKey`: The SAS key for authentication (default: TheLocal+DevelopmentKey=)\n\n## Schema Types\n1. **Event Grid Schema**: The original Azure Event Grid format\n2. **CloudEvents Schema**: CloudEvents v1.0 specification with structured, batch, and binary modes",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Event Grid Schema",
+      "item": [
+        {
+          "name": "Single Event",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId', uuid.v4());",
+                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                  "});",
+                  "",
+                  "pm.test('Response body is empty or valid JSON', function () {",
+                  "    if (pm.response.text()) {",
+                  "        pm.response.to.be.json;",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              },
+              {
+                "key": "aeg-event-type",
+                "value": "Notification",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {\n      \"MyProperty\": \"This is my awesome data!\",\n      \"Count\": 42\n    },\n    \"eventType\": \"Example.EventType\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Sends a single event using the Event Grid schema.\n\nRequired fields:\n- `id`: Unique event identifier\n- `subject`: Resource path relative to topic\n- `eventType`: Type of event that occurred\n- `eventTime`: UTC timestamp (ISO 8601)\n- `dataVersion`: Schema version of data object\n\nOptional fields:\n- `data`: Event-specific payload\n- `metadataVersion`: Must be \"1\" or null"
+          },
+          "response": []
+        },
+        {
+          "name": "Batch Events",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId1', uuid.v4());",
+                  "pm.collectionVariables.set('eventId2', uuid.v4());",
+                  "pm.collectionVariables.set('eventId3', uuid.v4());",
+                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Batch of events processed successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              },
+              {
+                "key": "aeg-event-type",
+                "value": "Notification",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId1}}\",\n    \"subject\": \"/orders/order-123\",\n    \"data\": {\n      \"orderId\": \"order-123\",\n      \"status\": \"created\"\n    },\n    \"eventType\": \"Order.Created\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  },\n  {\n    \"id\": \"{{eventId2}}\",\n    \"subject\": \"/orders/order-123\",\n    \"data\": {\n      \"orderId\": \"order-123\",\n      \"status\": \"processing\"\n    },\n    \"eventType\": \"Order.Updated\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  },\n  {\n    \"id\": \"{{eventId3}}\",\n    \"subject\": \"/orders/order-123\",\n    \"data\": {\n      \"orderId\": \"order-123\",\n      \"status\": \"completed\"\n    },\n    \"eventType\": \"Order.Completed\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Sends multiple events in a single batch request using the Event Grid schema.\n\nThis demonstrates the typical order lifecycle events pattern."
+          },
+          "response": []
+        },
+        {
+          "name": "With Metadata Version",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId', uuid.v4());",
+                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {\n      \"message\": \"Event with explicit metadata version\"\n    },\n    \"eventType\": \"Example.MetadataTest\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"2.0\",\n    \"metadataVersion\": \"1\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Sends an event with explicit metadataVersion set to \"1\".\n\nNote: metadataVersion must be either \"1\" or null."
+          },
+          "response": []
+        },
+        {
+          "name": "Complex Data Payload",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId', uuid.v4());",
+                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/users/user-456\",\n    \"data\": {\n      \"user\": {\n        \"id\": \"user-456\",\n        \"name\": \"John Doe\",\n        \"email\": \"john.doe@example.com\",\n        \"roles\": [\"admin\", \"user\"]\n      },\n      \"metadata\": {\n        \"ipAddress\": \"192.168.1.100\",\n        \"userAgent\": \"Mozilla/5.0\",\n        \"timestamp\": \"{{eventTime}}\"\n      },\n      \"changes\": [\n        {\n          \"field\": \"email\",\n          \"oldValue\": \"john@old.com\",\n          \"newValue\": \"john.doe@example.com\"\n        }\n      ]\n    },\n    \"eventType\": \"User.ProfileUpdated\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Demonstrates an event with a complex, nested data payload including arrays and objects."
+          },
+          "response": []
+        },
+        {
+          "name": "Validation Error - Missing Required Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains validation error', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"data\": {\n      \"message\": \"Missing required fields\"\n    }\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Demonstrates validation error when required fields are missing.\n\nRequired fields: id, subject, eventType, eventTime, dataVersion"
+          },
+          "response": []
+        },
+        {
+          "name": "Validation Error - Invalid Metadata Version",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId', uuid.v4());",
+                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains metadata version error', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.message.toLowerCase()).to.include('metadataversion');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {},\n    \"eventType\": \"Example.Test\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\",\n    \"metadataVersion\": \"2\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Demonstrates validation error when metadataVersion is not \"1\".\n\nmetadataVersion must be either \"1\" or null."
+          },
+          "response": []
+        },
+        {
+          "name": "Validation Error - Empty Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains id error', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.message.toLowerCase()).to.include('id');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"\",\n    \"subject\": \"/example/subject\",\n    \"data\": {},\n    \"eventType\": \"Example.Test\",\n    \"eventTime\": \"2024-01-01T00:00:00Z\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Demonstrates validation error when id is an empty string.\n\nThe id field must be a non-empty string."
+          },
+          "response": []
+        },
+        {
+          "name": "Validation Error - Empty Subject",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId', uuid.v4());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains subject error', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.message.toLowerCase()).to.include('subject');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"\",\n    \"data\": {},\n    \"eventType\": \"Example.Test\",\n    \"eventTime\": \"2024-01-01T00:00:00Z\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Demonstrates validation error when subject is an empty string.\n\nThe subject field must be a non-empty string."
+          },
+          "response": []
+        },
+        {
+          "name": "Validation Error - Empty EventType",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId', uuid.v4());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains eventType error', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.message.toLowerCase()).to.include('eventtype');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {},\n    \"eventType\": \"\",\n    \"eventTime\": \"2024-01-01T00:00:00Z\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Demonstrates validation error when eventType is an empty string.\n\nThe eventType field must be a non-empty string."
+          },
+          "response": []
+        },
+        {
+          "name": "Validation Error - Empty DataVersion",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId', uuid.v4());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains dataVersion error', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.message.toLowerCase()).to.include('dataversion');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {},\n    \"eventType\": \"Example.Test\",\n    \"eventTime\": \"2024-01-01T00:00:00Z\",\n    \"dataVersion\": \"\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Demonstrates validation error when dataVersion is an empty string.\n\nThe dataVersion field must be a non-empty string."
+          },
+          "response": []
+        }
+      ],
+      "description": "Requests using the Azure Event Grid native schema format.\n\nThe Event Grid schema requires:\n- `id` (string): Unique event identifier\n- `subject` (string): Resource path relative to topic path\n- `eventType` (string): Type of event that occurred\n- `eventTime` (string): UTC timestamp in ISO 8601 format\n- `data` (object): Event-specific data payload\n- `dataVersion` (string): Schema version of data object"
+    },
+    {
+      "name": "CloudEvents Schema",
+      "item": [
+        {
+          "name": "Structured Mode",
+          "item": [
+            {
+              "name": "Single Event",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId', uuid.v4());",
+                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response time is acceptable', function () {",
+                      "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/cloudevents+json; charset=utf-8",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"com.example.someevent\",\n  \"source\": \"/mycontext/subcontext\",\n  \"id\": \"{{eventId}}\",\n  \"time\": \"{{eventTime}}\",\n  \"subject\": \"/example/subject\",\n  \"datacontenttype\": \"application/json\",\n  \"data\": {\n    \"MyProperty\": \"This is my awesome data!\",\n    \"Count\": 42\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "Sends a single CloudEvent in structured mode.\n\nStructured mode sends the entire CloudEvent as a JSON object with:\n- Content-Type: `application/cloudevents+json`\n\nRequired fields:\n- `specversion`: Must be \"1.0\"\n- `type`: Event type\n- `source`: Event source (URI-reference)\n- `id`: Unique event identifier\n\nOptional fields:\n- `time`: RFC 3339 timestamp\n- `subject`: Event subject\n- `datacontenttype`: Content type of data\n- `dataschema`: URI reference to data schema\n- `data`: Event payload"
+              },
+              "response": []
+            },
+            {
+              "name": "With Data Schema",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId', uuid.v4());",
+                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/cloudevents+json; charset=utf-8",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"com.example.order.created\",\n  \"source\": \"/orders\",\n  \"id\": \"{{eventId}}\",\n  \"time\": \"{{eventTime}}\",\n  \"subject\": \"/orders/order-123\",\n  \"datacontenttype\": \"application/json\",\n  \"dataschema\": \"https://example.com/schemas/order/v1.0\",\n  \"data\": {\n    \"orderId\": \"order-123\",\n    \"customerId\": \"cust-456\",\n    \"items\": [\n      {\n        \"productId\": \"prod-789\",\n        \"quantity\": 2,\n        \"price\": 29.99\n      }\n    ],\n    \"total\": 59.98\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "CloudEvent with an explicit dataschema field pointing to a schema URI.\n\nThe dataschema must be a valid URI."
+              },
+              "response": []
+            },
+            {
+              "name": "Minimal Event (Required Fields Only)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/cloudevents+json; charset=utf-8",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"com.example.minimal\",\n  \"source\": \"/minimal\",\n  \"id\": \"{{eventId}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "A minimal CloudEvent with only required fields.\n\nRequired fields:\n- specversion\n- type\n- source\n- id"
+              },
+              "response": []
+            }
+          ],
+          "description": "CloudEvents sent in structured mode where the entire event is serialized as JSON.\n\nContent-Type: `application/cloudevents+json; charset=utf-8`\n\nNote: For sending multiple events, use Batch Mode with `application/cloudevents-batch+json`."
+        },
+        {
+          "name": "Batch Mode",
+          "item": [
+            {
+              "name": "Multiple Events",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId1', uuid.v4());",
+                      "pm.collectionVariables.set('eventId2', uuid.v4());",
+                      "pm.collectionVariables.set('eventId3', uuid.v4());",
+                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Batch processed successfully', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/cloudevents-batch+json; charset=utf-8",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "[\n  {\n    \"specversion\": \"1.0\",\n    \"type\": \"com.example.order.created\",\n    \"source\": \"/orders\",\n    \"id\": \"{{eventId1}}\",\n    \"time\": \"{{eventTime}}\",\n    \"subject\": \"/orders/order-001\",\n    \"data\": {\n      \"orderId\": \"order-001\",\n      \"status\": \"created\"\n    }\n  },\n  {\n    \"specversion\": \"1.0\",\n    \"type\": \"com.example.order.processing\",\n    \"source\": \"/orders\",\n    \"id\": \"{{eventId2}}\",\n    \"time\": \"{{eventTime}}\",\n    \"subject\": \"/orders/order-001\",\n    \"data\": {\n      \"orderId\": \"order-001\",\n      \"status\": \"processing\"\n    }\n  },\n  {\n    \"specversion\": \"1.0\",\n    \"type\": \"com.example.order.completed\",\n    \"source\": \"/orders\",\n    \"id\": \"{{eventId3}}\",\n    \"time\": \"{{eventTime}}\",\n    \"subject\": \"/orders/order-001\",\n    \"data\": {\n      \"orderId\": \"order-001\",\n      \"status\": \"completed\"\n    }\n  }\n]"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "Sends multiple CloudEvents in batch mode.\n\nContent-Type: `application/cloudevents-batch+json`\n\nThe body must be a JSON array of CloudEvent objects."
+              },
+              "response": []
+            }
+          ],
+          "description": "CloudEvents sent in batch mode as a JSON array.\n\nContent-Type: `application/cloudevents-batch+json; charset=utf-8`"
+        },
+        {
+          "name": "Binary Mode",
+          "item": [
+            {
+              "name": "Simple Event",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId', uuid.v4());",
+                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Binary mode event processed', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-specversion",
+                    "value": "1.0",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-type",
+                    "value": "com.example.binaryevent",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-source",
+                    "value": "/binary/source",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-id",
+                    "value": "{{eventId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-time",
+                    "value": "{{eventTime}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-subject",
+                    "value": "/binary/subject",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"MyProperty\": \"This is data sent in binary mode!\",\n  \"Count\": 123\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "Sends a CloudEvent in binary mode.\n\nIn binary mode:\n- CloudEvent attributes are sent as HTTP headers with `ce-` prefix\n- The request body contains only the event data\n- Content-Type indicates the data type (typically application/json)\n\nRequired headers:\n- `ce-specversion`: \"1.0\"\n- `ce-type`: Event type\n- `ce-source`: Event source\n- `ce-id`: Unique event ID\n\nOptional headers:\n- `ce-time`: RFC 3339 timestamp\n- `ce-subject`: Event subject\n- `ce-datacontenttype`: Content type of body\n- `ce-dataschema`: Schema URI"
+              },
+              "response": []
+            },
+            {
+              "name": "With All Optional Headers",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId', uuid.v4());",
+                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-specversion",
+                    "value": "1.0",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-type",
+                    "value": "com.example.fullbinary",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-source",
+                    "value": "/full/binary/source",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-id",
+                    "value": "{{eventId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-time",
+                    "value": "{{eventTime}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-subject",
+                    "value": "/users/user-789",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-datacontenttype",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-dataschema",
+                    "value": "https://example.com/schemas/user/v2.0",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user\": {\n    \"id\": \"user-789\",\n    \"name\": \"Jane Smith\",\n    \"email\": \"jane@example.com\"\n  },\n  \"action\": \"profile_updated\",\n  \"previousValues\": {\n    \"name\": \"Jane Doe\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "CloudEvent in binary mode with all optional headers populated."
+              },
+              "response": []
+            },
+            {
+              "name": "Minimal (Required Headers Only)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-specversion",
+                    "value": "1.0",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-type",
+                    "value": "com.example.minimal",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-source",
+                    "value": "/minimal",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-id",
+                    "value": "{{eventId}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"simple\": \"data\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "Minimal CloudEvent in binary mode with only required headers."
+              },
+              "response": []
+            },
+            {
+              "name": "Plain Text Data (415 Error)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId', uuid.v4());",
+                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 415 Unsupported Media Type', function () {",
+                      "    pm.response.to.have.status(415);",
+                      "});",
+                      "",
+                      "pm.test('Response contains content-type error', function () {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.error.message.toLowerCase()).to.include('content-type');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "text/plain",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-specversion",
+                    "value": "1.0",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-type",
+                    "value": "com.example.textevent",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-source",
+                    "value": "/text/source",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-id",
+                    "value": "{{eventId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-time",
+                    "value": "{{eventTime}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "ce-datacontenttype",
+                    "value": "text/plain",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "This is plain text event data. It doesn't have to be JSON!"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "Demonstrates that Azure Event Grid CloudEvents topics require application/cloudevents+json or application/cloudevents-batch+json content types. Plain text is not supported."
+              },
+              "response": []
+            }
+          ],
+          "description": "CloudEvents sent in binary mode where:\n- Event attributes are sent as HTTP headers (ce-* prefix)\n- Request body contains only the event data\n\nRequired headers:\n- `ce-specversion`: \"1.0\"\n- `ce-type`: Event type\n- `ce-source`: Event source URI\n- `ce-id`: Unique event identifier"
+        },
+        {
+          "name": "Validation Errors",
+          "item": [
+            {
+              "name": "Any Spec Version Accepted",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/cloudevents+json; charset=utf-8",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"specversion\": \"2.0\",\n  \"type\": \"com.example.test\",\n  \"source\": \"/test\",\n  \"id\": \"{{eventId}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "Demonstrates that Azure Event Grid accepts any specversion value (not just \"1.0\")."
+              },
+              "response": []
+            },
+            {
+              "name": "Missing Required Fields",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 400 Bad Request', function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test('Response contains validation error', function () {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.error).to.exist;",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/cloudevents+json; charset=utf-8",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"specversion\": \"1.0\",\n  \"data\": {\n    \"message\": \"Missing type, source, and id\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "Demonstrates validation error when required fields are missing.\n\nRequired: specversion, type, source, id"
+              },
+              "response": []
+            },
+            {
+              "name": "Empty Source Accepted",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/cloudevents+json; charset=utf-8",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"com.example.test\",\n  \"source\": \"\",\n  \"id\": \"{{eventId}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "Demonstrates that Azure Event Grid accepts empty source values."
+              },
+              "response": []
+            },
+            {
+              "name": "Invalid Time Format",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 400 Bad Request', function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test('Response contains time error', function () {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.error.message.toLowerCase()).to.include('time');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/cloudevents+json; charset=utf-8",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"com.example.test\",\n  \"source\": \"/test\",\n  \"id\": \"{{eventId}}\",\n  \"time\": \"not-a-valid-timestamp\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "Demonstrates validation error when time is not a valid RFC 3339 timestamp."
+              },
+              "response": []
+            },
+            {
+              "name": "Empty Id",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 400 Bad Request', function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test('Response contains id error', function () {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.error.message.toLowerCase()).to.include('id');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/cloudevents+json; charset=utf-8",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"com.example.test\",\n  \"source\": \"/test\",\n  \"id\": \"\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "Demonstrates validation error when id is an empty string.\n\nThe id field must be a non-empty string."
+              },
+              "response": []
+            },
+            {
+              "name": "Empty Type",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var uuid = require('uuid');",
+                      "",
+                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 400 Bad Request', function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test('Response contains type error', function () {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.error.message.toLowerCase()).to.include('type');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/cloudevents+json; charset=utf-8",
+                    "type": "text"
+                  },
+                  {
+                    "key": "aeg-sas-key",
+                    "value": "{{sasKey}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"specversion\": \"1.0\",\n  \"type\": \"\",\n  \"source\": \"/test\",\n  \"id\": \"{{eventId}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "events"],
+                  "query": [
+                    {
+                      "key": "api-version",
+                      "value": "2018-01-01"
+                    }
+                  ]
+                },
+                "description": "Demonstrates validation error when type is an empty string.\n\nThe type field must be a non-empty string."
+              },
+              "response": []
+            }
+          ],
+          "description": "Examples of CloudEvents validation errors."
+        }
+      ],
+      "description": "Requests using the CloudEvents v1.0 schema format.\n\nCloudEvents can be sent in three modes:\n1. **Structured Mode**: Entire event as JSON (Content-Type: application/cloudevents+json)\n2. **Batch Mode**: Array of events (Content-Type: application/cloudevents-batch+json)\n3. **Binary Mode**: Attributes in headers, data in body (ce-* headers)"
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Missing SAS Key (401)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId', uuid.v4());",
+                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates authentication failure', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {},\n    \"eventType\": \"Example.Test\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Demonstrates 401 Unauthorized when SAS key is missing (assuming topic has key configured)."
+          },
+          "response": []
+        },
+        {
+          "name": "Invalid SAS Key (401)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId', uuid.v4());",
+                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates authentication failure', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "InvalidKey123=",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/example/subject\",\n    \"data\": {},\n    \"eventType\": \"Example.Test\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Demonstrates 401 Unauthorized when SAS key is invalid."
+          },
+          "response": []
+        }
+      ],
+      "description": "Examples demonstrating authentication behavior.\n\nThe simulator supports two authentication methods:\n- `aeg-sas-key`: Simple SAS key matching\n- `aeg-sas-token`: SHA256-hashed SAS token"
+    },
+    {
+      "name": "Subscription Validation",
+      "item": [
+        {
+          "name": "Manual Validation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK or 400 Bad Request', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+                  "});",
+                  "",
+                  "pm.test('Response is text or JSON', function () {",
+                  "    var contentType = pm.response.headers.get('Content-Type');",
+                  "    pm.expect(contentType).to.match(/text|json/);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/validate?id=d9ebebb7-f884-40b5-8c0d-9ec72f6f19cd",
+              "host": ["{{baseUrl}}"],
+              "path": ["validate"],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "d9ebebb7-f884-40b5-8c0d-9ec72f6f19cd"
+                }
+              ]
+            },
+            "description": "Manually validates a subscription using a validation ID.\n\nWhen a webhook endpoint doesn't automatically respond to the validation challenge, the validation URL can be accessed manually to complete the subscription validation.\n\nThe `id` parameter should be the GUID from the validation URL provided during subscription setup."
+          },
+          "response": []
+        }
+      ],
+      "description": "Subscription validation endpoints.\n\nWhen a new subscription is created, Event Grid sends a validation request to the webhook endpoint. The endpoint must respond with the validation code to confirm ownership."
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response body is OK', function () {",
+                  "    pm.expect(pm.response.text()).to.equal('OK');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Health check endpoint to verify the simulator is running.\n\nReturns \"OK\" if the service is healthy."
+          },
+          "response": []
+        }
+      ],
+      "description": "Health check endpoints for monitoring the simulator status."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://127.0.0.1:60101",
+      "type": "string"
+    },
+    {
+      "key": "sasKey",
+      "value": "TheLocal+DevelopmentKey=",
+      "type": "string"
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "eventTime",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "eventId1",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "eventId2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "eventId3",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "protocolProfileBehavior": {}
 }

@@ -1,49 +1,42 @@
-#nullable enable
-
 namespace AzureEventGridSimulator.Domain.Entities.Dashboard;
 
 /// <summary>
 /// Represents a single delivery attempt to a subscriber.
 /// </summary>
-public class AttemptRecord
+/// <param name="AttemptNumber" >
+/// 1-based attempt count.
+/// </param>
+/// <param name="AttemptedAt" >
+/// When the attempt was made.
+/// </param>
+/// <param name="Outcome" >
+/// Result of the attempt.
+/// </param>
+/// <param name="HttpStatusCode" >
+/// HTTP status code if applicable.
+/// </param>
+/// <param name="ErrorMessage" >
+/// Error details if failed.
+/// </param>
+public record AttemptRecord(
+    int AttemptNumber,
+    DateTimeOffset AttemptedAt,
+    DeliveryOutcome Outcome,
+    int? HttpStatusCode = null,
+    string? ErrorMessage = null
+)
 {
-    /// <summary>
-    /// 1-based attempt count.
-    /// </summary>
-    public int AttemptNumber { get; init; }
-
-    /// <summary>
-    /// When the attempt was made.
-    /// </summary>
-    public DateTimeOffset AttemptedAt { get; init; }
-
-    /// <summary>
-    /// Result of the attempt.
-    /// </summary>
-    public DeliveryOutcome Outcome { get; init; }
-
-    /// <summary>
-    /// HTTP status code if applicable.
-    /// </summary>
-    public int? HttpStatusCode { get; init; }
-
-    /// <summary>
-    /// Error details if failed.
-    /// </summary>
-    public string? ErrorMessage { get; init; }
-
     /// <summary>
     /// Creates an AttemptRecord from an existing DeliveryAttempt.
     /// </summary>
     public static AttemptRecord FromDeliveryAttempt(DeliveryAttempt attempt)
     {
-        return new AttemptRecord
-        {
-            AttemptNumber = attempt.AttemptNumber,
-            AttemptedAt = attempt.AttemptTime,
-            Outcome = attempt.Outcome,
-            HttpStatusCode = attempt.HttpStatusCode,
-            ErrorMessage = attempt.ErrorMessage,
-        };
+        return new AttemptRecord(
+            attempt.AttemptNumber,
+            attempt.AttemptTime,
+            attempt.Outcome,
+            attempt.HttpStatusCode,
+            attempt.ErrorMessage
+        );
     }
 }

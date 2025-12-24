@@ -1,5 +1,3 @@
-#nullable enable
-
 using System.Net;
 
 namespace AzureEventGridSimulator.Domain.Entities.Dashboard;

@@ -23,7 +23,7 @@ public class DeliveryPropertyResolver
     /// A dictionary of resolved property names and values.
     /// </returns>
     public Dictionary<string, object> ResolveProperties(
-        Dictionary<string, DeliveryPropertySettings> properties,
+        Dictionary<string, DeliveryPropertySettings>? properties,
         SimulatorEvent evt
     )
     {
@@ -58,7 +58,7 @@ public class DeliveryPropertyResolver
     /// <returns>
     /// The resolved property value, or null if not found.
     /// </returns>
-    public object ResolveProperty(DeliveryPropertySettings setting, SimulatorEvent evt)
+    public object? ResolveProperty(DeliveryPropertySettings setting, SimulatorEvent evt)
     {
         if (setting == null)
         {
@@ -82,7 +82,7 @@ public class DeliveryPropertyResolver
     /// Gets a value from an event using a property path (e.g., "Subject", "data.customerId").
     /// Uses the same property access pattern as the filter extensions.
     /// </summary>
-    private static object GetValueFromEvent(SimulatorEvent evt, string path)
+    private static object? GetValueFromEvent(SimulatorEvent evt, string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
@@ -136,7 +136,7 @@ public class DeliveryPropertyResolver
     /// <summary>
     /// Gets a nested value from an object using a property path.
     /// </summary>
-    private static object GetNestedValue(object data, string[] pathParts, int startIndex)
+    private static object? GetNestedValue(object data, string[] pathParts, int startIndex)
     {
         try
         {
@@ -187,7 +187,7 @@ public class DeliveryPropertyResolver
     /// <summary>
     /// Converts a JsonElement to an appropriate .NET type for use as a Service Bus message property.
     /// </summary>
-    private static object ConvertJsonElement(JsonElement element)
+    private static object? ConvertJsonElement(JsonElement element)
     {
         return element.ValueKind switch
         {
@@ -203,7 +203,7 @@ public class DeliveryPropertyResolver
         };
     }
 
-    private static bool TryParseDateTime(string value, out DateTimeOffset result)
+    private static bool TryParseDateTime(string? value, out DateTimeOffset result)
     {
         result = default;
         if (string.IsNullOrEmpty(value))
@@ -214,7 +214,7 @@ public class DeliveryPropertyResolver
         return DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, out result);
     }
 
-    private static bool TryParseGuid(string value, out Guid result)
+    private static bool TryParseGuid(string? value, out Guid result)
     {
         result = Guid.Empty;
         if (string.IsNullOrEmpty(value))

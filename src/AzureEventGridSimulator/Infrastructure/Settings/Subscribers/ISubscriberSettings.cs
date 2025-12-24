@@ -8,25 +8,25 @@ namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 public interface ISubscriberSettings
 {
     /// <summary>
-    /// Gets or sets the name of the subscription.
+    /// Gets the name of the subscription.
     /// </summary>
-    string Name { get; set; }
+    string Name { get; }
 
     /// <summary>
-    /// Gets or sets the filter settings for this subscription.
+    /// Gets the filter settings for this subscription.
     /// </summary>
-    FilterSetting Filter { get; set; }
+    FilterSetting? Filter { get; }
 
     /// <summary>
-    /// Gets or sets whether this subscription is disabled.
+    /// Gets whether this subscription is disabled.
     /// </summary>
-    bool Disabled { get; set; }
+    bool Disabled { get; }
 
     /// <summary>
-    /// Gets or sets the delivery schema for events sent to this subscriber.
+    /// Gets the delivery schema for events sent to this subscriber.
     /// If null, uses the topic's output schema or the original event schema.
     /// </summary>
-    EventSchema? DeliverySchema { get; set; }
+    EventSchema? DeliverySchema { get; }
 
     /// <summary>
     /// Gets the type of subscriber (http, serviceBus, etc.).
@@ -34,16 +34,16 @@ public interface ISubscriberSettings
     string SubscriberType { get; }
 
     /// <summary>
-    /// Gets or sets the retry policy for this subscriber.
+    /// Gets the retry policy for this subscriber.
     /// If null, default Azure Event Grid retry behavior is used.
     /// </summary>
-    RetryPolicySettings RetryPolicy { get; set; }
+    RetryPolicySettings? RetryPolicy { get; }
 
     /// <summary>
-    /// Gets or sets the dead-letter settings for this subscriber.
+    /// Gets the dead-letter settings for this subscriber.
     /// Events that cannot be delivered are written to the dead-letter destination.
     /// </summary>
-    DeadLetterSettings DeadLetter { get; set; }
+    DeadLetterSettings? DeadLetter { get; }
 
     /// <summary>
     /// Validates the subscriber settings.

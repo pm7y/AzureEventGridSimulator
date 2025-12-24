@@ -19,7 +19,7 @@ public static class SubscriptionSettingsFilterExtensions
                 or AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotEndsWith;
     }
 
-    private static bool EvaluateAdvancedFilter(AdvancedFilterSetting filter, object value)
+    private static bool EvaluateAdvancedFilter(AdvancedFilterSetting filter, object? value)
     {
         bool retVal;
 
@@ -64,7 +64,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.Contains(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -82,7 +82,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.StartsWith(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -100,7 +100,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.EndsWith(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -137,7 +137,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.Contains(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -154,7 +154,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.StartsWith(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -171,7 +171,7 @@ public static class SubscriptionSettingsFilterExtensions
                             .Where(v => !string.IsNullOrEmpty(v))
                             .Any(filterValue =>
                                 valueAsString.EndsWith(
-                                    filterValue,
+                                    filterValue!,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                             )
@@ -198,8 +198,8 @@ public static class SubscriptionSettingsFilterExtensions
 
     private static bool TryGetValue(
         this SimulatorEvent simulatorEvent,
-        string key,
-        out object value
+        string? key,
+        out object? value
     )
     {
         value = null;
@@ -266,7 +266,7 @@ public static class SubscriptionSettingsFilterExtensions
         object data,
         string[] pathParts,
         int startIndex,
-        out object value
+        out object? value
     )
     {
         value = null;
@@ -317,7 +317,7 @@ public static class SubscriptionSettingsFilterExtensions
         }
     }
 
-    private static object ConvertJsonElement(JsonElement element)
+    private static object? ConvertJsonElement(JsonElement element)
     {
         return element.ValueKind switch
         {
@@ -331,7 +331,7 @@ public static class SubscriptionSettingsFilterExtensions
         };
     }
 
-    private static double ToNumber(this object value)
+    private static double ToNumber(this object? value)
     {
         if (value == null)
         {
@@ -360,7 +360,7 @@ public static class SubscriptionSettingsFilterExtensions
     /// Checks if a number is within any of the specified ranges.
     /// Ranges are specified as arrays like [[min1, max1], [min2, max2]] in the Values collection.
     /// </summary>
-    private static bool IsNumberInRanges(double value, ICollection<object> ranges)
+    private static bool IsNumberInRanges(double value, ICollection<object>? ranges)
     {
         if (ranges == null || ranges.Count == 0)
         {
@@ -414,7 +414,7 @@ public static class SubscriptionSettingsFilterExtensions
         return false;
     }
 
-    private static bool TryGetValue(this EventGridEvent gridEvent, string key, out object value)
+    private static bool TryGetValue(this EventGridEvent gridEvent, string? key, out object? value)
     {
         var retval = false;
         value = null;
@@ -485,7 +485,7 @@ public static class SubscriptionSettingsFilterExtensions
                 return true;
             }
 
-            var subject = simulatorEvent.Subject ?? "";
+            var subject = simulatorEvent.Subject;
 
             // Check event type filter
             var retVal =
@@ -534,25 +534,25 @@ public static class SubscriptionSettingsFilterExtensions
         /// </summary>
         public bool AcceptsEvent(EventGridEvent gridEvent)
         {
-            var retVal = filter == null;
-
-            if (retVal)
+            if (filter == null)
             {
                 return true;
             }
 
             // we have a filter to parse
-            retVal =
+            var retVal =
                 filter.IncludedEventTypes == null
                 || filter.IncludedEventTypes.Contains("All")
                 || filter.IncludedEventTypes.Contains(gridEvent.EventType);
+
+            var subject = gridEvent.Subject;
 
             // short circuit if we have decided the event type is not acceptable
             retVal =
                 retVal
                 && (
                     string.IsNullOrWhiteSpace(filter.SubjectBeginsWith)
-                    || gridEvent.Subject.StartsWith(
+                    || subject.StartsWith(
                         filter.SubjectBeginsWith,
                         filter.IsSubjectCaseSensitive
                             ? StringComparison.Ordinal
@@ -565,7 +565,7 @@ public static class SubscriptionSettingsFilterExtensions
                 retVal
                 && (
                     string.IsNullOrWhiteSpace(filter.SubjectEndsWith)
-                    || gridEvent.Subject.EndsWith(
+                    || subject.EndsWith(
                         filter.SubjectEndsWith,
                         filter.IsSubjectCaseSensitive
                             ? StringComparison.Ordinal

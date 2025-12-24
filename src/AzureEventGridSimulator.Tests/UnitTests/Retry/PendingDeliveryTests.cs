@@ -18,7 +18,7 @@ public class PendingDeliveryTests
         DateTimeOffset? enqueuedTime = null
     )
     {
-        RetryPolicySettings retryPolicy = null;
+        RetryPolicySettings? retryPolicy = null;
 
         if (retryEnabled.HasValue || ttlMinutes.HasValue || maxAttempts.HasValue)
         {
@@ -211,13 +211,7 @@ public class PendingDeliveryTests
     public void GivenOneAttempt_WhenGettingLastAttempt_ThenReturnsThatAttempt()
     {
         var delivery = CreatePendingDelivery();
-        var attempt = new DeliveryAttempt
-        {
-            AttemptNumber = 1,
-            AttemptTime = FixedTime,
-            Outcome = DeliveryOutcome.HttpError,
-            HttpStatusCode = 500,
-        };
+        var attempt = new DeliveryAttempt(1, DeliveryOutcome.HttpError, FixedTime, 500);
         delivery.Attempts.Add(attempt);
 
         delivery.LastAttempt.ShouldBe(attempt);
@@ -227,26 +221,14 @@ public class PendingDeliveryTests
     public void GivenMultipleAttempts_WhenGettingLastAttempt_ThenReturnsLast()
     {
         var delivery = CreatePendingDelivery();
-        var attempt1 = new DeliveryAttempt
-        {
-            AttemptNumber = 1,
-            AttemptTime = FixedTime.AddMinutes(-10),
-            Outcome = DeliveryOutcome.HttpError,
-            HttpStatusCode = 500,
-        };
-        var attempt2 = new DeliveryAttempt
-        {
-            AttemptNumber = 2,
-            AttemptTime = FixedTime.AddMinutes(-5),
-            Outcome = DeliveryOutcome.Timeout,
-        };
-        var attempt3 = new DeliveryAttempt
-        {
-            AttemptNumber = 3,
-            AttemptTime = FixedTime,
-            Outcome = DeliveryOutcome.HttpError,
-            HttpStatusCode = 503,
-        };
+        var attempt1 = new DeliveryAttempt(
+            1,
+            DeliveryOutcome.HttpError,
+            FixedTime.AddMinutes(-10),
+            500
+        );
+        var attempt2 = new DeliveryAttempt(2, DeliveryOutcome.Timeout, FixedTime.AddMinutes(-5));
+        var attempt3 = new DeliveryAttempt(3, DeliveryOutcome.HttpError, FixedTime, 503);
         delivery.Attempts.Add(attempt1);
         delivery.Attempts.Add(attempt2);
         delivery.Attempts.Add(attempt3);

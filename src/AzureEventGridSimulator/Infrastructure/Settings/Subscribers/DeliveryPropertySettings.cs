@@ -11,7 +11,7 @@ public class DeliveryPropertySettings
     /// Gets or sets the type of property: "static" or "dynamic".
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get; set; }
+    public required string Type { get; init; }
 
     /// <summary>
     /// Gets or sets the value of the property.
@@ -20,7 +20,7 @@ public class DeliveryPropertySettings
     /// "data.customerId").
     /// </summary>
     [JsonPropertyName("value")]
-    public string Value { get; set; }
+    public required string Value { get; init; }
 
     /// <summary>
     /// Gets whether this is a static property.

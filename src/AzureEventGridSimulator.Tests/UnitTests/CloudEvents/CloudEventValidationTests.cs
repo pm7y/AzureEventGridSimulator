@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using Shouldly;
 using Xunit;
@@ -41,90 +42,111 @@ public class CloudEventValidationTests
     }
 
     [Fact]
-    public void GivenCloudEventWithMissingSpecVersion_WhenValidated_ThenExceptionThrown()
+    public void GivenCloudEventJsonWithMissingSpecVersion_WhenDeserialized_ThenExceptionThrown()
     {
+        const string json = """
+            {
+                "type": "com.example.test",
+                "source": "/test/source",
+                "id": "test-id-123"
+            }
+            """;
+
+        var exception = Should.Throw<JsonException>(() =>
+            JsonSerializer.Deserialize<CloudEvent>(json)
+        );
+        exception.Message.ShouldContain("specversion");
+    }
+
+    [Theory]
+    [InlineData("0.3")]
+    [InlineData("2.0")]
+    [InlineData("invalid")]
+    public void GivenCloudEventWithAnySpecVersion_WhenValidated_ThenNoExceptionThrown(
+        string specVersion
+    )
+    {
+        // Azure Event Grid does not validate specversion value - it accepts any value
         var cloudEvent = new CloudEvent
         {
+            SpecVersion = specVersion,
             Type = "com.example.test",
             Source = "/test/source",
             Id = "test-id-123",
         };
 
-        var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
-        exception.Message.ShouldContain("SpecVersion");
+        Should.NotThrow(() => cloudEvent.Validate());
     }
 
     [Fact]
-    public void GivenCloudEventWithWrongSpecVersion_WhenValidated_ThenExceptionThrown()
+    public void GivenCloudEventJsonWithMissingType_WhenDeserialized_ThenExceptionThrown()
     {
-        var cloudEvent = new CloudEvent
-        {
-            SpecVersion = "0.3",
-            Type = "com.example.test",
-            Source = "/test/source",
-            Id = "test-id-123",
-        };
+        const string json = """
+            {
+                "specversion": "1.0",
+                "source": "/test/source",
+                "id": "test-id-123"
+            }
+            """;
 
-        var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
-        exception.Message.ShouldContain("1.0");
+        var exception = Should.Throw<JsonException>(() =>
+            JsonSerializer.Deserialize<CloudEvent>(json)
+        );
+        exception.Message.ShouldContain("type");
     }
 
     [Fact]
-    public void GivenCloudEventWithMissingType_WhenValidated_ThenExceptionThrown()
+    public void GivenCloudEventJsonWithMissingSource_WhenDeserialized_ThenExceptionThrown()
+    {
+        const string json = """
+            {
+                "specversion": "1.0",
+                "type": "com.example.test",
+                "id": "test-id-123"
+            }
+            """;
+
+        var exception = Should.Throw<JsonException>(() =>
+            JsonSerializer.Deserialize<CloudEvent>(json)
+        );
+        exception.Message.ShouldContain("source");
+    }
+
+    [Fact]
+    public void GivenCloudEventJsonWithMissingId_WhenDeserialized_ThenExceptionThrown()
+    {
+        const string json = """
+            {
+                "specversion": "1.0",
+                "type": "com.example.test",
+                "source": "/test/source"
+            }
+            """;
+
+        var exception = Should.Throw<JsonException>(() =>
+            JsonSerializer.Deserialize<CloudEvent>(json)
+        );
+        exception.Message.ShouldContain("id");
+    }
+
+    [Theory]
+    [InlineData("not-a-valid-timestamp")]
+    [InlineData("2025-01-15 10:30:00")] // Missing timezone
+    public void GivenCloudEventWithInvalidTime_WhenValidated_ThenExceptionThrown(string time)
     {
         var cloudEvent = new CloudEvent
         {
             SpecVersion = "1.0",
-            Source = "/test/source",
-            Id = "test-id-123",
-        };
-
-        var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
-        exception.Message.ShouldContain("Type");
-    }
-
-    [Fact]
-    public void GivenCloudEventWithMissingSource_WhenValidated_ThenExceptionThrown()
-    {
-        var cloudEvent = new CloudEvent
-        {
-            SpecVersion = "1.0",
-            Type = "com.example.test",
-            Id = "test-id-123",
-        };
-
-        var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
-        exception.Message.ShouldContain("Source");
-    }
-
-    [Fact]
-    public void GivenCloudEventWithMissingId_WhenValidated_ThenExceptionThrown()
-    {
-        var cloudEvent = new CloudEvent
-        {
-            SpecVersion = "1.0",
-            Type = "com.example.test",
-            Source = "/test/source",
-        };
-
-        var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
-        exception.Message.ShouldContain("Id");
-    }
-
-    [Fact]
-    public void GivenCloudEventWithInvalidTime_WhenValidated_ThenExceptionThrown()
-    {
-        var cloudEvent = new CloudEvent
-        {
-            SpecVersion = "1.0",
             Type = "com.example.test",
             Source = "/test/source",
             Id = "test-id-123",
-            Time = "not-a-valid-timestamp",
+            Time = time,
         };
 
         var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
-        exception.Message.ShouldContain("Time");
+        exception.Message.ShouldContain(
+            "The event time property 'time' was not a valid date/time."
+        );
     }
 
     [Fact]
@@ -154,6 +176,70 @@ public class CloudEventValidationTests
         string source
     )
     {
+        var cloudEvent = new CloudEvent
+        {
+            SpecVersion = "1.0",
+            Type = "com.example.test",
+            Source = source,
+            Id = "test-id-123",
+        };
+
+        Should.NotThrow(() => cloudEvent.Validate());
+    }
+
+    [Fact]
+    public void GivenCloudEventWithEmptyId_WhenValidated_ThenExceptionThrown()
+    {
+        var cloudEvent = new CloudEvent
+        {
+            SpecVersion = "1.0",
+            Type = "com.example.test",
+            Source = "/test/source",
+            Id = "",
+        };
+
+        var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
+        exception.Message.ShouldContain("'id'");
+        exception.Message.ShouldContain("CloudEventV10");
+    }
+
+    [Fact]
+    public void GivenCloudEventWithWhitespaceId_WhenValidated_ThenExceptionThrown()
+    {
+        var cloudEvent = new CloudEvent
+        {
+            SpecVersion = "1.0",
+            Type = "com.example.test",
+            Source = "/test/source",
+            Id = "   ",
+        };
+
+        var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
+        exception.Message.ShouldContain("'id'");
+    }
+
+    [Fact]
+    public void GivenCloudEventWithEmptyType_WhenValidated_ThenExceptionThrown()
+    {
+        var cloudEvent = new CloudEvent
+        {
+            SpecVersion = "1.0",
+            Type = "",
+            Source = "/test/source",
+            Id = "test-id-123",
+        };
+
+        var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
+        exception.Message.ShouldContain("'eventType'");
+        exception.Message.ShouldContain("CloudEventV10");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void GivenCloudEventWithEmptySource_WhenValidated_ThenNoExceptionThrown(string source)
+    {
+        // Azure Event Grid does not validate source value - it accepts any value
         var cloudEvent = new CloudEvent
         {
             SpecVersion = "1.0",

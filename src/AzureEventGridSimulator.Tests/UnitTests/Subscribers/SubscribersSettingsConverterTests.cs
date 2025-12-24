@@ -1,6 +1,7 @@
 using System.Text.Json;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;
 using Xunit;
 
@@ -72,7 +73,11 @@ public class SubscribersSettingsConverterTests
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
-        settings.Topics.First().Subscribers.HttpSubscribers.Count().ShouldBe(2);
+        settings
+            .ShouldNotBeNullAnd()
+            .Topics.First()
+            .Subscribers.HttpSubscribers.Count()
+            .ShouldBe(2);
     }
 
     [Fact]
@@ -207,7 +212,10 @@ public class SubscribersSettingsConverterTests
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
-        var sbSub = settings.Topics.First().Subscribers.ServiceBusSubscribers.First();
+        var sbSub = settings
+            .ShouldNotBeNullAnd()
+            .Topics.First()
+            .Subscribers.ServiceBusSubscribers.First();
         sbSub.Namespace.ShouldBe("my-namespace");
         sbSub.SharedAccessKeyName.ShouldBe("RootManageSharedAccessKey");
         sbSub.SharedAccessKey.ShouldBe("abc123");
@@ -245,7 +253,10 @@ public class SubscribersSettingsConverterTests
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
-        var sbSub = settings.Topics.First().Subscribers.ServiceBusSubscribers.First();
+        var sbSub = settings
+            .ShouldNotBeNullAnd()
+            .Topics.First()
+            .Subscribers.ServiceBusSubscribers.First();
         sbSub.Properties.ShouldNotBeNull();
         sbSub.Properties.Count.ShouldBe(2);
 
@@ -273,8 +284,9 @@ public class SubscribersSettingsConverterTests
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
-        settings.Topics.First().Subscribers.HttpSubscribers.ShouldBeEmpty();
-        settings.Topics.First().Subscribers.ServiceBusSubscribers.ShouldBeEmpty();
+        var validSettings = settings.ShouldNotBeNullAnd();
+        validSettings.Topics.First().Subscribers.HttpSubscribers.ShouldBeEmpty();
+        validSettings.Topics.First().Subscribers.ServiceBusSubscribers.ShouldBeEmpty();
     }
 
     [Fact]
@@ -294,8 +306,9 @@ public class SubscribersSettingsConverterTests
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
-        settings.Topics.First().Subscribers.HttpSubscribers.ShouldBeEmpty();
-        settings.Topics.First().Subscribers.ServiceBusSubscribers.ShouldBeEmpty();
+        var validSettings = settings.ShouldNotBeNullAnd();
+        validSettings.Topics.First().Subscribers.HttpSubscribers.ShouldBeEmpty();
+        validSettings.Topics.First().Subscribers.ServiceBusSubscribers.ShouldBeEmpty();
     }
 
     [Fact]
@@ -323,7 +336,7 @@ public class SubscribersSettingsConverterTests
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
-        var allSubscribers = settings.Topics.First().Subscribers.All.ToList();
+        var allSubscribers = settings.ShouldNotBeNullAnd().Topics.First().Subscribers.All.ToList();
         allSubscribers.Count.ShouldBe(3);
         allSubscribers.Select(s => s.Name).ShouldBe(_expected);
     }
@@ -385,9 +398,12 @@ public class SubscribersSettingsConverterTests
 
         var settings = JsonSerializer.Deserialize<SimulatorSettings>(json);
 
-        var httpSub = settings.Topics.First().Subscribers.HttpSubscribers.First();
+        var httpSub = settings
+            .ShouldNotBeNullAnd()
+            .Topics.First()
+            .Subscribers.HttpSubscribers.First();
         httpSub.Filter.ShouldNotBeNull();
-        httpSub.Filter.IncludedEventTypes.ShouldContain("MyEvent");
+        httpSub.Filter.IncludedEventTypes.ShouldNotBeNullAnd().ShouldContain("MyEvent");
         httpSub.Filter.SubjectBeginsWith.ShouldBe("test/");
     }
 

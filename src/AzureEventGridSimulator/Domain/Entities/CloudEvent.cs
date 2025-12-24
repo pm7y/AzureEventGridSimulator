@@ -8,65 +8,66 @@ namespace AzureEventGridSimulator.Domain.Entities;
 /// </summary>
 public class CloudEvent
 {
+    private const string SchemaName = "CloudEventV10";
+
     /// <summary>
     /// Gets or sets the CloudEvents specification version (required).
-    /// Must be "1.0".
     /// </summary>
     [JsonPropertyName("specversion")]
-    public string SpecVersion { get; set; }
+    public required string SpecVersion { get; set; }
 
     /// <summary>
     /// Gets or sets the event type (required).
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get; set; }
+    public required string Type { get; set; }
 
     /// <summary>
     /// Gets or sets the event source URI (required).
     /// </summary>
     [JsonPropertyName("source")]
-    public string Source { get; set; }
+    public required string Source { get; set; }
 
     /// <summary>
     /// Gets or sets the unique event identifier (required).
     /// </summary>
     [JsonPropertyName("id")]
-    public string Id { get; set; }
+    public required string Id { get; set; }
 
     /// <summary>
     /// Gets or sets the event timestamp in RFC 3339 format (optional).
     /// </summary>
     [JsonPropertyName("time")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string Time { get; set; }
+    public string? Time { get; set; }
 
     /// <summary>
     /// Gets or sets the subject of the event (optional).
     /// </summary>
     [JsonPropertyName("subject")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string Subject { get; set; }
+    public string? Subject { get; set; }
 
     /// <summary>
     /// Gets or sets the content type of the data attribute (optional).
     /// </summary>
     [JsonPropertyName("datacontenttype")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string DataContentType { get; set; }
+    public string? DataContentType { get; set; }
 
     /// <summary>
     /// Gets or sets a URI reference to the schema for the data attribute (optional).
     /// </summary>
     [JsonPropertyName("dataschema")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string DataSchema { get; set; }
+    public string? DataSchema { get; set; }
 
     /// <summary>
     /// Gets or sets the event payload (optional).
     /// </summary>
     [JsonPropertyName("data")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public object Data { get; set; }
+    public object? Data { get; set; }
 
     /// <summary>
     /// Gets or sets the base64-encoded binary event payload (optional).
@@ -74,7 +75,7 @@ public class CloudEvent
     /// </summary>
     [JsonPropertyName("data_base64")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string DataBase64 { get; set; }
+    public string? DataBase64 { get; set; }
 
     [JsonIgnore]
     private DateTimeOffset? TimeParsed =>
@@ -96,70 +97,37 @@ public class CloudEvent
 
     /// <summary>
     /// Validate the CloudEvent according to the CloudEvents v1.0 specification.
+    /// Required properties (SpecVersion, Type, Source, Id) are enforced by the 'required' modifier
+    /// for presence, but this method validates they are non-empty and have valid formats.
     /// </summary>
     /// <exception cref="InvalidOperationException" >
     /// Thrown if validation fails
     /// </exception>
     public void Validate()
     {
-        // Required: specversion
-        if (string.IsNullOrWhiteSpace(SpecVersion))
-        {
-            throw new InvalidOperationException(
-                $"Required property '{nameof(SpecVersion)}' was not set."
-            );
-        }
-
-        if (SpecVersion != "1.0")
-        {
-            throw new InvalidOperationException(
-                $"Property '{nameof(SpecVersion)}' must be '1.0', but was '{SpecVersion}'."
-            );
-        }
-
-        // Required: type
-        if (string.IsNullOrWhiteSpace(Type))
-        {
-            throw new InvalidOperationException($"Required property '{nameof(Type)}' was not set.");
-        }
-
-        // Required: source - must be a non-empty URI-reference per CloudEvents spec
-        if (string.IsNullOrWhiteSpace(Source))
-        {
-            throw new InvalidOperationException(
-                $"Required property '{nameof(Source)}' was not set."
-            );
-        }
-
-        if (!Uri.TryCreate(Source, UriKind.RelativeOrAbsolute, out _))
-        {
-            throw new InvalidOperationException(
-                $"Property '{nameof(Source)}' must be a valid URI-reference."
-            );
-        }
-
-        // Required: id
+        // Validate required fields are non-empty
         if (string.IsNullOrWhiteSpace(Id))
         {
-            throw new InvalidOperationException($"Required property '{nameof(Id)}' was not set.");
+            throw new InvalidOperationException(
+                $"This resource is configured for '{SchemaName}' schema and requires 'id' property to be set."
+            );
         }
 
-        // Optional: time - if present, must be valid RFC 3339
-        if (!string.IsNullOrEmpty(Time))
+        if (string.IsNullOrWhiteSpace(Type))
         {
-            if (!TimeIsValid)
-            {
-                throw new InvalidOperationException(
-                    $"Property '{nameof(Time)}' was not a valid RFC 3339 timestamp."
-                );
-            }
+            throw new InvalidOperationException(
+                $"This resource is configured for '{SchemaName}' schema and requires 'eventType' property to be set."
+            );
+        }
 
-            if (!TimeHasTimezone)
-            {
-                throw new InvalidOperationException(
-                    $"Property '{nameof(Time)}' must include timezone information (e.g., 'Z' for UTC or an offset like '+00:00')."
-                );
-            }
+        // Note: Azure Event Grid does not validate specversion or source values - it accepts any value
+
+        // Optional: time - if present, must be valid date/time
+        if (!string.IsNullOrEmpty(Time) && (!TimeIsValid || !TimeHasTimezone))
+        {
+            throw new InvalidOperationException(
+                "The event time property 'time' was not a valid date/time."
+            );
         }
 
         // Optional: dataschema - if present, must be a valid URI
@@ -168,7 +136,7 @@ public class CloudEvent
             if (!Uri.TryCreate(DataSchema, UriKind.RelativeOrAbsolute, out _))
             {
                 throw new InvalidOperationException(
-                    $"Property '{nameof(DataSchema)}' must be a valid URI."
+                    $"This resource is configured for '{SchemaName}' schema and requires 'dataschema' property to be a valid URI."
                 );
             }
         }
@@ -177,7 +145,7 @@ public class CloudEvent
         if (Data != null && !string.IsNullOrEmpty(DataBase64))
         {
             throw new InvalidOperationException(
-                "Properties 'data' and 'data_base64' are mutually exclusive."
+                $"This resource is configured for '{SchemaName}' schema. The 'data' and 'data_base64' properties are mutually exclusive."
             );
         }
     }

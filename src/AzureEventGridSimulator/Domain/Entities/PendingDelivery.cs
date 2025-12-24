@@ -72,7 +72,7 @@ public class PendingDelivery
     /// <summary>
     /// Gets the last delivery attempt, if any.
     /// </summary>
-    public DeliveryAttempt LastAttempt => Attempts.Count > 0 ? Attempts[^1] : null;
+    public DeliveryAttempt? LastAttempt => Attempts.Count > 0 ? Attempts[^1] : null;
 
     /// <summary>
     /// Determines whether the event has expired based on TTL.
