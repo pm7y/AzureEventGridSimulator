@@ -19,6 +19,14 @@ public class FilterSetting
     [JsonPropertyName("advancedFilters")]
     public ICollection<AdvancedFilterSetting>? AdvancedFilters { get; init; }
 
+    /// <summary>
+    /// When true, advanced filters can match against array values in the event data.
+    /// If the event property is an array, the filter matches if ANY element satisfies the condition.
+    /// Added in API version 2020-10-15-preview.
+    /// </summary>
+    [JsonPropertyName("enableAdvancedFilteringOnArrays")]
+    public bool EnableAdvancedFilteringOnArrays { get; init; }
+
     internal void Validate()
     {
         // Azure Event Grid allows up to 25 advanced filters per subscription

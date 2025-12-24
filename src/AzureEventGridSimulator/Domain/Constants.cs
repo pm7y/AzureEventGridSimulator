@@ -15,8 +15,11 @@ public static class Constants
     public const string NotificationEventType = "Notification";
     public const string ValidationEventType = "SubscriptionValidation";
 
-    // Other
+    // API Versions
+    // Note: Custom Topics only support 2018-01-01
+    // Newer versions (2023-11-01, 2024-01-01, 2024-06-01) are for Namespace Topics only
     public const string SupportedApiVersion = "2018-01-01";
+
     public const string SasAuthorizationType = "SharedAccessSignature";
 
     // CloudEvents Headers (binary mode)

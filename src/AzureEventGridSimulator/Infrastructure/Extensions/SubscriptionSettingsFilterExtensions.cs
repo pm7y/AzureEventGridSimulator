@@ -327,8 +327,68 @@ public static class SubscriptionSettingsFilterExtensions
             JsonValueKind.True => true,
             JsonValueKind.False => false,
             JsonValueKind.Null => null,
+            JsonValueKind.Array => ConvertJsonArray(element),
             _ => element.GetRawText(),
         };
+    }
+
+    private static List<object?> ConvertJsonArray(JsonElement arrayElement)
+    {
+        var result = new List<object?>();
+        foreach (var item in arrayElement.EnumerateArray())
+        {
+            result.Add(ConvertJsonElement(item));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Attempts to extract array elements from a value for array filtering.
+    /// Returns null if the value is not an array.
+    /// </summary>
+    private static IEnumerable<object?>? TryGetArrayElements(object? value)
+    {
+        return value switch
+        {
+            List<object?> list => list,
+            IEnumerable<object> enumerable => enumerable.Cast<object?>(),
+            JsonElement { ValueKind: JsonValueKind.Array } jsonArray => ConvertJsonArray(jsonArray),
+            _ => null,
+        };
+    }
+
+    /// <summary>
+    /// Evaluates an advanced filter against a value, with optional array filtering support.
+    /// When enableArrayFiltering is true and the value is an array, returns true if ANY element matches.
+    /// </summary>
+    private static bool EvaluateWithArraySupport(
+        AdvancedFilterSetting filter,
+        object? value,
+        bool enableArrayFiltering
+    )
+    {
+        if (!enableArrayFiltering)
+        {
+            return EvaluateAdvancedFilter(filter, value);
+        }
+
+        // Check if the value is an array
+        var arrayElements = TryGetArrayElements(value);
+        if (arrayElements == null)
+        {
+            // Not an array, evaluate normally
+            return EvaluateAdvancedFilter(filter, value);
+        }
+
+        // For negation operators on arrays, ALL elements must satisfy the condition
+        if (IsNegationOperator(filter.OperatorType))
+        {
+            return arrayElements.All(element => EvaluateAdvancedFilter(filter, element));
+        }
+
+        // For positive operators on arrays, ANY element must satisfy the condition
+        return arrayElements.Any(element => EvaluateAdvancedFilter(filter, element));
     }
 
     private static double ToNumber(this object? value)
@@ -523,7 +583,11 @@ public static class SubscriptionSettingsFilterExtensions
             retVal =
                 retVal
                 && (filter.AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>()).All(af =>
-                    af.AcceptsEvent(simulatorEvent)
+                    AcceptsAdvancedFilter(
+                        af,
+                        simulatorEvent,
+                        filter.EnableAdvancedFilteringOnArrays
+                    )
                 );
 
             return retVal;
@@ -576,69 +640,70 @@ public static class SubscriptionSettingsFilterExtensions
             retVal =
                 retVal
                 && (filter.AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>()).All(af =>
-                    af.AcceptsEvent(gridEvent)
+                    AcceptsAdvancedFilter(af, gridEvent, filter.EnableAdvancedFilteringOnArrays)
                 );
 
             return retVal;
         }
     }
 
-    extension(AdvancedFilterSetting filter)
+    /// <summary>
+    /// Evaluates an advanced filter against a SimulatorEvent with array filtering support.
+    /// </summary>
+    private static bool AcceptsAdvancedFilter(
+        AdvancedFilterSetting filter,
+        SimulatorEvent simulatorEvent,
+        bool enableArrayFiltering
+    )
     {
-        private bool AcceptsEvent(SimulatorEvent simulatorEvent)
+        var keyExists = simulatorEvent.TryGetValue(filter.Key, out var value);
+        var valueIsNull = keyExists && value == null;
+
+        // Handle null check operators specially - they evaluate based on key existence
+        switch (filter.OperatorType)
         {
-            if (filter == null)
-            {
-                return true;
-            }
-
-            var keyExists = simulatorEvent.TryGetValue(filter.Key, out var value);
-            var valueIsNull = keyExists && value == null;
-
-            // Handle null check operators specially - they evaluate based on key existence
-            switch (filter.OperatorType)
-            {
-                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
-                    return !keyExists || valueIsNull;
-                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
-                    return keyExists && !valueIsNull;
-            }
-
-            // For "Not" operators, return true when key doesn't exist (per Azure docs)
-            if (!keyExists)
-            {
-                return IsNegationOperator(filter.OperatorType);
-            }
-
-            return EvaluateAdvancedFilter(filter, value);
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
+                return !keyExists || valueIsNull;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
+                return keyExists && !valueIsNull;
         }
 
-        private bool AcceptsEvent(EventGridEvent gridEvent)
+        // For "Not" operators, return true when key doesn't exist (per Azure docs)
+        if (!keyExists)
         {
-            if (filter == null)
-            {
-                return true;
-            }
-
-            var keyExists = gridEvent.TryGetValue(filter.Key, out var value);
-            var valueIsNull = keyExists && value == null;
-
-            // Handle null check operators specially - they evaluate based on key existence
-            switch (filter.OperatorType)
-            {
-                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
-                    return !keyExists || valueIsNull;
-                case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
-                    return keyExists && !valueIsNull;
-            }
-
-            // For "Not" operators, return true when key doesn't exist (per Azure docs)
-            if (!keyExists)
-            {
-                return IsNegationOperator(filter.OperatorType);
-            }
-
-            return EvaluateAdvancedFilter(filter, value);
+            return IsNegationOperator(filter.OperatorType);
         }
+
+        return EvaluateWithArraySupport(filter, value, enableArrayFiltering);
+    }
+
+    /// <summary>
+    /// Evaluates an advanced filter against an EventGridEvent with array filtering support.
+    /// </summary>
+    private static bool AcceptsAdvancedFilter(
+        AdvancedFilterSetting filter,
+        EventGridEvent gridEvent,
+        bool enableArrayFiltering
+    )
+    {
+        var keyExists = gridEvent.TryGetValue(filter.Key, out var value);
+        var valueIsNull = keyExists && value == null;
+
+        // Handle null check operators specially - they evaluate based on key existence
+        switch (filter.OperatorType)
+        {
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
+                return !keyExists || valueIsNull;
+            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
+                return keyExists && !valueIsNull;
+        }
+
+        // For "Not" operators, return true when key doesn't exist (per Azure docs)
+        if (!keyExists)
+        {
+            return IsNegationOperator(filter.OperatorType);
+        }
+
+        return EvaluateWithArraySupport(filter, value, enableArrayFiltering);
     }
 }

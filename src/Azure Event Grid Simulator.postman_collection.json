@@ -1851,6 +1851,134 @@
         }
       ],
       "description": "Health check endpoints for monitoring the simulator status."
+    },
+    {
+      "name": "API Versions",
+      "item": [
+        {
+          "name": "Version 2018-01-01",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId', uuid.v4());",
+                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('API version 2018-01-01 is supported', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/api-version-test\",\n    \"data\": { \"apiVersion\": \"2018-01-01\" },\n    \"eventType\": \"ApiVersion.Test\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events?api-version=2018-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Tests the 2018-01-01 API version - the only version supported by Azure Event Grid Custom Topics."
+          },
+          "response": []
+        },
+        {
+          "name": "No Version (Uses Default)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var uuid = require('uuid');",
+                  "",
+                  "pm.collectionVariables.set('eventId', uuid.v4());",
+                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('No api-version uses default', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": \"{{eventId}}\",\n    \"subject\": \"/api-version-test\",\n    \"data\": { \"apiVersion\": \"none (default)\" },\n    \"eventType\": \"ApiVersion.Test\",\n    \"eventTime\": \"{{eventTime}}\",\n    \"dataVersion\": \"1.0\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "description": "Tests that requests without api-version query parameter work using the default version (2018-01-01)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Tests for API version handling.\n\nAzure Event Grid Custom Topics only support api-version=2018-01-01.\n\nNote: Newer versions (2023-11-01, 2024-01-01, 2024-06-01) are only for Namespace Topics, which have a different API structure."
     }
   ],
   "event": [
