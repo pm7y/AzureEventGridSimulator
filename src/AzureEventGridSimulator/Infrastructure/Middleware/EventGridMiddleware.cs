@@ -74,11 +74,9 @@ public class EventGridMiddleware(RequestDelegate next)
                 return;
 
             case RequestType.NotFound:
-                var requestUri =
-                    $"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}";
                 await context.WriteErrorResponse(
                     HttpStatusCode.NotFound,
-                    $"No HTTP resource was found that matches the request URI '{Uri.EscapeDataString(requestUri)}'.{context.GenerateReportSuffix()}",
+                    $"No HTTP resource was found that matches the request URI '{Uri.EscapeDataString($"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}")}'.{context.GenerateReportSuffix()}",
                     null,
                     ErrorDetailCodes.ResourceNotFound
                 );
@@ -95,8 +93,6 @@ public class EventGridMiddleware(RequestDelegate next)
         ILogger logger
     )
     {
-        var contentType = context.Request.Headers.ContentType.FirstOrDefault();
-
         // 1. Validate the SAS key/token if configured
         if (!string.IsNullOrWhiteSpace(topic.Key))
         {
@@ -152,6 +148,7 @@ public class EventGridMiddleware(RequestDelegate next)
                 : validationResult2.ErrorMessage + context.GenerateReportSuffix();
 
             // Record the rejection in event history
+            var contentType = context.Request.Headers.ContentType.FirstOrDefault();
             RecordRejection(
                 eventHistoryService,
                 topic.Name,

@@ -206,10 +206,12 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             if (string.Equals(signature, computedSignature, StringComparison.Ordinal))
                 return new SasValidationResult(true);
 
+            // Sanitize signature to prevent log forging by escaping control characters
+            var sanitizedSignature = signature.Replace("\n", "\\n").Replace("\r", "\\r");
             logger.LogWarning(
                 "SAS token signature mismatch. Expected: {Expected}, Got: {Actual}",
                 computedSignature,
-                signature
+                sanitizedSignature
             );
 
             return new SasValidationResult(false, SasValidationFailureReason.SignatureMismatch);
