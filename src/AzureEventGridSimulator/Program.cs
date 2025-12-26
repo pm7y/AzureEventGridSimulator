@@ -278,6 +278,9 @@ public class Program
         builder.Services.AddSingleton<CloudEventSchemaFormatter>();
         builder.Services.AddSingleton<EventSchemaFormatterFactory>();
 
+        // Register validation services (routing and validation pipeline)
+        builder.Services.AddEventGridValidation();
+
         // Register delivery services
         builder.Services.AddSingleton<DeliveryPropertyResolver>();
         builder.Services.AddSingleton<ServiceBusEventDeliveryService>();

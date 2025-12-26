@@ -19,6 +19,12 @@ public class SimulatorSettings
     [JsonPropertyName("dashboardPort")]
     public int? DashboardPort { get; set; }
 
+    /// <summary>
+    ///     Configurable validation limits for events. If not specified, uses default Azure Event Grid limits.
+    /// </summary>
+    [JsonPropertyName("eventValidationLimits")]
+    public EventValidationLimits EventValidationLimits { get; set; } = new();
+
     public void Validate()
     {
         if (Topics.GroupBy(o => o.Port).Count() != Topics.Length)

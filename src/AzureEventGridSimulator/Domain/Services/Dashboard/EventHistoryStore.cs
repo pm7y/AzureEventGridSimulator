@@ -41,6 +41,13 @@ public class EventHistoryStore
     );
 
     /// <summary>
+    ///     Per-topic event counts for efficient capacity checking.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, int> _topicCounts = new(
+        StringComparer.OrdinalIgnoreCase
+    );
+
+    /// <summary>
     ///     Counter for total events received (may exceed MaxCapacity).
     /// </summary>
     private int _totalEventsReceived;
@@ -86,14 +93,17 @@ public class EventHistoryStore
         );
         topicOrder.Enqueue(record.Id);
 
-        // Evict oldest for this topic if over capacity
-        var topicCount = _records.Values.Count(r =>
-            string.Equals(r.TopicName, record.TopicName, StringComparison.OrdinalIgnoreCase)
-        );
+        // Increment topic count
+        _topicCounts.AddOrUpdate(record.TopicName, 1, (_, count) => count + 1);
 
-        while (topicCount > MaxCapacityPerTopic && topicOrder.TryDequeue(out var oldestId))
+        // Evict oldest for this topic if over capacity
+        while (
+            _topicCounts.TryGetValue(record.TopicName, out var topicCount)
+            && topicCount > MaxCapacityPerTopic
+            && topicOrder.TryDequeue(out var oldestId)
+        )
             if (_records.TryRemove(oldestId, out _))
-                topicCount--;
+                _topicCounts.AddOrUpdate(record.TopicName, 0, (_, count) => Math.Max(0, count - 1));
     }
 
     /// <summary>
@@ -183,6 +193,7 @@ public class EventHistoryStore
     {
         _records.Clear();
         _topicOrders.Clear();
+        _topicCounts.Clear();
 
         _rejections.Clear();
         while (_rejectionOrder.TryDequeue(out _))
