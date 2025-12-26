@@ -6,21 +6,21 @@ using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
 
 /// <summary>
-/// Resolves static and dynamic delivery properties for Service Bus messages.
+///     Resolves static and dynamic delivery properties for Service Bus messages.
 /// </summary>
 public class DeliveryPropertyResolver
 {
     /// <summary>
-    /// Resolves all delivery properties for a given event.
+    ///     Resolves all delivery properties for a given event.
     /// </summary>
-    /// <param name="properties" >
-    /// The property configurations.
+    /// <param name="properties">
+    ///     The property configurations.
     /// </param>
-    /// <param name="evt" >
-    /// The event to extract dynamic property values from.
+    /// <param name="evt">
+    ///     The event to extract dynamic property values from.
     /// </param>
     /// <returns>
-    /// A dictionary of resolved property names and values.
+    ///     A dictionary of resolved property names and values.
     /// </returns>
     public Dictionary<string, object> ResolveProperties(
         Dictionary<string, DeliveryPropertySettings>? properties,
@@ -30,64 +30,52 @@ public class DeliveryPropertyResolver
         var result = new Dictionary<string, object>();
 
         if (properties == null)
-        {
             return result;
-        }
 
         foreach (var (name, setting) in properties)
         {
             var value = ResolveProperty(setting, evt);
             if (value != null)
-            {
                 result[name] = value;
-            }
         }
 
         return result;
     }
 
     /// <summary>
-    /// Resolves a single delivery property value.
+    ///     Resolves a single delivery property value.
     /// </summary>
-    /// <param name="setting" >
-    /// The property configuration.
+    /// <param name="setting">
+    ///     The property configuration.
     /// </param>
-    /// <param name="evt" >
-    /// The event to extract dynamic property values from.
+    /// <param name="evt">
+    ///     The event to extract dynamic property values from.
     /// </param>
     /// <returns>
-    /// The resolved property value, or null if not found.
+    ///     The resolved property value, or null if not found.
     /// </returns>
     public object? ResolveProperty(DeliveryPropertySettings setting, SimulatorEvent evt)
     {
         if (setting == null)
-        {
             return null;
-        }
 
         if (setting.IsStatic)
-        {
             return setting.Value;
-        }
 
         if (setting.IsDynamic)
-        {
             return GetValueFromEvent(evt, setting.Value);
-        }
 
         return null;
     }
 
     /// <summary>
-    /// Gets a value from an event using a property path (e.g., "Subject", "data.customerId").
-    /// Uses the same property access pattern as the filter extensions.
+    ///     Gets a value from an event using a property path (e.g., "Subject", "data.customerId").
+    ///     Uses the same property access pattern as the filter extensions.
     /// </summary>
     private static object? GetValueFromEvent(SimulatorEvent evt, string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
-        {
             return null;
-        }
 
         // Handle top-level properties
         switch (path)
@@ -125,16 +113,18 @@ public class DeliveryPropertyResolver
 
         // Handle nested data properties (e.g., "data.customerId" or "Data.order.id")
         var split = path.Split('.');
-        if ((split[0] == "Data" || split[0] == "data") && evt.Data != null && split.Length > 1)
-        {
+        if (
+            string.Equals(split[0], "Data", StringComparison.OrdinalIgnoreCase)
+            && evt.Data != null
+            && split.Length > 1
+        )
             return GetNestedValue(evt.Data, split, 1);
-        }
 
         return null;
     }
 
     /// <summary>
-    /// Gets a nested value from an object using a property path.
+    ///     Gets a nested value from an object using a property path.
     /// </summary>
     private static object? GetNestedValue(object data, string[] pathParts, int startIndex)
     {
@@ -148,31 +138,23 @@ public class DeliveryPropertyResolver
             for (var i = startIndex; i < pathParts.Length; i++)
             {
                 if (current.ValueKind == JsonValueKind.Null)
-                {
                     return null;
-                }
 
                 if (current.ValueKind != JsonValueKind.Object)
-                {
                     return null;
-                }
 
                 // Try case-insensitive property lookup
                 var found = false;
                 foreach (var prop in current.EnumerateObject())
-                {
                     if (prop.Name.Equals(pathParts[i], StringComparison.OrdinalIgnoreCase))
                     {
                         current = prop.Value;
                         found = true;
                         break;
                     }
-                }
 
                 if (!found)
-                {
                     return null;
-                }
             }
 
             // Convert the final JsonElement to an appropriate .NET type
@@ -185,7 +167,7 @@ public class DeliveryPropertyResolver
     }
 
     /// <summary>
-    /// Converts a JsonElement to an appropriate .NET type for use as a Service Bus message property.
+    ///     Converts a JsonElement to an appropriate .NET type for use as a Service Bus message property.
     /// </summary>
     private static object? ConvertJsonElement(JsonElement element)
     {
@@ -207,9 +189,7 @@ public class DeliveryPropertyResolver
     {
         result = default;
         if (string.IsNullOrEmpty(value))
-        {
             return false;
-        }
 
         return DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, out result);
     }
@@ -218,9 +198,7 @@ public class DeliveryPropertyResolver
     {
         result = Guid.Empty;
         if (string.IsNullOrEmpty(value))
-        {
             return false;
-        }
 
         return Guid.TryParse(value, out result);
     }

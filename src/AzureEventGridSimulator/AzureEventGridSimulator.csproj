@@ -1,68 +1,68 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <!-- Multi-target for .NET Tool compatibility (clears TargetFramework from Directory.Build.props) -->
-    <TargetFramework></TargetFramework>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
+    <PropertyGroup>
+        <!-- Multi-target for .NET Tool compatibility (clears TargetFramework from Directory.Build.props) -->
+        <TargetFramework></TargetFramework>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
 
-    <!-- .NET Tool packaging -->
-    <IsPackable>true</IsPackable>
-    <PackAsTool>true</PackAsTool>
-    <RollForward>LatestMinor</RollForward>
-    <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
-    <ToolCommandName>azure-eventgrid-simulator</ToolCommandName>
-    <PackageId>AzureEventGridSimulator</PackageId>
-    <PackageOutputPath>./nupkg</PackageOutputPath>
+        <!-- .NET Tool packaging -->
+        <IsPackable>true</IsPackable>
+        <PackAsTool>true</PackAsTool>
+        <RollForward>LatestMinor</RollForward>
+        <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
+        <ToolCommandName>azure-eventgrid-simulator</ToolCommandName>
+        <PackageId>AzureEventGridSimulator</PackageId>
+        <PackageOutputPath>./nupkg</PackageOutputPath>
 
-    <!-- NuGet metadata -->
-    <Authors>Paul McIlreavy</Authors>
-    <Description>A simulator that provides endpoints to mimic the functionality of Azure Event Grid topics and subscribers. Compatible with the Microsoft.Azure.EventGrid client library. Supports both EventGrid and CloudEvents v1.0 schemas.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/pm7y/AzureEventGridSimulator</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/pm7y/AzureEventGridSimulator</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>azure;eventgrid;event-grid;simulator;emulator;development;testing</PackageTags>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-  </PropertyGroup>
+        <!-- NuGet metadata -->
+        <Authors>Paul McIlreavy</Authors>
+        <Description>A simulator that provides endpoints to mimic the functionality of Azure Event Grid topics and subscribers. Compatible with the Microsoft.Azure.EventGrid client library. Supports both EventGrid and CloudEvents v1.0 schemas.</Description>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/pm7y/AzureEventGridSimulator</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/pm7y/AzureEventGridSimulator</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>azure;eventgrid;event-grid;simulator;emulator;development;testing</PackageTags>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="/" />
-  </ItemGroup>
+    <ItemGroup>
+        <None Include="../../README.md" Pack="true" PackagePath="/" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Asp.Versioning.Mvc" />
-    <PackageReference Include="JetBrains.Annotations" />
-    <PackageReference Include="Serilog.AspNetCore" />
-    <PackageReference Include="Serilog.Extensions.Logging" />
-    <PackageReference Include="Serilog.Settings.Configuration" />
-    <PackageReference Include="Serilog.Sinks.Console" />
-    <PackageReference Include="Serilog.Sinks.File" />
-    <PackageReference Include="Serilog.Sinks.Seq" />
-    <PackageReference Include="Azure.Messaging.EventHubs" />
-    <PackageReference Include="Azure.Messaging.ServiceBus" />
-    <PackageReference Include="Azure.Storage.Queues" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Asp.Versioning.Mvc" />
+        <PackageReference Include="JetBrains.Annotations" />
+        <PackageReference Include="Serilog.AspNetCore" />
+        <PackageReference Include="Serilog.Extensions.Logging" />
+        <PackageReference Include="Serilog.Settings.Configuration" />
+        <PackageReference Include="Serilog.Sinks.Console" />
+        <PackageReference Include="Serilog.Sinks.File" />
+        <PackageReference Include="Serilog.Sinks.Seq" />
+        <PackageReference Include="Azure.Messaging.EventHubs" />
+        <PackageReference Include="Azure.Messaging.ServiceBus" />
+        <PackageReference Include="Azure.Storage.Queues" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="appsettings.*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </Content>
-    <Content Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+    <ItemGroup>
+        <Content Update="appsettings.*.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+        </Content>
+        <Content Update="appsettings.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Dashboard\**" />
-  </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Dashboard\**" />
+    </ItemGroup>
 
-  <!-- ServiceDefaults is only used when running under Aspire (local development) -->
-  <PropertyGroup Condition="'$(ASPIRE_ENABLED)' == 'true'">
-    <DefineConstants>$(DefineConstants);ASPIRE_ENABLED</DefineConstants>
-  </PropertyGroup>
+    <!-- ServiceDefaults is only used when running under Aspire (local development) -->
+    <PropertyGroup Condition="'$(ASPIRE_ENABLED)' == 'true'">
+        <DefineConstants>$(DefineConstants);ASPIRE_ENABLED</DefineConstants>
+    </PropertyGroup>
 
-  <ItemGroup Condition="'$(ASPIRE_ENABLED)' == 'true'">
-    <ProjectReference Include="..\AzureEventGridSimulator.ServiceDefaults\AzureEventGridSimulator.ServiceDefaults.csproj" />
-  </ItemGroup>
+    <ItemGroup Condition="'$(ASPIRE_ENABLED)' == 'true'">
+        <ProjectReference Include="..\AzureEventGridSimulator.ServiceDefaults\AzureEventGridSimulator.ServiceDefaults.csproj" />
+    </ItemGroup>
 </Project>

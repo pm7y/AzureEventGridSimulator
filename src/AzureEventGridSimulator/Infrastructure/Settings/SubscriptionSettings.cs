@@ -24,8 +24,8 @@ public class SubscriptionSettings
     public bool Disabled { get; init; }
 
     /// <summary>
-    /// Gets or sets the delivery schema for events sent to this subscriber.
-    /// If null, uses the topic's output schema or the original event schema.
+    ///     Gets or sets the delivery schema for events sent to this subscriber.
+    ///     If null, uses the topic's output schema or the original event schema.
     /// </summary>
     [JsonPropertyName("deliverySchema")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -38,13 +38,13 @@ public class SubscriptionSettings
     public Guid ValidationCode => GetValidationCode();
 
     /// <summary>
-    /// Determines if the validation period has expired.
+    ///     Determines if the validation period has expired.
     /// </summary>
-    /// <param name="now" >
-    /// The current UTC time.
+    /// <param name="now">
+    ///     The current UTC time.
     /// </param>
     /// <returns>
-    /// True if the 5-minute validation window has expired.
+    ///     True if the 5-minute validation window has expired.
     /// </returns>
     public bool ValidationPeriodExpired(DateTimeOffset now)
     {

@@ -4,59 +4,59 @@ using AzureEventGridSimulator.Domain.Entities;
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
 /// <summary>
-/// Settings for Azure Event Hub subscribers.
+///     Settings for Azure Event Hub subscribers.
 /// </summary>
 public class EventHubSubscriberSettings : ISubscriberSettings
 {
     /// <summary>
-    /// Internal reference to the parent topic for connection string inheritance.
-    /// Set during validation in SimulatorSettings.
+    ///     Internal reference to the parent topic for connection string inheritance.
+    ///     Set during validation in SimulatorSettings.
     /// </summary>
     [JsonIgnore]
     internal TopicSettings? ParentTopic { get; set; }
 
     /// <summary>
-    /// Gets or sets the Event Hub connection string.
-    /// Either this OR (Namespace + SharedAccessKeyName + SharedAccessKey) must be provided.
+    ///     Gets or sets the Event Hub connection string.
+    ///     Either this OR (Namespace + SharedAccessKeyName + SharedAccessKey) must be provided.
     /// </summary>
     [JsonPropertyName("connectionString")]
     public string? ConnectionString { get; init; }
 
     /// <summary>
-    /// Gets or sets the Event Hub namespace (without .servicebus.windows.net suffix).
+    ///     Gets or sets the Event Hub namespace (without .servicebus.windows.net suffix).
     /// </summary>
     [JsonPropertyName("namespace")]
     public string? Namespace { get; init; }
 
     /// <summary>
-    /// Gets or sets the shared access key name.
+    ///     Gets or sets the shared access key name.
     /// </summary>
     [JsonPropertyName("sharedAccessKeyName")]
     public string? SharedAccessKeyName { get; init; }
 
     /// <summary>
-    /// Gets or sets the shared access key.
+    ///     Gets or sets the shared access key.
     /// </summary>
     [JsonPropertyName("sharedAccessKey")]
     public string? SharedAccessKey { get; init; }
 
     /// <summary>
-    /// Gets or sets the Event Hub name.
+    ///     Gets or sets the Event Hub name.
     /// </summary>
     [JsonPropertyName("eventHubName")]
     public required string EventHubName { get; init; }
 
     /// <summary>
-    /// Gets or sets the delivery properties to add to Event Hub messages.
-    /// Keys are property names, values specify whether the property is static or dynamic.
+    ///     Gets or sets the delivery properties to add to Event Hub messages.
+    ///     Keys are property names, values specify whether the property is static or dynamic.
     /// </summary>
     [JsonPropertyName("properties")]
     public Dictionary<string, DeliveryPropertySettings>? Properties { get; init; }
 
     /// <summary>
-    /// Gets the connection string, either directly specified, built from components, or inherited from
-    /// topic.
-    /// Falls back to topic-level defaults if not specified at subscriber level.
+    ///     Gets the connection string, either directly specified, built from components, or inherited from
+    ///     topic.
+    ///     Falls back to topic-level defaults if not specified at subscriber level.
     /// </summary>
     [JsonIgnore]
     public string? EffectiveConnectionString
@@ -65,34 +65,26 @@ public class EventHubSubscriberSettings : ISubscriberSettings
         {
             // Subscriber-level connection string (direct)
             if (!string.IsNullOrWhiteSpace(ConnectionString))
-            {
                 return ConnectionString;
-            }
 
             // Subscriber-level namespace components
             if (HasSubscriberNamespaceCredentials())
-            {
                 return BuildConnectionString(Namespace!, SharedAccessKeyName!, SharedAccessKey!);
-            }
 
             // Fall back to topic-level connection string
             if (
                 ParentTopic != null
                 && !string.IsNullOrWhiteSpace(ParentTopic.EventHubConnectionString)
             )
-            {
                 return ParentTopic.EventHubConnectionString;
-            }
 
             // Fall back to topic-level namespace components
             if (HasTopicNamespaceCredentials() && ParentTopic != null)
-            {
                 return BuildConnectionString(
                     ParentTopic.EventHubNamespace!,
                     ParentTopic.EventHubSharedAccessKeyName!,
                     ParentTopic.EventHubSharedAccessKey!
                 );
-            }
 
             // No connection string available - will fail validation
             return null;
@@ -109,23 +101,23 @@ public class EventHubSubscriberSettings : ISubscriberSettings
     public bool Disabled { get; init; }
 
     /// <summary>
-    /// Gets or sets the delivery schema for events sent to this subscriber.
-    /// If null, uses the topic's output schema or the original event schema.
+    ///     Gets or sets the delivery schema for events sent to this subscriber.
+    ///     If null, uses the topic's output schema or the original event schema.
     /// </summary>
     [JsonPropertyName("deliverySchema")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public EventSchema? DeliverySchema { get; init; }
 
     /// <summary>
-    /// Gets or sets the retry policy for this subscriber.
-    /// If null, default Azure Event Grid retry behavior is used (enabled with 30 attempts, 24h TTL).
+    ///     Gets or sets the retry policy for this subscriber.
+    ///     If null, default Azure Event Grid retry behavior is used (enabled with 30 attempts, 24h TTL).
     /// </summary>
     [JsonPropertyName("retryPolicy")]
     public RetryPolicySettings? RetryPolicy { get; init; }
 
     /// <summary>
-    /// Gets or sets the dead-letter settings for this subscriber.
-    /// Events that cannot be delivered are written to the dead-letter destination.
+    ///     Gets or sets the dead-letter settings for this subscriber.
+    ///     Events that cannot be delivered are written to the dead-letter destination.
     /// </summary>
     [JsonPropertyName("deadLetter")]
     public DeadLetterSettings? DeadLetter { get; init; }
@@ -136,17 +128,13 @@ public class EventHubSubscriberSettings : ISubscriberSettings
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Name))
-        {
             throw new ArgumentException("Subscriber name is required.", nameof(Name));
-        }
 
         // Validate Event Hub name
         if (string.IsNullOrWhiteSpace(EventHubName))
-        {
             throw new ArgumentException(
                 $"Event Hub subscriber '{Name}' must specify an eventHubName."
             );
-        }
 
         // Validate authentication (considering topic-level defaults)
         var hasConnectionString = !string.IsNullOrWhiteSpace(ConnectionString);
@@ -155,11 +143,9 @@ public class EventHubSubscriberSettings : ISubscriberSettings
 
         // Check if subscriber specifies both connection string and any namespace components
         if (hasConnectionString && HasAnySubscriberNamespaceCredential())
-        {
             throw new ArgumentException(
                 $"Event Hub subscriber '{Name}' should specify either connectionString or namespace credentials, not both."
             );
-        }
 
         // Check if at least one authentication method is available (subscriber or topic level)
         if (
@@ -168,20 +154,14 @@ public class EventHubSubscriberSettings : ISubscriberSettings
             && !hasTopicConnectionString
             && !HasTopicNamespaceCredentials()
         )
-        {
             throw new ArgumentException(
                 $"Event Hub subscriber '{Name}' must have either a connectionString or namespace + sharedAccessKeyName + sharedAccessKey, either at subscriber or topic level."
             );
-        }
 
         // Validate properties
         if (Properties != null)
-        {
             foreach (var (propertyName, propertySetting) in Properties)
-            {
                 propertySetting.Validate(propertyName);
-            }
-        }
 
         Filter?.Validate();
         RetryPolicy?.Validate();

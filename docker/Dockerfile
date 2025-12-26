@@ -5,6 +5,7 @@ WORKDIR /source
 # copy build configuration files first
 COPY /src/Directory.Build.props .
 COPY /src/Directory.Packages.props .
+COPY /src/.editorconfig .
 
 # copy source
 COPY /src/AzureEventGridSimulator ./AzureEventGridSimulator

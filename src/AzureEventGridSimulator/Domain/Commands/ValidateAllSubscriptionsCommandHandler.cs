@@ -26,17 +26,13 @@ public class ValidateAllSubscriptionsCommandHandler(
     )
     {
         foreach (var enabledTopic in simulatorSettings.Topics.Where(o => !o.Disabled))
-        {
-            // Only HTTP subscribers need validation (Service Bus subscribers don't use webhook validation)
-            foreach (
-                var subscriber in enabledTopic.Subscribers.HttpSubscribers.Where(o =>
-                    !o.DisableValidation && !o.Disabled
-                )
+        // Only HTTP subscribers need validation (Service Bus subscribers don't use webhook validation)
+        foreach (
+            var subscriber in enabledTopic.Subscribers.HttpSubscribers.Where(o =>
+                !o.DisableValidation && !o.Disabled
             )
-            {
-                await ValidateSubscription(enabledTopic, subscriber);
-            }
-        }
+        )
+            await ValidateSubscription(enabledTopic, subscriber);
     }
 
     private async Task ValidateSubscription(

@@ -52,17 +52,19 @@ public class EventSchemaDetectorTests
     }
 
     [Fact]
-    public void GivenRequestWithPartialCloudEventsHeaders_WhenDetected_ThenReturnsEventGridSchema()
+    public void GivenRequestWithPartialCloudEventsHeaders_WhenDetected_ThenReturnsCloudEventsSchema()
     {
+        // Azure detects binary mode when ANY ce-* header is present
+        // Missing required headers are validated during parsing
         var context = new DefaultHttpContext();
         context.Request.Headers[Constants.CeSpecVersionHeader] = "1.0";
         context.Request.Headers[Constants.CeIdHeader] = "test-id";
-        // Missing ce-source and ce-type
+        // Missing ce-source and ce-type - but still detected as CloudEvents
         context.Request.ContentType = "application/json";
 
         var schema = _detector.DetectSchema(context);
 
-        schema.ShouldBe(EventSchema.EventGridSchema);
+        schema.ShouldBe(EventSchema.CloudEventV1_0);
     }
 
     [Fact]

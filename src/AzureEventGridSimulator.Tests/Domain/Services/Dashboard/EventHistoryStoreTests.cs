@@ -43,22 +43,18 @@ public class EventHistoryStoreTests
     public void Add_ExceedsMaxCapacity_EvictsOldestEvents()
     {
         // Add more than max capacity
-        for (var i = 0; i < EventHistoryStore.MaxCapacity + 10; i++)
-        {
+        for (var i = 0; i < EventHistoryStore.MaxCapacityPerTopic + 10; i++)
             _store.Add(CreateTestRecord($"event-{i}"));
-        }
 
-        _store.Count.ShouldBe(EventHistoryStore.MaxCapacity);
-        _store.TotalEventsReceived.ShouldBe(EventHistoryStore.MaxCapacity + 10);
+        _store.Count.ShouldBe(EventHistoryStore.MaxCapacityPerTopic);
+        _store.TotalEventsReceived.ShouldBe(EventHistoryStore.MaxCapacityPerTopic + 10);
     }
 
     [Fact]
     public void Add_ExceedsMaxCapacity_OldestEventsAreRemoved()
     {
-        for (var i = 0; i < EventHistoryStore.MaxCapacity + 5; i++)
-        {
+        for (var i = 0; i < EventHistoryStore.MaxCapacityPerTopic + 5; i++)
             _store.Add(CreateTestRecord($"event-{i}"));
-        }
 
         // First 5 events should be evicted
         _store.Get("event-0").ShouldBeNull();
@@ -66,7 +62,7 @@ public class EventHistoryStoreTests
 
         // Event starting from index 5 should still exist
         _store.Get("event-5").ShouldNotBeNull();
-        _store.Get($"event-{EventHistoryStore.MaxCapacity + 4}").ShouldNotBeNull();
+        _store.Get($"event-{EventHistoryStore.MaxCapacityPerTopic + 4}").ShouldNotBeNull();
     }
 
     [Fact]

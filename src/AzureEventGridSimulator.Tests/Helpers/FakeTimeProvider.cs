@@ -1,8 +1,8 @@
 namespace AzureEventGridSimulator.Tests.Helpers;
 
 /// <summary>
-/// A fake TimeProvider for testing time-dependent code.
-/// Allows tests to control the current time for deterministic behavior.
+///     A fake TimeProvider for testing time-dependent code.
+///     Allows tests to control the current time for deterministic behavior.
 /// </summary>
 public class FakeTimeProvider(DateTimeOffset startTime) : TimeProvider
 {
@@ -14,7 +14,7 @@ public class FakeTimeProvider(DateTimeOffset startTime) : TimeProvider
     }
 
     /// <summary>
-    /// Sets the current time to a specific value.
+    ///     Sets the current time to a specific value.
     /// </summary>
     public void SetUtcNow(DateTimeOffset value)
     {
@@ -22,7 +22,7 @@ public class FakeTimeProvider(DateTimeOffset startTime) : TimeProvider
     }
 
     /// <summary>
-    /// Advances the current time by the specified duration.
+    ///     Advances the current time by the specified duration.
     /// </summary>
     public void Advance(TimeSpan duration)
     {

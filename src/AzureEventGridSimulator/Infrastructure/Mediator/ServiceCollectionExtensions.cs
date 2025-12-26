@@ -3,21 +3,21 @@ using System.Reflection;
 namespace AzureEventGridSimulator.Infrastructure.Mediator;
 
 /// <summary>
-/// Extension methods for registering the mediator and handlers.
+///     Extension methods for registering the mediator and handlers.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the mediator and registers all request handlers from the specified assembly.
+    ///     Adds the mediator and registers all request handlers from the specified assembly.
     /// </summary>
-    /// <param name="services" >
-    /// The service collection.
+    /// <param name="services">
+    ///     The service collection.
     /// </param>
-    /// <param name="assembly" >
-    /// The assembly to scan for handlers.
+    /// <param name="assembly">
+    ///     The assembly to scan for handlers.
     /// </param>
     /// <returns>
-    /// The service collection for chaining.
+    ///     The service collection for chaining.
     /// </returns>
     public static IServiceCollection AddMediator(
         this IServiceCollection services,
@@ -55,9 +55,7 @@ public static class ServiceCollectionExtensions
                 );
 
             foreach (var handlerInterface in handlerInterfaces)
-            {
                 services.AddSingleton(handlerInterface, handlerType);
-            }
         }
 
         return services;

@@ -7,6 +7,7 @@ services:
     ports:
       # add a port mapping for each topic in the settings file
       - "60101:60101"
+      - "60102:60102"
     volumes:
       # map this folder to a read-only folder '/aegs' in the container
       # this allows us to access files (e.g. settings or certificates) from within the container

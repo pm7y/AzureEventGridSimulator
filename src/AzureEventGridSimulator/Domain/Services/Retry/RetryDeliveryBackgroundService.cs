@@ -7,7 +7,7 @@ using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 namespace AzureEventGridSimulator.Domain.Services.Retry;
 
 /// <summary>
-/// Background service that processes the delivery queue and handles retries.
+///     Background service that processes the delivery queue and handles retries.
 /// </summary>
 public class RetryDeliveryBackgroundService(
     IDeliveryQueue queue,
@@ -57,7 +57,7 @@ public class RetryDeliveryBackgroundService(
     }
 
     /// <summary>
-    /// Processes all deliveries that are due.
+    ///     Processes all deliveries that are due.
     /// </summary>
     private async Task ProcessDueDeliveriesAsync(CancellationToken cancellationToken)
     {
@@ -71,7 +71,7 @@ public class RetryDeliveryBackgroundService(
     }
 
     /// <summary>
-    /// Processes a single delivery.
+    ///     Processes a single delivery.
     /// </summary>
     private async Task ProcessDeliveryAsync(
         PendingDelivery delivery,
@@ -160,7 +160,7 @@ public class RetryDeliveryBackgroundService(
     }
 
     /// <summary>
-    /// Attempts to deliver an event.
+    ///     Attempts to deliver an event.
     /// </summary>
     private async Task<DeliveryResult> AttemptDeliveryAsync(
         PendingDelivery delivery,
@@ -196,7 +196,7 @@ public class RetryDeliveryBackgroundService(
     }
 
     /// <summary>
-    /// Delivers to an HTTP endpoint.
+    ///     Delivers to an HTTP endpoint.
     /// </summary>
     private static async Task<DeliveryResult> DeliverToHttpAsync(
         IServiceScope scope,
@@ -209,7 +209,7 @@ public class RetryDeliveryBackgroundService(
     }
 
     /// <summary>
-    /// Delivers to Service Bus.
+    ///     Delivers to Service Bus.
     /// </summary>
     private async Task<DeliveryResult> DeliverToServiceBusAsync(
         IServiceScope scope,
@@ -239,7 +239,7 @@ public class RetryDeliveryBackgroundService(
     }
 
     /// <summary>
-    /// Delivers to Storage Queue.
+    ///     Delivers to Storage Queue.
     /// </summary>
     private async Task<DeliveryResult> DeliverToStorageQueueAsync(
         IServiceScope scope,
@@ -269,7 +269,7 @@ public class RetryDeliveryBackgroundService(
     }
 
     /// <summary>
-    /// Delivers to Event Hub.
+    ///     Delivers to Event Hub.
     /// </summary>
     private async Task<DeliveryResult> DeliverToEventHubAsync(
         IServiceScope scope,
@@ -298,7 +298,7 @@ public class RetryDeliveryBackgroundService(
     }
 
     /// <summary>
-    /// Handles a failed delivery attempt.
+    ///     Handles a failed delivery attempt.
     /// </summary>
     private async Task HandleDeliveryFailureAsync(
         PendingDelivery delivery,

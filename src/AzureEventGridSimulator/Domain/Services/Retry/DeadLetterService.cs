@@ -4,7 +4,7 @@ using AzureEventGridSimulator.Domain.Entities;
 namespace AzureEventGridSimulator.Domain.Services.Retry;
 
 /// <summary>
-/// Writes dead-lettered events to local JSON files.
+///     Writes dead-lettered events to local JSON files.
 /// </summary>
 public class DeadLetterService(ILogger<DeadLetterService> logger)
 {
@@ -15,13 +15,13 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
     };
 
     /// <summary>
-    /// Writes a dead-letter event to the configured folder.
+    ///     Writes a dead-letter event to the configured folder.
     /// </summary>
-    /// <param name="delivery" >
-    /// The failed delivery.
+    /// <param name="delivery">
+    ///     The failed delivery.
     /// </param>
-    /// <param name="reason" >
-    /// The reason for dead-lettering.
+    /// <param name="reason">
+    ///     The reason for dead-lettering.
     /// </param>
     public async Task WriteDeadLetterAsync(PendingDelivery delivery, string reason)
     {
@@ -91,7 +91,7 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
     }
 
     /// <summary>
-    /// Gets the event payload for serialization.
+    ///     Gets the event payload for serialization.
     /// </summary>
     private static object GetEventPayload(PendingDelivery delivery)
     {
@@ -112,8 +112,8 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
     }
 
     /// <summary>
-    /// Sanitizes a string to be safe for use as a file name.
-    /// Note: Event IDs are GUIDs which only contain valid path characters.
+    ///     Sanitizes a string to be safe for use as a file name.
+    ///     Note: Event IDs are GUIDs which only contain valid path characters.
     /// </summary>
     private static string SanitizeFileName(string name)
     {
@@ -125,8 +125,8 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
     }
 
     /// <summary>
-    /// Sanitizes a string to be safe for use as a directory name.
-    /// Note: Topic and subscriber names are validated to only contain letters, numbers, and dashes.
+    ///     Sanitizes a string to be safe for use as a directory name.
+    ///     Note: Topic and subscriber names are validated to only contain letters, numbers, and dashes.
     /// </summary>
     private static string SanitizeDirectoryName(string name)
     {

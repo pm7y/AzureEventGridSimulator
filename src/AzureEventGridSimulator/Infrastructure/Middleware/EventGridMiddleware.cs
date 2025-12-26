@@ -62,40 +62,62 @@ public class EventGridMiddleware(RequestDelegate next)
             return;
         }
 
-        // This is the end of the line
-        // Only record rejections for POST requests (events are always sent via POST)
-        // GET requests for unknown paths (like source maps) should just return 404
-        if (context.Request.Method != HttpMethods.Post)
+        // Azure returns 200 for OPTIONS (CORS preflight support)
+        if (
+            string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase)
+            && context.Request.Method == HttpMethods.Options
+        )
+        {
+            var topic = simulatorSettings.Topics.FirstOrDefault(t =>
+                t.Port == context.Request.Host.Port
+            );
+            var schemaName =
+                topic?.InputSchema == EventSchema.CloudEventV1_0
+                    ? "CloudEventV10"
+                    : "EventGridEvent";
+
+            context.Response.Headers.Append("Allow", "POST, OPTIONS");
+            context.Response.Headers.Append("api-supported-versions", "2018-01-01");
+            context.Response.Headers.Append("aeg-input-event-schema", schemaName);
+            context.Response.Headers["x-ms-request-id"] = context.GetRequestId().ToString();
+            context.Response.StatusCode = 200;
+            return;
+        }
+
+        // Azure returns 404 for HEAD on /api/events
+        if (
+            string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase)
+            && context.Request.Method == HttpMethods.Head
+        )
         {
             context.Response.StatusCode = 404;
             return;
         }
 
-        var errorMessage = "Request not supported.";
-        var topic = simulatorSettings.Topics.FirstOrDefault(t =>
-            t.Port == context.Request.Host.Port
-        );
-        if (topic != null)
+        // Azure returns 405 Method Not Allowed for non-POST methods to /api/events (exact path)
+        if (
+            string.Equals(context.Request.Path, "/api/events", StringComparison.Ordinal)
+            && context.Request.Method != HttpMethods.Post
+        )
         {
-            context.Request.EnableBuffering();
-            var rawBody = await TryReadBody(context);
-            var contentType = context.Request.Headers.ContentType.FirstOrDefault();
-            RecordRejection(
-                eventHistoryService,
-                topic.Name,
-                topic.Port,
-                HttpStatusCode.BadRequest,
-                errorMessage,
-                rawBody,
-                contentType
+            context.Response.Headers.Append("Allow", "OPTIONS, POST");
+            await context.WriteErrorResponse(
+                HttpStatusCode.MethodNotAllowed,
+                $".{context.GenerateReportSuffix()}",
+                null,
+                ErrorDetailCodes.MethodNotAllowed
             );
+            return;
         }
 
+        // This is the end of the line - unknown path
+        // Azure returns 404 Not Found for unknown paths regardless of HTTP method
+        var requestUri = $"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}";
         await context.WriteErrorResponse(
-            HttpStatusCode.BadRequest,
-            errorMessage,
+            HttpStatusCode.NotFound,
+            $"No HTTP resource was found that matches the request URI '{Uri.EscapeDataString(requestUri)}'.{context.GenerateReportSuffix()}",
             null,
-            ErrorDetailCodes.InputJsonInvalid
+            ErrorDetailCodes.ResourceNotFound
         );
     }
 
@@ -159,10 +181,26 @@ public class EventGridMiddleware(RequestDelegate next)
             var validationResult = sasHeaderValidator.Validate(context.Request.Headers, topic.Key);
             if (!validationResult.IsValid)
             {
+                // Azure returns 400 Bad Request for empty keys with InvalidSas code
+                if (validationResult.FailureReason == SasValidationFailureReason.EmptyKey)
+                {
+                    await context.WriteErrorResponse(
+                        HttpStatusCode.BadRequest,
+                        $"Request must have a value for aeg-sas-key.{context.GenerateReportSuffix()}",
+                        null,
+                        ErrorDetailCodes.InvalidSas
+                    );
+                    return;
+                }
+
                 await context.WriteErrorResponse(
                     HttpStatusCode.Unauthorized,
-                    GetAuthErrorMessage(validationResult.FailureReason, topic.Name),
-                    ErrorDetailCodes.Unauthorized,
+                    GetAuthErrorMessage(
+                        context,
+                        validationResult.FailureReason,
+                        context.Request.Host.Host
+                    ),
+                    null,
                     ErrorDetailCodes.Unauthorized
                 );
                 return;
@@ -171,6 +209,31 @@ public class EventGridMiddleware(RequestDelegate next)
 
         context.Request.EnableBuffering();
         var requestBody = await context.RequestBody();
+
+        //
+        // Azure returns 400 for empty body in binary mode CloudEvents
+        //
+        if (IsCloudEventsBinaryMode(context) && string.IsNullOrWhiteSpace(requestBody))
+        {
+            var errorMessage = $"Unexpected end when reading JSON.{context.GenerateReportSuffix()}";
+            RecordRejection(
+                eventHistoryService,
+                topic.Name,
+                topic.Port,
+                HttpStatusCode.BadRequest,
+                errorMessage,
+                requestBody,
+                contentType
+            );
+
+            await context.WriteErrorResponse(
+                HttpStatusCode.BadRequest,
+                errorMessage,
+                null,
+                ErrorDetailCodes.InputJsonInvalid
+            );
+            return;
+        }
 
         //
         // Validate the overall body size.
@@ -182,7 +245,8 @@ public class EventGridMiddleware(RequestDelegate next)
         {
             logger.LogError("Payload is larger than the allowed maximum");
 
-            var errorMessage = "Payload is larger than the allowed maximum.";
+            var errorMessage =
+                $"The maximum size ({maximumAllowedOverallMessageSizeInBytes}) has been exceeded.";
             RecordRejection(
                 eventHistoryService,
                 topic.Name,
@@ -196,7 +260,8 @@ public class EventGridMiddleware(RequestDelegate next)
             await context.WriteErrorResponse(
                 HttpStatusCode.RequestEntityTooLarge,
                 errorMessage,
-                null
+                null,
+                ErrorDetailCodes.PayloadTooLarge
             );
             return;
         }
@@ -213,12 +278,38 @@ public class EventGridMiddleware(RequestDelegate next)
         {
             if (IsCloudEventsBinaryMode(context))
             {
+                // Binary mode with structured content type is a conflict - Azure returns 400
+                if (IsValidCloudEventsContentType(contentType))
+                {
+                    var errorMessage =
+                        "Conflicting content mode: binary mode headers with structured mode content type.";
+
+                    RecordRejection(
+                        eventHistoryService,
+                        topic.Name,
+                        topic.Port,
+                        HttpStatusCode.BadRequest,
+                        errorMessage,
+                        requestBody,
+                        contentType
+                    );
+
+                    await context.WriteErrorResponse(
+                        HttpStatusCode.BadRequest,
+                        errorMessage,
+                        null,
+                        ErrorDetailCodes.InputJsonInvalid
+                    );
+                    return;
+                }
+
                 // Binary mode: Content-Type is the data's content type
-                // Azure accepts application/json but rejects text/plain
+                // Azure only accepts application/json for binary mode
                 if (!IsValidBinaryModeContentType(contentType))
                 {
                     var errorMessage =
-                        "The Content-Type header is either missing or it doesn't have a valid value. The content type header must either be application/cloudevents+json; charset=utf-8 or application/cloudevents-batch+json; charset=UTF-8.";
+                        "The Content-Type header is either missing or it doesn't have a valid value. The content type header must either be application/cloudevents+json; charset=utf-8 or application/cloudevents-batch+json; charset=UTF-8."
+                        + context.GenerateReportSuffix();
 
                     RecordRejection(
                         eventHistoryService,
@@ -241,11 +332,14 @@ public class EventGridMiddleware(RequestDelegate next)
             }
             else
             {
-                // Structured/batch mode: require CloudEvents content types
-                if (!IsValidCloudEventsContentType(contentType))
+                // Structured/batch mode: require CloudEvents content types OR application/json
+                // Azure accepts application/json and treats it as single CloudEvent (not batch)
+                // It will fail with 400 if the body is an array instead of an object
+                if (!IsValidCloudEventsContentType(contentType) && !IsApplicationJson(contentType))
                 {
                     var errorMessage =
-                        "The Content-Type header is either missing or it doesn't have a valid value. The content type header must either be application/cloudevents+json; charset=utf-8 or application/cloudevents-batch+json; charset=UTF-8.";
+                        "The Content-Type header is either missing or it doesn't have a valid value. The content type header must either be application/cloudevents+json; charset=utf-8 or application/cloudevents-batch+json; charset=UTF-8."
+                        + context.GenerateReportSuffix();
 
                     RecordRejection(
                         eventHistoryService,
@@ -279,28 +373,40 @@ public class EventGridMiddleware(RequestDelegate next)
         {
             logger.LogError(ex, "Failed to parse events");
 
+            // Determine the appropriate error code based on the exception message
+            var errorCode = ex.Message.Contains("header", StringComparison.OrdinalIgnoreCase)
+                ? ErrorDetailCodes.InvalidCloudEventHeader
+                : ErrorDetailCodes.InputJsonInvalid;
+
+            // Add Report suffix to parser errors
+            var errorMessage = $"{ex.Message}{context.GenerateReportSuffix()}";
+
             RecordRejection(
                 eventHistoryService,
                 topic.Name,
                 topic.Port,
                 HttpStatusCode.BadRequest,
-                ex.Message,
+                errorMessage,
                 requestBody,
                 contentType
             );
 
             await context.WriteErrorResponse(
                 HttpStatusCode.BadRequest,
-                ex.Message,
+                errorMessage,
                 null,
-                ErrorDetailCodes.InputJsonInvalid
+                errorCode
             );
             return;
         }
 
         if (events == null || events.Length == 0)
         {
-            var errorMessage = "No events found in the request body.";
+            var schemaName =
+                detectedSchema == EventSchema.CloudEventV1_0 ? "CloudEventV10" : "EventGridEvent";
+            var errorMessage =
+                $"This resource is configured to receive event in '{schemaName}' schema. "
+                + "The JSON received does not conform to the expected schema.";
             RecordRejection(
                 eventHistoryService,
                 topic.Name,
@@ -334,7 +440,8 @@ public class EventGridMiddleware(RequestDelegate next)
             {
                 logger.LogError("Event is larger than the allowed maximum");
 
-                var errorMessage = "Event is larger than the allowed maximum.";
+                var errorMessage =
+                    $"The maximum size ({maximumAllowedEventSizeInBytes}) has been exceeded.";
                 RecordRejection(
                     eventHistoryService,
                     topic.Name,
@@ -348,7 +455,8 @@ public class EventGridMiddleware(RequestDelegate next)
                 await context.WriteErrorResponse(
                     HttpStatusCode.RequestEntityTooLarge,
                     errorMessage,
-                    null
+                    null,
+                    ErrorDetailCodes.PayloadTooLarge
                 );
                 return;
             }
@@ -361,23 +469,54 @@ public class EventGridMiddleware(RequestDelegate next)
         {
             parser.Validate(events);
         }
+        catch (TopicAuthorizationException ex)
+        {
+            // Azure returns 401 when topic field is set (doesn't match endpoint)
+            logger.LogError(ex, "Topic authorization failed");
+
+            // Add Report suffix to topic authorization errors
+            var errorMessage = $"{ex.Message}{context.GenerateReportSuffix()}";
+
+            RecordRejection(
+                eventHistoryService,
+                topic.Name,
+                topic.Port,
+                HttpStatusCode.Unauthorized,
+                errorMessage,
+                requestBody,
+                contentType
+            );
+
+            await context.WriteErrorResponse(
+                HttpStatusCode.Unauthorized,
+                errorMessage,
+                null,
+                ErrorDetailCodes.Unauthorized
+            );
+            return;
+        }
         catch (InvalidOperationException ex)
         {
             logger.LogError(ex, "Event was not valid");
+
+            // Add Azure-style report suffix to validation errors if not already present
+            var errorMessage = ex.Message.Contains("Report '", StringComparison.Ordinal)
+                ? ex.Message
+                : ex.Message + context.GenerateReportSuffix();
 
             RecordRejection(
                 eventHistoryService,
                 topic.Name,
                 topic.Port,
                 HttpStatusCode.BadRequest,
-                ex.Message,
+                errorMessage,
                 requestBody,
                 contentType
             );
 
             await context.WriteErrorResponse(
                 HttpStatusCode.BadRequest,
-                ex.Message,
+                errorMessage,
                 null,
                 ErrorDetailCodes.InputJsonInvalid
             );
@@ -419,40 +558,29 @@ public class EventGridMiddleware(RequestDelegate next)
 
     private static bool IsNotificationRequest(HttpContext context)
     {
+        // Azure accepts paths in any case and with trailing slash
+        var path = context.Request.Path.Value?.TrimEnd('/') ?? "";
         if (
             context.Request.Method != HttpMethods.Post
-            || !string.Equals(
-                context.Request.Path,
-                "/api/events",
-                StringComparison.OrdinalIgnoreCase
-            )
+            || !string.Equals(path, "/api/events", StringComparison.OrdinalIgnoreCase)
         )
-        {
             return false;
-        }
 
         // Check for CloudEvents binary mode (indicated by ce-* headers)
         if (IsCloudEventsBinaryMode(context))
-        {
             return true;
-        }
 
-        if (
-            !context.Request.Headers.Keys.Any(k =>
-                string.Equals(k, "Content-Type", StringComparison.OrdinalIgnoreCase)
-            )
-        )
-        {
-            return false;
-        }
+        var contentType = context.Request.Headers.ContentType.FirstOrDefault();
 
-        var contentType = context.Request.Headers["Content-Type"].FirstOrDefault();
+        // Azure Event Grid is lenient for EventGrid schema - accepts missing/wrong content-type
+        // For CloudEvents, we'll validate the content-type later and return 415 if invalid
+        // Accept all POST /api/events requests and let the schema detection/validation handle it
         if (string.IsNullOrWhiteSpace(contentType))
-        {
-            return false;
-        }
+            // Accept requests without Content-Type - EventGrid schema is lenient
+            return true;
 
         // Accept EventGrid format (application/json) or CloudEvents format (use base types for detection)
+        // Also accept text/plain and other content types - Azure is lenient for EventGrid schema
         return contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase)
             || contentType.Contains(
                 Constants.CloudEventsContentTypeBase,
@@ -461,16 +589,19 @@ public class EventGridMiddleware(RequestDelegate next)
             || contentType.Contains(
                 Constants.CloudEventsBatchContentTypeBase,
                 StringComparison.OrdinalIgnoreCase
-            );
+            )
+            || !contentType.Contains("cloudevents", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsCloudEventsBinaryMode(HttpContext context)
     {
         var headers = context.Request.Headers;
+        // Binary mode is detected when any ce-* header is present
+        // Azure validates required headers during parsing and returns specific errors
         return headers.ContainsKey(Constants.CeSpecVersionHeader)
-            && headers.ContainsKey(Constants.CeIdHeader)
-            && headers.ContainsKey(Constants.CeSourceHeader)
-            && headers.ContainsKey(Constants.CeTypeHeader);
+            || headers.ContainsKey(Constants.CeIdHeader)
+            || headers.ContainsKey(Constants.CeSourceHeader)
+            || headers.ContainsKey(Constants.CeTypeHeader);
     }
 
     private static bool IsValidationRequest(HttpContext context)
@@ -496,9 +627,7 @@ public class EventGridMiddleware(RequestDelegate next)
     private static bool IsValidCloudEventsContentType(string? contentType)
     {
         if (string.IsNullOrWhiteSpace(contentType))
-        {
             return false;
-        }
 
         return contentType.Contains(
                 Constants.CloudEventsContentTypeBase,
@@ -510,42 +639,55 @@ public class EventGridMiddleware(RequestDelegate next)
             );
     }
 
+    private static bool IsApplicationJson(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+            return false;
+
+        // Azure accepts application/json for CloudEvents and treats it as single event mode
+        return contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsValidBinaryModeContentType(string? contentType)
     {
         if (string.IsNullOrWhiteSpace(contentType))
-        {
             return false;
-        }
 
         // In binary mode, Content-Type represents the data's content type
-        // Azure accepts application/json but rejects text/plain
-        return contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase)
-            || contentType.Contains("application/xml", StringComparison.OrdinalIgnoreCase)
-            || contentType.Contains("application/octet-stream", StringComparison.OrdinalIgnoreCase);
+        // Azure only accepts application/json for binary mode CloudEvents
+        // Azure returns 415 for text/plain, application/octet-stream, etc.
+        return contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string GetAuthErrorMessage(
+        HttpContext context,
         SasValidationFailureReason? failureReason,
-        string topicName
+        string? hostName
     )
     {
-        var upperTopicName = topicName.ToUpperInvariant();
+        var endpoint = (hostName ?? "localhost").ToUpperInvariant();
+        var reportSuffix = context.GenerateReportSuffix();
+
         return failureReason switch
         {
             SasValidationFailureReason.MissingKey =>
-                "Request must contain one of the following authorization signature: aeg-sas-token, aeg-sas-key.",
+                $"Request must contain one of the following authorization signature: aeg-sas-token, aeg-sas-key.{reportSuffix}",
             SasValidationFailureReason.KeyMismatch =>
-                $"The specified aeg-sas-key is invalid for topic '{upperTopicName}'.",
+                $"The request authorization key is not authorized for {endpoint}. This is due to the reason: The input is not a valid Base-64 string as it contains a non-base 64 character, more than two padding characters, or an illegal character among the padding characters.{reportSuffix}",
             SasValidationFailureReason.InvalidBase64 =>
-                $"The SAS key is not a valid Base-64 string for topic '{upperTopicName}'.",
+                $"The request authorization key is not authorized for {endpoint}. This is due to the reason: The input is not a valid Base-64 string as it contains a non-base 64 character, more than two padding characters, or an illegal character among the padding characters.{reportSuffix}",
             SasValidationFailureReason.TokenExpired =>
-                $"The specified SAS token has expired for topic '{upperTopicName}'.",
+                $"The specified SAS token has expired for topic '{endpoint}'.{reportSuffix}",
             SasValidationFailureReason.SignatureMismatch =>
-                $"The specified SAS token signature is invalid for topic '{upperTopicName}'.",
+                $"The specified SAS token signature is invalid for topic '{endpoint}'.{reportSuffix}",
             SasValidationFailureReason.InvalidTokenFormat =>
-                $"The specified SAS token format is invalid for topic '{upperTopicName}'.",
+                $"The specified SAS token format is invalid for topic '{endpoint}'.{reportSuffix}",
+            SasValidationFailureReason.BearerTokenInvalid =>
+                $"Unable to read access token.{reportSuffix}",
+            SasValidationFailureReason.UnsupportedAuthScheme =>
+                $"Request has an unsupported Authorization scheme (must be SharedAccessSignature or Bearer).{reportSuffix}",
             _ =>
-                "Request must contain one of the following authorization signature: aeg-sas-token, aeg-sas-key.",
+                $"Request must contain one of the following authorization signature: aeg-sas-token, aeg-sas-key.{reportSuffix}",
         };
     }
 }

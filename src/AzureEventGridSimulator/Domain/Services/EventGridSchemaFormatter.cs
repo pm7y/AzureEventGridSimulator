@@ -4,7 +4,7 @@ using AzureEventGridSimulator.Domain.Entities;
 namespace AzureEventGridSimulator.Domain.Services;
 
 /// <summary>
-/// Formats events in the Azure Event Grid schema for delivery.
+///     Formats events in the Azure Event Grid schema for delivery.
 /// </summary>
 public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaFormatter
 {
@@ -36,21 +36,17 @@ public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaF
     }
 
     /// <summary>
-    /// Converts a SimulatorEvent to an EventGridEvent.
-    /// If the source is already an EventGridEvent, returns it directly.
-    /// If the source is a CloudEvent, converts it to EventGrid format.
+    ///     Converts a SimulatorEvent to an EventGridEvent.
+    ///     If the source is already an EventGridEvent, returns it directly.
+    ///     If the source is a CloudEvent, converts it to EventGrid format.
     /// </summary>
     private EventGridEvent ConvertToEventGridEvent(SimulatorEvent evt)
     {
         if (evt.Schema == EventSchema.EventGridSchema && evt.EventGridEvent != null)
-        {
             return evt.EventGridEvent;
-        }
 
         if (evt.Schema == EventSchema.CloudEventV1_0 && evt.CloudEvent != null)
-        {
             return ConvertCloudEventToEventGrid(evt.CloudEvent);
-        }
 
         throw new InvalidOperationException(
             $"Cannot convert event with schema {evt.Schema} to Event Grid format."
@@ -58,33 +54,33 @@ public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaF
     }
 
     /// <summary>
-    /// Converts a CloudEvent to an EventGridEvent.
+    ///     Converts a CloudEvent to an EventGridEvent.
     /// </summary>
     private EventGridEvent ConvertCloudEventToEventGrid(CloudEvent cloudEvent)
     {
+        // Azure is lenient - source can be null, use empty string as fallback
+        var source = cloudEvent.Source ?? "";
         var eventGridEvent = new EventGridEvent
         {
             Id = cloudEvent.Id,
-            Subject = cloudEvent.Subject ?? cloudEvent.Source,
+            Subject = cloudEvent.Subject ?? source,
             EventType = cloudEvent.Type,
             EventTime = cloudEvent.Time ?? timeProvider.GetUtcNow().ToString("o"),
             Data = cloudEvent.Data,
             DataVersion = ExtractDataVersion(cloudEvent.DataSchema),
             MetadataVersion = "1",
         };
-        eventGridEvent.SetTopic(cloudEvent.Source);
+        eventGridEvent.SetTopic(source);
         return eventGridEvent;
     }
 
     /// <summary>
-    /// Extracts a data version from a CloudEvents dataschema URI.
+    ///     Extracts a data version from a CloudEvents dataschema URI.
     /// </summary>
     private string ExtractDataVersion(string? dataSchema)
     {
         if (string.IsNullOrEmpty(dataSchema))
-        {
             return "";
-        }
 
         // Try to extract version from URI (e.g., "/schema/v1" -> "v1")
         if (Uri.TryCreate(dataSchema, UriKind.RelativeOrAbsolute, out var uri))
@@ -94,9 +90,7 @@ public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaF
             {
                 var lastSegment = segments.Last().TrimEnd('/');
                 if (lastSegment.StartsWith("v", StringComparison.OrdinalIgnoreCase))
-                {
                     return lastSegment;
-                }
             }
         }
 

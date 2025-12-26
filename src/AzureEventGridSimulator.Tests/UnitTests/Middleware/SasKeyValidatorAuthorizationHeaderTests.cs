@@ -90,8 +90,10 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
     }
 
     [Fact]
-    public void GivenNonSasAuthorizationHeader_WhenValidated_ThenReturnsTrue()
+    public void GivenNonSasAuthorizationHeader_WhenValidated_ThenReturnsFalse()
     {
+        // Azure Event Grid only supports SharedAccessSignature authorization
+        // Bearer, Basic, and other auth types are not supported
         var headers = new HeaderDictionary
         {
             { HeaderNames.Authorization, "Bearer some-jwt-token" },
@@ -99,7 +101,7 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
 
         var result = Validator.IsValid(headers, ValidTopicKey);
 
-        result.ShouldBeTrue();
+        result.ShouldBeFalse();
     }
 
     [Fact]
