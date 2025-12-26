@@ -61,6 +61,7 @@ jobs:
         run: >-
           dotnet build ${{ env.MAIN_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
+          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-restore
           --no-incremental
@@ -71,6 +72,7 @@ jobs:
         run: >-
           dotnet build ${{ env.TEST_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
+          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-restore
           --no-incremental
@@ -81,6 +83,7 @@ jobs:
         run: >-
           dotnet test ${{ env.TEST_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
+          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-build
           --verbosity normal
