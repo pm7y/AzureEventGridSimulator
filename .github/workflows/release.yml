@@ -24,8 +24,9 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
   DOTNET_NOLOGO: "true"
-  SOLUTION_PATH: ./src/AzureEventGridSimulator.sln
-  PROJECT_PATH: ./src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
+  # Build specific projects, not the solution (excludes Aspire projects from release)
+  MAIN_PROJECT: ./src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
+  TEST_PROJECT: ./src/AzureEventGridSimulator.Tests/AzureEventGridSimulator.Tests.csproj
   CONFIGURATION: Release
   ARTIFACT_PATH: ./dist
 
@@ -56,11 +57,13 @@ jobs:
           cache-dependency-path: "**/*.csproj"
 
       - name: Restore dependencies
-        run: dotnet restore ${{ env.SOLUTION_PATH }} --runtime ${{ matrix.runtime }}
+        run: |
+          dotnet restore ${{ env.MAIN_PROJECT }} --runtime ${{ matrix.runtime }}
+          dotnet restore ${{ env.TEST_PROJECT }} --runtime ${{ matrix.runtime }}
 
-      - name: Build
+      - name: Build main project
         run: >-
-          dotnet build ${{ env.SOLUTION_PATH }}
+          dotnet build ${{ env.MAIN_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
           --framework net10.0
           --runtime ${{ matrix.runtime }}
@@ -70,9 +73,20 @@ jobs:
           /p:WarningLevel=4
           /p:TreatWarningsAsErrors=true
 
+      - name: Build test project
+        run: >-
+          dotnet build ${{ env.TEST_PROJECT }}
+          --configuration ${{ env.CONFIGURATION }}
+          --framework net10.0
+          --runtime ${{ matrix.runtime }}
+          --no-restore
+          --no-incremental
+          /p:WarningLevel=4
+          /p:TreatWarningsAsErrors=true
+
       - name: Test
         run: >-
-          dotnet test ${{ env.SOLUTION_PATH }}
+          dotnet test ${{ env.TEST_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
           --framework net10.0
           --runtime ${{ matrix.runtime }}
@@ -82,7 +96,7 @@ jobs:
 
       - name: Publish
         run: >-
-          dotnet publish ${{ env.PROJECT_PATH }}
+          dotnet publish ${{ env.MAIN_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
           --framework net10.0
           --runtime ${{ matrix.runtime }}
