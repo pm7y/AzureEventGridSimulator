@@ -10,7 +10,7 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Filtering;
 public class ArrayFilteringTests
 {
     /// <summary>
-    /// Test event with array data for filtering tests.
+    ///     Test event with array data for filtering tests.
     /// </summary>
     private static EventGridEvent CreateEventWithArrayData()
     {

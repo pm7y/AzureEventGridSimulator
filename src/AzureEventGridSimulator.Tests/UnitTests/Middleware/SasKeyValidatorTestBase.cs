@@ -24,20 +24,14 @@ public abstract class SasKeyValidatorTestBase
         DateTimeOffset expiry
     )
     {
-        var decodedExpiration = expiry.UtcDateTime.ToString("o");
-
-        var encodedResource = HttpUtility.UrlEncode(resource);
-        var encodedExpiration = HttpUtility.UrlEncode(decodedExpiration);
-
-        var unsignedSas = $"r={encodedResource}&e={encodedExpiration}";
+        var expiryEpoch = expiry.ToUnixTimeSeconds();
+        var stringToSign = $"{resource}\n{expiryEpoch}";
 
         using var hmac = new HMACSHA256(Convert.FromBase64String(key));
         var signature = Convert.ToBase64String(
-            hmac.ComputeHash(Encoding.UTF8.GetBytes(unsignedSas))
+            hmac.ComputeHash(Encoding.UTF8.GetBytes(stringToSign))
         );
 
-        var encodedSignature = HttpUtility.UrlEncode(signature);
-
-        return $"r={encodedResource}&e={encodedExpiration}&s={encodedSignature}";
+        return $"r={HttpUtility.UrlEncode(resource)}&e={expiryEpoch}&s={HttpUtility.UrlEncode(signature)}";
     }
 }

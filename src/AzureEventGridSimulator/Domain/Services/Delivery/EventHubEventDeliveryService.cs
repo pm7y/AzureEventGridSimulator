@@ -9,7 +9,7 @@ using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
 
 /// <summary>
-/// Delivers events to Azure Event Hubs.
+///     Delivers events to Azure Event Hubs.
 /// </summary>
 public class EventHubEventDeliveryService(
     ILogger<EventHubEventDeliveryService> logger,
@@ -22,9 +22,7 @@ public class EventHubEventDeliveryService(
     public async ValueTask DisposeAsync()
     {
         foreach (var producer in _producers.Values)
-        {
             await producer.DisposeAsync();
-        }
 
         _producers.Clear();
     }
@@ -42,13 +40,11 @@ public class EventHubEventDeliveryService(
         );
 
         if (delivery.Subscriber is not EventHubSubscriberSettings subscription)
-        {
             return new DeliveryResult(
                 false,
                 DeliveryOutcome.EventHubError,
                 ErrorMessage: "Invalid subscriber type for Event Hub delivery"
             );
-        }
 
         try
         {
@@ -89,9 +85,7 @@ public class EventHubEventDeliveryService(
                 delivery.Event
             );
             foreach (var (name, value) in properties)
-            {
                 eventData.Properties[name] = value;
-            }
 
             // Add standard Event Grid headers as properties
             eventData.Properties["aeg-event-type"] = "Notification";
@@ -159,7 +153,7 @@ public class EventHubEventDeliveryService(
     }
 
     /// <summary>
-    /// Sends an event to an Event Hub subscriber.
+    ///     Sends an event to an Event Hub subscriber.
     /// </summary>
     public async Task SendAsync(
         EventHubSubscriberSettings subscription,
@@ -200,9 +194,7 @@ public class EventHubEventDeliveryService(
             // Add delivery properties
             var properties = propertyResolver.ResolveProperties(subscription.Properties, evt);
             foreach (var (name, value) in properties)
-            {
                 eventData.Properties[name] = value;
-            }
 
             // Add standard Event Grid headers as properties
             eventData.Properties["aeg-event-type"] = "Notification";
@@ -258,10 +250,8 @@ public class EventHubEventDeliveryService(
                         StringComparison.OrdinalIgnoreCase
                     );
                     if (keyIndex > 0)
-                    {
                         connectionForLogging =
                             connectionForLogging[..(keyIndex + 16)] + "***REDACTED***";
-                    }
                 }
 
                 logger.LogInformation(

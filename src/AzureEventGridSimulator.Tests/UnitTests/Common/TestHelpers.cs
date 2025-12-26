@@ -7,13 +7,13 @@ using Shouldly;
 namespace AzureEventGridSimulator.Tests.UnitTests.Common;
 
 /// <summary>
-/// Extension methods for null assertions in tests.
+///     Extension methods for null assertions in tests.
 /// </summary>
 public static class NullAssertionExtensions
 {
     /// <summary>
-    /// Asserts that the value is not null and returns it.
-    /// This allows null-safe property access without using the null-forgiving operator.
+    ///     Asserts that the value is not null and returns it.
+    ///     This allows null-safe property access without using the null-forgiving operator.
     /// </summary>
     public static T ShouldNotBeNullAnd<T>(this T? value, string? customMessage = null)
         where T : class
@@ -24,12 +24,12 @@ public static class NullAssertionExtensions
 }
 
 /// <summary>
-/// Shared test helper methods for creating test objects.
+///     Shared test helper methods for creating test objects.
 /// </summary>
 public static class TestHelpers
 {
     /// <summary>
-    /// Creates a basic HttpContext with the specified content type.
+    ///     Creates a basic HttpContext with the specified content type.
     /// </summary>
     public static HttpContext CreateHttpContext(string contentType = "application/json")
     {
@@ -37,7 +37,7 @@ public static class TestHelpers
     }
 
     /// <summary>
-    /// Creates an HttpContext configured for CloudEvents binary mode.
+    ///     Creates an HttpContext configured for CloudEvents binary mode.
     /// </summary>
     public static HttpContext CreateCloudEventsBinaryModeContext(
         string specVersion = "1.0",
@@ -66,30 +66,22 @@ public static class TestHelpers
         };
 
         if (time != null)
-        {
             context.Request.Headers[Constants.CeTimeHeader] = time;
-        }
 
         if (subject != null)
-        {
             context.Request.Headers[Constants.CeSubjectHeader] = subject;
-        }
 
         if (dataContentType != null)
-        {
             context.Request.Headers[Constants.CeDataContentTypeHeader] = dataContentType;
-        }
 
         if (dataSchema != null)
-        {
             context.Request.Headers[Constants.CeDataSchemaHeader] = dataSchema;
-        }
 
         return context;
     }
 
     /// <summary>
-    /// Creates an HttpContext configured for CloudEvents structured mode.
+    ///     Creates an HttpContext configured for CloudEvents structured mode.
     /// </summary>
     public static HttpContext CreateCloudEventsStructuredModeContext()
     {
@@ -100,7 +92,7 @@ public static class TestHelpers
     }
 
     /// <summary>
-    /// Creates an HttpContext configured for CloudEvents batch mode.
+    ///     Creates an HttpContext configured for CloudEvents batch mode.
     /// </summary>
     public static HttpContext CreateCloudEventsBatchModeContext()
     {
@@ -111,7 +103,7 @@ public static class TestHelpers
     }
 
     /// <summary>
-    /// Creates a valid EventGridEvent for testing.
+    ///     Creates a valid EventGridEvent for testing.
     /// </summary>
     public static EventGridEvent CreateValidEventGridEvent(
         string id = "test-id-123",
@@ -134,7 +126,7 @@ public static class TestHelpers
     }
 
     /// <summary>
-    /// Creates a valid CloudEvent for testing.
+    ///     Creates a valid CloudEvent for testing.
     /// </summary>
     public static CloudEvent CreateValidCloudEvent(
         string specVersion = "1.0",
@@ -159,7 +151,7 @@ public static class TestHelpers
     }
 
     /// <summary>
-    /// Creates a SimulatorEvent from an EventGridEvent.
+    ///     Creates a SimulatorEvent from an EventGridEvent.
     /// </summary>
     public static SimulatorEvent CreateSimulatorEventFromEventGrid(
         string id = "test-id-123",
@@ -176,7 +168,7 @@ public static class TestHelpers
     }
 
     /// <summary>
-    /// Creates a SimulatorEvent from a CloudEvent.
+    ///     Creates a SimulatorEvent from a CloudEvent.
     /// </summary>
     public static SimulatorEvent CreateSimulatorEventFromCloudEvent(
         string specVersion = "1.0",
@@ -194,7 +186,7 @@ public static class TestHelpers
     }
 
     /// <summary>
-    /// Creates valid ServiceBusSubscriberSettings for testing.
+    ///     Creates valid ServiceBusSubscriberSettings for testing.
     /// </summary>
     public static ServiceBusSubscriberSettings CreateValidServiceBusSettings(
         string name = "TestSubscriber",
@@ -213,7 +205,7 @@ public static class TestHelpers
     }
 
     /// <summary>
-    /// Creates valid StorageQueueSubscriberSettings for testing.
+    ///     Creates valid StorageQueueSubscriberSettings for testing.
     /// </summary>
     public static StorageQueueSubscriberSettings CreateValidStorageQueueSettings(
         string name = "TestSubscriber",
@@ -230,7 +222,7 @@ public static class TestHelpers
     }
 
     /// <summary>
-    /// Creates valid TopicSettings for testing.
+    ///     Creates valid TopicSettings for testing.
     /// </summary>
     public static TopicSettings CreateValidTopicSettings(
         string name = "TestTopic",

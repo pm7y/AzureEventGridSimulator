@@ -3,73 +3,73 @@ using System.Text.Json;
 namespace AzureEventGridSimulator.Domain.Entities.Dashboard;
 
 /// <summary>
-/// Represents a single event as captured for dashboard display.
-/// Wraps the existing SimulatorEvent with additional metadata.
+///     Represents a single event as captured for dashboard display.
+///     Wraps the existing SimulatorEvent with additional metadata.
 /// </summary>
 public class EventHistoryRecord
 {
     /// <summary>
-    /// The lock object for thread-safe updates to deliveries.
+    ///     The lock object for thread-safe updates to deliveries.
     /// </summary>
     private readonly object _deliveriesLock = new();
 
     /// <summary>
-    /// Unique identifier (from event).
+    ///     Unique identifier (from event).
     /// </summary>
     public required string Id { get; init; }
 
     /// <summary>
-    /// When the event was received by the simulator.
+    ///     When the event was received by the simulator.
     /// </summary>
     public DateTimeOffset ReceivedAt { get; init; }
 
     /// <summary>
-    /// Name of the topic that received the event.
+    ///     Name of the topic that received the event.
     /// </summary>
     public required string TopicName { get; init; }
 
     /// <summary>
-    /// Port the topic is listening on.
+    ///     Port the topic is listening on.
     /// </summary>
     public int TopicPort { get; init; }
 
     /// <summary>
-    /// Event type identifier.
+    ///     Event type identifier.
     /// </summary>
     public required string EventType { get; init; }
 
     /// <summary>
-    /// Event subject.
+    ///     Event subject.
     /// </summary>
     public string? Subject { get; init; }
 
     /// <summary>
-    /// Event source URI.
+    ///     Event source URI.
     /// </summary>
     public string? Source { get; init; }
 
     /// <summary>
-    /// When the event occurred (from payload).
+    ///     When the event occurred (from payload).
     /// </summary>
     public string? EventTime { get; init; }
 
     /// <summary>
-    /// Schema type (EventGrid, CloudEvents).
+    ///     Schema type (EventGrid, CloudEvents).
     /// </summary>
     public EventSchema InputSchema { get; init; }
 
     /// <summary>
-    /// Full event payload as JSON string.
+    ///     Full event payload as JSON string.
     /// </summary>
     public required string PayloadJson { get; init; }
 
     /// <summary>
-    /// Delivery attempts to subscribers.
+    ///     Delivery attempts to subscribers.
     /// </summary>
     public List<DeliveryRecord> Deliveries { get; } = [];
 
     /// <summary>
-    /// Creates an EventHistoryRecord from a SimulatorEvent.
+    ///     Creates an EventHistoryRecord from a SimulatorEvent.
     /// </summary>
     public static EventHistoryRecord FromSimulatorEvent(
         SimulatorEvent evt,
@@ -107,7 +107,7 @@ public class EventHistoryRecord
     }
 
     /// <summary>
-    /// Thread-safe method to add or update a delivery record.
+    ///     Thread-safe method to add or update a delivery record.
     /// </summary>
     public void AddOrUpdateDelivery(DeliveryRecord delivery)
     {
@@ -117,16 +117,14 @@ public class EventHistoryRecord
                 d.SubscriberName == delivery.SubscriberName
             );
             if (existing != null)
-            {
                 Deliveries.Remove(existing);
-            }
 
             Deliveries.Add(delivery);
         }
     }
 
     /// <summary>
-    /// Thread-safe method to get delivery records.
+    ///     Thread-safe method to get delivery records.
     /// </summary>
     public IReadOnlyList<DeliveryRecord> GetDeliveries()
     {

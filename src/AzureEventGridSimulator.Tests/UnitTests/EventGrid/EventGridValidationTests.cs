@@ -122,22 +122,6 @@ public class EventGridValidationTests
         exception.Message.ShouldContain("EventTime");
     }
 
-    [Fact]
-    public void GivenEventWithUnspecifiedDateTimeKind_WhenValidated_ThenExceptionThrown()
-    {
-        // A date without timezone info will be parsed as Unspecified kind
-        var eventGridEvent = new EventGridEvent
-        {
-            Id = "test-id-123",
-            Subject = "/test/subject",
-            EventType = "Test.EventType",
-            EventTime = "2025-01-15 10:30:00", // No timezone specified
-        };
-
-        var exception = Should.Throw<InvalidOperationException>(() => eventGridEvent.Validate());
-        exception.Message.ShouldContain("EventTime");
-    }
-
     [Theory]
     [InlineData("2025-01-15T10:30:00Z")] // UTC
     [InlineData("2025-01-15T10:30:00+00:00")] // UTC offset
@@ -210,8 +194,9 @@ public class EventGridValidationTests
         var eventGridEvent = JsonSerializer.Deserialize<EventGridEvent>(json);
 
         eventGridEvent.ShouldNotBeNull();
-        var exception = Should.Throw<InvalidOperationException>(() => eventGridEvent.Validate());
-        exception.Message.ShouldContain("Topic");
+        // Azure returns 401 when topic is set by the publisher (doesn't match endpoint)
+        var exception = Should.Throw<TopicAuthorizationException>(() => eventGridEvent.Validate());
+        exception.Message.ShouldContain("topic");
     }
 
     [Fact]

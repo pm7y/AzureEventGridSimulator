@@ -1,77 +1,77 @@
 {
-  "dashboardEnabled": true,
-  "topics": [
-    {
-      "name": "MyAwesomeTopic",
-      "port": 60101,
-      "key": "TheLocal+DevelopmentKey=",
-      "subscribers": [
+    "dashboardEnabled": true,
+    "topics": [
         {
-          "name": "LocalAzureFunctionSubscription",
-          "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=ExampleFunction",
-          "disableValidation": true
-        }
-      ]
-    },
-    {
-      "name": "ATopicWithNoSubscribers",
-      "port": 60102,
-      "key": "TheLocal+DevelopmentKey=",
-      "subscribers": [
-      ]
-    },
-    {
-      "name": "ADisabledTopic",
-      "port": 60103,
-      "key": "TheLocal+DevelopmentKey=",
-      "disabled": true,
-      "subscribers": [
+            "name": "MyAwesomeTopic",
+            "port": 60101,
+            "key": "TheLocal+DevelopmentKey=",
+            "subscribers": [
+                {
+                    "name": "LocalAzureFunctionSubscription",
+                    "endpoint": "http://localhost:7071/runtime/webhooks/EventGrid?functionName=ExampleFunction",
+                    "disableValidation": true
+                }
+            ]
+        },
         {
-          "name": "LocalWebApiSubscription",
-          "endpoint": "https://localhost:5050/api/SomeApi"
-        }
-      ]
-    },
-    {
-      "name": "RequestCatcherTopic",
-      "port": 60104,
-      "key": "TheLocal+DevelopmentKey=",
-      "subscribers": [
+            "name": "ATopicWithNoSubscribers",
+            "port": 60102,
+            "key": "TheLocal+DevelopmentKey=",
+            "subscribers": [
+            ]
+        },
         {
-          "name": "RequestCatcherSubscription",
-          "endpoint": "https://azureeventgridsimulator.requestcatcher.com",
-          "disableValidation": true
+            "name": "ADisabledTopic",
+            "port": 60103,
+            "key": "TheLocal+DevelopmentKey=",
+            "disabled": true,
+            "subscribers": [
+                {
+                    "name": "LocalWebApiSubscription",
+                    "endpoint": "https://localhost:5050/api/SomeApi"
+                }
+            ]
+        },
+        {
+            "name": "RequestCatcherTopic",
+            "port": 60104,
+            "key": "TheLocal+DevelopmentKey=",
+            "subscribers": [
+                {
+                    "name": "RequestCatcherSubscription",
+                    "endpoint": "https://azureeventgridsimulator.requestcatcher.com",
+                    "disableValidation": true
+                }
+            ]
         }
-      ]
+    ],
+    "Serilog": {
+        "MinimumLevel": {
+            "Default": "Information",
+            "Override": {
+                "Microsoft": "Warning",
+                "System": "Warning"
+            }
+        },
+        "WriteTo": [
+            {
+                "Name": "Console"
+            },
+            {
+                "Name": "File",
+                "Args": {
+                    "path": "log_.txt",
+                    "rollingInterval": "Day",
+                    "retainedFileCountLimit": 7
+                }
+            },
+            {
+                "Name": "Seq",
+                "Args": {
+                    "serverUrl": "http://localhost:5341",
+                    "apiKey": null
+                }
+            }
+        ]
     }
-  ],
-  "Serilog": {
-    "MinimumLevel": {
-      "Default": "Information",
-      "Override": {
-        "Microsoft": "Warning",
-        "System": "Warning"
-      }
-    },
-    "WriteTo": [
-      {
-        "Name": "Console"
-      },
-      {
-        "Name": "File",
-        "Args": {
-          "path": "log_.txt",
-          "rollingInterval": "Day",
-          "retainedFileCountLimit": 7
-        }
-      },
-      {
-        "Name": "Seq",
-        "Args": {
-          "serverUrl": "http://localhost:5341",
-          "apiKey": null
-        }
-      }
-    ]
-  }
 }

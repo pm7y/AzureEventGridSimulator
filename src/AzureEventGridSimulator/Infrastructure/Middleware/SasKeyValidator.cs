@@ -8,44 +8,59 @@ using Microsoft.Net.Http.Headers;
 namespace AzureEventGridSimulator.Infrastructure.Middleware;
 
 /// <summary>
-/// Result of SAS key validation.
+///     Result of SAS key validation.
 /// </summary>
 public record SasValidationResult(bool IsValid, SasValidationFailureReason? FailureReason = null);
 
 /// <summary>
-/// Reasons for SAS validation failure.
+///     Reasons for SAS validation failure.
 /// </summary>
 public enum SasValidationFailureReason
 {
     /// <summary>
-    /// No authorization header was provided.
+    ///     No authorization header was provided.
     /// </summary>
     MissingKey,
 
     /// <summary>
-    /// The aeg-sas-key value did not match.
+    ///     The aeg-sas-key value did not match.
     /// </summary>
     KeyMismatch,
 
     /// <summary>
-    /// The key is not a valid Base-64 string.
+    ///     The key is not a valid Base-64 string.
     /// </summary>
     InvalidBase64,
 
     /// <summary>
-    /// The token has expired.
+    ///     The token has expired.
     /// </summary>
     TokenExpired,
 
     /// <summary>
-    /// The token signature did not match.
+    ///     The token signature did not match.
     /// </summary>
     SignatureMismatch,
 
     /// <summary>
-    /// The token format is invalid.
+    ///     The token format is invalid.
     /// </summary>
     InvalidTokenFormat,
+
+    /// <summary>
+    ///     The key value is empty. Azure returns 400 for this case.
+    /// </summary>
+    EmptyKey,
+
+    /// <summary>
+    ///     Bearer token provided but not supported (AAD auth not configured).
+    /// </summary>
+    BearerTokenInvalid,
+
+    /// <summary>
+    ///     Unsupported authorization scheme (not SharedAccessSignature or Bearer).
+    /// </summary>
+    UnsupportedAuthScheme,
 }
 
 public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator> logger)
@@ -63,7 +78,16 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             )
         )
         {
-            if (!string.Equals(requestHeaders[Constants.AegSasKeyHeader], topicKey))
+            var keyValue = requestHeaders[Constants.AegSasKeyHeader].FirstOrDefault();
+
+            // Azure returns 400 Bad Request for empty keys
+            if (string.IsNullOrEmpty(keyValue))
+            {
+                logger.LogError("'aeg-sas-key' value is empty!");
+                return new SasValidationResult(false, SasValidationFailureReason.EmptyKey);
+            }
+
+            if (!string.Equals(keyValue, topicKey))
             {
                 logger.LogError("'aeg-sas-key' value did not match the expected value!");
                 return new SasValidationResult(false, SasValidationFailureReason.KeyMismatch);
@@ -84,9 +108,7 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
         {
             var token = requestHeaders[Constants.AegSasTokenHeader].FirstOrDefault();
             if (token == null)
-            {
                 return new SasValidationResult(false, SasValidationFailureReason.MissingKey);
-            }
 
             var tokenResult = ValidateToken(token, topicKey);
             if (!tokenResult.IsValid)
@@ -125,7 +147,21 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
                 return new SasValidationResult(true);
             }
 
-            return new SasValidationResult(true);
+            // Check for Bearer token (Azure supports AAD auth, but we don't)
+            if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogError("Bearer token authentication is not supported by the simulator.");
+                return new SasValidationResult(
+                    false,
+                    SasValidationFailureReason.BearerTokenInvalid
+                );
+            }
+
+            // Basic auth or other unsupported schemes
+            logger.LogError(
+                "Unsupported Authorization header type. Only SharedAccessSignature is supported."
+            );
+            return new SasValidationResult(false, SasValidationFailureReason.UnsupportedAuthScheme);
         }
 
         return new SasValidationResult(false, SasValidationFailureReason.MissingKey);
@@ -134,48 +170,45 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
     private SasValidationResult ValidateToken(string token, string key)
     {
         var query = HttpUtility.ParseQueryString(token);
-        var decodedResource = HttpUtility.UrlDecode(query["r"], Encoding.UTF8);
-        var decodedExpiration = HttpUtility.UrlDecode(query["e"], Encoding.UTF8);
-        var encodedSignature = query["s"];
+        var resource = query["r"];
+        var expiration = query["e"];
+        var signature = query["s"];
 
-        if (string.IsNullOrEmpty(decodedExpiration) || string.IsNullOrEmpty(encodedSignature))
-        {
-            return new SasValidationResult(false, SasValidationFailureReason.InvalidTokenFormat);
-        }
-
+        // All three parameters are required
         if (
-            !DateTimeOffset.TryParse(
-                decodedExpiration,
-                CultureInfo.InvariantCulture,
-                out var tokenExpiryDateTime
-            )
-            || tokenExpiryDateTime.ToUniversalTime() <= timeProvider.GetUtcNow()
+            string.IsNullOrEmpty(resource)
+            || string.IsNullOrEmpty(expiration)
+            || string.IsNullOrEmpty(signature)
         )
-        {
+            return new SasValidationResult(false, SasValidationFailureReason.InvalidTokenFormat);
+
+        // Parse expiration as Unix epoch seconds
+        if (
+            !long.TryParse(expiration, out var expiryEpoch)
+            || DateTimeOffset.FromUnixTimeSeconds(expiryEpoch) <= timeProvider.GetUtcNow()
+        )
             return new SasValidationResult(false, SasValidationFailureReason.TokenExpired);
-        }
 
-        var encodedResource = HttpUtility.UrlEncode(decodedResource);
-        var encodedExpiration = HttpUtility.UrlEncode(decodedExpiration);
-
-        var unsignedSas = $"r={encodedResource}&e={encodedExpiration}";
+        // The string to sign is: {resource}\n{expiryEpoch}
+        // This matches Azure Event Grid's SAS token format
+        var decodedResource = HttpUtility.UrlDecode(resource);
+        var stringToSign = $"{decodedResource}\n{expiration}";
 
         try
         {
             using var hmac = new HMACSHA256(Convert.FromBase64String(key));
-            var signature = Convert.ToBase64String(
-                hmac.ComputeHash(Encoding.UTF8.GetBytes(unsignedSas))
+            var computedSignature = Convert.ToBase64String(
+                hmac.ComputeHash(Encoding.UTF8.GetBytes(stringToSign))
             );
-            var encodedComputedSignature = HttpUtility.UrlEncode(signature);
 
-            if (encodedSignature == signature)
-            {
+            // ParseQueryString already decodes URL-encoded values, so signature is ready to compare
+            // Note: Don't call UrlDecode again as it would convert '+' to space
+            if (string.Equals(signature, computedSignature, StringComparison.Ordinal))
                 return new SasValidationResult(true);
-            }
 
             logger.LogWarning(
-                "{ExpectedSignature} != {MessageSignature}",
-                encodedComputedSignature,
+                "SAS token signature mismatch. Expected: {Expected}, Got: {Actual}",
+                computedSignature,
                 signature
             );
 

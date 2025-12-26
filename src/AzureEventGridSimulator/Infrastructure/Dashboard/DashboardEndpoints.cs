@@ -4,12 +4,12 @@ using AzureEventGridSimulator.Domain.Services.Dashboard;
 namespace AzureEventGridSimulator.Infrastructure.Dashboard;
 
 /// <summary>
-/// Dashboard API endpoints for retrieving event history and statistics.
+///     Dashboard API endpoints for retrieving event history and statistics.
 /// </summary>
 public static class DashboardEndpoints
 {
     /// <summary>
-    /// Maps all dashboard API endpoints.
+    ///     Maps all dashboard API endpoints.
     /// </summary>
     public static IEndpointRouteBuilder MapDashboardEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -25,7 +25,7 @@ public static class DashboardEndpoints
     }
 
     /// <summary>
-    /// GET /dashboard/api/events - Returns list of recent events.
+    ///     GET /dashboard/api/events - Returns list of recent events.
     /// </summary>
     private static IResult GetEvents(IEventHistoryService eventHistoryService, string? topic = null)
     {
@@ -35,21 +35,19 @@ public static class DashboardEndpoints
     }
 
     /// <summary>
-    /// GET /dashboard/api/events/{id} - Returns details of a specific event.
+    ///     GET /dashboard/api/events/{id} - Returns details of a specific event.
     /// </summary>
     private static IResult GetEventById(string id, IEventHistoryService eventHistoryService)
     {
         var evt = eventHistoryService.GetEvent(id);
         if (evt == null)
-        {
             return Results.NotFound();
-        }
 
         return Results.Ok(MapToEventDetails(evt));
     }
 
     /// <summary>
-    /// GET /dashboard/api/stats - Returns dashboard statistics.
+    ///     GET /dashboard/api/stats - Returns dashboard statistics.
     /// </summary>
     private static IResult GetStats(IEventHistoryService eventHistoryService)
     {
@@ -58,7 +56,7 @@ public static class DashboardEndpoints
     }
 
     /// <summary>
-    /// GET /dashboard/api/rejections - Returns list of rejected events.
+    ///     GET /dashboard/api/rejections - Returns list of rejected events.
     /// </summary>
     private static IResult GetRejections(IEventHistoryService eventHistoryService)
     {
@@ -68,7 +66,7 @@ public static class DashboardEndpoints
     }
 
     /// <summary>
-    /// DELETE /dashboard/api/clear - Clears all event history and rejections.
+    ///     DELETE /dashboard/api/clear - Clears all event history and rejections.
     /// </summary>
     private static IResult ClearHistory(EventHistoryStore store)
     {

@@ -3,7 +3,7 @@ using System.Reflection;
 namespace AzureEventGridSimulator.Infrastructure.Dashboard;
 
 /// <summary>
-/// Middleware to serve embedded dashboard resources (HTML, CSS, JS).
+///     Middleware to serve embedded dashboard resources (HTML, CSS, JS).
 /// </summary>
 public class DashboardMiddleware
 {
@@ -102,12 +102,12 @@ public class DashboardMiddleware
 }
 
 /// <summary>
-/// Extension methods for registering dashboard middleware.
+///     Extension methods for registering dashboard middleware.
 /// </summary>
 public static class DashboardMiddlewareExtensions
 {
     /// <summary>
-    /// Adds the dashboard middleware to serve embedded UI resources.
+    ///     Adds the dashboard middleware to serve embedded UI resources.
     /// </summary>
     public static IApplicationBuilder UseDashboard(this IApplicationBuilder app)
     {

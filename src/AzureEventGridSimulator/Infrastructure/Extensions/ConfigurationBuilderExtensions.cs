@@ -15,12 +15,10 @@ public static class ConfigurationBuilderExtensions
             if (!string.IsNullOrWhiteSpace(configFileOverridden))
             {
                 if (!File.Exists(configFileOverridden))
-                {
                     throw new FileNotFoundException(
                         "The specified ConfigFile could not be found.",
                         configFileOverridden
                     );
-                }
 
                 builder.AddJsonFile(
                     Path.Combine(Directory.GetCurrentDirectory(), configFileOverridden),

@@ -1,12 +1,12 @@
 namespace AzureEventGridSimulator.Domain.Services.Retry;
 
 /// <summary>
-/// Calculates next retry time based on Azure Event Grid retry schedule.
+///     Calculates next retry time based on Azure Event Grid retry schedule.
 /// </summary>
 public class RetryScheduler
 {
     /// <summary>
-    /// Azure Event Grid retry schedule with exponential backoff.
+    ///     Azure Event Grid retry schedule with exponential backoff.
     /// </summary>
     private static readonly TimeSpan[] StandardSchedule =
     [
@@ -23,12 +23,12 @@ public class RetryScheduler
     ];
 
     /// <summary>
-    /// HTTP status codes that indicate successful delivery.
+    ///     HTTP status codes that indicate successful delivery.
     /// </summary>
     private static readonly int[] SuccessStatusCodes = [200, 201, 202, 203, 204];
 
     /// <summary>
-    /// HTTP status codes that should immediately dead-letter (no retry).
+    ///     HTTP status codes that should immediately dead-letter (no retry).
     /// </summary>
     private static readonly int[] ImmediateDeadLetterStatusCodes = [400, 401, 403, 413];
 
@@ -40,16 +40,16 @@ public class RetryScheduler
     }
 
     /// <summary>
-    /// Calculates the next retry time based on attempt number and HTTP status code.
+    ///     Calculates the next retry time based on attempt number and HTTP status code.
     /// </summary>
-    /// <param name="attemptNumber" >
-    /// The current attempt number (1-based).
+    /// <param name="attemptNumber">
+    ///     The current attempt number (1-based).
     /// </param>
-    /// <param name="httpStatusCode" >
-    /// The HTTP status code from the failed attempt, if applicable.
+    /// <param name="httpStatusCode">
+    ///     The HTTP status code from the failed attempt, if applicable.
     /// </param>
     /// <returns>
-    /// The next retry time.
+    ///     The next retry time.
     /// </returns>
     public DateTimeOffset GetNextRetryTime(int attemptNumber, int? httpStatusCode = null)
     {
@@ -58,7 +58,7 @@ public class RetryScheduler
     }
 
     /// <summary>
-    /// Gets the retry delay based on attempt number and HTTP status code.
+    ///     Gets the retry delay based on attempt number and HTTP status code.
     /// </summary>
     private static TimeSpan GetRetryDelay(int attemptNumber, int? httpStatusCode)
     {
@@ -78,7 +78,7 @@ public class RetryScheduler
     }
 
     /// <summary>
-    /// Gets the standard exponential backoff delay.
+    ///     Gets the standard exponential backoff delay.
     /// </summary>
     private static TimeSpan GetStandardDelay(int attemptNumber)
     {
@@ -86,27 +86,23 @@ public class RetryScheduler
         var index = attemptNumber - 1;
 
         if (index < 0)
-        {
             return TimeSpan.Zero;
-        }
 
         if (index < StandardSchedule.Length)
-        {
             return StandardSchedule[index];
-        }
 
         // After schedule exhausted, retry every 12 hours
         return TimeSpan.FromHours(12);
     }
 
     /// <summary>
-    /// Determines if an HTTP status code indicates successful delivery.
+    ///     Determines if an HTTP status code indicates successful delivery.
     /// </summary>
-    /// <param name="statusCode" >
-    /// The HTTP status code.
+    /// <param name="statusCode">
+    ///     The HTTP status code.
     /// </param>
     /// <returns>
-    /// True if the status code indicates success.
+    ///     True if the status code indicates success.
     /// </returns>
     public bool IsSuccessStatusCode(int statusCode)
     {
@@ -114,13 +110,13 @@ public class RetryScheduler
     }
 
     /// <summary>
-    /// Determines if an HTTP status code should immediately dead-letter (no retry).
+    ///     Determines if an HTTP status code should immediately dead-letter (no retry).
     /// </summary>
-    /// <param name="statusCode" >
-    /// The HTTP status code.
+    /// <param name="statusCode">
+    ///     The HTTP status code.
     /// </param>
     /// <returns>
-    /// True if the event should be immediately dead-lettered.
+    ///     True if the event should be immediately dead-lettered.
     /// </returns>
     public bool ShouldImmediatelyDeadLetter(int statusCode)
     {
@@ -128,13 +124,13 @@ public class RetryScheduler
     }
 
     /// <summary>
-    /// Gets the dead-letter reason for an HTTP status code.
+    ///     Gets the dead-letter reason for an HTTP status code.
     /// </summary>
-    /// <param name="statusCode" >
-    /// The HTTP status code.
+    /// <param name="statusCode">
+    ///     The HTTP status code.
     /// </param>
     /// <returns>
-    /// The dead-letter reason string.
+    ///     The dead-letter reason string.
     /// </returns>
     public string GetDeadLetterReasonForStatusCode(int statusCode)
     {

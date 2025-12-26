@@ -28,7 +28,6 @@ public class SubscriptionValidationController(
         );
 
         if (!isValid)
-        {
             return BadRequest(
                 new ErrorMessage(
                     HttpStatusCode.BadRequest,
@@ -37,7 +36,6 @@ public class SubscriptionValidationController(
                     ErrorDetailCodes.InputJsonInvalid
                 )
             );
-        }
 
         return Ok("Webhook successfully validated as a subscription endpoint");
     }

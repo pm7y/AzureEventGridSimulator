@@ -5,8 +5,8 @@ using AzureEventGridSimulator.Domain.Entities;
 namespace AzureEventGridSimulator.Domain.Services.Retry;
 
 /// <summary>
-/// Thread-safe in-memory implementation of the delivery queue.
-/// Events are lost on restart (acceptable for a simulator).
+///     Thread-safe in-memory implementation of the delivery queue.
+///     Events are lost on restart (acceptable for a simulator).
 /// </summary>
 public class InMemoryDeliveryQueue(TimeProvider timeProvider, ILogger<InMemoryDeliveryQueue> logger)
     : IDeliveryQueue
@@ -17,21 +17,17 @@ public class InMemoryDeliveryQueue(TimeProvider timeProvider, ILogger<InMemoryDe
     public void Enqueue(PendingDelivery delivery)
     {
         if (_queue.TryAdd(delivery.Id, delivery))
-        {
             logger.LogDebug(
                 "Enqueued delivery {DeliveryId} for event {EventId} to subscriber '{SubscriberName}'",
                 delivery.Id,
                 delivery.Event.Id,
                 delivery.Subscriber.Name
             );
-        }
         else
-        {
             logger.LogWarning(
                 "Failed to enqueue delivery {DeliveryId} - already exists",
                 delivery.Id
             );
-        }
     }
 
     /// <inheritdoc />
@@ -80,9 +76,7 @@ public class InMemoryDeliveryQueue(TimeProvider timeProvider, ILogger<InMemoryDe
         foreach (var delivery in dueDeliveries)
         {
             if (cancellationToken.IsCancellationRequested)
-            {
                 yield break;
-            }
 
             yield return delivery;
 

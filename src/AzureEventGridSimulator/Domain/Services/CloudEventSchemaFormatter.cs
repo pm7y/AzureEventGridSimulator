@@ -5,8 +5,8 @@ using AzureEventGridSimulator.Domain.Entities;
 namespace AzureEventGridSimulator.Domain.Services;
 
 /// <summary>
-/// Formats events in the CloudEvents v1.0 schema for delivery.
-/// Uses structured content mode (all attributes in JSON body).
+///     Formats events in the CloudEvents v1.0 schema for delivery.
+///     Uses structured content mode (all attributes in JSON body).
 /// </summary>
 public class CloudEventSchemaFormatter : IEventSchemaFormatter
 {
@@ -20,8 +20,8 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
 
     /// <inheritdoc />
     /// <remarks>
-    /// Azure Event Grid sends events "in an array that has a single event",
-    /// so we use the batch content type even for single events.
+    ///     Azure Event Grid sends events "in an array that has a single event",
+    ///     so we use the batch content type even for single events.
     /// </remarks>
     public string ContentType => Constants.CloudEventsBatchContentType;
 
@@ -49,21 +49,17 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     }
 
     /// <summary>
-    /// Converts a SimulatorEvent to a CloudEvent.
-    /// If the source is already a CloudEvent, returns it directly.
-    /// If the source is an EventGridEvent, converts it to CloudEvents format.
+    ///     Converts a SimulatorEvent to a CloudEvent.
+    ///     If the source is already a CloudEvent, returns it directly.
+    ///     If the source is an EventGridEvent, converts it to CloudEvents format.
     /// </summary>
     private CloudEvent ConvertToCloudEvent(SimulatorEvent evt)
     {
         if (evt.Schema == EventSchema.CloudEventV1_0 && evt.CloudEvent != null)
-        {
             return evt.CloudEvent;
-        }
 
         if (evt.Schema == EventSchema.EventGridSchema && evt.EventGridEvent != null)
-        {
             return ConvertEventGridToCloudEvent(evt.EventGridEvent);
-        }
 
         throw new InvalidOperationException(
             $"Cannot convert event with schema {evt.Schema} to CloudEvents format."
@@ -71,7 +67,7 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     }
 
     /// <summary>
-    /// Converts an EventGridEvent to a CloudEvent.
+    ///     Converts an EventGridEvent to a CloudEvent.
     /// </summary>
     private CloudEvent ConvertEventGridToCloudEvent(EventGridEvent eventGridEvent)
     {
@@ -90,20 +86,16 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     }
 
     /// <summary>
-    /// Converts a data version to a CloudEvents dataschema URI.
+    ///     Converts a data version to a CloudEvents dataschema URI.
     /// </summary>
     private string? ConvertDataVersionToSchema(string? dataVersion)
     {
         if (string.IsNullOrEmpty(dataVersion))
-        {
             return null;
-        }
 
         // If it's already a URI, return as-is
         if (Uri.TryCreate(dataVersion, UriKind.Absolute, out _))
-        {
             return dataVersion;
-        }
 
         // Otherwise, create a simple schema URI
         return $"#/schema/{dataVersion}";

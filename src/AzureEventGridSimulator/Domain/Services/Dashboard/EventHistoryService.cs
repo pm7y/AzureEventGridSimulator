@@ -6,7 +6,7 @@ using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 namespace AzureEventGridSimulator.Domain.Services.Dashboard;
 
 /// <summary>
-/// Service for managing event history for the dashboard.
+///     Service for managing event history for the dashboard.
 /// </summary>
 public class EventHistoryService(
     EventHistoryStore store,

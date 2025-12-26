@@ -7,6 +7,8 @@ namespace AzureEventGridSimulator.Infrastructure;
 public class ValidationIpAddressProvider
 {
     private static string? _ipAddress;
+
+    // MA0158: Lock type requires .NET 9+, but this project multi-targets net8.0+
     private static readonly object _lock = new();
 
     public string Create()
@@ -29,9 +31,7 @@ public class ValidationIpAddressProvider
         lock (_lock)
         {
             if (string.IsNullOrWhiteSpace(_ipAddress))
-            {
                 _ipAddress = Create();
-            }
         }
 
         return _ipAddress;

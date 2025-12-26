@@ -41,9 +41,7 @@ public class Program
             // Conditionally enable dashboard based on settings
             var simulatorSettings = app.Services.GetRequiredService<SimulatorSettings>();
             if (simulatorSettings.DashboardEnabled)
-            {
                 app.UseDashboard();
-            }
 
             app.UseRouting();
             app.MapControllers();
@@ -54,9 +52,7 @@ public class Program
 #endif
 
             if (simulatorSettings.DashboardEnabled)
-            {
                 app.MapDashboardEndpoints();
-            }
 
             await StartSimulator(app);
         }
@@ -129,14 +125,12 @@ public class Program
                 );
 
                 foreach (var sub in allSubscribers)
-                {
                     Log.Information(
                         "  - {SubscriberName} ({SubscriberType}){Disabled}",
                         sub.Name,
                         sub.SubscriberType,
                         sub.Disabled ? " [DISABLED]" : ""
                     );
-                }
             }
 
             // Log dashboard availability
@@ -284,6 +278,9 @@ public class Program
         builder.Services.AddSingleton<CloudEventSchemaFormatter>();
         builder.Services.AddSingleton<EventSchemaFormatterFactory>();
 
+        // Register validation services (routing and validation pipeline)
+        builder.Services.AddEventGridValidation();
+
         // Register delivery services
         builder.Services.AddSingleton<DeliveryPropertyResolver>();
         builder.Services.AddSingleton<ServiceBusEventDeliveryService>();
@@ -336,7 +333,8 @@ public class Program
                     DateOnly.Parse(Constants.SupportedApiVersion, CultureInfo.InvariantCulture)
                 );
                 options.AssumeDefaultVersionWhenUnspecified = true;
-                options.ReportApiVersions = true;
+                // Don't auto-add api-supported-versions header - we add it manually where needed to match Azure behavior
+                options.ReportApiVersions = false;
             })
             .AddMvc();
 
@@ -383,13 +381,11 @@ public class Program
             options.ConfigureSimulatorCertificate();
 
             foreach (var topics in options.ApplicationServices.EnabledTopics())
-            {
                 options.Listen(
                     IPAddress.Any,
                     topics.Port,
                     listenOptions => listenOptions.UseHttps()
                 );
-            }
         });
 
         return builder;

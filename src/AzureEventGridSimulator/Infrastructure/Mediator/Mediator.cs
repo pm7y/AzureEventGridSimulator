@@ -1,8 +1,8 @@
 namespace AzureEventGridSimulator.Infrastructure.Mediator;
 
 /// <summary>
-/// Default implementation of <see cref="IMediator" /> that resolves handlers from the service
-/// provider.
+///     Default implementation of <see cref="IMediator" /> that resolves handlers from the service
+///     provider.
 /// </summary>
 public class Mediator(IServiceProvider serviceProvider) : IMediator
 {

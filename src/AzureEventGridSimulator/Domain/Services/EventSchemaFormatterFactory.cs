@@ -3,7 +3,7 @@ using AzureEventGridSimulator.Domain.Entities;
 namespace AzureEventGridSimulator.Domain.Services;
 
 /// <summary>
-/// Factory for creating event schema formatters based on the desired output schema.
+///     Factory for creating event schema formatters based on the desired output schema.
 /// </summary>
 public class EventSchemaFormatterFactory(
     EventGridSchemaFormatter eventGridFormatter,
@@ -11,13 +11,13 @@ public class EventSchemaFormatterFactory(
 )
 {
     /// <summary>
-    /// Gets the appropriate formatter for the specified schema.
+    ///     Gets the appropriate formatter for the specified schema.
     /// </summary>
-    /// <param name="schema" >
-    /// The desired output schema.
+    /// <param name="schema">
+    ///     The desired output schema.
     /// </param>
     /// <returns>
-    /// The formatter for the schema.
+    ///     The formatter for the schema.
     /// </returns>
     public IEventSchemaFormatter GetFormatter(EventSchema schema)
     {

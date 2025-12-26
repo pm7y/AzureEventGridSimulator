@@ -4,8 +4,8 @@ using System.Text.Json.Serialization;
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
 /// <summary>
-/// Custom JSON converter that supports both legacy format (array of HTTP subscribers)
-/// and new grouped format (object with http, serviceBus arrays).
+///     Custom JSON converter that supports both legacy format (array of HTTP subscribers)
+///     and new grouped format (object with http, serviceBus arrays).
 /// </summary>
 public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
 {
@@ -16,9 +16,7 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
     )
     {
         if (reader.TokenType == JsonTokenType.Null)
-        {
             return new SubscribersSettings();
-        }
 
         // Legacy format: array of HTTP subscribers
         if (reader.TokenType == JsonTokenType.StartArray)
@@ -44,40 +42,32 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
             var root = document.RootElement;
 
             if (root.TryGetProperty("http", out var httpElement))
-            {
                 result.Http =
                     JsonSerializer.Deserialize<HttpSubscriberSettings[]>(
                         httpElement.GetRawText(),
                         options
                     ) ?? [];
-            }
 
             if (root.TryGetProperty("serviceBus", out var serviceBusElement))
-            {
                 result.ServiceBus =
                     JsonSerializer.Deserialize<ServiceBusSubscriberSettings[]>(
                         serviceBusElement.GetRawText(),
                         options
                     ) ?? [];
-            }
 
             if (root.TryGetProperty("storageQueue", out var storageQueueElement))
-            {
                 result.StorageQueue =
                     JsonSerializer.Deserialize<StorageQueueSubscriberSettings[]>(
                         storageQueueElement.GetRawText(),
                         options
                     ) ?? [];
-            }
 
             if (root.TryGetProperty("eventHub", out var eventHubElement))
-            {
                 result.EventHub =
                     JsonSerializer.Deserialize<EventHubSubscriberSettings[]>(
                         eventHubElement.GetRawText(),
                         options
                     ) ?? [];
-            }
 
             return result;
         }

@@ -8,7 +8,7 @@ using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
 
 /// <summary>
-/// Delivers events to Azure Service Bus queues and topics.
+///     Delivers events to Azure Service Bus queues and topics.
 /// </summary>
 public class ServiceBusEventDeliveryService(
     ILogger<ServiceBusEventDeliveryService> logger,
@@ -22,14 +22,10 @@ public class ServiceBusEventDeliveryService(
     public async ValueTask DisposeAsync()
     {
         foreach (var sender in _senders.Values)
-        {
             await sender.DisposeAsync();
-        }
 
         foreach (var client in _clients.Values)
-        {
             await client.DisposeAsync();
-        }
 
         _senders.Clear();
         _clients.Clear();
@@ -42,24 +38,20 @@ public class ServiceBusEventDeliveryService(
     )
     {
         if (delivery.Subscriber is not ServiceBusSubscriberSettings subscription)
-        {
             return new DeliveryResult(
                 false,
                 DeliveryOutcome.ServiceBusError,
                 ErrorMessage: "Invalid subscriber type for Service Bus delivery"
             );
-        }
 
         try
         {
             if (subscription.Disabled)
-            {
                 return new DeliveryResult(
                     false,
                     DeliveryOutcome.ServiceBusError,
                     ErrorMessage: "Subscription is disabled"
                 );
-            }
 
             // Determine the delivery schema
             var deliverySchema =
@@ -85,9 +77,7 @@ public class ServiceBusEventDeliveryService(
                 delivery.Event
             );
             foreach (var (name, value) in properties)
-            {
                 message.ApplicationProperties[name] = value;
-            }
 
             // Add standard Event Grid headers as application properties
             message.ApplicationProperties["aeg-event-type"] = "Notification";
@@ -156,7 +146,7 @@ public class ServiceBusEventDeliveryService(
     }
 
     /// <summary>
-    /// Sends an event to a Service Bus subscriber.
+    ///     Sends an event to a Service Bus subscriber.
     /// </summary>
     public async Task SendAsync(
         ServiceBusSubscriberSettings subscription,
@@ -197,9 +187,7 @@ public class ServiceBusEventDeliveryService(
             // Add delivery properties
             var properties = propertyResolver.ResolveProperties(subscription.Properties, evt);
             foreach (var (name, value) in properties)
-            {
                 message.ApplicationProperties[name] = value;
-            }
 
             // Add standard Event Grid headers as application properties
             message.ApplicationProperties["aeg-event-type"] = "Notification";

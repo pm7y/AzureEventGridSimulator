@@ -53,9 +53,7 @@ public class AdvancedFilterSetting
     internal void Validate()
     {
         if (string.IsNullOrWhiteSpace(Key))
-        {
             throw new ArgumentException("A filter key must be provided", nameof(Key));
-        }
 
         // IsNullOrUndefined and IsNotNull don't require values
         var nullCheckOperators = new[]
@@ -65,30 +63,24 @@ public class AdvancedFilterSetting
         };
 
         if (!nullCheckOperators.Contains(OperatorType) && Value == null && !Values.HasItems())
-        {
             throw new ArgumentException(
                 "Either a Value or a set of Values must be provided",
                 nameof(Value)
             );
-        }
 
         const short maxStringLength = 512;
 
         if ((Value as string)?.Length > maxStringLength)
-        {
             throw new ArgumentOutOfRangeException(
                 nameof(Value),
                 $"Advanced filtering limits strings to {maxStringLength} characters per string value"
             );
-        }
 
         if (Values?.Any(o => (o as string)?.Length > maxStringLength) == true)
-        {
             throw new ArgumentOutOfRangeException(
                 nameof(Values),
                 $"Advanced filtering limits strings to {maxStringLength} characters per string value"
             );
-        }
 
         // In/NotIn operators are limited to 5 values
         if (
@@ -101,12 +93,10 @@ public class AdvancedFilterSetting
             }.Contains(OperatorType)
             && Values?.Count > 5
         )
-        {
             throw new ArgumentOutOfRangeException(
                 nameof(OperatorType),
                 "Advanced filtering limits filters to five values for in and not in operators"
             );
-        }
 
         // Range operators require values to be provided in pairs (min, max)
         if (
@@ -116,15 +106,11 @@ public class AdvancedFilterSetting
                 AdvancedFilterOperatorType.NumberNotInRange,
             }.Contains(OperatorType)
         )
-        {
             if (Values == null || Values.Count == 0)
-            {
                 throw new ArgumentException(
                     "NumberInRange and NumberNotInRange operators require at least one range specified as [min, max] pairs in Values",
                     nameof(Values)
                 );
-            }
-        }
     }
 
     public override string ToString()

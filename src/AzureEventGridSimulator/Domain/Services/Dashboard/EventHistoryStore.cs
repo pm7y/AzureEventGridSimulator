@@ -4,100 +4,119 @@ using AzureEventGridSimulator.Domain.Entities.Dashboard;
 namespace AzureEventGridSimulator.Domain.Services.Dashboard;
 
 /// <summary>
-/// Thread-safe in-memory storage for event history with fixed capacity.
+///     Thread-safe in-memory storage for event history with fixed capacity per topic.
 /// </summary>
 public class EventHistoryStore
 {
     /// <summary>
-    /// Maximum number of events to store.
+    ///     Maximum number of events to store per topic.
     /// </summary>
-    public const int MaxCapacity = 100;
+    public const int MaxCapacityPerTopic = 100;
 
     /// <summary>
-    /// Maximum number of rejected events to store.
+    ///     Maximum number of rejected events to store.
     /// </summary>
     public const int MaxRejectedCapacity = 50;
 
     /// <summary>
-    /// Queue for FIFO eviction tracking.
-    /// </summary>
-    private readonly ConcurrentQueue<string> _order = new();
-
-    /// <summary>
-    /// Dictionary for O(1) lookup by event ID.
+    ///     Dictionary for O(1) lookup by event ID.
     /// </summary>
     private readonly ConcurrentDictionary<string, EventHistoryRecord> _records = new();
 
     /// <summary>
-    /// Queue for FIFO eviction of rejected events.
+    ///     Queue for FIFO eviction of rejected events.
     /// </summary>
     private readonly ConcurrentQueue<string> _rejectionOrder = new();
 
     /// <summary>
-    /// Dictionary for rejected events.
+    ///     Dictionary for rejected events.
     /// </summary>
     private readonly ConcurrentDictionary<string, RejectedEventRecord> _rejections = new();
 
     /// <summary>
-    /// Counter for total events received (may exceed MaxCapacity).
+    ///     Per-topic queues for FIFO eviction tracking.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, ConcurrentQueue<string>> _topicOrders = new(
+        StringComparer.OrdinalIgnoreCase
+    );
+
+    /// <summary>
+    ///     Per-topic event counts for efficient capacity checking.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, int> _topicCounts = new(
+        StringComparer.OrdinalIgnoreCase
+    );
+
+    /// <summary>
+    ///     Counter for total events received (may exceed MaxCapacity).
     /// </summary>
     private int _totalEventsReceived;
 
     /// <summary>
-    /// Counter for total rejections.
+    ///     Counter for total rejections.
     /// </summary>
     private int _totalRejections;
 
     /// <summary>
-    /// Gets the total number of events received since startup.
+    ///     Gets the total number of events received since startup.
     /// </summary>
     public int TotalEventsReceived => _totalEventsReceived;
 
     /// <summary>
-    /// Gets the total number of rejections since startup.
+    ///     Gets the total number of rejections since startup.
     /// </summary>
     public int TotalRejections => _totalRejections;
 
     /// <summary>
-    /// Gets the current number of events in the store.
+    ///     Gets the current number of events in the store.
     /// </summary>
     public int Count => _records.Count;
 
     /// <summary>
-    /// Gets the current number of rejections in the store.
+    ///     Gets the current number of rejections in the store.
     /// </summary>
     public int RejectionCount => _rejections.Count;
 
     /// <summary>
-    /// Adds an event to the store, evicting the oldest if at capacity.
+    ///     Adds an event to the store, evicting the oldest for that topic if at capacity.
     /// </summary>
     public void Add(EventHistoryRecord record)
     {
         Interlocked.Increment(ref _totalEventsReceived);
 
         _records[record.Id] = record;
-        _order.Enqueue(record.Id);
 
-        // Evict oldest if over capacity
-        while (_records.Count > MaxCapacity && _order.TryDequeue(out var oldestId))
-        {
-            _records.TryRemove(oldestId, out _);
-        }
+        // Get or create the topic's order queue
+        var topicOrder = _topicOrders.GetOrAdd(
+            record.TopicName,
+            _ => new ConcurrentQueue<string>()
+        );
+        topicOrder.Enqueue(record.Id);
+
+        // Increment topic count
+        _topicCounts.AddOrUpdate(record.TopicName, 1, (_, count) => count + 1);
+
+        // Evict oldest for this topic if over capacity
+        while (
+            _topicCounts.TryGetValue(record.TopicName, out var topicCount)
+            && topicCount > MaxCapacityPerTopic
+            && topicOrder.TryDequeue(out var oldestId)
+        )
+            if (_records.TryRemove(oldestId, out _))
+                _topicCounts.AddOrUpdate(record.TopicName, 0, (_, count) => Math.Max(0, count - 1));
     }
 
     /// <summary>
-    /// Updates delivery information for an event.
+    ///     Updates delivery information for an event.
     /// </summary>
     public void UpdateDelivery(string? eventId, DeliveryRecord delivery)
     {
         if (eventId != null && _records.TryGetValue(eventId, out var record))
-        {
             record.AddOrUpdateDelivery(delivery);
-        }
     }
 
     /// <summary>
-    /// Gets an event by ID.
+    ///     Gets an event by ID.
     /// </summary>
     public EventHistoryRecord? Get(string? eventId)
     {
@@ -105,7 +124,7 @@ public class EventHistoryStore
     }
 
     /// <summary>
-    /// Gets all events ordered by received time (newest first).
+    ///     Gets all events ordered by received time (newest first).
     /// </summary>
     public IReadOnlyList<EventHistoryRecord> GetAll()
     {
@@ -113,7 +132,7 @@ public class EventHistoryStore
     }
 
     /// <summary>
-    /// Gets events filtered by topic name, ordered by received time (newest first).
+    ///     Gets events filtered by topic name, ordered by received time (newest first).
     /// </summary>
     public IReadOnlyList<EventHistoryRecord> GetByTopic(string topicName)
     {
@@ -126,7 +145,7 @@ public class EventHistoryStore
     }
 
     /// <summary>
-    /// Gets dashboard statistics.
+    ///     Gets dashboard statistics.
     /// </summary>
     public DashboardStats GetStats(int topicsActive)
     {
@@ -137,26 +156,22 @@ public class EventHistoryStore
         var totalPending = 0;
 
         foreach (var record in records)
-        {
-            foreach (var delivery in record.GetDeliveries())
+        foreach (var delivery in record.GetDeliveries())
+            switch (delivery.Status)
             {
-                switch (delivery.Status)
-                {
-                    case DeliveryStatus.Delivered:
-                        totalDelivered++;
-                        break;
-                    case DeliveryStatus.Failed:
-                    case DeliveryStatus.DeadLettered:
-                        totalFailed++;
-                        break;
-                    case DeliveryStatus.Pending:
-                    case DeliveryStatus.InProgress:
-                    case DeliveryStatus.Retrying:
-                        totalPending++;
-                        break;
-                }
+                case DeliveryStatus.Delivered:
+                    totalDelivered++;
+                    break;
+                case DeliveryStatus.Failed:
+                case DeliveryStatus.DeadLettered:
+                    totalFailed++;
+                    break;
+                case DeliveryStatus.Pending:
+                case DeliveryStatus.InProgress:
+                case DeliveryStatus.Retrying:
+                    totalPending++;
+                    break;
             }
-        }
 
         return new DashboardStats(
             _totalEventsReceived,
@@ -172,15 +187,13 @@ public class EventHistoryStore
     }
 
     /// <summary>
-    /// Clears all events from the store and resets counters.
+    ///     Clears all events from the store and resets counters.
     /// </summary>
     public void Clear()
     {
         _records.Clear();
-        while (_order.TryDequeue(out _))
-        {
-            // Clear the queue
-        }
+        _topicOrders.Clear();
+        _topicCounts.Clear();
 
         _rejections.Clear();
         while (_rejectionOrder.TryDequeue(out _))
@@ -193,7 +206,7 @@ public class EventHistoryStore
     }
 
     /// <summary>
-    /// Adds a rejected event to the store, evicting the oldest if at capacity.
+    ///     Adds a rejected event to the store, evicting the oldest if at capacity.
     /// </summary>
     public void AddRejection(RejectedEventRecord rejection)
     {
@@ -206,13 +219,11 @@ public class EventHistoryStore
         while (
             _rejections.Count > MaxRejectedCapacity && _rejectionOrder.TryDequeue(out var oldestId)
         )
-        {
             _rejections.TryRemove(oldestId, out _);
-        }
     }
 
     /// <summary>
-    /// Gets all rejected events ordered by rejection time (newest first).
+    ///     Gets all rejected events ordered by rejection time (newest first).
     /// </summary>
     public IReadOnlyList<RejectedEventRecord> GetAllRejections()
     {

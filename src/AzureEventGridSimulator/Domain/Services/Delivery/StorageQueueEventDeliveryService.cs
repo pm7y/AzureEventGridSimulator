@@ -9,7 +9,7 @@ using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
 
 /// <summary>
-/// Delivers events to Azure Storage Queues.
+///     Delivers events to Azure Storage Queues.
 /// </summary>
 public class StorageQueueEventDeliveryService(
     ILogger<StorageQueueEventDeliveryService> logger,
@@ -32,24 +32,20 @@ public class StorageQueueEventDeliveryService(
     )
     {
         if (delivery.Subscriber is not StorageQueueSubscriberSettings subscription)
-        {
             return new DeliveryResult(
                 false,
                 DeliveryOutcome.StorageQueueError,
                 ErrorMessage: "Invalid subscriber type for Storage Queue delivery"
             );
-        }
 
         try
         {
             if (subscription.Disabled)
-            {
                 return new DeliveryResult(
                     false,
                     DeliveryOutcome.StorageQueueError,
                     ErrorMessage: "Subscription is disabled"
                 );
-            }
 
             // Determine the delivery schema
             var deliverySchema =
@@ -118,7 +114,7 @@ public class StorageQueueEventDeliveryService(
     }
 
     /// <summary>
-    /// Sends an event to a Storage Queue subscriber.
+    ///     Sends an event to a Storage Queue subscriber.
     /// </summary>
     public async Task SendAsync(
         StorageQueueSubscriberSettings subscription,
@@ -182,9 +178,7 @@ public class StorageQueueEventDeliveryService(
         var key = $"{subscription.EffectiveConnectionString}:{subscription.QueueName}";
 
         if (_clients.TryGetValue(key, out var existingClient))
-        {
             return existingClient;
-        }
 
         logger.LogDebug(
             "Creating Storage Queue client for subscription '{SubscriberName}' (Queue: '{QueueName}')",
