@@ -1,5 +1,23 @@
 # Changelog
 
+## [4.6.0](https://github.com/pm7y/AzureEventGridSimulator/compare/4.5.0...4.6.0) (2025-12-26)
+
+
+### Features
+
+* Code formatting cleanup and Postman test reorganization ([#240](https://github.com/pm7y/AzureEventGridSimulator/issues/240)) ([79eca3d](https://github.com/pm7y/AzureEventGridSimulator/commit/79eca3dd4e28ccdd9b97c9d1cca81601490044f8))
+* Enable null reference types ([#239](https://github.com/pm7y/AzureEventGridSimulator/issues/239)) ([08ab11e](https://github.com/pm7y/AzureEventGridSimulator/commit/08ab11e7d71e5ae3eadd47a4d4cd39dea147f4bb))
+
+
+### Bug Fixes
+
+* Remove DateTime in favour of TimeProvder and DateTimeOffset ([#238](https://github.com/pm7y/AzureEventGridSimulator/issues/238)) ([16ee484](https://github.com/pm7y/AzureEventGridSimulator/commit/16ee484ea5b4bc8025cbcd94d9256e63100211cf))
+
+
+### Dependencies
+
+* **actions:** bump the actions group with 5 updates ([#233](https://github.com/pm7y/AzureEventGridSimulator/issues/233)) ([346cfbb](https://github.com/pm7y/AzureEventGridSimulator/commit/346cfbbcaed7e1fbf7ab6abb748e8bae4dd496ff))
+
 ## [4.5.0](https://github.com/pm7y/AzureEventGridSimulator/compare/4.4.0...4.5.0) (2025-12-22)
 
 
