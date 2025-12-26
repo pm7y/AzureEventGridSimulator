@@ -156,22 +156,26 @@ public class EventHistoryStore
         var totalPending = 0;
 
         foreach (var record in records)
-        foreach (var delivery in record.GetDeliveries())
-            switch (delivery.Status)
+        {
+            foreach (var delivery in record.GetDeliveries())
             {
-                case DeliveryStatus.Delivered:
-                    totalDelivered++;
-                    break;
-                case DeliveryStatus.Failed:
-                case DeliveryStatus.DeadLettered:
-                    totalFailed++;
-                    break;
-                case DeliveryStatus.Pending:
-                case DeliveryStatus.InProgress:
-                case DeliveryStatus.Retrying:
-                    totalPending++;
-                    break;
+                switch (delivery.Status)
+                {
+                    case DeliveryStatus.Delivered:
+                        totalDelivered++;
+                        break;
+                    case DeliveryStatus.Failed:
+                    case DeliveryStatus.DeadLettered:
+                        totalFailed++;
+                        break;
+                    case DeliveryStatus.Pending:
+                    case DeliveryStatus.InProgress:
+                    case DeliveryStatus.Retrying:
+                        totalPending++;
+                        break;
+                }
             }
+        }
 
         return new DashboardStats(
             _totalEventsReceived,

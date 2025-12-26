@@ -206,10 +206,12 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             if (string.Equals(signature, computedSignature, StringComparison.Ordinal))
                 return new SasValidationResult(true);
 
+            // Sanitize signature to prevent log forging by escaping all control characters
+            var sanitizedSignature = SanitizeForLogging(signature);
             logger.LogWarning(
                 "SAS token signature mismatch. Expected: {Expected}, Got: {Actual}",
                 computedSignature,
-                signature
+                sanitizedSignature
             );
 
             return new SasValidationResult(false, SasValidationFailureReason.SignatureMismatch);
@@ -218,5 +220,44 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
         {
             return new SasValidationResult(false, SasValidationFailureReason.InvalidBase64);
         }
+    }
+
+    /// <summary>
+    ///     Sanitizes a string for logging by escaping all control characters (code points &lt; 32 and DEL at 127)
+    ///     to prevent log forging attacks.
+    /// </summary>
+    /// <param name="input">The string to sanitize</param>
+    /// <returns>A sanitized string with control characters escaped</returns>
+    private static string SanitizeForLogging(string input)
+    {
+        // Use input.Length * 2 capacity to reduce reallocations when control characters expand
+        // (e.g., '\n' becomes "\\n" which is 2 characters instead of 1)
+        var sb = new StringBuilder(input.Length * 2);
+        foreach (var c in input)
+        {
+            if (c < 32 || c == 127) // Control characters: code points < 32 and DEL (127)
+            {
+                sb.Append(
+                    c switch
+                    {
+                        '\n' => "\\n",
+                        '\r' => "\\r",
+                        '\t' => "\\t",
+                        '\f' => "\\f",
+                        '\b' => "\\b",
+                        '\0' => "\\0",
+                        '\a' => "\\a",
+                        '\v' => "\\v",
+                        (char)127 => "\\x7F", // DEL character
+                        _ => $"\\x{((int)c):X2}" // Escape other control chars as hex
+                    }
+                );
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+        return sb.ToString();
     }
 }
