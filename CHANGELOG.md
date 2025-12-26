@@ -1,5 +1,14 @@
 # Changelog
 
+## [4.6.1](https://github.com/pm7y/AzureEventGridSimulator/compare/4.6.0...4.6.1) (2025-12-26)
+
+
+### Bug Fixes
+
+* Build Race Condition ([#244](https://github.com/pm7y/AzureEventGridSimulator/issues/244)) ([e07be4d](https://github.com/pm7y/AzureEventGridSimulator/commit/e07be4d9398ebfacbc1bb319442424a75ead4a6d))
+* Fix Code Scanning Alerts ([#241](https://github.com/pm7y/AzureEventGridSimulator/issues/241)) ([f1d1463](https://github.com/pm7y/AzureEventGridSimulator/commit/f1d14630b377e115ddfe05242394d02bcae914cf))
+* Release ([#243](https://github.com/pm7y/AzureEventGridSimulator/issues/243)) ([98e69a8](https://github.com/pm7y/AzureEventGridSimulator/commit/98e69a8f0d0918c2fce373cd5dbb3e7396abaeab))
+
 ## [4.6.0](https://github.com/pm7y/AzureEventGridSimulator/compare/4.5.0...4.6.0) (2025-12-26)
 
 
