@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.6.2](https://github.com/pm7y/AzureEventGridSimulator/compare/4.6.1...4.6.2) (2025-12-26)
+
+
+### Bug Fixes
+
+* fix-release ([#245](https://github.com/pm7y/AzureEventGridSimulator/issues/245)) ([c15dc81](https://github.com/pm7y/AzureEventGridSimulator/commit/c15dc8163bd0684e2a503066de7e3dc327fa0481))
+
 ## [4.6.1](https://github.com/pm7y/AzureEventGridSimulator/compare/4.6.0...4.6.1) (2025-12-26)
 
 
