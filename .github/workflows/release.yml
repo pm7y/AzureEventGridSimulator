@@ -89,7 +89,6 @@ jobs:
           /p:Version=${{ env.VERSION_NUMBER }}
           /p:PublishReadyToRun=false
           /p:PublishSingleFile=true
-          /p:PublishTrimmed=true
           /p:IncludeNativeLibrariesForSelfExtract=true
           --output ${{ env.ARTIFACT_PATH }}
 
