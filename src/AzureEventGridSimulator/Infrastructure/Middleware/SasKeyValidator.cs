@@ -223,17 +223,19 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
     }
 
     /// <summary>
-    ///     Sanitizes a string for logging by escaping all control characters (code points &lt; 32)
+    ///     Sanitizes a string for logging by escaping all control characters (code points &lt; 32 and DEL at 127)
     ///     to prevent log forging attacks.
     /// </summary>
     /// <param name="input">The string to sanitize</param>
     /// <returns>A sanitized string with control characters escaped</returns>
     private static string SanitizeForLogging(string input)
     {
-        var sb = new StringBuilder(input.Length);
+        // Use input.Length * 2 capacity to reduce reallocations when control characters expand
+        // (e.g., '\n' becomes "\\n" which is 2 characters instead of 1)
+        var sb = new StringBuilder(input.Length * 2);
         foreach (var c in input)
         {
-            if (c < 32) // Control characters have code points less than 32 (space)
+            if (c < 32 || c == 127) // Control characters: code points < 32 and DEL (127)
             {
                 sb.Append(
                     c switch
@@ -246,6 +248,7 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
                         '\0' => "\\0",
                         '\a' => "\\a",
                         '\v' => "\\v",
+                        (char)127 => "\\x7F", // DEL character
                         _ => $"\\x{((int)c):X2}" // Escape other control chars as hex
                     }
                 );

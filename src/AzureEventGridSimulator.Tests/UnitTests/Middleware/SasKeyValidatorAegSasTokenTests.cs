@@ -182,7 +182,10 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => (o.ToString() ?? "").Contains("fake\\tsignature")),
+                Arg.Is<object>(o =>
+                    (o.ToString() ?? "").Contains("fake\\tsignature")
+                    && !(o.ToString() ?? "").Contains("fake\tsignature")
+                ),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
@@ -208,6 +211,32 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
                 Arg.Is<object>(o =>
                     (o.ToString() ?? "").Contains("fake\\n\\r\\t\\0signature")
                     && !(o.ToString() ?? "").Contains("fake\n\r\t\0signature")
+                ),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
+            );
+    }
+
+    [Fact]
+    public void GivenTokenWithSignatureContainingDelCharacter_WhenValidated_ThenSanitizesDelInLog()
+    {
+        // Create a token with an invalid signature containing the DEL character (ASCII 127)
+        var maliciousSignature = $"fake{(char)127}signature";
+        var token =
+            $"r=http%3A%2F%2Flocalhost&e={DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()}&s={maliciousSignature}";
+        var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
+
+        Validator.IsValid(headers, ValidTopicKey);
+
+        // Verify that the DEL character is sanitized as \x7F
+        Logger
+            .Received()
+            .Log(
+                LogLevel.Warning,
+                Arg.Any<EventId>(),
+                Arg.Is<object>(o =>
+                    (o.ToString() ?? "").Contains("fake\\x7Fsignature")
+                    && !(o.ToString() ?? "").Contains($"fake{(char)127}signature")
                 ),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
