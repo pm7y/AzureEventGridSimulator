@@ -54,7 +54,7 @@ jobs:
                     - warning
 
       - name: Build
-        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
+        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --framework net10.0
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
