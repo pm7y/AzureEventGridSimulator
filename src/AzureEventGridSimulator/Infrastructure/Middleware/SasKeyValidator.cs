@@ -206,8 +206,8 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             if (string.Equals(signature, computedSignature, StringComparison.Ordinal))
                 return new SasValidationResult(true);
 
-            // Sanitize signature to prevent log forging by escaping control characters
-            var sanitizedSignature = signature.Replace("\n", "\\n").Replace("\r", "\\r");
+            // Sanitize signature to prevent log forging by escaping all control characters
+            var sanitizedSignature = SanitizeForLogging(signature);
             logger.LogWarning(
                 "SAS token signature mismatch. Expected: {Expected}, Got: {Actual}",
                 computedSignature,
@@ -220,5 +220,41 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
         {
             return new SasValidationResult(false, SasValidationFailureReason.InvalidBase64);
         }
+    }
+
+    /// <summary>
+    ///     Sanitizes a string for logging by escaping all control characters (code points &lt; 32)
+    ///     to prevent log forging attacks.
+    /// </summary>
+    /// <param name="input">The string to sanitize</param>
+    /// <returns>A sanitized string with control characters escaped</returns>
+    private static string SanitizeForLogging(string input)
+    {
+        var sb = new StringBuilder(input.Length);
+        foreach (var c in input)
+        {
+            if (c < 32) // Control characters have code points less than 32 (space)
+            {
+                sb.Append(
+                    c switch
+                    {
+                        '\n' => "\\n",
+                        '\r' => "\\r",
+                        '\t' => "\\t",
+                        '\f' => "\\f",
+                        '\b' => "\\b",
+                        '\0' => "\\0",
+                        '\a' => "\\a",
+                        '\v' => "\\v",
+                        _ => $"\\x{((int)c):X2}" // Escape other control chars as hex
+                    }
+                );
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+        return sb.ToString();
     }
 }
