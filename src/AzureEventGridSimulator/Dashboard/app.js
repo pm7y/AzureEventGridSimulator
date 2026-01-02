@@ -386,7 +386,7 @@
         selectedEventId = null;
         selectedRejectionId = null;
         elements.detailPanel.classList.remove('open');
-        elements.detailContent.innerHTML = '<p class="detail-placeholder">Select an event to view details</p>';
+        elements.detailContent.innerHTML = DOMPurify.sanitize('<p class="detail-placeholder">Select an event to view details</p>');
         renderEventsList();
         renderRejectionsList();
     }
@@ -447,7 +447,7 @@
             ${renderDeliverySection(event.deliveries || [])}
         `;
 
-        elements.detailContent.innerHTML = html;
+        elements.detailContent.innerHTML = DOMPurify.sanitize(html);
 
         // Attach attempt toggle handlers
         elements.detailContent.querySelectorAll('.attempt-toggle').forEach(toggle => {
@@ -505,7 +505,7 @@
             ` : ''}
         `;
 
-        elements.detailContent.innerHTML = html;
+        elements.detailContent.innerHTML = DOMPurify.sanitize(html);
     }
 
     function renderDeliverySection(deliveries) {
