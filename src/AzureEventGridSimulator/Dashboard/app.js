@@ -279,9 +279,9 @@
 
         elements.emptyState.classList.add('hidden');
 
-        elements.eventsList.innerHTML = filteredEvents
+        elements.eventsList.innerHTML = DOMPurify.sanitize(filteredEvents
             .map(event => renderEventItem(event))
-            .join('');
+            .join(''));
 
         // Attach click handlers
         elements.eventsList.querySelectorAll('.event-item').forEach(item => {
@@ -303,9 +303,9 @@
 
         elements.emptyRejectionsState.classList.add('hidden');
 
-        elements.rejectionsList.innerHTML = filteredRejections
+        elements.rejectionsList.innerHTML = DOMPurify.sanitize(filteredRejections
             .map(rejection => renderRejectionItem(rejection))
-            .join('');
+            .join(''));
 
         // Attach click handlers
         elements.rejectionsList.querySelectorAll('.rejection-item').forEach(item => {
