@@ -279,9 +279,9 @@
 
         elements.emptyState.classList.add('hidden');
 
-        elements.eventsList.innerHTML = filteredEvents
+        elements.eventsList.innerHTML = DOMPurify.sanitize(filteredEvents
             .map(event => renderEventItem(event))
-            .join('');
+            .join(''));
 
         // Attach click handlers
         elements.eventsList.querySelectorAll('.event-item').forEach(item => {
@@ -303,9 +303,9 @@
 
         elements.emptyRejectionsState.classList.add('hidden');
 
-        elements.rejectionsList.innerHTML = filteredRejections
+        elements.rejectionsList.innerHTML = DOMPurify.sanitize(filteredRejections
             .map(rejection => renderRejectionItem(rejection))
-            .join('');
+            .join(''));
 
         // Attach click handlers
         elements.rejectionsList.querySelectorAll('.rejection-item').forEach(item => {
@@ -386,7 +386,7 @@
         selectedEventId = null;
         selectedRejectionId = null;
         elements.detailPanel.classList.remove('open');
-        elements.detailContent.innerHTML = '<p class="detail-placeholder">Select an event to view details</p>';
+        elements.detailContent.innerHTML = DOMPurify.sanitize('<p class="detail-placeholder">Select an event to view details</p>');
         renderEventsList();
         renderRejectionsList();
     }
@@ -447,7 +447,7 @@
             ${renderDeliverySection(event.deliveries || [])}
         `;
 
-        elements.detailContent.innerHTML = html;
+        elements.detailContent.innerHTML = DOMPurify.sanitize(html);
 
         // Attach attempt toggle handlers
         elements.detailContent.querySelectorAll('.attempt-toggle').forEach(toggle => {
@@ -505,7 +505,7 @@
             ` : ''}
         `;
 
-        elements.detailContent.innerHTML = html;
+        elements.detailContent.innerHTML = DOMPurify.sanitize(html);
     }
 
     function renderDeliverySection(deliveries) {
