@@ -19,7 +19,7 @@
         <PackageVersion Include="Azure.Messaging.EventGrid" Version="5.0.0" />
         <PackageVersion Include="Azure.Messaging.EventHubs" Version="5.12.2" />
         <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
-        <PackageVersion Include="Azure.Storage.Queues" Version="12.24.0" />
+        <PackageVersion Include="Azure.Storage.Queues" Version="12.25.0" />
         <!-- Aspire -->
         <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.1.0" />
         <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.1.0" />
@@ -34,7 +34,7 @@
         <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0" />
         <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
         <!-- Analyzers -->
-        <PackageVersion Include="Meziantou.Analyzer" Version="2.0.267" />
+        <PackageVersion Include="Meziantou.Analyzer" Version="2.0.276" />
         <!-- Conformance Testing CLI -->
         <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
         <!-- Testing -->
