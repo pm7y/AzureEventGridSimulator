@@ -47,7 +47,7 @@ src/
 ## Code Style
 
 - **Framework:** .NET 10.0, latest C# features
-- **Nullable:** Disabled - do not add nullable annotations
+- **Nullable:** Enabled
 - **Formatter:** CSharpier (100 char width, runs on build)
 - **Namespaces:** File-scoped required
 - **Preferences:** `var` for variables, pattern matching, primary constructors, collection expressions (`[]`)
