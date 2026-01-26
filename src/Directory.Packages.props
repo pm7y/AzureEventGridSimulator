@@ -28,13 +28,13 @@
         <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.1.0" />
         <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.2.0" />
         <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.2.0" />
-        <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0" />
-        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
-        <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0" />
-        <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0" />
-        <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
+        <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.0" />
+        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0" />
+        <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.0" />
+        <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
+        <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
         <!-- Analyzers -->
-        <PackageVersion Include="Meziantou.Analyzer" Version="2.0.283" />
+        <PackageVersion Include="Meziantou.Analyzer" Version="2.0.286" />
         <!-- Conformance Testing CLI -->
         <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
         <!-- Testing -->
