@@ -248,4 +248,57 @@ public class ServiceBusEventDeliveryServiceTests
 
         resolved["Subject"].ShouldBe("test/subject");
     }
+
+    [Fact]
+    public void GivenCloudEventFormatter_WhenSerializingSingle_ThenReturnsJsonWithoutArray()
+    {
+        var formatter = _formatterFactory.GetFormatter(EventSchema.CloudEventV1_0);
+        var evt = CreateTestEvent();
+
+        var json = formatter.SerializeSingle(evt);
+
+        json.ShouldNotBeNullOrEmpty();
+        json.ShouldContain("test-event-id");
+        // Verify it's NOT an array (doesn't start with '[')
+        json.TrimStart().ShouldStartWith("{");
+        json.TrimEnd().ShouldEndWith("}");
+    }
+
+    [Fact]
+    public void GivenEventGridFormatter_WhenSerializingSingle_ThenReturnsJsonWithoutArray()
+    {
+        var formatter = _formatterFactory.GetFormatter(EventSchema.EventGridSchema);
+        var evt = CreateTestEvent();
+
+        var json = formatter.SerializeSingle(evt);
+
+        json.ShouldNotBeNullOrEmpty();
+        json.ShouldContain("test-event-id");
+        // Verify it's NOT an array (doesn't start with '[')
+        json.TrimStart().ShouldStartWith("{");
+        json.TrimEnd().ShouldEndWith("}");
+    }
+
+    [Fact]
+    public void GivenSubscriptionWithSingleEventDelivery_WhenConfigured_ThenPropertyIsSet()
+    {
+        var subscription = new ServiceBusSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            Queue = "my-queue",
+            SingleEventDelivery = true,
+        };
+
+        subscription.SingleEventDelivery.ShouldBe(true);
+    }
+
+    [Fact]
+    public void GivenSubscriptionWithoutSingleEventDelivery_WhenConfigured_ThenPropertyIsNull()
+    {
+        var subscription = CreateValidQueueSettings();
+
+        subscription.SingleEventDelivery.ShouldBeNull();
+    }
 }

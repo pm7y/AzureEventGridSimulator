@@ -34,6 +34,13 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     }
 
     /// <inheritdoc />
+    public string SerializeSingle(SimulatorEvent evt)
+    {
+        var cloudEvent = ConvertToCloudEvent(evt);
+        return JsonSerializer.Serialize(cloudEvent, _serializerOptions);
+    }
+
+    /// <inheritdoc />
     public string SerializeArray(IEnumerable<SimulatorEvent> events)
     {
         var cloudEvents = events.Select(ConvertToCloudEvent).ToArray();

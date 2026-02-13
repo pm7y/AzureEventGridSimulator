@@ -131,6 +131,14 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
     public EventSchema? DeliverySchema { get; init; }
 
     /// <summary>
+    ///     Gets or sets whether to send events as single objects without array wrapper.
+    ///     When true, events are sent as individual objects (Azure behavior for Service Bus).
+    ///     When false or null, events are sent in an array with a single event (default for backward compatibility).
+    /// </summary>
+    [JsonPropertyName("singleEventDelivery")]
+    public bool? SingleEventDelivery { get; init; }
+
+    /// <summary>
     ///     Gets or sets the retry policy for this subscriber.
     ///     If null, default Azure Event Grid retry behavior is used (enabled with 30 attempts, 24h TTL).
     /// </summary>
