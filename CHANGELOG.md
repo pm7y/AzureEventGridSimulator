@@ -1,5 +1,28 @@
 # Changelog
 
+## [5.0.0](https://github.com/pm7y/AzureEventGridSimulator/compare/4.6.3...5.0.0) (2026-02-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* Service Bus message bodies are now single JSON objects instead of single-element arrays. Consumers that parse the array format will need to be updated.
+
+### Bug Fixes
+
+* integrate DOMPurify to sanitize innerHTML assignments in dashboard ([#252](https://github.com/pm7y/AzureEventGridSimulator/issues/252)) ([46bfac5](https://github.com/pm7y/AzureEventGridSimulator/commit/46bfac57a03057b749232bd0ba374de5e338e265))
+* Send Service Bus events as single objects instead of arrays ([#261](https://github.com/pm7y/AzureEventGridSimulator/issues/261)) ([d033b19](https://github.com/pm7y/AzureEventGridSimulator/commit/d033b198b229418ca0a6b565221d242545d32576))
+
+
+### Dependencies
+
+* **nuget:** Bump the minor-and-patch group with 2 updates ([#253](https://github.com/pm7y/AzureEventGridSimulator/issues/253)) ([786b8e5](https://github.com/pm7y/AzureEventGridSimulator/commit/786b8e56f4673b93c8ed9ed0f868c566e7376347))
+* **nuget:** Bump the minor-and-patch group with 2 updates ([#254](https://github.com/pm7y/AzureEventGridSimulator/issues/254)) ([c90650a](https://github.com/pm7y/AzureEventGridSimulator/commit/c90650a21b3467e2390f420d0148564a2d7aadd7))
+* **nuget:** Bump the minor-and-patch group with 2 updates ([#260](https://github.com/pm7y/AzureEventGridSimulator/issues/260)) ([9497ecf](https://github.com/pm7y/AzureEventGridSimulator/commit/9497ecf56e3c16533287389496bdb9177854db38))
+* **nuget:** Bump the minor-and-patch group with 3 updates ([#249](https://github.com/pm7y/AzureEventGridSimulator/issues/249)) ([a43306c](https://github.com/pm7y/AzureEventGridSimulator/commit/a43306cbf949be95f1009389c36ed2acbc4c8e70))
+* **nuget:** Bump the minor-and-patch group with 4 updates ([#256](https://github.com/pm7y/AzureEventGridSimulator/issues/256)) ([ebfb116](https://github.com/pm7y/AzureEventGridSimulator/commit/ebfb116d8e790f43b484a649ca9bb62f9a145e47))
+* **nuget:** Bump the minor-and-patch group with 6 updates ([#257](https://github.com/pm7y/AzureEventGridSimulator/issues/257)) ([1fc6069](https://github.com/pm7y/AzureEventGridSimulator/commit/1fc6069e201cb77ef7f3a98b7c2e6ebe0b4e9d70))
+* **nuget:** Bump the minor-and-patch group with 9 updates ([#262](https://github.com/pm7y/AzureEventGridSimulator/issues/262)) ([bae6b1b](https://github.com/pm7y/AzureEventGridSimulator/commit/bae6b1b8781e6e0d0e90436fa46b386e7e2f1ebf))
+
 ## [4.6.3](https://github.com/pm7y/AzureEventGridSimulator/compare/4.6.2...4.6.3) (2025-12-26)
 
 
