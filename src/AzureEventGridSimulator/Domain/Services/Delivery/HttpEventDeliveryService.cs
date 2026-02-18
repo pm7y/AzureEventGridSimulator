@@ -21,11 +21,13 @@ public class HttpEventDeliveryService(
     )
     {
         if (delivery.Subscriber is not HttpSubscriberSettings httpSubscriber)
+        {
             return new DeliveryResult(
                 false,
                 DeliveryOutcome.NetworkError,
                 ErrorMessage: "Invalid subscriber type for HTTP delivery"
             );
+        }
 
         try
         {
@@ -69,7 +71,9 @@ public class HttpEventDeliveryService(
 
             // Add any additional headers from the formatter
             foreach (var header in formatter.GetHeaders(delivery.Event))
+            {
                 httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+            }
 
             httpClient.Timeout = TimeSpan.FromSeconds(60);
 

@@ -68,6 +68,7 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
         var stopwatch = Stopwatch.StartNew();
 
         while (stopwatch.ElapsedMilliseconds < MaxStartupWaitTimeMs)
+        {
             try
             {
                 // Try to connect to the simulator's endpoint
@@ -87,6 +88,7 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
                 // Timeout, wait and retry
                 await Task.Delay(PollingIntervalMs);
             }
+        }
 
         throw new InvalidOperationException(
             $"Simulator did not start within {MaxStartupWaitTimeMs}ms"
@@ -96,7 +98,9 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
     private void KillExistingSimulators()
     {
         if (_simulatorExePath == null)
+        {
             return;
+        }
 
         try
         {
@@ -115,7 +119,9 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
                 .ToArray();
 
             foreach (var process in simulatorProcesses)
+            {
                 process.Kill();
+            }
         }
         catch
         {

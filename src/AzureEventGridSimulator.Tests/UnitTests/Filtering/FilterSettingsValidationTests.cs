@@ -60,7 +60,9 @@ public class FilterSettingsValidationTests
                 AdvancedFilters = new List<AdvancedFilterSetting>(),
             };
             for (byte i = 0; i < n; i++)
+            {
                 filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
+            }
 
             GetValidSimulatorSettings(filterConfig).Validate();
         });
@@ -75,7 +77,9 @@ public class FilterSettingsValidationTests
         };
         // Azure Event Grid allows up to 25 filters, so 26 should fail
         for (var i = 0; i < 26; i++)
+        {
             filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
+        }
 
         var exception = Should.Throw<ArgumentException>(() =>
             GetValidSimulatorSettings(filterConfig).Validate()

@@ -28,10 +28,14 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
     public SimulatorEvent[] Parse(HttpContext context, string requestBody)
     {
         if (schemaDetector.IsBinaryMode(context))
+        {
             return ParseBinaryMode(context, requestBody);
+        }
 
         if (schemaDetector.IsBatchMode(context))
+        {
             return ParseBatchStructuredMode(context, requestBody);
+        }
 
         // Check if using application/json (strict single-event mode)
         var contentType = context.Request.ContentType;
@@ -47,7 +51,9 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
     public void Validate(SimulatorEvent[] events)
     {
         foreach (var evt in events)
+        {
             evt.Validate();
+        }
     }
 
     /// <summary>
@@ -74,6 +80,7 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
 
         // Parse the body as data
         if (!string.IsNullOrWhiteSpace(requestBody))
+        {
             // Try to parse as JSON, otherwise treat as string
             try
             {
@@ -84,6 +91,7 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
             {
                 cloudEvent.Data = requestBody;
             }
+        }
 
         return [SimulatorEvent.FromCloudEvent(cloudEvent)];
     }
@@ -105,7 +113,9 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
     )
     {
         if (string.IsNullOrWhiteSpace(requestBody))
+        {
             throw new InvalidOperationException("Unexpected end when reading JSON.");
+        }
 
         CloudEvent? cloudEvent;
 
@@ -118,17 +128,21 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
             {
                 // Azure behavior: application/json expects a single object, not an array
                 if (strictSingleEvent)
+                {
                     throw new InvalidOperationException(
                         $"This resource is configured to receive event in '{SchemaName}' schema. "
                             + "The JSON received does not conform to the expected schema. "
                             + $"Token Expected: StartObject, Actual Token Received: StartArray.{context.GenerateReportSuffix()}"
                     );
+                }
 
                 if (document.RootElement.GetArrayLength() == 0)
+                {
                     throw new InvalidOperationException(
                         $"This resource is configured to receive event in '{SchemaName}' schema. "
                             + "The JSON received does not conform to the expected schema."
                     );
+                }
 
                 // Handle single event in array format (for application/cloudevents+json)
                 var events = JsonSerializer.Deserialize<CloudEvent[]>(
@@ -149,7 +163,9 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
         }
 
         if (cloudEvent == null)
+        {
             throw new InvalidOperationException("Failed to parse CloudEvent from request body.");
+        }
 
         return [SimulatorEvent.FromCloudEvent(cloudEvent)];
     }
@@ -160,7 +176,9 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
     private SimulatorEvent[] ParseBatchStructuredMode(HttpContext context, string requestBody)
     {
         if (string.IsNullOrWhiteSpace(requestBody))
+        {
             throw new InvalidOperationException("Unexpected end when reading JSON.");
+        }
 
         CloudEvent[]? events;
 
@@ -177,10 +195,12 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
         }
 
         if (events == null || events.Length == 0)
+        {
             throw new InvalidOperationException(
                 $"This resource is configured to receive event in '{SchemaName}' schema. "
                     + "The JSON received does not conform to the expected schema."
             );
+        }
 
         return events.Select(SimulatorEvent.FromCloudEvent).ToArray();
     }
@@ -191,11 +211,15 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
     private static string? GetHeaderValue(IHeaderDictionary headers, string headerName)
     {
         if (!headers.TryGetValue(headerName, out var values))
+        {
             return null;
+        }
 
         var value = values.FirstOrDefault();
         if (string.IsNullOrEmpty(value))
+        {
             return value;
+        }
 
         return DecodeHeaderValue(value);
     }
@@ -207,17 +231,21 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
     private static string GetRequiredHeaderValue(IHeaderDictionary headers, string headerName)
     {
         if (!headers.TryGetValue(headerName, out var values))
+        {
             throw new InvalidOperationException(
                 $"{headerName} header is missing for the cloud event. "
                     + "Please check required attributes at https://github.com/cloudevents/spec/blob/v1.0/spec.md#required-attributes"
             );
+        }
 
         var value = values.FirstOrDefault();
         if (string.IsNullOrEmpty(value))
+        {
             throw new InvalidOperationException(
                 $"{headerName} header is empty for the cloud event. "
                     + "Please check required attributes at https://github.com/cloudevents/spec/blob/v1.0/spec.md#required-attributes"
             );
+        }
 
         return DecodeHeaderValue(value);
     }

@@ -63,10 +63,14 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     private CloudEvent ConvertToCloudEvent(SimulatorEvent evt)
     {
         if (evt.Schema == EventSchema.CloudEventV1_0 && evt.CloudEvent != null)
+        {
             return evt.CloudEvent;
+        }
 
         if (evt.Schema == EventSchema.EventGridSchema && evt.EventGridEvent != null)
+        {
             return ConvertEventGridToCloudEvent(evt.EventGridEvent);
+        }
 
         throw new InvalidOperationException(
             $"Cannot convert event with schema {evt.Schema} to CloudEvents format."
@@ -98,11 +102,15 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     private string? ConvertDataVersionToSchema(string? dataVersion)
     {
         if (string.IsNullOrEmpty(dataVersion))
+        {
             return null;
+        }
 
         // If it's already a URI, return as-is
         if (Uri.TryCreate(dataVersion, UriKind.Absolute, out _))
+        {
             return dataVersion;
+        }
 
         // Otherwise, create a simple schema URI
         return $"#/schema/{dataVersion}";

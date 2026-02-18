@@ -108,7 +108,9 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
         {
             var token = requestHeaders[Constants.AegSasTokenHeader].FirstOrDefault();
             if (token == null)
+            {
                 return new SasValidationResult(false, SasValidationFailureReason.MissingKey);
+            }
 
             var tokenResult = ValidateToken(token, topicKey);
             if (!tokenResult.IsValid)
@@ -180,14 +182,18 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             || string.IsNullOrEmpty(expiration)
             || string.IsNullOrEmpty(signature)
         )
+        {
             return new SasValidationResult(false, SasValidationFailureReason.InvalidTokenFormat);
+        }
 
         // Parse expiration as Unix epoch seconds
         if (
             !long.TryParse(expiration, out var expiryEpoch)
             || DateTimeOffset.FromUnixTimeSeconds(expiryEpoch) <= timeProvider.GetUtcNow()
         )
+        {
             return new SasValidationResult(false, SasValidationFailureReason.TokenExpired);
+        }
 
         // The string to sign is: {resource}\n{expiryEpoch}
         // This matches Azure Event Grid's SAS token format
@@ -204,7 +210,9 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             // ParseQueryString already decodes URL-encoded values, so signature is ready to compare
             // Note: Don't call UrlDecode again as it would convert '+' to space
             if (string.Equals(signature, computedSignature, StringComparison.Ordinal))
+            {
                 return new SasValidationResult(true);
+            }
 
             // Sanitize signature to prevent log forging by escaping all control characters
             var sanitizedSignature = SanitizeForLogging(signature);

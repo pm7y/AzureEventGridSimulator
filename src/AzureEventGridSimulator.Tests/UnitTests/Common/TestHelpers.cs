@@ -66,16 +66,24 @@ public static class TestHelpers
         };
 
         if (time != null)
+        {
             context.Request.Headers[Constants.CeTimeHeader] = time;
+        }
 
         if (subject != null)
+        {
             context.Request.Headers[Constants.CeSubjectHeader] = subject;
+        }
 
         if (dataContentType != null)
+        {
             context.Request.Headers[Constants.CeDataContentTypeHeader] = dataContentType;
+        }
 
         if (dataSchema != null)
+        {
             context.Request.Headers[Constants.CeDataSchemaHeader] = dataSchema;
+        }
 
         return context;
     }

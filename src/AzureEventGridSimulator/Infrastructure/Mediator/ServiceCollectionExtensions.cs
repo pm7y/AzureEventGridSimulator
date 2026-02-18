@@ -55,7 +55,9 @@ public static class ServiceCollectionExtensions
                 );
 
             foreach (var handlerInterface in handlerInterfaces)
+            {
                 services.AddSingleton(handlerInterface, handlerType);
+            }
         }
 
         return services;

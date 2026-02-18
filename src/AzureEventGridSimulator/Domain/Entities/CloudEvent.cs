@@ -122,30 +122,40 @@ public class CloudEvent
 
         // Validate required fields are non-empty
         if (string.IsNullOrWhiteSpace(Id))
+        {
             throw new InvalidOperationException(
                 $"This resource is configured for '{SchemaName}' schema and requires 'id' property to be set."
             );
+        }
 
         if (string.IsNullOrWhiteSpace(Type))
+        {
             throw new InvalidOperationException(
                 $"This resource is configured for '{SchemaName}' schema and requires 'eventType' property to be set."
             );
+        }
 
         // Azure does NOT enforce field length limits for type or subject
 
         // Optional: time - if present, must be valid date/time
         // Note: Azure is lenient and accepts time without timezone (though CloudEvents spec recommends RFC 3339 with timezone)
         if (!string.IsNullOrEmpty(Time) && !TimeIsValid)
+        {
             throw new InvalidOperationException(
                 "The event time property 'time' was not a valid date/time."
             );
+        }
 
         // Optional: dataschema - if present, must be a valid URI
         if (!string.IsNullOrEmpty(DataSchema))
+        {
             if (!Uri.TryCreate(DataSchema, UriKind.RelativeOrAbsolute, out _))
+            {
                 throw new InvalidOperationException(
                     $"This resource is configured for '{SchemaName}' schema and requires 'dataschema' property to be a valid URI."
                 );
+            }
+        }
 
         // Note: Azure Event Grid is lenient and accepts both data and data_base64
         // The spec says they are mutually exclusive, but Azure doesn't enforce this

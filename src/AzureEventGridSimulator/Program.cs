@@ -41,7 +41,9 @@ public class Program
             // Conditionally enable dashboard based on settings
             var simulatorSettings = app.Services.GetRequiredService<SimulatorSettings>();
             if (simulatorSettings.DashboardEnabled)
+            {
                 app.UseDashboard();
+            }
 
             app.UseRouting();
             app.MapControllers();
@@ -52,7 +54,9 @@ public class Program
 #endif
 
             if (simulatorSettings.DashboardEnabled)
+            {
                 app.MapDashboardEndpoints();
+            }
 
             await StartSimulator(app);
         }
@@ -125,12 +129,14 @@ public class Program
                 );
 
                 foreach (var sub in allSubscribers)
+                {
                     Log.Information(
                         "  - {SubscriberName} ({SubscriberType}){Disabled}",
                         sub.Name,
                         sub.SubscriberType,
                         sub.Disabled ? " [DISABLED]" : ""
                     );
+                }
             }
 
             // Log dashboard availability
@@ -381,11 +387,13 @@ public class Program
             options.ConfigureSimulatorCertificate();
 
             foreach (var topics in options.ApplicationServices.EnabledTopics())
+            {
                 options.Listen(
                     IPAddress.Any,
                     topics.Port,
                     listenOptions => listenOptions.UseHttps()
                 );
+            }
         });
 
         return builder;

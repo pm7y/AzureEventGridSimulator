@@ -117,7 +117,9 @@ public class EventHistoryRecord
                 d.SubscriberName == delivery.SubscriberName
             );
             if (existing != null)
+            {
                 Deliveries.Remove(existing);
+            }
 
             Deliveries.Add(delivery);
         }

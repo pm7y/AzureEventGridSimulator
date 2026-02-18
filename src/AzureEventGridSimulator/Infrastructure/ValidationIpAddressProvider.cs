@@ -31,7 +31,9 @@ public class ValidationIpAddressProvider
         lock (_lock)
         {
             if (string.IsNullOrWhiteSpace(_ipAddress))
+            {
                 _ipAddress = Create();
+            }
         }
 
         return _ipAddress;

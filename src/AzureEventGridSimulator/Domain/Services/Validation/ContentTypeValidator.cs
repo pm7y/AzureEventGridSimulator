@@ -39,7 +39,9 @@ public class ContentTypeValidator(ILogger<ContentTypeValidator> logger)
 
         // Only validate content-type for CloudEvents schema
         if (detectedSchema != EventSchema.CloudEventV1_0)
+        {
             return new ContentTypeValidationResult(IsValid: true);
+        }
 
         if (IsCloudEventsBinaryMode(context))
         {
@@ -117,7 +119,9 @@ public class ContentTypeValidator(ILogger<ContentTypeValidator> logger)
     private static bool IsValidCloudEventsContentType(string? contentType)
     {
         if (string.IsNullOrWhiteSpace(contentType))
+        {
             return false;
+        }
 
         return contentType.Contains(
                 Constants.CloudEventsContentTypeBase,
@@ -132,7 +136,9 @@ public class ContentTypeValidator(ILogger<ContentTypeValidator> logger)
     private static bool IsApplicationJson(string? contentType)
     {
         if (string.IsNullOrWhiteSpace(contentType))
+        {
             return false;
+        }
 
         // Azure accepts application/json for CloudEvents and treats it as single event mode
         return contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase);
@@ -141,7 +147,9 @@ public class ContentTypeValidator(ILogger<ContentTypeValidator> logger)
     private static bool IsValidBinaryModeContentType(string? contentType)
     {
         if (string.IsNullOrWhiteSpace(contentType))
+        {
             return false;
+        }
 
         // In binary mode, Content-Type represents the data's content type
         // Azure only accepts application/json for binary mode CloudEvents

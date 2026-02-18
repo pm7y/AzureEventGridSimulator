@@ -32,7 +32,9 @@ public class HttpEventDeliveryServiceTests : IDisposable
     public void Dispose()
     {
         foreach (var client in _httpClients)
+        {
             client.Dispose();
+        }
 
         _httpClients.Clear();
     }
@@ -158,7 +160,9 @@ public class HttpEventDeliveryServiceTests : IDisposable
         var httpClientFactory = CreateMockHttpClientFactory(captureHeaders: headers =>
         {
             if (headers.TryGetValues(Constants.AegDeliveryCountHeader, out var values))
+            {
                 capturedDeliveryCount = values.FirstOrDefault();
+            }
         });
         var service = new HttpEventDeliveryService(httpClientFactory, _formatterFactory, _logger);
         var delivery = CreatePendingDelivery();
@@ -298,7 +302,9 @@ public class HttpEventDeliveryServiceTests : IDisposable
             _responseAction?.Invoke();
 
             if (_exception != null)
+            {
                 throw _exception;
+            }
 
             var response = new HttpResponseMessage(_statusCode)
             {
@@ -315,7 +321,9 @@ public class HttpEventDeliveryServiceTests : IDisposable
             if (disposing)
             {
                 foreach (var response in _responses)
+                {
                     response.Dispose();
+                }
 
                 _responses.Clear();
             }

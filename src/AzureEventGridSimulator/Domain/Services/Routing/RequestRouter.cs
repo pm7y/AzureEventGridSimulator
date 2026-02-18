@@ -82,19 +82,27 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
 
         // Check for subscription validation request (GET /validate?id=...)
         if (IsValidationRequest(context))
+        {
             return new RequestRouteResult(RequestType.SubscriptionValidation);
+        }
 
         // Check for health check request (GET /api/health)
         if (IsHealthRequest(context))
+        {
             return new RequestRouteResult(RequestType.Health);
+        }
 
         // Check for dashboard request (/dashboard/*)
         if (IsDashboardRequest(context))
+        {
             return new RequestRouteResult(RequestType.Dashboard);
+        }
 
         // Favicon requests (browsers request this automatically)
         if (context.Request.Path.Equals("/favicon.ico", StringComparison.OrdinalIgnoreCase))
+        {
             return new RequestRouteResult(RequestType.FaviconIgnore);
+        }
 
         // OPTIONS preflight request (CORS support)
         if (
@@ -113,14 +121,18 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
             string.Equals(context.Request.Path, "/api/events", StringComparison.OrdinalIgnoreCase)
             && context.Request.Method == HttpMethods.Head
         )
+        {
             return new RequestRouteResult(RequestType.HeadApiEvents);
+        }
 
         // Non-POST method to /api/events (Azure returns 405)
         if (
             string.Equals(context.Request.Path, "/api/events", StringComparison.Ordinal)
             && context.Request.Method != HttpMethods.Post
         )
+        {
             return new RequestRouteResult(RequestType.MethodNotAllowed);
+        }
 
         // Unknown path (returns 404)
         return new RequestRouteResult(RequestType.NotFound);
@@ -134,11 +146,15 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
             context.Request.Method != HttpMethods.Post
             || !string.Equals(path, "/api/events", StringComparison.OrdinalIgnoreCase)
         )
+        {
             return false;
+        }
 
         // Check for CloudEvents binary mode (indicated by ce-* headers)
         if (IsCloudEventsBinaryMode(context))
+        {
             return true;
+        }
 
         var contentType = context.Request.Headers.ContentType.FirstOrDefault();
 
@@ -146,8 +162,10 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
         // For CloudEvents, we'll validate the content-type later and return 415 if invalid
         // Accept all POST /api/events requests and let the schema detection/validation handle it
         if (string.IsNullOrWhiteSpace(contentType))
+        {
             // Accept requests without Content-Type - EventGrid schema is lenient
             return true;
+        }
 
         // Accept EventGrid format (application/json) or CloudEvents format (use base types for detection)
         // Also accept text/plain and other content types - Azure is lenient for EventGrid schema

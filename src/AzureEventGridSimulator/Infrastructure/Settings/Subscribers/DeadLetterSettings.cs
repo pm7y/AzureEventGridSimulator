@@ -28,6 +28,8 @@ public class DeadLetterSettings
         // Path validation is performed at runtime when writing files
         // Empty/null path will use the default
         if (string.IsNullOrWhiteSpace(FolderPath))
+        {
             FolderPath = "./dead-letters";
+        }
     }
 }

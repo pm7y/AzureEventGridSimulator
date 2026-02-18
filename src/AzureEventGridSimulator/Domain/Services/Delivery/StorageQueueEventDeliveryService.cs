@@ -32,20 +32,24 @@ public class StorageQueueEventDeliveryService(
     )
     {
         if (delivery.Subscriber is not StorageQueueSubscriberSettings subscription)
+        {
             return new DeliveryResult(
                 false,
                 DeliveryOutcome.StorageQueueError,
                 ErrorMessage: "Invalid subscriber type for Storage Queue delivery"
             );
+        }
 
         try
         {
             if (subscription.Disabled)
+            {
                 return new DeliveryResult(
                     false,
                     DeliveryOutcome.StorageQueueError,
                     ErrorMessage: "Subscription is disabled"
                 );
+            }
 
             // Determine the delivery schema
             var deliverySchema =
@@ -178,7 +182,9 @@ public class StorageQueueEventDeliveryService(
         var key = $"{subscription.EffectiveConnectionString}:{subscription.QueueName}";
 
         if (_clients.TryGetValue(key, out var existingClient))
+        {
             return existingClient;
+        }
 
         logger.LogDebug(
             "Creating Storage Queue client for subscription '{SubscriberName}' (Queue: '{QueueName}')",

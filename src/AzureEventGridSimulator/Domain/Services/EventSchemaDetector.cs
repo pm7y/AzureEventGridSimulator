@@ -20,11 +20,15 @@ public class EventSchemaDetector
     {
         // Check for CloudEvents structured mode (content-type based)
         if (IsCloudEventStructuredMode(context))
+        {
             return EventSchema.CloudEventV1_0;
+        }
 
         // Check for CloudEvents binary mode (header based)
         if (IsCloudEventBinaryMode(context))
+        {
             return EventSchema.CloudEventV1_0;
+        }
 
         // Default to EventGrid schema
         return EventSchema.EventGridSchema;
@@ -38,7 +42,9 @@ public class EventSchemaDetector
     {
         var contentType = context.Request.ContentType;
         if (string.IsNullOrEmpty(contentType))
+        {
             return false;
+        }
 
         // Check for CloudEvents JSON content type (use base types for detection)
         return contentType.Contains(Constants.CloudEventsContentTypeBase)

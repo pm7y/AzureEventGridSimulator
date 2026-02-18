@@ -41,7 +41,9 @@ public static class DashboardEndpoints
     {
         var evt = eventHistoryService.GetEvent(id);
         if (evt == null)
+        {
             return Results.NotFound();
+        }
 
         return Results.Ok(MapToEventDetails(evt));
     }

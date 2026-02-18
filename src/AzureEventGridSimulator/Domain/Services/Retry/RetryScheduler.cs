@@ -86,10 +86,14 @@ public class RetryScheduler
         var index = attemptNumber - 1;
 
         if (index < 0)
+        {
             return TimeSpan.Zero;
+        }
 
         if (index < StandardSchedule.Length)
+        {
             return StandardSchedule[index];
+        }
 
         // After schedule exhausted, retry every 12 hours
         return TimeSpan.FromHours(12);

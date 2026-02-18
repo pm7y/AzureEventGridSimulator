@@ -205,7 +205,9 @@ public static class SubscriptionSettingsFilterExtensions
         value = null;
 
         if (string.IsNullOrWhiteSpace(key))
+        {
             return false;
+        }
 
         // Map common property names to SimulatorEvent accessors
         switch (key)
@@ -248,11 +250,13 @@ public static class SubscriptionSettingsFilterExtensions
                     && simulatorEvent.Data != null
                     && split.Length > 1
                 )
+                {
                     if (TryGetNestedValue(simulatorEvent.Data, split, 1, out var nestedValue))
                     {
                         value = nestedValue;
                         return true;
                     }
+                }
 
                 return false;
         }
@@ -275,22 +279,28 @@ public static class SubscriptionSettingsFilterExtensions
             for (var i = startIndex; i < pathParts.Length; i++)
             {
                 if (current.ValueKind != JsonValueKind.Object)
+                {
                     return false;
+                }
 
                 if (!current.TryGetProperty(pathParts[i], out var property))
                 {
                     // Try case-insensitive match
                     var found = false;
                     foreach (var prop in current.EnumerateObject())
+                    {
                         if (prop.Name.Equals(pathParts[i], StringComparison.OrdinalIgnoreCase))
                         {
                             current = prop.Value;
                             found = true;
                             break;
                         }
+                    }
 
                     if (!found)
+                    {
                         return false;
+                    }
                 }
                 else
                 {
@@ -326,7 +336,9 @@ public static class SubscriptionSettingsFilterExtensions
     {
         var result = new List<object?>();
         foreach (var item in arrayElement.EnumerateArray())
+        {
             result.Add(ConvertJsonElement(item));
+        }
 
         return result;
     }
@@ -357,17 +369,23 @@ public static class SubscriptionSettingsFilterExtensions
     )
     {
         if (!enableArrayFiltering)
+        {
             return EvaluateAdvancedFilter(filter, value);
+        }
 
         // Check if the value is an array
         var arrayElements = TryGetArrayElements(value);
         if (arrayElements == null)
+        {
             // Not an array, evaluate normally
             return EvaluateAdvancedFilter(filter, value);
+        }
 
         // For negation operators on arrays, ALL elements must satisfy the condition
         if (IsNegationOperator(filter.OperatorType))
+        {
             return arrayElements.All(element => EvaluateAdvancedFilter(filter, element));
+        }
 
         // For positive operators on arrays, ANY element must satisfy the condition
         return arrayElements.Any(element => EvaluateAdvancedFilter(filter, element));
@@ -376,10 +394,12 @@ public static class SubscriptionSettingsFilterExtensions
     private static double ToNumber(this object? value)
     {
         if (value == null)
+        {
             throw new ArgumentNullException(
                 nameof(value),
                 "null is not convertible to a number in this implementation"
             );
+        }
 
         return Convert.ToDouble(value);
     }
@@ -403,7 +423,9 @@ public static class SubscriptionSettingsFilterExtensions
     private static bool IsNumberInRanges(double value, ICollection<object>? ranges)
     {
         if (ranges == null || ranges.Count == 0)
+        {
             return false;
+        }
 
         foreach (var range in ranges)
         {
@@ -444,7 +466,9 @@ public static class SubscriptionSettingsFilterExtensions
 
             // Check if value is within this range (inclusive)
             if (value >= min && value <= max)
+            {
                 return true;
+            }
         }
 
         return false;
@@ -456,7 +480,9 @@ public static class SubscriptionSettingsFilterExtensions
         value = null;
 
         if (string.IsNullOrWhiteSpace(key))
+        {
             return retval;
+        }
 
         switch (key)
         {
@@ -491,7 +517,9 @@ public static class SubscriptionSettingsFilterExtensions
                     || gridEvent.Data == null
                     || split.Length <= 1
                 )
+                {
                     break;
+                }
 
                 if (TryGetNestedValue(gridEvent.Data, split, 1, out var nestedValue))
                 {
@@ -528,7 +556,9 @@ public static class SubscriptionSettingsFilterExtensions
 
         // For "Not" operators, return true when key doesn't exist (per Azure docs)
         if (!keyExists)
+        {
             return IsNegationOperator(filter.OperatorType);
+        }
 
         return EvaluateWithArraySupport(filter, value, enableArrayFiltering);
     }
@@ -556,7 +586,9 @@ public static class SubscriptionSettingsFilterExtensions
 
         // For "Not" operators, return true when key doesn't exist (per Azure docs)
         if (!keyExists)
+        {
             return IsNegationOperator(filter.OperatorType);
+        }
 
         return EvaluateWithArraySupport(filter, value, enableArrayFiltering);
     }
@@ -569,7 +601,9 @@ public static class SubscriptionSettingsFilterExtensions
         public bool AcceptsEvent(SimulatorEvent simulatorEvent)
         {
             if (filter == null)
+            {
                 return true;
+            }
 
             var subject = simulatorEvent.Subject;
 
@@ -625,7 +659,9 @@ public static class SubscriptionSettingsFilterExtensions
         public bool AcceptsEvent(EventGridEvent gridEvent)
         {
             if (filter == null)
+            {
                 return true;
+            }
 
             // we have a filter to parse
             var retVal =

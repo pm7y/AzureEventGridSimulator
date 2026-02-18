@@ -27,7 +27,9 @@ public partial class EventGridSchemaParser : IEventSchemaParser
     public SimulatorEvent[] Parse(HttpContext context, string requestBody)
     {
         if (string.IsNullOrWhiteSpace(requestBody))
+        {
             throw new InvalidOperationException("Unexpected end when reading JSON.");
+        }
 
         EventGridEvent[]? events;
 
@@ -58,10 +60,12 @@ public partial class EventGridSchemaParser : IEventSchemaParser
         }
 
         if (events == null || events.Length == 0)
+        {
             throw new InvalidOperationException(
                 $"This resource is configured to receive event in '{SchemaName}' schema. "
                     + "The JSON received does not conform to the expected schema."
             );
+        }
 
         return events.Select(SimulatorEvent.FromEventGridEvent).ToArray();
     }
@@ -70,7 +74,9 @@ public partial class EventGridSchemaParser : IEventSchemaParser
     public void Validate(SimulatorEvent[] events)
     {
         foreach (var evt in events)
+        {
             evt.Validate();
+        }
     }
 
     // Azure validates fields in this order (observed from real Azure responses)

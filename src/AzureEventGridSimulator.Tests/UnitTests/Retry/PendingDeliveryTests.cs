@@ -21,12 +21,14 @@ public class PendingDeliveryTests
         RetryPolicySettings? retryPolicy = null;
 
         if (retryEnabled.HasValue || ttlMinutes.HasValue || maxAttempts.HasValue)
+        {
             retryPolicy = new RetryPolicySettings
             {
                 Enabled = retryEnabled ?? true,
                 EventTimeToLiveInMinutes = ttlMinutes ?? 1440,
                 MaxDeliveryAttempts = maxAttempts ?? 30,
             };
+        }
 
         var subscriber = new HttpSubscriberSettings
         {
