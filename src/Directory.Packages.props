@@ -34,7 +34,7 @@
         <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
         <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
         <!-- Analyzers -->
-        <PackageVersion Include="Meziantou.Analyzer" Version="2.0.302" />
+        <PackageVersion Include="Meziantou.Analyzer" Version="3.0.1" />
         <!-- Conformance Testing CLI -->
         <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
         <!-- Testing -->
@@ -44,6 +44,6 @@
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
         <PackageVersion Include="xunit" Version="2.9.3" />
         <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-        <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+        <PackageVersion Include="coverlet.collector" Version="8.0.0" />
     </ItemGroup>
 </Project>

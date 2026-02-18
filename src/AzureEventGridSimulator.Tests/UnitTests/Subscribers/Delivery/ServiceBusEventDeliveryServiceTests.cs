@@ -184,7 +184,7 @@ public class ServiceBusEventDeliveryServiceTests
     }
 
     [Fact]
-    public void GivenEventGridFormatter_WhenSerializing_ThenReturnsJson()
+    public void GivenEventGridFormatter_WhenSerializing_ThenReturnsJsonArray()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.EventGridSchema);
         var evt = CreateTestEvent();
@@ -193,10 +193,12 @@ public class ServiceBusEventDeliveryServiceTests
 
         json.ShouldNotBeNullOrEmpty();
         json.ShouldContain("test-event-id");
+        json.TrimStart().ShouldStartWith("[");
+        json.TrimEnd().ShouldEndWith("]");
     }
 
     [Fact]
-    public void GivenCloudEventFormatter_WhenSerializing_ThenReturnsJson()
+    public void GivenCloudEventFormatter_WhenSerializing_ThenReturnsJsonArray()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.CloudEventV1_0);
         var evt = CreateTestEvent();
@@ -205,6 +207,8 @@ public class ServiceBusEventDeliveryServiceTests
 
         json.ShouldNotBeNullOrEmpty();
         json.ShouldContain("test-event-id");
+        json.TrimStart().ShouldStartWith("[");
+        json.TrimEnd().ShouldEndWith("]");
     }
 
     [Fact]
@@ -247,5 +251,35 @@ public class ServiceBusEventDeliveryServiceTests
         var resolved = _propertyResolver.ResolveProperties(properties, CreateTestEvent());
 
         resolved["Subject"].ShouldBe("test/subject");
+    }
+
+    [Fact]
+    public void GivenCloudEventFormatter_WhenSerializingSingle_ThenReturnsJsonWithoutArray()
+    {
+        var formatter = _formatterFactory.GetFormatter(EventSchema.CloudEventV1_0);
+        var evt = CreateTestEvent();
+
+        var json = formatter.SerializeSingle(evt);
+
+        json.ShouldNotBeNullOrEmpty();
+        json.ShouldContain("test-event-id");
+        // Verify it's NOT an array (doesn't start with '[')
+        json.TrimStart().ShouldStartWith("{");
+        json.TrimEnd().ShouldEndWith("}");
+    }
+
+    [Fact]
+    public void GivenEventGridFormatter_WhenSerializingSingle_ThenReturnsJsonWithoutArray()
+    {
+        var formatter = _formatterFactory.GetFormatter(EventSchema.EventGridSchema);
+        var evt = CreateTestEvent();
+
+        var json = formatter.SerializeSingle(evt);
+
+        json.ShouldNotBeNullOrEmpty();
+        json.ShouldContain("test-event-id");
+        // Verify it's NOT an array (doesn't start with '[')
+        json.TrimStart().ShouldStartWith("{");
+        json.TrimEnd().ShouldEndWith("}");
     }
 }

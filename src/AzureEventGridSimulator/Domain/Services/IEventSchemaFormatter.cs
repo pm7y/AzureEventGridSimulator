@@ -19,6 +19,7 @@ public interface IEventSchemaFormatter
 
     /// <summary>
     ///     Serializes an event to JSON for delivery.
+    ///     By default, wraps single events in an array for Azure Event Grid compatibility.
     /// </summary>
     /// <param name="evt">
     ///     The event to serialize.
@@ -27,6 +28,18 @@ public interface IEventSchemaFormatter
     ///     The JSON representation of the event.
     /// </returns>
     string Serialize(SimulatorEvent evt);
+
+    /// <summary>
+    ///     Serializes a single event to JSON without array wrapper.
+    ///     Used for Service Bus delivery which doesn't use array format.
+    /// </summary>
+    /// <param name="evt">
+    ///     The event to serialize.
+    /// </param>
+    /// <returns>
+    ///     The JSON representation of the single event.
+    /// </returns>
+    string SerializeSingle(SimulatorEvent evt);
 
     /// <summary>
     ///     Serializes multiple events to JSON for delivery.

@@ -22,6 +22,13 @@ public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaF
     }
 
     /// <inheritdoc />
+    public string SerializeSingle(SimulatorEvent evt)
+    {
+        var eventGridEvent = ConvertToEventGridEvent(evt);
+        return JsonSerializer.Serialize(eventGridEvent);
+    }
+
+    /// <inheritdoc />
     public string SerializeArray(IEnumerable<SimulatorEvent> events)
     {
         var eventGridEvents = events.Select(ConvertToEventGridEvent).ToArray();
