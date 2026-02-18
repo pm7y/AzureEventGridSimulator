@@ -65,26 +65,34 @@ public class EventHubSubscriberSettings : ISubscriberSettings
         {
             // Subscriber-level connection string (direct)
             if (!string.IsNullOrWhiteSpace(ConnectionString))
+            {
                 return ConnectionString;
+            }
 
             // Subscriber-level namespace components
             if (HasSubscriberNamespaceCredentials())
+            {
                 return BuildConnectionString(Namespace!, SharedAccessKeyName!, SharedAccessKey!);
+            }
 
             // Fall back to topic-level connection string
             if (
                 ParentTopic != null
                 && !string.IsNullOrWhiteSpace(ParentTopic.EventHubConnectionString)
             )
+            {
                 return ParentTopic.EventHubConnectionString;
+            }
 
             // Fall back to topic-level namespace components
             if (HasTopicNamespaceCredentials() && ParentTopic != null)
+            {
                 return BuildConnectionString(
                     ParentTopic.EventHubNamespace!,
                     ParentTopic.EventHubSharedAccessKeyName!,
                     ParentTopic.EventHubSharedAccessKey!
                 );
+            }
 
             // No connection string available - will fail validation
             return null;
@@ -128,13 +136,17 @@ public class EventHubSubscriberSettings : ISubscriberSettings
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Name))
+        {
             throw new ArgumentException("Subscriber name is required.", nameof(Name));
+        }
 
         // Validate Event Hub name
         if (string.IsNullOrWhiteSpace(EventHubName))
+        {
             throw new ArgumentException(
                 $"Event Hub subscriber '{Name}' must specify an eventHubName."
             );
+        }
 
         // Validate authentication (considering topic-level defaults)
         var hasConnectionString = !string.IsNullOrWhiteSpace(ConnectionString);
@@ -143,9 +155,11 @@ public class EventHubSubscriberSettings : ISubscriberSettings
 
         // Check if subscriber specifies both connection string and any namespace components
         if (hasConnectionString && HasAnySubscriberNamespaceCredential())
+        {
             throw new ArgumentException(
                 $"Event Hub subscriber '{Name}' should specify either connectionString or namespace credentials, not both."
             );
+        }
 
         // Check if at least one authentication method is available (subscriber or topic level)
         if (
@@ -154,14 +168,20 @@ public class EventHubSubscriberSettings : ISubscriberSettings
             && !hasTopicConnectionString
             && !HasTopicNamespaceCredentials()
         )
+        {
             throw new ArgumentException(
                 $"Event Hub subscriber '{Name}' must have either a connectionString or namespace + sharedAccessKeyName + sharedAccessKey, either at subscriber or topic level."
             );
+        }
 
         // Validate properties
         if (Properties != null)
+        {
             foreach (var (propertyName, propertySetting) in Properties)
+            {
                 propertySetting.Validate(propertyName);
+            }
+        }
 
         Filter?.Validate();
         RetryPolicy?.Validate();

@@ -37,21 +37,27 @@ public class DeliveryPropertySettings
     public void Validate(string propertyName)
     {
         if (string.IsNullOrWhiteSpace(Type))
+        {
             throw new ArgumentException(
                 $"Property '{propertyName}' must have a type.",
                 nameof(Type)
             );
+        }
 
         if (!IsStatic && !IsDynamic)
+        {
             throw new ArgumentException(
                 $"Property '{propertyName}' type must be 'static' or 'dynamic', got '{Type}'.",
                 nameof(Type)
             );
+        }
 
         if (string.IsNullOrWhiteSpace(Value))
+        {
             throw new ArgumentException(
                 $"Property '{propertyName}' must have a value.",
                 nameof(Value)
             );
+        }
     }
 }

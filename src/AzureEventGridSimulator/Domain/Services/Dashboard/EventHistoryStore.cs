@@ -102,8 +102,12 @@ public class EventHistoryStore
             && topicCount > MaxCapacityPerTopic
             && topicOrder.TryDequeue(out var oldestId)
         )
+        {
             if (_records.TryRemove(oldestId, out _))
+            {
                 _topicCounts.AddOrUpdate(record.TopicName, 0, (_, count) => Math.Max(0, count - 1));
+            }
+        }
     }
 
     /// <summary>
@@ -112,7 +116,9 @@ public class EventHistoryStore
     public void UpdateDelivery(string? eventId, DeliveryRecord delivery)
     {
         if (eventId != null && _records.TryGetValue(eventId, out var record))
+        {
             record.AddOrUpdateDelivery(delivery);
+        }
     }
 
     /// <summary>
@@ -223,7 +229,9 @@ public class EventHistoryStore
         while (
             _rejections.Count > MaxRejectedCapacity && _rejectionOrder.TryDequeue(out var oldestId)
         )
+        {
             _rejections.TryRemove(oldestId, out _);
+        }
     }
 
     /// <summary>

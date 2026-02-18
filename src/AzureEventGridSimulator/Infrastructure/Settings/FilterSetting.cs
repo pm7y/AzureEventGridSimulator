@@ -31,12 +31,16 @@ public class FilterSetting
     {
         // Azure Event Grid allows up to 25 advanced filters per subscription
         if (AdvancedFilters?.Count > 25)
+        {
             throw new ArgumentOutOfRangeException(
                 nameof(AdvancedFilters),
                 "Advanced filtering is limited to 25 advanced filters per event grid subscription."
             );
+        }
 
         foreach (var advancedFilter in AdvancedFilters ?? [])
+        {
             advancedFilter.Validate();
+        }
     }
 }

@@ -60,22 +60,28 @@ public class HttpSubscriberSettings : ISubscriberSettings
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Name))
+        {
             throw new ArgumentException("Subscriber name is required.", nameof(Name));
+        }
 
         if (string.IsNullOrWhiteSpace(Endpoint))
+        {
             throw new ArgumentException(
                 "Endpoint is required for HTTP subscribers.",
                 nameof(Endpoint)
             );
+        }
 
         if (
             !Uri.TryCreate(Endpoint, UriKind.Absolute, out var uri)
             || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
         )
+        {
             throw new ArgumentException(
                 "Endpoint must be a valid HTTP or HTTPS URL.",
                 nameof(Endpoint)
             );
+        }
 
         Filter?.Validate();
         RetryPolicy?.Validate();

@@ -27,7 +27,9 @@ public class DeadLetterServiceTests : IDisposable
     {
         // Clean up temp folder
         if (Directory.Exists(_tempFolder))
+        {
             Directory.Delete(_tempFolder, true);
+        }
     }
 
     private static PendingDelivery CreatePendingDelivery(

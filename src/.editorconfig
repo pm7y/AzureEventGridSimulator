@@ -12,6 +12,9 @@ trim_trailing_whitespace = true
 insert_final_newline = true
 
 [*.cs]
+# Require braces on all control flow blocks
+csharp_prefer_braces = true : error
+
 # Meziantou.Analyzer rules - downgrade to suggestions for existing code
 # These can be gradually fixed over time
 

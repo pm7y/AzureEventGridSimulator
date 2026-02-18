@@ -106,48 +106,62 @@ public class EventGridEvent
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Id))
+        {
             throw new InvalidOperationException(
                 $"This resource is configured for '{SchemaName}' schema and requires 'id' property to be set."
             );
+        }
 
         if (string.IsNullOrWhiteSpace(Subject))
+        {
             throw new InvalidOperationException(
                 $"This resource is configured for '{SchemaName}' schema and requires 'subject' property to be set."
             );
+        }
 
         // Azure does NOT enforce subject length limits
 
         if (string.IsNullOrWhiteSpace(EventType))
+        {
             throw new InvalidOperationException(
                 $"This resource is configured for '{SchemaName}' schema and requires 'eventType' property to be set."
             );
+        }
 
         // Azure does NOT enforce eventType length limits
 
         // DataVersion is optional, but if provided it must be non-empty
         if (DataVersion != null && string.IsNullOrWhiteSpace(DataVersion))
+        {
             throw new InvalidOperationException(
                 $"This resource is configured for '{SchemaName}' schema and requires 'dataVersion' property to be set."
             );
+        }
 
         if (!EventTimeIsValid)
+        {
             throw new InvalidOperationException(
                 $"This resource is configured for '{SchemaName}' schema and requires 'eventTime' property to be a valid RFC 3339 timestamp."
             );
+        }
 
         // Note: Azure is lenient and accepts eventTime without timezone (though best practice is to include it)
 
         if (MetadataVersion != null && MetadataVersion != "1")
+        {
             throw new InvalidOperationException(
                 $"Property 'metadataVersion' was found to be set to {MetadataVersion}, but was expected to either be null or be set to 1."
             );
+        }
 
         // Topic must NOT be set by the publisher - Event Grid sets this automatically
         // Skip this check if the simulator has already set the topic via SetTopic()
         // Azure returns 401 when the topic field doesn't match the actual endpoint topic
         if (!TopicHasBeenSet && !string.IsNullOrEmpty(Topic))
+        {
             throw new TopicAuthorizationException(
                 $"This resource is configured for '{SchemaName}' schema. The 'topic' property must not be set by the publisher."
             );
+        }
     }
 }

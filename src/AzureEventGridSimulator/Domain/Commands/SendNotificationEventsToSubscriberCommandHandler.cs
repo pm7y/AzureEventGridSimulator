@@ -33,7 +33,9 @@ public class SendNotificationEventsToSubscriberCommandHandler(
 
         // Record events for dashboard
         foreach (var evt in request.Events)
+        {
             eventHistoryService.RecordEventReceived(evt, request.Topic, request.InputSchema);
+        }
 
         // Enrich events with topic information
         EnrichEvents(request.Events, request.Topic.Name);
@@ -75,11 +77,13 @@ public class SendNotificationEventsToSubscriberCommandHandler(
             .ToArray();
 
         foreach (var filteredEvent in eventsFilteredOutByAllSubscribers)
+        {
             logger.LogWarning(
                 "All subscribers of topic '{TopicName}' filtered out event {EventId}",
                 request.Topic.Name,
                 filteredEvent.Id
             );
+        }
 
         // Enqueue events for each subscriber
         var enqueuedCount = 0;
@@ -142,11 +146,13 @@ public class SendNotificationEventsToSubscriberCommandHandler(
         }
 
         if (enqueuedCount > 0)
+        {
             logger.LogDebug(
                 "Enqueued {Count} event delivery(ies) for topic '{TopicName}'",
                 enqueuedCount,
                 request.Topic.Name
             );
+        }
 
         return Task.CompletedTask;
     }
@@ -157,6 +163,7 @@ public class SendNotificationEventsToSubscriberCommandHandler(
             $"/subscriptions/{Guid.Empty:D}/resourceGroups/eventGridSimulator/providers/Microsoft.EventGrid/topics/{topicName}";
 
         foreach (var evt in events)
+        {
             if (evt.Schema == EventSchema.EventGridSchema && evt.EventGridEvent != null)
             {
                 evt.EventGridEvent.SetTopic(topicPath);
@@ -167,7 +174,10 @@ public class SendNotificationEventsToSubscriberCommandHandler(
                 // CloudEvents use 'source' which is already set
                 // Optionally set it to the topic path if not already set
                 if (string.IsNullOrEmpty(evt.CloudEvent.Source))
+                {
                     evt.CloudEvent.Source = topicPath;
+                }
             }
+        }
     }
 }

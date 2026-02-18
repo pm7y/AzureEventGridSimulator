@@ -86,27 +86,37 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
         {
             // Subscriber-level connection string (direct)
             if (!string.IsNullOrWhiteSpace(ConnectionString))
+            {
                 return ConnectionString;
+            }
 
             // Subscriber-level namespace components
             if (HasSubscriberNamespaceCredentials())
+            {
                 return BuildConnectionString(Namespace!, SharedAccessKeyName!, SharedAccessKey!);
+            }
 
             // Fall back to topic-level connection string
             if (
                 ParentTopic != null
                 && !string.IsNullOrWhiteSpace(ParentTopic.ServiceBusConnectionString)
             )
+            {
                 return ParentTopic.ServiceBusConnectionString;
+            }
 
             // Fall back to topic-level namespace components
             if (HasTopicNamespaceCredentials())
+            {
                 if (ParentTopic != null)
+                {
                     return BuildConnectionString(
                         ParentTopic.ServiceBusNamespace!,
                         ParentTopic.ServiceBusSharedAccessKeyName!,
                         ParentTopic.ServiceBusSharedAccessKey!
                     );
+                }
+            }
 
             // No connection string available - will fail validation
             return null;
@@ -150,7 +160,9 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Name))
+        {
             throw new ArgumentException("Subscriber name is required.", nameof(Name));
+        }
 
         // Validate authentication (considering topic-level defaults)
         var hasConnectionString = !string.IsNullOrWhiteSpace(ConnectionString);
@@ -160,9 +172,11 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
 
         // Check if subscriber specifies both connection string and any namespace components
         if (hasConnectionString && HasAnySubscriberNamespaceCredential())
+        {
             throw new ArgumentException(
                 $"Service Bus subscriber '{Name}' should specify either connectionString or namespace credentials, not both."
             );
+        }
 
         // Check if at least one authentication method is available (subscriber or topic level)
         if (
@@ -171,28 +185,38 @@ public class ServiceBusSubscriberSettings : ISubscriberSettings
             && !hasTopicConnectionString
             && !HasTopicNamespaceCredentials()
         )
+        {
             throw new ArgumentException(
                 $"Service Bus subscriber '{Name}' must have either a connectionString or namespace + sharedAccessKeyName + sharedAccessKey, either at subscriber or topic level."
             );
+        }
 
         // Validate destination
         var hasTopic = !string.IsNullOrWhiteSpace(Topic);
         var hasQueue = !string.IsNullOrWhiteSpace(Queue);
 
         if (!hasTopic && !hasQueue)
+        {
             throw new ArgumentException(
                 $"Service Bus subscriber '{Name}' must specify either a topic or queue."
             );
+        }
 
         if (hasTopic && hasQueue)
+        {
             throw new ArgumentException(
                 $"Service Bus subscriber '{Name}' must specify either a topic or queue, not both."
             );
+        }
 
         // Validate properties
         if (Properties != null)
+        {
             foreach (var (propertyName, propertySetting) in Properties)
+            {
                 propertySetting.Validate(propertyName);
+            }
+        }
 
         Filter?.Validate();
         RetryPolicy?.Validate();

@@ -44,7 +44,9 @@ public class EventHistoryStoreTests
     {
         // Add more than max capacity
         for (var i = 0; i < EventHistoryStore.MaxCapacityPerTopic + 10; i++)
+        {
             _store.Add(CreateTestRecord($"event-{i}"));
+        }
 
         _store.Count.ShouldBe(EventHistoryStore.MaxCapacityPerTopic);
         _store.TotalEventsReceived.ShouldBe(EventHistoryStore.MaxCapacityPerTopic + 10);
@@ -54,7 +56,9 @@ public class EventHistoryStoreTests
     public void Add_ExceedsMaxCapacity_OldestEventsAreRemoved()
     {
         for (var i = 0; i < EventHistoryStore.MaxCapacityPerTopic + 5; i++)
+        {
             _store.Add(CreateTestRecord($"event-{i}"));
+        }
 
         // First 5 events should be evicted
         _store.Get("event-0").ShouldBeNull();

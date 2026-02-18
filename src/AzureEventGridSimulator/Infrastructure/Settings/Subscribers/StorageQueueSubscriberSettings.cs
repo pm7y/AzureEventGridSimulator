@@ -73,18 +73,24 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Name))
+        {
             throw new ArgumentException("Subscriber name is required.", nameof(Name));
+        }
 
         // Validate connection string (considering topic-level default)
         if (string.IsNullOrWhiteSpace(EffectiveConnectionString))
+        {
             throw new ArgumentException(
                 $"Storage Queue subscriber '{Name}' must have a connectionString, either at subscriber or topic level."
             );
+        }
 
         if (string.IsNullOrWhiteSpace(QueueName))
+        {
             throw new ArgumentException(
                 $"Storage Queue subscriber '{Name}' must have a queueName."
             );
+        }
 
         Filter?.Validate();
         RetryPolicy?.Validate();

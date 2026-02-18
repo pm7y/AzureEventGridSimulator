@@ -82,7 +82,9 @@ public class SubscribersSettings
     public void Validate()
     {
         foreach (var subscriber in All)
+        {
             subscriber.Validate();
+        }
 
         // Check for duplicate names
         var names = All.Select(s => s.Name).ToList();
@@ -93,8 +95,10 @@ public class SubscribersSettings
             .ToList();
 
         if (duplicates.Count != 0)
+        {
             throw new ArgumentException(
                 $"Duplicate subscriber names found: {string.Join(", ", duplicates)}"
             );
+        }
     }
 }

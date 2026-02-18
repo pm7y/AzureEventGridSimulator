@@ -31,15 +31,19 @@ public class RetryPolicySettings
     public void Validate()
     {
         if (MaxDeliveryAttempts < 1 || MaxDeliveryAttempts > 30)
+        {
             throw new ArgumentException(
                 "MaxDeliveryAttempts must be between 1 and 30.",
                 nameof(MaxDeliveryAttempts)
             );
+        }
 
         if (EventTimeToLiveInMinutes < 1 || EventTimeToLiveInMinutes > 1440)
+        {
             throw new ArgumentException(
                 "EventTimeToLiveInMinutes must be between 1 and 1440.",
                 nameof(EventTimeToLiveInMinutes)
             );
+        }
     }
 }

@@ -30,13 +30,17 @@ public class DeliveryPropertyResolver
         var result = new Dictionary<string, object>();
 
         if (properties == null)
+        {
             return result;
+        }
 
         foreach (var (name, setting) in properties)
         {
             var value = ResolveProperty(setting, evt);
             if (value != null)
+            {
                 result[name] = value;
+            }
         }
 
         return result;
@@ -57,13 +61,19 @@ public class DeliveryPropertyResolver
     public object? ResolveProperty(DeliveryPropertySettings setting, SimulatorEvent evt)
     {
         if (setting == null)
+        {
             return null;
+        }
 
         if (setting.IsStatic)
+        {
             return setting.Value;
+        }
 
         if (setting.IsDynamic)
+        {
             return GetValueFromEvent(evt, setting.Value);
+        }
 
         return null;
     }
@@ -75,7 +85,9 @@ public class DeliveryPropertyResolver
     private static object? GetValueFromEvent(SimulatorEvent evt, string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
+        {
             return null;
+        }
 
         // Handle top-level properties
         switch (path)
@@ -118,7 +130,9 @@ public class DeliveryPropertyResolver
             && evt.Data != null
             && split.Length > 1
         )
+        {
             return GetNestedValue(evt.Data, split, 1);
+        }
 
         return null;
     }
@@ -138,23 +152,31 @@ public class DeliveryPropertyResolver
             for (var i = startIndex; i < pathParts.Length; i++)
             {
                 if (current.ValueKind == JsonValueKind.Null)
+                {
                     return null;
+                }
 
                 if (current.ValueKind != JsonValueKind.Object)
+                {
                     return null;
+                }
 
                 // Try case-insensitive property lookup
                 var found = false;
                 foreach (var prop in current.EnumerateObject())
+                {
                     if (prop.Name.Equals(pathParts[i], StringComparison.OrdinalIgnoreCase))
                     {
                         current = prop.Value;
                         found = true;
                         break;
                     }
+                }
 
                 if (!found)
+                {
                     return null;
+                }
             }
 
             // Convert the final JsonElement to an appropriate .NET type
@@ -189,7 +211,9 @@ public class DeliveryPropertyResolver
     {
         result = default;
         if (string.IsNullOrEmpty(value))
+        {
             return false;
+        }
 
         return DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, out result);
     }
@@ -198,7 +222,9 @@ public class DeliveryPropertyResolver
     {
         result = Guid.Empty;
         if (string.IsNullOrEmpty(value))
+        {
             return false;
+        }
 
         return Guid.TryParse(value, out result);
     }
