@@ -58,11 +58,8 @@ public class ServiceBusEventDeliveryService(
                 subscription.DeliverySchema ?? delivery.Topic.OutputSchema ?? delivery.InputSchema;
             var formatter = formatterFactory.GetFormatter(deliverySchema);
 
-            // Serialize the event (use single event format if configured)
-            var json =
-                subscription.SingleEventDelivery == true
-                    ? formatter.SerializeSingle(delivery.Event)
-                    : formatter.Serialize(delivery.Event);
+            // Serialize as a single event (matches Azure Event Grid to Service Bus behavior)
+            var json = formatter.SerializeSingle(delivery.Event);
 
             // Get or create the sender
             var sender = GetOrCreateSender(subscription);
@@ -174,11 +171,8 @@ public class ServiceBusEventDeliveryService(
             var deliverySchema = subscription.DeliverySchema ?? topic.OutputSchema ?? inputSchema;
             var formatter = formatterFactory.GetFormatter(deliverySchema);
 
-            // Serialize the event (use single event format if configured)
-            var json =
-                subscription.SingleEventDelivery == true
-                    ? formatter.SerializeSingle(evt)
-                    : formatter.Serialize(evt);
+            // Serialize as a single event (matches Azure Event Grid to Service Bus behavior)
+            var json = formatter.SerializeSingle(evt);
 
             // Get or create the sender
             var sender = GetOrCreateSender(subscription);

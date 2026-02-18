@@ -15,9 +15,10 @@ if echo "$commit_msg" | grep -qE "^Merge "; then
     exit 0
 fi
 
-# Conventional commit pattern: type(optional scope): description
+# Conventional commit pattern: type(optional scope)(optional !): description
 # Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert, deps
-pattern="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|deps)(\(.+\))?: .+"
+# The optional ! before the colon indicates a breaking change.
+pattern="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|deps)(\(.+\))?!?: .+"
 
 if ! echo "$commit_msg" | head -1 | grep -qE "$pattern"; then
     echo ""
@@ -25,6 +26,8 @@ if ! echo "$commit_msg" | head -1 | grep -qE "$pattern"; then
     echo ""
     echo "Expected format: <type>: <description>"
     echo "                 <type>(<scope>): <description>"
+    echo "                 <type>!: <description>"
+    echo "                 <type>(<scope>)!: <description>"
     echo ""
     echo "Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert, deps"
     echo ""
@@ -33,8 +36,11 @@ if ! echo "$commit_msg" | head -1 | grep -qE "$pattern"; then
     echo "  fix: resolve validation error"
     echo "  docs: update README"
     echo "  chore(deps): update dependencies"
+    echo "  fix!: change Service Bus message format"
+    echo "  feat(api)!: remove deprecated endpoint"
     echo ""
     echo "Note: There must be a space after the colon."
+    echo "      Use ! before the colon to indicate a breaking change."
     echo ""
     echo "Your commit message was:"
     echo "  $(head -1 "$commit_msg_file")"

@@ -184,7 +184,7 @@ public class ServiceBusEventDeliveryServiceTests
     }
 
     [Fact]
-    public void GivenEventGridFormatter_WhenSerializing_ThenReturnsJson()
+    public void GivenEventGridFormatter_WhenSerializing_ThenReturnsJsonArray()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.EventGridSchema);
         var evt = CreateTestEvent();
@@ -193,10 +193,12 @@ public class ServiceBusEventDeliveryServiceTests
 
         json.ShouldNotBeNullOrEmpty();
         json.ShouldContain("test-event-id");
+        json.TrimStart().ShouldStartWith("[");
+        json.TrimEnd().ShouldEndWith("]");
     }
 
     [Fact]
-    public void GivenCloudEventFormatter_WhenSerializing_ThenReturnsJson()
+    public void GivenCloudEventFormatter_WhenSerializing_ThenReturnsJsonArray()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.CloudEventV1_0);
         var evt = CreateTestEvent();
@@ -205,6 +207,8 @@ public class ServiceBusEventDeliveryServiceTests
 
         json.ShouldNotBeNullOrEmpty();
         json.ShouldContain("test-event-id");
+        json.TrimStart().ShouldStartWith("[");
+        json.TrimEnd().ShouldEndWith("]");
     }
 
     [Fact]
@@ -277,43 +281,5 @@ public class ServiceBusEventDeliveryServiceTests
         // Verify it's NOT an array (doesn't start with '[')
         json.TrimStart().ShouldStartWith("{");
         json.TrimEnd().ShouldEndWith("}");
-    }
-
-    [Fact]
-    public void GivenSubscriptionWithSingleEventDelivery_WhenConfigured_ThenPropertyIsSet()
-    {
-        var subscription = new ServiceBusSubscriberSettings
-        {
-            Name = "TestSubscriber",
-            ConnectionString =
-                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
-            Queue = "my-queue",
-            SingleEventDelivery = true,
-        };
-
-        subscription.SingleEventDelivery.ShouldBe(true);
-    }
-
-    [Fact]
-    public void GivenSubscriptionWithoutSingleEventDelivery_WhenConfigured_ThenPropertyIsNull()
-    {
-        var subscription = CreateValidQueueSettings();
-
-        subscription.SingleEventDelivery.ShouldBeNull();
-    }
-
-    [Fact]
-    public void GivenSubscriptionWithSingleEventDeliveryFalse_WhenConfigured_ThenPropertyIsFalse()
-    {
-        var subscription = new ServiceBusSubscriberSettings
-        {
-            Name = "TestSubscriber",
-            ConnectionString =
-                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
-            Queue = "my-queue",
-            SingleEventDelivery = false,
-        };
-
-        subscription.SingleEventDelivery.ShouldBe(false);
     }
 }
