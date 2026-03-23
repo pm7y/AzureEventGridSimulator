@@ -21,11 +21,11 @@
         <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
         <PackageVersion Include="Azure.Storage.Queues" Version="12.25.0" />
         <!-- Aspire -->
-        <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.1.2" />
-        <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.1.2" />
-        <PackageVersion Include="Aspire.Hosting.Azure.ServiceBus" Version="13.1.2" />
-        <PackageVersion Include="Aspire.Hosting.Azure.EventHubs" Version="13.1.2" />
-        <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.1.2" />
+        <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.1.3" />
+        <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.1.3" />
+        <PackageVersion Include="Aspire.Hosting.Azure.ServiceBus" Version="13.1.3" />
+        <PackageVersion Include="Aspire.Hosting.Azure.EventHubs" Version="13.1.3" />
+        <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.1.3" />
         <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.4.0" />
         <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.4.0" />
         <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.0" />
@@ -34,7 +34,7 @@
         <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
         <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
         <!-- Analyzers -->
-        <PackageVersion Include="Meziantou.Analyzer" Version="3.0.23" />
+        <PackageVersion Include="Meziantou.Analyzer" Version="3.0.26" />
         <!-- Conformance Testing CLI -->
         <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
         <!-- Testing -->
@@ -44,6 +44,6 @@
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
         <PackageVersion Include="xunit" Version="2.9.3" />
         <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-        <PackageVersion Include="coverlet.collector" Version="8.0.0" />
+        <PackageVersion Include="coverlet.collector" Version="8.0.1" />
     </ItemGroup>
 </Project>
