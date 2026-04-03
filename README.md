@@ -72,13 +72,15 @@ Create an `appsettings.json` file:
       "name": "MyTopic",
       "port": 60101,
       "key": "TheLocal+DevelopmentKey=",
-      "subscribers": [
-        {
-          "name": "MySubscriber",
-          "endpoint": "http://localhost:7071/api/MyFunction",
-          "disableValidation": true
-        }
-      ]
+      "subscribers": {
+        "http": [
+          {
+            "name": "MySubscriber",
+            "endpoint": "http://localhost:7071/api/MyFunction",
+            "disableValidation": true
+          }
+        ]
+      }
     }
   ]
 }
