@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="OpenTelemetry.Api" />
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
 
         <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
