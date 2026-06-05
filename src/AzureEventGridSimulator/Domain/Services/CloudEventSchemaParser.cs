@@ -244,8 +244,10 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
                 continue;
             }
 
+            // Preserve present-but-empty extension headers (e.g. "ce-foo: ") rather than dropping
+            // them, matching GetHeaderValue. Only skip when the header carries no value at all.
             var value = header.Value.FirstOrDefault();
-            if (string.IsNullOrEmpty(value))
+            if (value is null)
             {
                 continue;
             }

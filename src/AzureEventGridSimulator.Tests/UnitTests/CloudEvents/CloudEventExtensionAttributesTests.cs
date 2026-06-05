@@ -106,6 +106,35 @@ public class CloudEventExtensionAttributesTests
     }
 
     [Fact]
+    public void GivenBinaryModeRequestWithEmptyExtensionHeader_WhenParsed_ThenAttributeIsPreserved()
+    {
+        // A present-but-empty ce-<name> header is still an extension attribute and must be
+        // preserved (matching GetHeaderValue, which keeps empty strings rather than dropping them).
+        var context = new DefaultHttpContext
+        {
+            Request =
+            {
+                ContentType = "application/json",
+                Headers =
+                {
+                    [Constants.CeSpecVersionHeader] = "1.0",
+                    [Constants.CeTypeHeader] = "com.example.test",
+                    [Constants.CeSourceHeader] = "/test/source",
+                    [Constants.CeIdHeader] = "test-id-123",
+                    ["ce-emptyext"] = "",
+                },
+            },
+        };
+
+        var events = _parser.Parse(context, "{\"Property\": \"Value\"}");
+
+        var cloudEvent = events.ShouldHaveSingleItem().CloudEvent.ShouldNotBeNullAnd();
+        cloudEvent.ExtensionAttributes.ShouldNotBeNull();
+        cloudEvent.ExtensionAttributes!.ShouldContainKey("emptyext");
+        cloudEvent.ExtensionAttributes["emptyext"].GetString().ShouldBe("");
+    }
+
+    [Fact]
     public void GivenPublishedEventWithExtensionAttribute_WhenParsedAndDelivered_ThenAttributeSurvives()
     {
         // End-to-end: an extension attribute published to the simulator must reach subscribers,
