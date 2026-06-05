@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Infrastructure.JsonConverters;
 
@@ -87,6 +88,14 @@ public class CloudEvent
     [JsonPropertyName("data_base64")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? DataBase64 { get; set; }
+
+    /// <summary>
+    ///     Gets or sets any CloudEvents extension context attributes (unknown top-level attributes).
+    ///     Azure Event Grid preserves extension attributes through ingestion and delivery, so we
+    ///     capture any unrecognised top-level attribute here and re-emit it to subscribers unchanged.
+    /// </summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtensionAttributes { get; set; }
 
     [JsonIgnore]
     private DateTimeOffset? TimeParsed =>

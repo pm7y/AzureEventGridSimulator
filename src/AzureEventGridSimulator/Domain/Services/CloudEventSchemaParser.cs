@@ -76,6 +76,7 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
                 GetHeaderValue(headers, Constants.CeDataContentTypeHeader)
                 ?? context.Request.ContentType,
             DataSchema = GetHeaderValue(headers, Constants.CeDataSchemaHeader),
+            ExtensionAttributes = GetExtensionAttributesFromHeaders(headers),
         };
 
         // Parse the body as data
@@ -203,6 +204,62 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
         }
 
         return events.Select(SimulatorEvent.FromCloudEvent).ToArray();
+    }
+
+    // CloudEvents binary-mode headers that map to known attributes; any other "ce-" header
+    // is an extension context attribute and must be preserved.
+    private static readonly HashSet<string> ReservedCeHeaders = new(
+        StringComparer.OrdinalIgnoreCase
+    )
+    {
+        Constants.CeSpecVersionHeader,
+        Constants.CeTypeHeader,
+        Constants.CeSourceHeader,
+        Constants.CeIdHeader,
+        Constants.CeTimeHeader,
+        Constants.CeSubjectHeader,
+        Constants.CeDataContentTypeHeader,
+        Constants.CeDataSchemaHeader,
+    };
+
+    private const string CeHeaderPrefix = "ce-";
+
+    /// <summary>
+    ///     Collects any "ce-" headers that are not known CloudEvents attributes into a dictionary of
+    ///     extension context attributes, keyed by the attribute name (the header name without "ce-").
+    /// </summary>
+    private static Dictionary<string, JsonElement>? GetExtensionAttributesFromHeaders(
+        IHeaderDictionary headers
+    )
+    {
+        Dictionary<string, JsonElement>? extensionAttributes = null;
+
+        foreach (var header in headers)
+        {
+            if (
+                !header.Key.StartsWith(CeHeaderPrefix, StringComparison.OrdinalIgnoreCase)
+                || ReservedCeHeaders.Contains(header.Key)
+            )
+            {
+                continue;
+            }
+
+            // Preserve present-but-empty extension headers (e.g. "ce-foo: ") rather than dropping
+            // them, matching GetHeaderValue. Only skip when the header carries no value at all.
+            var value = header.Value.FirstOrDefault();
+            if (value is null)
+            {
+                continue;
+            }
+
+            var name = header.Key[CeHeaderPrefix.Length..];
+            extensionAttributes ??= new Dictionary<string, JsonElement>(
+                StringComparer.OrdinalIgnoreCase
+            );
+            extensionAttributes[name] = JsonSerializer.SerializeToElement(DecodeHeaderValue(value));
+        }
+
+        return extensionAttributes;
     }
 
     /// <summary>
