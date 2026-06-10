@@ -10,12 +10,12 @@ Azure Event Grid Simulator - local HTTPS simulator for Azure Event Grid topics/s
 
 ```bash
 # Build
-dotnet build src/AzureEventGridSimulator.sln --configuration Release
+dotnet build src/AzureEventGridSimulator.slnx --configuration Release
 
 # Test
-dotnet test src/AzureEventGridSimulator.sln --configuration Release
-dotnet test src/AzureEventGridSimulator.sln --filter "Category=unit"
-dotnet test src/AzureEventGridSimulator.sln --filter "Category=integration"
+dotnet test src/AzureEventGridSimulator.slnx --configuration Release
+dotnet test src/AzureEventGridSimulator.slnx --filter "Category=unit"
+dotnet test src/AzureEventGridSimulator.slnx --filter "Category=integration"
 
 # Run
 dotnet run --project src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
