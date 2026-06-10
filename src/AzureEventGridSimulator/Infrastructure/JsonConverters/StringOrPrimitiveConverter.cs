@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -19,8 +20,8 @@ public sealed class StringOrPrimitiveConverter : JsonConverter<string>
         {
             JsonTokenType.String => reader.GetString(),
             JsonTokenType.Number => reader.TryGetInt64(out var l)
-                ? l.ToString()
-                : reader.GetDouble().ToString(),
+                ? l.ToString(CultureInfo.InvariantCulture)
+                : reader.GetDouble().ToString(CultureInfo.InvariantCulture),
             JsonTokenType.True => "true",
             JsonTokenType.False => "false",
             JsonTokenType.Null => null,

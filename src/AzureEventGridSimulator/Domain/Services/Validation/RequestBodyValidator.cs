@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure;
@@ -73,8 +74,8 @@ public class RequestBodyValidator(ILogger<RequestBodyValidator> logger)
             );
         }
 
-        // Validate the overall body size
-        if (requestBody.Length > limits.MaximumOverallMessageSizeInBytes)
+        // Validate the overall body size (the limit is in bytes, not UTF-16 chars)
+        if (Encoding.UTF8.GetByteCount(requestBody) > limits.MaximumOverallMessageSizeInBytes)
         {
             logger.LogError("Payload is larger than the allowed maximum");
 
@@ -105,8 +106,8 @@ public class RequestBodyValidator(ILogger<RequestBodyValidator> logger)
         {
             var eventSize =
                 evt.Schema == EventSchema.EventGridSchema
-                    ? JsonSerializer.Serialize(evt.EventGridEvent).Length
-                    : JsonSerializer.Serialize(evt.CloudEvent).Length;
+                    ? JsonSerializer.SerializeToUtf8Bytes(evt.EventGridEvent).Length
+                    : JsonSerializer.SerializeToUtf8Bytes(evt.CloudEvent).Length;
 
             if (eventSize > limits.MaximumEventSizeInBytes)
             {

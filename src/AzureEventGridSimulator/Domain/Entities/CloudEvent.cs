@@ -98,22 +98,9 @@ public class CloudEvent
     public Dictionary<string, JsonElement>? ExtensionAttributes { get; set; }
 
     [JsonIgnore]
-    private DateTimeOffset? TimeParsed =>
-        string.IsNullOrEmpty(Time)
-            ? null
-            : DateTimeOffset.Parse(Time, CultureInfo.InvariantCulture);
-
-    [JsonIgnore]
     private bool TimeIsValid =>
         string.IsNullOrEmpty(Time)
         || DateTimeOffset.TryParse(Time, CultureInfo.InvariantCulture, out _);
-
-    [JsonIgnore]
-    private bool TimeHasTimezone =>
-        string.IsNullOrEmpty(Time)
-        || Time.Contains('Z')
-        || Time.Contains('+')
-        || (Time.Length > 10 && Time[10..].Contains('-'));
 
     /// <summary>
     ///     Validate the CloudEvent according to Azure Event Grid's lenient behavior.

@@ -38,6 +38,18 @@ public class FilterSetting
             );
         }
 
+        // Azure Event Grid allows up to 25 filter values across all the filters per subscription
+        var totalValues = (AdvancedFilters ?? []).Sum(f =>
+            f.Values?.Count ?? (f.Value is null ? 0 : 1)
+        );
+        if (totalValues > 25)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(AdvancedFilters),
+                "Advanced filtering is limited to 25 filter values across all the filters per event grid subscription."
+            );
+        }
+
         foreach (var advancedFilter in AdvancedFilters ?? [])
         {
             advancedFilter.Validate();

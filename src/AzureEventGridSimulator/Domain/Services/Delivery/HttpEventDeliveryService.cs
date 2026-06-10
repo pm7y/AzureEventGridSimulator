@@ -44,17 +44,21 @@ public class HttpEventDeliveryService(
             content.Headers.ContentType = MediaTypeHeaderValue.Parse(formatter.ContentType);
 
             var httpClient = httpClientFactory.CreateClient("AzureEventGridSimulator");
+            httpClient.Timeout = TimeSpan.FromSeconds(60);
+
+            // Per-delivery headers belong on the request message, not the client
+            using var request = new HttpRequestMessage(HttpMethod.Post, httpSubscriber.Endpoint)
+            {
+                Content = content,
+            };
 
             // Add standard Event Grid headers
-            httpClient.DefaultRequestHeaders.Add(
-                Constants.AegEventTypeHeader,
-                Constants.NotificationEventType
-            );
-            httpClient.DefaultRequestHeaders.Add(
+            request.Headers.Add(Constants.AegEventTypeHeader, Constants.NotificationEventType);
+            request.Headers.Add(
                 Constants.AegSubscriptionNameHeader,
                 httpSubscriber.Name.ToUpperInvariant()
             );
-            httpClient.DefaultRequestHeaders.Add(
+            request.Headers.Add(
                 Constants.AegDeliveryCountHeader,
                 (delivery.AttemptCount + 1).ToString()
             );
@@ -62,20 +66,18 @@ public class HttpEventDeliveryService(
             // Add schema-specific headers
             if (deliverySchema == EventSchema.EventGridSchema)
             {
-                httpClient.DefaultRequestHeaders.Add(
+                request.Headers.Add(
                     Constants.AegDataVersionHeader,
                     delivery.Event.DataVersion ?? ""
                 );
-                httpClient.DefaultRequestHeaders.Add(Constants.AegMetadataVersionHeader, "1");
+                request.Headers.Add(Constants.AegMetadataVersionHeader, "1");
             }
 
             // Add any additional headers from the formatter
             foreach (var header in formatter.GetHeaders(delivery.Event))
             {
-                httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                request.Headers.Add(header.Key, header.Value);
             }
-
-            httpClient.Timeout = TimeSpan.FromSeconds(60);
 
             logger.LogDebug(
                 "Attempting delivery of event {EventId} to {Endpoint} (attempt {Attempt})",
@@ -84,11 +86,7 @@ public class HttpEventDeliveryService(
                 delivery.AttemptCount + 1
             );
 
-            var response = await httpClient.PostAsync(
-                httpSubscriber.Endpoint,
-                content,
-                cancellationToken
-            );
+            using var response = await httpClient.SendAsync(request, cancellationToken);
 
             var statusCode = (int)response.StatusCode;
 

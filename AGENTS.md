@@ -4,7 +4,7 @@
 
 Azure Event Grid Simulator - local HTTPS simulator for Azure Event Grid topics/subscribers. Compatible with Microsoft.Azure.EventGrid client library, supports EventGrid and CloudEvents v1.0 schemas.
 
-**Stack:** .NET 10.0, C#, Serilog, xUnit/Shouldly/NSubstitute
+**Stack:** .NET (multi-targets net8.0/net9.0/net10.0; tests run net10.0), C#, Serilog, xUnit/Shouldly/NSubstitute
 
 ## Commands
 
@@ -71,8 +71,9 @@ public class MyTests
 
 - **HTTPS only** - all topic endpoints require HTTPS
 - **Authentication** - `aeg-sas-key` or `aeg-sas-token` headers when topic has `key` configured
-- **Message limits** - 1 MB max per event and overall body
+- **Message limits** - defaults: 1,049,600 bytes (~1 MB) per event, 1,536,000 bytes (~1.5 MB) overall body
 - **Schemas** - EventGrid (default) or CloudEvents v1.0, auto-detected or configured
+- **Build flavours** - the AppHost builds the simulator with `ASPIRE_ENABLED=true` into separate `bin/aspire/` and `obj/aspire/` paths; the regular build uses `bin/`/`obj/`. Don't mix artifacts between the two.
 
 ## Commits & Releases
 

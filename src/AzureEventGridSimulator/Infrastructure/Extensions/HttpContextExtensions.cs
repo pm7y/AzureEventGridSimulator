@@ -21,8 +21,10 @@ public static class HttpContextExtensions
     {
         public async Task<string> RequestBody()
         {
-            using var reader = new StreamReader(context.Request.Body);
-            reader.BaseStream.Seek(0, SeekOrigin.Begin);
+            // leaveOpen: the request body stream is owned by ASP.NET Core and may be re-read
+            // after EnableBuffering(); disposing the reader must not close it.
+            context.Request.Body.Position = 0;
+            using var reader = new StreamReader(context.Request.Body, leaveOpen: true);
             return await reader.ReadToEndAsync();
         }
 

@@ -46,18 +46,8 @@ public class EventGridEvent
     public required string EventTime { get; set; }
 
     [JsonIgnore]
-    private DateTimeOffset EventTimeParsed =>
-        DateTimeOffset.Parse(EventTime, CultureInfo.InvariantCulture);
-
-    [JsonIgnore]
     private bool EventTimeIsValid =>
         DateTimeOffset.TryParse(EventTime, CultureInfo.InvariantCulture, out _);
-
-    [JsonIgnore]
-    private bool EventTimeHasTimezone =>
-        EventTime.Contains('Z')
-        || EventTime.Contains('+')
-        || (EventTime.Length > 10 && EventTime[10..].Contains('-'));
 
     /// <summary>
     ///     Gets or sets the schema version of the data object.

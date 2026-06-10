@@ -39,9 +39,22 @@ public class SimulatorSettings
 
         var allSubscribers = Topics.SelectMany(o => o.Subscribers.All).ToList();
 
-        if (allSubscribers.GroupBy(o => o.Name).Count() != allSubscribers.Count)
+        // Subscriber names must be unique within a topic (case-insensitive, matching Azure);
+        // the same name may be reused across different topics.
+        foreach (var topic in Topics)
         {
-            throw new InvalidOperationException("Each subscriber must have a unique name.");
+            var duplicateNames = topic
+                .Subscribers.All.GroupBy(s => s.Name ?? "", StringComparer.OrdinalIgnoreCase)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            if (duplicateNames.Count != 0)
+            {
+                throw new InvalidOperationException(
+                    $"Each subscriber on a topic must have a unique name. Duplicate name(s) on topic '{topic.Name}': {string.Join(", ", duplicateNames)}."
+                );
+            }
         }
 
         if (

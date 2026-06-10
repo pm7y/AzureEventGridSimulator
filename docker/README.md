@@ -142,6 +142,7 @@ Each topic listens on its own port and can have multiple subscribers.
 | `outputSchema` | No | Schema for delivery to subscribers |
 | `serviceBusConnectionString` | No | Default connection string for Service Bus subscribers |
 | `storageQueueConnectionString` | No | Default connection string for Storage Queue subscribers |
+| `eventHubConnectionString` | No | Default connection string for Event Hub subscribers |
 
 ### Example: Multiple Topics
 
@@ -170,7 +171,7 @@ Each topic listens on its own port and can have multiple subscribers.
 
 ## Subscriber Types
 
-The simulator supports three subscriber types: HTTP webhooks, Azure Service Bus, and Azure Storage Queues.
+The simulator supports four subscriber types: HTTP webhooks, Azure Service Bus, Azure Storage Queues, and Azure Event Hubs.
 
 ### Subscriber Configuration Format
 
@@ -179,7 +180,8 @@ The simulator supports three subscriber types: HTTP webhooks, Azure Service Bus,
   "subscribers": {
     "http": [ /* HTTP webhook subscribers */ ],
     "serviceBus": [ /* Service Bus queue/topic subscribers */ ],
-    "storageQueue": [ /* Storage Queue subscribers */ ]
+    "storageQueue": [ /* Storage Queue subscribers */ ],
+    "eventHub": [ /* Event Hub subscribers */ ]
   }
 }
 ```
@@ -281,6 +283,40 @@ Events are delivered to Azure Storage Queues.
 }
 ```
 
+### Event Hub Subscribers
+
+Events are delivered to Azure Event Hubs.
+
+| Property | Required | Description |
+|----------|----------|-------------|
+| `name` | Yes | Subscriber name |
+| `connectionString` | * | Event Hub connection string (or inherit from topic `eventHubConnectionString`) |
+| `namespace` | * | Event Hub namespace (alternative to connectionString) |
+| `sharedAccessKeyName` | * | SAS key name (with namespace) |
+| `sharedAccessKey` | * | SAS key value (with namespace) |
+| `eventHubName` | Yes | Event Hub name |
+| `properties` | No | Custom message properties (static or dynamic) |
+| `filter` | No | Event filtering rules |
+| `retryPolicy` | No | Retry policy settings (see below) |
+| `deadLetter` | No | Dead-letter settings (see below) |
+
+\* Either `connectionString` OR `namespace`+`sharedAccessKeyName`+`sharedAccessKey` required
+
+```json
+{
+  "eventHub": [
+    {
+      "name": "orders-eventhub-subscriber",
+      "connectionString": "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=...",
+      "eventHubName": "orders-events",
+      "properties": {
+        "OrderId": { "type": "dynamic", "value": "data.orderId" }
+      }
+    }
+  ]
+}
+```
+
 ### Retry Policy Settings
 
 The simulator supports Azure Event Grid-compatible retry with exponential backoff. Retry is **enabled by default**.
@@ -365,8 +401,8 @@ Advanced filters support complex conditions on event data.
 
 **Limits:**
 - Maximum 25 filters per subscription
+- Maximum 25 filter values across all filters per subscription
 - String values limited to 512 characters
-- In/NotIn operators limited to 5 values
 
 **Available Operators:**
 

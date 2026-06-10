@@ -186,40 +186,42 @@ public class AdvancedFilterValidationTests
     [Fact]
     public void TestFilterValidationWithSixValues()
     {
-        foreach (
-            var operatorType in Enum.GetValues<AdvancedFilterSetting.AdvancedFilterOperatorType>()
-        )
+        // Azure Event Grid limits filter values to 25 across all filters per subscription;
+        // there is no per-operator five-value limit.
+        Should.NotThrow(() =>
         {
-            var filterConfig = new AdvancedFilterSetting
-            {
-                Key = "Data",
-                Values = new object[6],
-                OperatorType = operatorType,
-            };
-            if (
-                new[]
-                {
-                    AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn,
-                    AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotIn,
-                    AdvancedFilterSetting.AdvancedFilterOperatorType.StringIn,
-                    AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
-                }.Contains(operatorType)
+            foreach (
+                var operatorType in Enum.GetValues<AdvancedFilterSetting.AdvancedFilterOperatorType>()
             )
             {
-                var exception = Should.Throw<ArgumentOutOfRangeException>(() =>
-                    GetValidSimulatorSettings(filterConfig).Validate()
-                );
-
-                exception.ParamName.ShouldBe(nameof(filterConfig.OperatorType));
-                exception.Message.ShouldBe(
-                    "Advanced filtering limits filters to five values for in and not in operators (Parameter 'OperatorType')"
-                );
-            }
-            else
-            {
+                var filterConfig = new AdvancedFilterSetting
+                {
+                    Key = "Data",
+                    Values = new object[6],
+                    OperatorType = operatorType,
+                };
                 GetValidSimulatorSettings(filterConfig).Validate();
             }
-        }
+        });
+    }
+
+    [Fact]
+    public void TestFilterValidationWithMoreThan25ValuesInASingleFilter()
+    {
+        var filterConfig = new AdvancedFilterSetting
+        {
+            Key = "Data",
+            Values = new object[26],
+            OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringIn,
+        };
+
+        var exception = Should.Throw<ArgumentOutOfRangeException>(() =>
+            GetValidSimulatorSettings(filterConfig).Validate()
+        );
+
+        exception.Message.ShouldBe(
+            "Advanced filtering is limited to 25 filter values across all the filters per event grid subscription. (Parameter 'AdvancedFilters')"
+        );
     }
 
     [Fact]

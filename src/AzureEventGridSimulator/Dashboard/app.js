@@ -453,6 +453,7 @@
         elements.detailContent.querySelectorAll('.attempt-toggle').forEach(toggle => {
             toggle.addEventListener('click', () => {
                 const list = toggle.nextElementSibling;
+                if (!list) return;
                 list.classList.toggle('hidden');
                 toggle.textContent = list.classList.contains('hidden')
                     ? `Show ${toggle.dataset.count} attempts`

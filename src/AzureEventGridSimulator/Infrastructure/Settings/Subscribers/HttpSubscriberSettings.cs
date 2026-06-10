@@ -104,8 +104,10 @@ public class HttpSubscriberSettings : ISubscriberSettings
 
     public Guid GetValidationCode()
     {
-        return new Guid(
-            Encoding.UTF8.GetBytes(Endpoint).AsEnumerable().Reverse().Take(16).ToArray()
-        );
+        // Derive a stable code from a hash of the full endpoint. Building the Guid from raw
+        // endpoint bytes crashes for endpoints shorter than 16 UTF-8 bytes and collides for
+        // endpoints sharing the same trailing bytes.
+        var hash = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(Endpoint));
+        return new Guid(hash.AsSpan(0, 16));
     }
 }

@@ -29,8 +29,10 @@ public class DeliveryRecord
 
     /// <summary>
     ///     Individual delivery attempts.
+    ///     Updates are copy-on-write (see EventHistoryService): a published record's list is
+    ///     never mutated, so concurrent dashboard readers can enumerate it safely.
     /// </summary>
-    public List<AttemptRecord> Attempts { get; } = [];
+    public List<AttemptRecord> Attempts { get; init; } = [];
 
     /// <summary>
     ///     When the last attempt was made.
