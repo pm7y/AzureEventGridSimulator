@@ -30,4 +30,17 @@
             AdditionalProperties="ASPIRE_ENABLED=true"
         />
     </ItemGroup>
+
+    <!--
+        The simulator is built with ASPIRE_ENABLED=true into its own bin/aspire and obj/aspire
+        output paths (see Directory.Build.props), and solution-level restore never sees that
+        flavour, so restore it explicitly before this project resolves its references.
+    -->
+    <Target Name="RestoreAspireFlavouredSimulator" BeforeTargets="ResolveProjectReferences">
+        <MSBuild
+            Projects="..\AzureEventGridSimulator\AzureEventGridSimulator.csproj"
+            Targets="Restore"
+            Properties="ASPIRE_ENABLED=true"
+        />
+    </Target>
 </Project>

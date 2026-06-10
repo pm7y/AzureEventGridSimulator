@@ -22,6 +22,21 @@
         <DebugSymbols>false</DebugSymbols>
     </PropertyGroup>
 
+    <!--
+        The AppHost references the simulator with AdditionalProperties="ASPIRE_ENABLED=true",
+        so a full solution build compiles that project twice with different flavours. Give the
+        Aspire flavour its own bin/obj, otherwise the two builds race on the same output paths
+        (intermittent MSB4018 crashes) and can leave an Aspire-flavoured simulator binary in
+        the shared bin that fails to start outside Aspire (missing ServiceDefaults.dll).
+    -->
+    <PropertyGroup Condition="'$(ASPIRE_ENABLED)' == 'true'">
+        <BaseIntermediateOutputPath>obj/aspire/</BaseIntermediateOutputPath>
+        <BaseOutputPath>bin/aspire/</BaseOutputPath>
+        <!-- The regular flavour's bin/obj are no longer under this flavour's output paths,
+             so exclude them from item globs explicitly. -->
+        <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
+    </PropertyGroup>
+
     <Target
         Name="CSharpier"
         BeforeTargets="BeforeBuild"
