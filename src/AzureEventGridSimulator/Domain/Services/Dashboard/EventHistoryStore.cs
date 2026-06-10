@@ -48,6 +48,19 @@ public class EventHistoryStore
     );
 
     /// <summary>
+    ///     Per-topic locks serialising the add/evict cycle so the order queue and count
+    ///     can't drift apart under concurrent writers.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, object> _topicLocks = new(
+        StringComparer.OrdinalIgnoreCase
+    );
+
+    /// <summary>
+    ///     Lock serialising the rejection add/evict cycle.
+    /// </summary>
+    private readonly object _rejectionLock = new();
+
+    /// <summary>
     ///     Counter for total events received (may exceed MaxCapacity).
     /// </summary>
     private int _totalEventsReceived;
@@ -84,28 +97,41 @@ public class EventHistoryStore
     {
         Interlocked.Increment(ref _totalEventsReceived);
 
-        _records[record.Id] = record;
+        var topicLock = _topicLocks.GetOrAdd(record.TopicName, _ => new object());
 
-        // Get or create the topic's order queue
-        var topicOrder = _topicOrders.GetOrAdd(
-            record.TopicName,
-            _ => new ConcurrentQueue<string>()
-        );
-        topicOrder.Enqueue(record.Id);
-
-        // Increment topic count
-        _topicCounts.AddOrUpdate(record.TopicName, 1, (_, count) => count + 1);
-
-        // Evict oldest for this topic if over capacity
-        while (
-            _topicCounts.TryGetValue(record.TopicName, out var topicCount)
-            && topicCount > MaxCapacityPerTopic
-            && topicOrder.TryDequeue(out var oldestId)
-        )
+        lock (topicLock)
         {
-            if (_records.TryRemove(oldestId, out _))
+            // A replayed event with the same id replaces the stored record without taking a
+            // second slot in the order queue (which would corrupt the eviction accounting).
+            var isNewRecord = !_records.ContainsKey(record.Id);
+            _records[record.Id] = record;
+
+            if (!isNewRecord)
             {
-                _topicCounts.AddOrUpdate(record.TopicName, 0, (_, count) => Math.Max(0, count - 1));
+                return;
+            }
+
+            // Get or create the topic's order queue
+            var topicOrder = _topicOrders.GetOrAdd(
+                record.TopicName,
+                _ => new ConcurrentQueue<string>()
+            );
+            topicOrder.Enqueue(record.Id);
+
+            // Increment topic count
+            var topicCount = _topicCounts.AddOrUpdate(record.TopicName, 1, (_, count) => count + 1);
+
+            // Evict oldest for this topic if over capacity
+            while (topicCount > MaxCapacityPerTopic && topicOrder.TryDequeue(out var oldestId))
+            {
+                if (_records.TryRemove(oldestId, out _))
+                {
+                    topicCount = _topicCounts.AddOrUpdate(
+                        record.TopicName,
+                        0,
+                        (_, count) => Math.Max(0, count - 1)
+                    );
+                }
             }
         }
     }
@@ -222,15 +248,19 @@ public class EventHistoryStore
     {
         Interlocked.Increment(ref _totalRejections);
 
-        _rejections[rejection.Id] = rejection;
-        _rejectionOrder.Enqueue(rejection.Id);
-
-        // Evict oldest if over capacity
-        while (
-            _rejections.Count > MaxRejectedCapacity && _rejectionOrder.TryDequeue(out var oldestId)
-        )
+        lock (_rejectionLock)
         {
-            _rejections.TryRemove(oldestId, out _);
+            _rejections[rejection.Id] = rejection;
+            _rejectionOrder.Enqueue(rejection.Id);
+
+            // Evict oldest if over capacity
+            while (
+                _rejections.Count > MaxRejectedCapacity
+                && _rejectionOrder.TryDequeue(out var oldestId)
+            )
+            {
+                _rejections.TryRemove(oldestId, out _);
+            }
         }
     }
 

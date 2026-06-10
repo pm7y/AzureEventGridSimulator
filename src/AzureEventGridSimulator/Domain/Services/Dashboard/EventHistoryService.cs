@@ -70,18 +70,26 @@ public class EventHistoryService(
             return;
         }
 
+        // Copy-on-write: never mutate the published record, dashboard readers may be
+        // enumerating it concurrently. Build a replacement and swap it in under the
+        // record's lock via UpdateDelivery.
         var attemptRecord = AttemptRecord.FromDeliveryAttempt(attempt);
-        delivery.Attempts.Add(attemptRecord);
-        delivery.LastAttemptAt = attempt.AttemptTime;
-
-        // Update status based on outcome
-        delivery.Status = attempt.Outcome switch
+        var updatedDelivery = new DeliveryRecord
         {
-            DeliveryOutcome.Success => DeliveryStatus.Delivered,
-            _ => DeliveryStatus.Retrying,
+            SubscriberName = delivery.SubscriberName,
+            SubscriberType = delivery.SubscriberType,
+            Endpoint = delivery.Endpoint,
+            Status = attempt.Outcome switch
+            {
+                DeliveryOutcome.Success => DeliveryStatus.Delivered,
+                _ => DeliveryStatus.Retrying,
+            },
+            Attempts = [.. delivery.Attempts, attemptRecord],
+            LastAttemptAt = attempt.AttemptTime,
+            CompletedAt = delivery.CompletedAt,
         };
 
-        store.UpdateDelivery(eventId, delivery);
+        store.UpdateDelivery(eventId, updatedDelivery);
 
         logger.LogDebug(
             "Recorded delivery attempt {AttemptNumber} for event {EventId} to '{SubscriberName}' with outcome {Outcome}",
@@ -123,10 +131,19 @@ public class EventHistoryService(
             return;
         }
 
-        delivery.Status = status;
-        delivery.CompletedAt = completedAt;
+        // Copy-on-write: see RecordDeliveryAttempt
+        var updatedDelivery = new DeliveryRecord
+        {
+            SubscriberName = delivery.SubscriberName,
+            SubscriberType = delivery.SubscriberType,
+            Endpoint = delivery.Endpoint,
+            Status = status,
+            Attempts = delivery.Attempts,
+            LastAttemptAt = delivery.LastAttemptAt,
+            CompletedAt = completedAt,
+        };
 
-        store.UpdateDelivery(eventId, delivery);
+        store.UpdateDelivery(eventId, updatedDelivery);
 
         logger.LogDebug(
             "Recorded delivery completed for event {EventId} to '{SubscriberName}' with status {Status}",
