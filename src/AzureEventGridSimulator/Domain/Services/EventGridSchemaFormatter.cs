@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using AzureEventGridSimulator.Domain.Entities;
 
 namespace AzureEventGridSimulator.Domain.Services;
@@ -8,6 +9,12 @@ namespace AzureEventGridSimulator.Domain.Services;
 /// </summary>
 public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaFormatter
 {
+    private static readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        // Azure omits absent fields (e.g. null data) rather than emitting them as null
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
     /// <inheritdoc />
     public EventSchema Schema => EventSchema.EventGridSchema;
 
@@ -18,21 +25,21 @@ public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaF
     public string Serialize(SimulatorEvent evt)
     {
         var eventGridEvent = ConvertToEventGridEvent(evt);
-        return JsonSerializer.Serialize(new[] { eventGridEvent });
+        return JsonSerializer.Serialize(new[] { eventGridEvent }, _serializerOptions);
     }
 
     /// <inheritdoc />
     public string SerializeSingle(SimulatorEvent evt)
     {
         var eventGridEvent = ConvertToEventGridEvent(evt);
-        return JsonSerializer.Serialize(eventGridEvent);
+        return JsonSerializer.Serialize(eventGridEvent, _serializerOptions);
     }
 
     /// <inheritdoc />
     public string SerializeArray(IEnumerable<SimulatorEvent> events)
     {
         var eventGridEvents = events.Select(ConvertToEventGridEvent).ToArray();
-        return JsonSerializer.Serialize(eventGridEvents);
+        return JsonSerializer.Serialize(eventGridEvents, _serializerOptions);
     }
 
     /// <inheritdoc />
@@ -77,7 +84,9 @@ public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaF
             Subject = cloudEvent.Subject ?? source,
             EventType = cloudEvent.Type,
             EventTime = cloudEvent.Time ?? timeProvider.GetUtcNow().ToString("o"),
-            Data = cloudEvent.Data,
+            // CloudEvents binary payloads arrive in data_base64; pass the base64 string
+            // through so the payload isn't silently dropped on conversion.
+            Data = cloudEvent.Data ?? cloudEvent.DataBase64,
             DataVersion = ExtractDataVersion(cloudEvent.DataSchema),
             MetadataVersion = "1",
         };
@@ -95,8 +104,10 @@ public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaF
             return "";
         }
 
-        // Try to extract version from URI (e.g., "/schema/v1" -> "v1")
-        if (Uri.TryCreate(dataSchema, UriKind.RelativeOrAbsolute, out var uri))
+        // Try to extract version from URI (e.g., "https://example.com/schema/v1" -> "v1").
+        // Uri.Segments is only valid on absolute URIs; relative ones (e.g. "#/schema/v1")
+        // throw InvalidOperationException, so fall back to a manual split for those.
+        if (Uri.TryCreate(dataSchema, UriKind.Absolute, out var uri))
         {
             var segments = uri.Segments;
             if (segments.Length > 0)
@@ -107,6 +118,14 @@ public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaF
                     return lastSegment;
                 }
             }
+
+            return dataSchema;
+        }
+
+        var lastPart = dataSchema.TrimEnd('/').Split('/').Last();
+        if (lastPart.StartsWith("v", StringComparison.OrdinalIgnoreCase))
+        {
+            return lastPart;
         }
 
         return dataSchema;
