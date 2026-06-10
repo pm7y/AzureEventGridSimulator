@@ -225,6 +225,43 @@ public class AdvancedFilterValidationTests
     }
 
     [Fact]
+    public void TestFilterValidationCountsEachRangeAsOneValue()
+    {
+        // Azure counts each [min,max] range as a single filter value (the docs define
+        // 'values' for range operators as "an array of ranges"), so 13 ranges = 13
+        // values even though they contain 26 numbers.
+        var filterConfig = new AdvancedFilterSetting
+        {
+            Key = "Data",
+            Values = Enumerable
+                .Range(0, 13)
+                .Select(i => (object)new object[] { (double)i, i + 0.5d })
+                .ToArray(),
+            OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberInRange,
+        };
+
+        Should.NotThrow(() => GetValidSimulatorSettings(filterConfig).Validate());
+    }
+
+    [Fact]
+    public void TestFilterValidationWithMoreThan25Ranges()
+    {
+        var filterConfig = new AdvancedFilterSetting
+        {
+            Key = "Data",
+            Values = Enumerable
+                .Range(0, 26)
+                .Select(i => (object)new object[] { (double)i, i + 0.5d })
+                .ToArray(),
+            OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberInRange,
+        };
+
+        Should.Throw<ArgumentOutOfRangeException>(() =>
+            GetValidSimulatorSettings(filterConfig).Validate()
+        );
+    }
+
+    [Fact]
     public void TestFilterValidationWithSingleDepthKey()
     {
         Should.NotThrow(() =>

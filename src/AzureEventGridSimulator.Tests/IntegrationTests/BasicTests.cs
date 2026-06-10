@@ -15,8 +15,8 @@ namespace AzureEventGridSimulator.Tests.IntegrationTests;
 ///     Note: this is a WIP.
 /// </summary>
 [Trait("Category", "integration")]
+[Collection(nameof(IntegrationContextFixtureCollection))]
 public class BasicTests(IntegrationContextFixture factory)
-    : IClassFixture<IntegrationContextFixture>
 {
     [Fact]
     public async Task GivenAValidEvent_WhenPublished_ThenItShouldBeAccepted()
