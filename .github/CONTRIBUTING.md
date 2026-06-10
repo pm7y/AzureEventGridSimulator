@@ -5,8 +5,8 @@ Thank you for your interest in contributing! This simulator is intended for **lo
 ## Quick Start
 
 1. **Prerequisites:** .NET 10.0 SDK (multi-targets 8.0, 9.0, 10.0)
-2. **Build:** `dotnet build src/AzureEventGridSimulator.sln`
-3. **Test:** `dotnet test src/AzureEventGridSimulator.sln`
+2. **Build:** `dotnet build src/AzureEventGridSimulator.slnx`
+3. **Test:** `dotnet test src/AzureEventGridSimulator.slnx`
 4. **Format:** Code is auto-formatted with [CSharpier](https://csharpier.com/) on build
 
 ## Documentation

@@ -10,7 +10,7 @@
             "osx":{
                 "args": [
                     "build",
-                    "${workspaceFolder}/src/AzureEventGridSimulator.sln"
+                    "${workspaceFolder}/src/AzureEventGridSimulator.slnx"
                 ],
             },
       

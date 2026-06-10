@@ -1,0 +1,9 @@
+<Solution>
+    <Folder Name="/Solution Items/">
+        <File Path="../README.md" />
+    </Folder>
+    <Project Path="AzureEventGridSimulator.AppHost/AzureEventGridSimulator.AppHost.csproj" />
+    <Project Path="AzureEventGridSimulator.ServiceDefaults/AzureEventGridSimulator.ServiceDefaults.csproj" />
+    <Project Path="AzureEventGridSimulator.Tests/AzureEventGridSimulator.Tests.csproj" />
+    <Project Path="AzureEventGridSimulator/AzureEventGridSimulator.csproj" />
+</Solution>
