@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 
@@ -17,6 +18,22 @@ public static class SubscriptionSettingsFilterExtensions
                 or AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotContains
                 or AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotBeginsWith
                 or AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotEndsWith;
+    }
+
+    /// <summary>
+    ///     Per Azure docs, when the filter key is missing from the event only NumberNotIn and
+    ///     StringNotIn evaluate as matched; the other negation operators (StringNotContains,
+    ///     StringNotBeginsWith, StringNotEndsWith) evaluate as not matched.
+    ///     NumberNotInRange is undocumented; it follows the NumberNotIn behaviour.
+    /// </summary>
+    private static bool MatchesWhenKeyMissing(
+        AdvancedFilterSetting.AdvancedFilterOperatorType operatorType
+    )
+    {
+        return operatorType
+            is AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotIn
+                or AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotInRange
+                or AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn;
     }
 
     private static bool EvaluateAdvancedFilter(AdvancedFilterSetting filter, object? value)
@@ -401,7 +418,7 @@ public static class SubscriptionSettingsFilterExtensions
             );
         }
 
-        return Convert.ToDouble(value);
+        return Convert.ToDouble(value, CultureInfo.InvariantCulture);
     }
 
     private static bool Try(Func<bool> function, bool valueOnException = false)
@@ -449,14 +466,14 @@ public static class SubscriptionSettingsFilterExtensions
             // Handle object array
             else if (range is object[] { Length: >= 2 } objArray)
             {
-                min = Convert.ToDouble(objArray[0]);
-                max = Convert.ToDouble(objArray[1]);
+                min = Convert.ToDouble(objArray[0], CultureInfo.InvariantCulture);
+                max = Convert.ToDouble(objArray[1], CultureInfo.InvariantCulture);
             }
             // Handle IList<object>
             else if (range is IList<object> { Count: >= 2 } list)
             {
-                min = Convert.ToDouble(list[0]);
-                max = Convert.ToDouble(list[1]);
+                min = Convert.ToDouble(list[0], CultureInfo.InvariantCulture);
+                max = Convert.ToDouble(list[1], CultureInfo.InvariantCulture);
             }
             else
             {
@@ -484,36 +501,44 @@ public static class SubscriptionSettingsFilterExtensions
             return retval;
         }
 
+        // Azure filter keys are case-insensitive (e.g. "id", "eventType", "data.key1")
         switch (key)
         {
-            case nameof(gridEvent.Id):
+            case var _ when key.Equals(nameof(gridEvent.Id), StringComparison.OrdinalIgnoreCase):
                 value = gridEvent.Id;
                 retval = true;
                 break;
-            case nameof(gridEvent.Topic):
+            case var _ when key.Equals(nameof(gridEvent.Topic), StringComparison.OrdinalIgnoreCase):
                 value = gridEvent.Topic;
                 retval = true;
                 break;
-            case nameof(gridEvent.Subject):
+            case var _
+                when key.Equals(nameof(gridEvent.Subject), StringComparison.OrdinalIgnoreCase):
                 value = gridEvent.Subject;
                 retval = true;
                 break;
-            case nameof(gridEvent.EventType):
+            case var _
+                when key.Equals(nameof(gridEvent.EventType), StringComparison.OrdinalIgnoreCase):
                 value = gridEvent.EventType;
                 retval = true;
                 break;
-            case nameof(gridEvent.DataVersion):
+            case var _
+                when key.Equals(nameof(gridEvent.DataVersion), StringComparison.OrdinalIgnoreCase):
                 value = gridEvent.DataVersion;
                 retval = true;
                 break;
-            case nameof(gridEvent.Data):
+            case var _ when key.Equals(nameof(gridEvent.Data), StringComparison.OrdinalIgnoreCase):
                 value = gridEvent.Data;
                 retval = true;
                 break;
             default:
                 var split = key.Split('.');
                 if (
-                    split[0] != nameof(gridEvent.Data)
+                    !string.Equals(
+                        split[0],
+                        nameof(gridEvent.Data),
+                        StringComparison.OrdinalIgnoreCase
+                    )
                     || gridEvent.Data == null
                     || split.Length <= 1
                 )
@@ -554,10 +579,9 @@ public static class SubscriptionSettingsFilterExtensions
                 return keyExists && !valueIsNull;
         }
 
-        // For "Not" operators, return true when key doesn't exist (per Azure docs)
         if (!keyExists)
         {
-            return IsNegationOperator(filter.OperatorType);
+            return MatchesWhenKeyMissing(filter.OperatorType);
         }
 
         return EvaluateWithArraySupport(filter, value, enableArrayFiltering);
@@ -584,10 +608,9 @@ public static class SubscriptionSettingsFilterExtensions
                 return keyExists && !valueIsNull;
         }
 
-        // For "Not" operators, return true when key doesn't exist (per Azure docs)
         if (!keyExists)
         {
-            return IsNegationOperator(filter.OperatorType);
+            return MatchesWhenKeyMissing(filter.OperatorType);
         }
 
         return EvaluateWithArraySupport(filter, value, enableArrayFiltering);

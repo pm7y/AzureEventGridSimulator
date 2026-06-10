@@ -94,23 +94,8 @@ public class AdvancedFilterSetting
             );
         }
 
-        // In/NotIn operators are limited to 5 values
-        if (
-            new[]
-            {
-                AdvancedFilterOperatorType.NumberIn,
-                AdvancedFilterOperatorType.NumberNotIn,
-                AdvancedFilterOperatorType.StringIn,
-                AdvancedFilterOperatorType.StringNotIn,
-            }.Contains(OperatorType)
-            && Values?.Count > 5
-        )
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(OperatorType),
-                "Advanced filtering limits filters to five values for in and not in operators"
-            );
-        }
+        // Note: the per-filter value count is constrained by the 25-values-across-all-filters
+        // limit enforced in FilterSetting.Validate (matching current Azure Event Grid limits)
 
         // Range operators require values to be provided in pairs (min, max)
         if (
