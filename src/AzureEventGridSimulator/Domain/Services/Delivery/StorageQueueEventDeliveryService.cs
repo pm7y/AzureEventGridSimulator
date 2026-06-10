@@ -16,7 +16,9 @@ public class StorageQueueEventDeliveryService(
     EventSchemaFormatterFactory formatterFactory
 ) : IEventDeliveryService, IAsyncDisposable
 {
-    private readonly ConcurrentDictionary<string, QueueClient> _clients = new();
+    // Lazy task values guarantee the client (and its CreateIfNotExistsAsync round-trip) is
+    // created once per queue even when concurrent deliveries race on the same key.
+    private readonly ConcurrentDictionary<string, Lazy<Task<QueueClient>>> _clients = new();
 
     public ValueTask DisposeAsync()
     {
@@ -181,11 +183,27 @@ public class StorageQueueEventDeliveryService(
     {
         var key = $"{subscription.EffectiveConnectionString}:{subscription.QueueName}";
 
-        if (_clients.TryGetValue(key, out var existingClient))
-        {
-            return existingClient;
-        }
+        var lazyClient = _clients.GetOrAdd(
+            key,
+            _ => new Lazy<Task<QueueClient>>(() => CreateClientAsync(subscription))
+        );
 
+        try
+        {
+            return await lazyClient.Value;
+        }
+        catch
+        {
+            // Don't cache a failed creation (e.g. Azurite not yet running) - evict so the
+            // next delivery attempt retries. Remove only our own entry to avoid evicting a
+            // newer replacement added by another thread.
+            _clients.TryRemove(new KeyValuePair<string, Lazy<Task<QueueClient>>>(key, lazyClient));
+            throw;
+        }
+    }
+
+    private async Task<QueueClient> CreateClientAsync(StorageQueueSubscriberSettings subscription)
+    {
         logger.LogDebug(
             "Creating Storage Queue client for subscription '{SubscriberName}' (Queue: '{QueueName}')",
             subscription.Name,
@@ -200,7 +218,6 @@ public class StorageQueueEventDeliveryService(
         // Create the queue if it doesn't exist (useful for local development with Azurite)
         await client.CreateIfNotExistsAsync();
 
-        _clients.TryAdd(key, client);
         return client;
     }
 }

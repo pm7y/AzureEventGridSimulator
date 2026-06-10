@@ -34,14 +34,15 @@ public class ValidateAllSubscriptionsCommandHandler(
                 )
             )
             {
-                await ValidateSubscription(enabledTopic, subscriber);
+                await ValidateSubscription(enabledTopic, subscriber, cancellationToken);
             }
         }
     }
 
     private async Task ValidateSubscription(
         TopicSettings topic,
-        HttpSubscriberSettings subscription
+        HttpSubscriberSettings subscription,
+        CancellationToken cancellationToken
     )
     {
         var validationUrl =
@@ -75,7 +76,8 @@ public class ValidateAllSubscriptionsCommandHandler(
                 new JsonSerializerOptions { WriteIndented = true }
             );
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
-            using var httpClient = httpClientFactory.CreateClient();
+            // Use the named client so the optional DangerousAcceptAnyServerCertificateValidator applies
+            using var httpClient = httpClientFactory.CreateClient(nameof(AzureEventGridSimulator));
             httpClient.DefaultRequestHeaders.Add(
                 Constants.AegEventTypeHeader,
                 Constants.ValidationEventType
@@ -94,10 +96,14 @@ public class ValidateAllSubscriptionsCommandHandler(
 
             subscription.ValidationStatus = SubscriptionValidationStatus.ValidationEventSent;
 
-            var response = await httpClient.PostAsync(subscription.Endpoint, content);
+            using var response = await httpClient.PostAsync(
+                subscription.Endpoint,
+                content,
+                cancellationToken
+            );
             response.EnsureSuccessStatusCode();
 
-            var text = await response.Content.ReadAsStringAsync();
+            var text = await response.Content.ReadAsStringAsync(cancellationToken);
             var validationResponse = JsonSerializer.Deserialize<SubscriptionValidationResponse>(
                 text
             );

@@ -28,6 +28,7 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
         _handler = new SendNotificationEventsToSubscriberCommandHandler(
             _deliveryQueue,
             _eventHistoryService,
+            TimeProvider.System,
             _logger
         );
     }

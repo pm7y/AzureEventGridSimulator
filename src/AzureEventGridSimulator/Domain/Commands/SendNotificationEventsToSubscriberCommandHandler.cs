@@ -16,6 +16,7 @@ namespace AzureEventGridSimulator.Domain.Commands;
 public class SendNotificationEventsToSubscriberCommandHandler(
     IDeliveryQueue deliveryQueue,
     IEventHistoryService eventHistoryService,
+    TimeProvider timeProvider,
     ILogger<SendNotificationEventsToSubscriberCommandHandler> logger
 ) : IRequestHandler<SendNotificationEventsToSubscriberCommand>
 {
@@ -129,12 +130,15 @@ public class SendNotificationEventsToSubscriberCommandHandler(
                 }
 
                 // Create pending delivery and enqueue
+                var now = timeProvider.GetUtcNow();
                 var pendingDelivery = new PendingDelivery
                 {
                     Event = evt,
                     Subscriber = subscriber,
                     Topic = request.Topic,
                     InputSchema = request.InputSchema,
+                    EnqueuedTime = now,
+                    NextAttemptTime = now,
                 };
 
                 deliveryQueue.Enqueue(pendingDelivery);

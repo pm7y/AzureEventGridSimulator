@@ -16,19 +16,21 @@ public class ServiceBusEventDeliveryService(
     DeliveryPropertyResolver propertyResolver
 ) : IEventDeliveryService, IAsyncDisposable
 {
-    private readonly ConcurrentDictionary<string, ServiceBusClient> _clients = new();
-    private readonly ConcurrentDictionary<string, ServiceBusSender> _senders = new();
+    // Lazy values guarantee a single client/sender per key even when GetOrAdd factories race;
+    // a lost race would otherwise leak an undisposed client holding a live AMQP connection.
+    private readonly ConcurrentDictionary<string, Lazy<ServiceBusClient>> _clients = new();
+    private readonly ConcurrentDictionary<string, Lazy<ServiceBusSender>> _senders = new();
 
     public async ValueTask DisposeAsync()
     {
-        foreach (var sender in _senders.Values)
+        foreach (var sender in _senders.Values.Where(s => s.IsValueCreated))
         {
-            await sender.DisposeAsync();
+            await sender.Value.DisposeAsync();
         }
 
-        foreach (var client in _clients.Values)
+        foreach (var client in _clients.Values.Where(c => c.IsValueCreated))
         {
-            await client.DisposeAsync();
+            await client.Value.DisposeAsync();
         }
 
         _senders.Clear();
@@ -242,14 +244,16 @@ public class ServiceBusEventDeliveryService(
     {
         var key = $"{subscription.EffectiveConnectionString}:{subscription.DestinationName}";
 
-        return _senders.GetOrAdd(
-            key,
-            _ =>
-            {
-                var client = GetOrCreateClient(subscription);
-                return client.CreateSender(subscription.DestinationName);
-            }
-        );
+        return _senders
+            .GetOrAdd(
+                key,
+                _ => new Lazy<ServiceBusSender>(() =>
+                {
+                    var client = GetOrCreateClient(subscription);
+                    return client.CreateSender(subscription.DestinationName);
+                })
+            )
+            .Value;
     }
 
     private ServiceBusClient GetOrCreateClient(ServiceBusSubscriberSettings subscription)
@@ -260,17 +264,19 @@ public class ServiceBusEventDeliveryService(
                 $"No connection string available for subscription '{subscription.Name}'"
             );
 
-        return _clients.GetOrAdd(
-            connectionString,
-            cs =>
-            {
-                logger.LogDebug(
-                    "Creating Service Bus client for subscription '{SubscriberName}'",
-                    subscription.Name
-                );
+        return _clients
+            .GetOrAdd(
+                connectionString,
+                cs => new Lazy<ServiceBusClient>(() =>
+                {
+                    logger.LogDebug(
+                        "Creating Service Bus client for subscription '{SubscriberName}'",
+                        subscription.Name
+                    );
 
-                return new ServiceBusClient(cs);
-            }
-        );
+                    return new ServiceBusClient(cs);
+                })
+            )
+            .Value;
     }
 }

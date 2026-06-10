@@ -17,13 +17,15 @@ public class EventHubEventDeliveryService(
     DeliveryPropertyResolver propertyResolver
 ) : IEventDeliveryService, IAsyncDisposable
 {
-    private readonly ConcurrentDictionary<string, EventHubProducerClient> _producers = new();
+    // Lazy values guarantee a single producer per key even when GetOrAdd factories race;
+    // a lost race would otherwise leak an undisposed client holding a live AMQP connection.
+    private readonly ConcurrentDictionary<string, Lazy<EventHubProducerClient>> _producers = new();
 
     public async ValueTask DisposeAsync()
     {
-        foreach (var producer in _producers.Values)
+        foreach (var producer in _producers.Values.Where(p => p.IsValueCreated))
         {
-            await producer.DisposeAsync();
+            await producer.Value.DisposeAsync();
         }
 
         _producers.Clear();
@@ -245,44 +247,46 @@ public class EventHubEventDeliveryService(
     {
         var key = $"{subscription.EffectiveConnectionString}:{subscription.EventHubName}";
 
-        return _producers.GetOrAdd(
-            key,
-            _ =>
-            {
-                // Mask the connection string for logging (show endpoint but hide key)
-                var connectionForLogging = subscription.EffectiveConnectionString;
-                if (connectionForLogging != null)
+        return _producers
+            .GetOrAdd(
+                key,
+                _ => new Lazy<EventHubProducerClient>(() =>
                 {
-                    var keyIndex = connectionForLogging.IndexOf(
-                        "SharedAccessKey=",
-                        StringComparison.OrdinalIgnoreCase
-                    );
-                    if (keyIndex > 0)
+                    // Mask the connection string for logging (show endpoint but hide key)
+                    var connectionForLogging = subscription.EffectiveConnectionString;
+                    if (connectionForLogging != null)
                     {
-                        connectionForLogging =
-                            connectionForLogging[..(keyIndex + 16)] + "***REDACTED***";
+                        var keyIndex = connectionForLogging.IndexOf(
+                            "SharedAccessKey=",
+                            StringComparison.OrdinalIgnoreCase
+                        );
+                        if (keyIndex > 0)
+                        {
+                            connectionForLogging =
+                                connectionForLogging[..(keyIndex + 16)] + "***REDACTED***";
+                        }
                     }
-                }
 
-                logger.LogInformation(
-                    "Creating Event Hub producer client for subscription '{SubscriberName}' on hub '{EventHubName}'. Connection: {Connection}",
-                    subscription.Name,
-                    subscription.EventHubName,
-                    connectionForLogging
-                );
+                    logger.LogInformation(
+                        "Creating Event Hub producer client for subscription '{SubscriberName}' on hub '{EventHubName}'. Connection: {Connection}",
+                        subscription.Name,
+                        subscription.EventHubName,
+                        connectionForLogging
+                    );
 
-                var effectiveConnectionString =
-                    subscription.EffectiveConnectionString
-                    ?? throw new InvalidOperationException(
-                        $"No connection string for Event Hub subscription '{subscription.Name}'"
-                    );
-                var eventHubName =
-                    subscription.EventHubName
-                    ?? throw new InvalidOperationException(
-                        $"No Event Hub name for subscription '{subscription.Name}'"
-                    );
-                return new EventHubProducerClient(effectiveConnectionString, eventHubName);
-            }
-        );
+                    var effectiveConnectionString =
+                        subscription.EffectiveConnectionString
+                        ?? throw new InvalidOperationException(
+                            $"No connection string for Event Hub subscription '{subscription.Name}'"
+                        );
+                    var eventHubName =
+                        subscription.EventHubName
+                        ?? throw new InvalidOperationException(
+                            $"No Event Hub name for subscription '{subscription.Name}'"
+                        );
+                    return new EventHubProducerClient(effectiveConnectionString, eventHubName);
+                })
+            )
+            .Value;
     }
 }
