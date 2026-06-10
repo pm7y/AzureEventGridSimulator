@@ -74,10 +74,8 @@ public class Program
     {
         try
         {
-            await host.StartAsync(token)
-                .ContinueWith(_ => OnApplicationStarted(host, host.Lifetime), token)
-                .ConfigureAwait(false);
-
+            await host.StartAsync(token).ConfigureAwait(false);
+            await OnApplicationStarted(host, host.Lifetime).ConfigureAwait(false);
             await host.WaitForShutdownAsync(token).ConfigureAwait(false);
         }
         finally

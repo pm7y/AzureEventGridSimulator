@@ -76,8 +76,14 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
         // Check for notification request (POST /api/events with appropriate content)
         if (IsNotificationRequest(context))
         {
-            var topic = simulatorSettings.Topics.First(t => t.Port == context.Request.Host.Port);
-            return new RequestRouteResult(RequestType.Notification, topic);
+            // No matching topic (e.g. request on the dashboard port, or a Host header
+            // without a port) is treated as an unknown path rather than crashing.
+            var topic = simulatorSettings.Topics.FirstOrDefault(t =>
+                t.Port == context.Request.Host.Port
+            );
+            return topic is null
+                ? new RequestRouteResult(RequestType.NotFound)
+                : new RequestRouteResult(RequestType.Notification, topic);
         }
 
         // Check for subscription validation request (GET /validate?id=...)
@@ -127,7 +133,11 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
 
         // Non-POST method to /api/events (Azure returns 405)
         if (
-            string.Equals(context.Request.Path, "/api/events", StringComparison.Ordinal)
+            string.Equals(
+                context.Request.Path.Value?.TrimEnd('/'),
+                "/api/events",
+                StringComparison.OrdinalIgnoreCase
+            )
             && context.Request.Method != HttpMethods.Post
         )
         {
