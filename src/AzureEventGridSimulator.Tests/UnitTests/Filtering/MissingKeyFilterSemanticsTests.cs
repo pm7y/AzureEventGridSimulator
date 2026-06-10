@@ -76,7 +76,7 @@ public class MissingKeyFilterSemanticsTests
     public void GivenKeyPresentWithNullValue_WhenIsNullOrUndefined_ThenEventAccepted()
     {
         var gridEvent = TestHelpers.CreateValidEventGridEvent(
-            data: new { NullableValue = (string?)null }
+            data: new { NullableValue = default(string) }
         );
         var filterConfig = new FilterSetting
         {
@@ -99,7 +99,7 @@ public class MissingKeyFilterSemanticsTests
     public void GivenKeyPresentWithNullValue_WhenIsNotNull_ThenEventRejected()
     {
         var gridEvent = TestHelpers.CreateValidEventGridEvent(
-            data: new { NullableValue = (string?)null }
+            data: new { NullableValue = default(string) }
         );
         var filterConfig = new FilterSetting
         {
