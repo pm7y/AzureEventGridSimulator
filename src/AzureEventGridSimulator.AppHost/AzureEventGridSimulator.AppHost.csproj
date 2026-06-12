@@ -13,6 +13,7 @@
         <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" />
         <PackageReference Include="Aspire.Hosting.Azure.EventHubs" />
         <PackageReference Include="Aspire.Hosting.SqlServer" />
+        <PackageReference Include="MessagePack" />
     </ItemGroup>
 
     <!-- Set ASPIRE_ENABLED=true to include ServiceDefaults in the build -->
