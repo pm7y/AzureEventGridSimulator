@@ -20,6 +20,10 @@ public static class Constants
     // Newer versions (2023-11-01, 2024-01-01, 2024-06-01) are for Namespace Topics only
     public const string SupportedApiVersion = "2018-01-01";
 
+    // The ARM control-plane (management) API version emitted by Azure.ResourceManager.EventGrid.
+    // The management facade pins this version; update it if the management SDK is upgraded.
+    public const string SupportedManagementApiVersion = "2025-02-15";
+
     public const string SasAuthorizationType = "SharedAccessSignature";
 
     // CloudEvents Headers (binary mode)

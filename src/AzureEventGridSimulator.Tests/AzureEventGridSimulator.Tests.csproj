@@ -6,6 +6,7 @@
 
     <ItemGroup>
         <PackageReference Include="Azure.Messaging.EventGrid" />
+        <PackageReference Include="Azure.ResourceManager.EventGrid" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
         <PackageReference Include="NSubstitute" />
         <PackageReference Include="Shouldly" />
