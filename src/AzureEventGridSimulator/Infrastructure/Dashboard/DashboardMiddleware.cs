@@ -61,7 +61,10 @@ public class DashboardMiddleware
                 : path["/dashboard/".Length..];
 
         // Security: prevent directory traversal
-        if (resourcePath.Contains("..") || resourcePath.Contains("\\"))
+        if (
+            resourcePath.Contains("..", StringComparison.Ordinal)
+            || resourcePath.Contains("\\", StringComparison.Ordinal)
+        )
         {
             context.Response.StatusCode = 400;
             return;
