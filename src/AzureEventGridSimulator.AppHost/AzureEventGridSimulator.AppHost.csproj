@@ -15,7 +15,10 @@
         <PackageReference Include="Aspire.Hosting.SqlServer" />
         <!-- Security pin: forces patched MessagePack over the vulnerable version the Aspire
              SDK pulls transitively (GHSA-hv8m-jj95-wg3x). Not used by our code directly. -->
+        <PackageReference Include="Azure.Storage.Queues" />
         <PackageReference Include="MessagePack" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     </ItemGroup>
 
     <!-- Set ASPIRE_ENABLED=true to include ServiceDefaults in the build -->
