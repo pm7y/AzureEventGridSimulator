@@ -33,7 +33,6 @@
         <PackageReference Include="Asp.Versioning.Mvc" />
         <PackageReference Include="JetBrains.Annotations" />
         <PackageReference Include="Serilog.AspNetCore" />
-        <PackageReference Include="Serilog.Extensions.Logging" />
         <PackageReference Include="Serilog.Settings.Configuration" />
         <PackageReference Include="Serilog.Sinks.Console" />
         <PackageReference Include="Serilog.Sinks.File" />
