@@ -15,6 +15,7 @@
         <PackageReference Include="Aspire.Hosting.SqlServer" />
         <!-- Security pin: forces patched MessagePack over the vulnerable version the Aspire
              SDK pulls transitively (GHSA-hv8m-jj95-wg3x). Not used by our code directly. -->
+        <PackageReference Include="Azure.Storage.Queues" />
         <PackageReference Include="MessagePack" />
     </ItemGroup>
 
