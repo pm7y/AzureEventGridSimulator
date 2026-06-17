@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <PropertyGroup>
-        <!-- Multi-target for .NET Tool compatibility (clears TargetFramework from Directory.Build.props) -->
-        <TargetFramework></TargetFramework>
-        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <!-- TargetFramework (net10.0) is inherited from Directory.Build.props -->
         <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
 
         <!-- .NET Tool packaging -->
@@ -33,7 +31,6 @@
         <PackageReference Include="Asp.Versioning.Mvc" />
         <PackageReference Include="JetBrains.Annotations" />
         <PackageReference Include="Serilog.AspNetCore" />
-        <PackageReference Include="Serilog.Extensions.Logging" />
         <PackageReference Include="Serilog.Settings.Configuration" />
         <PackageReference Include="Serilog.Sinks.Console" />
         <PackageReference Include="Serilog.Sinks.File" />

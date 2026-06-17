@@ -47,8 +47,11 @@ public class EventSchemaDetector
         }
 
         // Check for CloudEvents JSON content type (use base types for detection)
-        return contentType.Contains(Constants.CloudEventsContentTypeBase)
-            || contentType.Contains(Constants.CloudEventsBatchContentTypeBase);
+        return contentType.Contains(Constants.CloudEventsContentTypeBase, StringComparison.Ordinal)
+            || contentType.Contains(
+                Constants.CloudEventsBatchContentTypeBase,
+                StringComparison.Ordinal
+            );
     }
 
     /// <summary>
@@ -91,6 +94,9 @@ public class EventSchemaDetector
     {
         var contentType = context.Request.ContentType;
         return !string.IsNullOrEmpty(contentType)
-            && contentType.Contains(Constants.CloudEventsBatchContentTypeBase);
+            && contentType.Contains(
+                Constants.CloudEventsBatchContentTypeBase,
+                StringComparison.Ordinal
+            );
     }
 }

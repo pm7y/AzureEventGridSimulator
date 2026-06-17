@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <!-- Multi-target to match main app (clears TargetFramework from Directory.Build.props) -->
-        <TargetFramework></TargetFramework>
-        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <!-- TargetFramework (net10.0) is inherited from Directory.Build.props -->
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsAspireSharedProject>true</IsAspireSharedProject>
