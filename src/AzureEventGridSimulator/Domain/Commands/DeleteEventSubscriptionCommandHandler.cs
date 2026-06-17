@@ -21,7 +21,11 @@ public class DeleteEventSubscriptionCommandHandler(
         );
 
         var removed =
-            topic?.Subscribers.RemoveHttpSubscriber(request.EventSubscriptionName) ?? false;
+            (topic?.Subscribers.RemoveHttpSubscriber(request.EventSubscriptionName) ?? false)
+            || (
+                topic?.Subscribers.RemoveStorageQueueSubscriber(request.EventSubscriptionName)
+                ?? false
+            );
 
         if (removed)
         {

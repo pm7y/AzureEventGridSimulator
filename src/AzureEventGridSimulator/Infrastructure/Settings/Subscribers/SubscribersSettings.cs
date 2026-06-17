@@ -81,6 +81,8 @@ public class SubscribersSettings
 
     private readonly object _httpMutationLock = new();
 
+    private readonly object _storageQueueMutationLock = new();
+
     /// <summary>
     ///     Adds or replaces (by name, case-insensitive) an HTTP subscriber at runtime. Mutations use
     ///     copy-on-write under a lock so that the delivery path, which enumerates the subscriber
@@ -119,6 +121,44 @@ public class SubscribersSettings
             }
 
             Http = retained;
+            return true;
+        }
+    }
+
+    /// <summary>
+    ///     Adds or replaces (by name, case-insensitive) a Storage Queue subscriber at runtime. Same
+    ///     copy-on-write-under-lock contract as <see cref="UpsertHttpSubscriber" />.
+    /// </summary>
+    public void UpsertStorageQueueSubscriber(StorageQueueSubscriberSettings subscriber)
+    {
+        lock (_storageQueueMutationLock)
+        {
+            var retained = (StorageQueue ?? [])
+                .Where(s =>
+                    !string.Equals(s.Name, subscriber.Name, StringComparison.OrdinalIgnoreCase)
+                )
+                .ToList();
+            retained.Add(subscriber);
+            StorageQueue = [.. retained];
+        }
+    }
+
+    /// <summary>
+    ///     Removes a Storage Queue subscriber by name (case-insensitive). Returns true if one was removed.
+    /// </summary>
+    public bool RemoveStorageQueueSubscriber(string name)
+    {
+        lock (_storageQueueMutationLock)
+        {
+            var current = StorageQueue ?? [];
+            var retained = current
+                .Where(s => !string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (retained.Length == current.Length)
+            {
+                return false;
+            }
+            StorageQueue = retained;
             return true;
         }
     }

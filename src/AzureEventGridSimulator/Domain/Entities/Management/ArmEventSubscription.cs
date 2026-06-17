@@ -40,10 +40,10 @@ public class ArmEventSubscriptionDestination
     public string? EndpointType { get; set; }
 
     [JsonPropertyName("properties")]
-    public ArmWebHookDestinationProperties? Properties { get; set; }
+    public ArmEventSubscriptionDestinationProperties? Properties { get; set; }
 }
 
-public class ArmWebHookDestinationProperties
+public class ArmEventSubscriptionDestinationProperties
 {
     /// <summary>
     ///     The full webhook URL. Azure treats this as write-only and only returns
@@ -55,6 +55,14 @@ public class ArmWebHookDestinationProperties
 
     [JsonPropertyName("endpointBaseUrl")]
     public string? EndpointBaseUrl { get; set; }
+
+    // Storage-queue destination properties (ARM nests destination-type-specific properties under the
+    // one "properties" object; only the fields for the active endpointType are populated).
+    [JsonPropertyName("resourceId")]
+    public string? ResourceId { get; set; }
+
+    [JsonPropertyName("queueName")]
+    public string? QueueName { get; set; }
 }
 
 public class ArmEventSubscriptionFilter

@@ -2,6 +2,7 @@ using AzureEventGridSimulator.Domain.Services.Management;
 using AzureEventGridSimulator.Domain.Services.Validation;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using JetBrains.Annotations;
 
 namespace AzureEventGridSimulator.Domain.Commands;
@@ -32,47 +33,86 @@ public class CreateOrUpdateEventSubscriptionCommandHandler(
         }
 
         if (
-            !EventSubscriptionMapper.TryMapToHttpSubscriber(
+            EventSubscriptionMapper.TryMapToHttpSubscriber(
                 request.EventSubscriptionName,
                 request.Resource,
-                out var subscriber
+                out var httpSubscriber
             )
         )
         {
+            var alreadyExisted = topic.Subscribers.HttpSubscribers.Any(s =>
+                string.Equals(
+                    s.Name,
+                    request.EventSubscriptionName,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
+
+            topic.Subscribers.UpsertHttpSubscriber(httpSubscriber!);
+
+            logger.LogInformation(
+                "{Action} runtime event subscription '{SubscriptionName}' (webhook) on topic '{TopicName}'",
+                alreadyExisted ? "Updated" : "Created",
+                httpSubscriber!.Name,
+                topic.Name
+            );
+
+            // Azure performs the webhook validation handshake while provisioning; the simulator gates
+            // delivery on it. Run it now so the subscription starts receiving events immediately.
+            if (!httpSubscriber.DisableValidation)
+            {
+                await validationSender.ValidateAsync(topic, httpSubscriber, cancellationToken);
+            }
+
             return new CreateOrUpdateEventSubscriptionResult(
-                EventSubscriptionWriteOutcome.UnsupportedDestination,
-                null
+                alreadyExisted
+                    ? EventSubscriptionWriteOutcome.Updated
+                    : EventSubscriptionWriteOutcome.Created,
+                EventSubscriptionMapper.MapToArm(request.Scope, httpSubscriber)
             );
         }
 
-        var alreadyExisted = topic.Subscribers.HttpSubscribers.Any(s =>
-            string.Equals(s.Name, request.EventSubscriptionName, StringComparison.OrdinalIgnoreCase)
-        );
-
-        topic.Subscribers.UpsertHttpSubscriber(subscriber!);
-
-        logger.LogInformation(
-            "{Action} runtime event subscription '{SubscriptionName}' on topic '{TopicName}'",
-            alreadyExisted ? "Updated" : "Created",
-            subscriber!.Name,
-            topic.Name
-        );
-
-        // Azure performs the webhook validation handshake while provisioning the subscription, and
-        // the simulator gates delivery on a successful handshake. Run it now so a runtime-created
-        // subscription starts receiving events as soon as it is created.
-        if (!subscriber.DisableValidation)
+        if (
+            EventSubscriptionMapper.TryMapToStorageQueueSubscriber(
+                request.EventSubscriptionName,
+                request.Resource,
+                out var queueSubscriber
+            )
+        )
         {
-            await validationSender.ValidateAsync(topic, subscriber, cancellationToken);
+            // Inherit the topic-level storageQueueConnectionString for delivery.
+            queueSubscriber!.ParentTopic = topic;
+
+            var alreadyExisted = topic.Subscribers.StorageQueueSubscribers.Any(s =>
+                string.Equals(
+                    s.Name,
+                    request.EventSubscriptionName,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
+
+            topic.Subscribers.UpsertStorageQueueSubscriber(queueSubscriber);
+
+            logger.LogInformation(
+                "{Action} runtime event subscription '{SubscriptionName}' (storage queue '{QueueName}') on topic '{TopicName}'",
+                alreadyExisted ? "Updated" : "Created",
+                queueSubscriber.Name,
+                queueSubscriber.QueueName,
+                topic.Name
+            );
+
+            // Storage-queue destinations have no validation handshake (that is webhook-only).
+            return new CreateOrUpdateEventSubscriptionResult(
+                alreadyExisted
+                    ? EventSubscriptionWriteOutcome.Updated
+                    : EventSubscriptionWriteOutcome.Created,
+                EventSubscriptionMapper.MapToArm(request.Scope, queueSubscriber)
+            );
         }
 
-        var resource = EventSubscriptionMapper.MapToArm(request.Scope, subscriber);
-
         return new CreateOrUpdateEventSubscriptionResult(
-            alreadyExisted
-                ? EventSubscriptionWriteOutcome.Updated
-                : EventSubscriptionWriteOutcome.Created,
-            resource
+            EventSubscriptionWriteOutcome.UnsupportedDestination,
+            null
         );
     }
 }

@@ -17,11 +17,13 @@ public readonly record struct EventSubscriptionScope(
 /// <summary>
 ///     Translates between the ARM <see cref="ArmEventSubscriptionResource" /> wire shape used by the
 ///     Azure.ResourceManager.EventGrid client and the simulator's internal
-///     <see cref="HttpSubscriberSettings" />. Only WebHook destinations are supported.
+///     <see cref="HttpSubscriberSettings" />. WebHook and StorageQueue destinations are supported.
 /// </summary>
 public static class EventSubscriptionMapper
 {
     public const string WebHookEndpointType = "WebHook";
+
+    public const string StorageQueueEndpointType = "StorageQueue";
 
     private const string EventSubscriptionType = "Microsoft.EventGrid/topics/eventSubscriptions";
 
@@ -62,6 +64,57 @@ public static class EventSubscriptionMapper
         return true;
     }
 
+    /// <summary>
+    ///     Maps an ARM event subscription resource to a Storage Queue subscriber. Returns false when the
+    ///     destination is missing, is not a StorageQueue, or has no queueName. The connection string is
+    ///     left null so it inherits the topic-level <c>storageQueueConnectionString</c>.
+    /// </summary>
+    public static bool TryMapToStorageQueueSubscriber(
+        string name,
+        ArmEventSubscriptionResource resource,
+        out StorageQueueSubscriberSettings? subscriber
+    )
+    {
+        subscriber = null;
+
+        var destination = resource.Properties?.Destination;
+        if (
+            destination is null
+            || !string.Equals(
+                destination.EndpointType,
+                StorageQueueEndpointType,
+                StringComparison.OrdinalIgnoreCase
+            )
+            || string.IsNullOrWhiteSpace(destination.Properties?.QueueName)
+        )
+        {
+            return false;
+        }
+
+        subscriber = new StorageQueueSubscriberSettings
+        {
+            Name = name,
+            QueueName = destination.Properties.QueueName!,
+            SourceResourceId = destination.Properties.ResourceId,
+            Filter = MapFilter(resource.Properties?.Filter),
+        };
+
+        return true;
+    }
+
+    public static ArmEventSubscriptionResource MapToArm(
+        EventSubscriptionScope scope,
+        ISubscriberSettings subscriber
+    ) =>
+        subscriber switch
+        {
+            HttpSubscriberSettings http => MapToArm(scope, http),
+            StorageQueueSubscriberSettings queue => MapToArm(scope, queue),
+            _ => throw new NotSupportedException(
+                $"Cannot map subscriber type '{subscriber.SubscriberType}' to an ARM event subscription."
+            ),
+        };
+
     public static ArmEventSubscriptionResource MapToArm(
         EventSubscriptionScope scope,
         HttpSubscriberSettings subscriber
@@ -77,10 +130,35 @@ public static class EventSubscriptionMapper
                 Destination = new ArmEventSubscriptionDestination
                 {
                     EndpointType = WebHookEndpointType,
-                    Properties = new ArmWebHookDestinationProperties
+                    Properties = new ArmEventSubscriptionDestinationProperties
                     {
                         EndpointUrl = subscriber.Endpoint,
                         EndpointBaseUrl = subscriber.Endpoint,
+                    },
+                },
+                Filter = MapFilter(subscriber.Filter),
+            },
+        };
+
+    public static ArmEventSubscriptionResource MapToArm(
+        EventSubscriptionScope scope,
+        StorageQueueSubscriberSettings subscriber
+    ) =>
+        new()
+        {
+            Id = BuildResourceId(scope, subscriber.Name),
+            Name = subscriber.Name,
+            Type = EventSubscriptionType,
+            Properties = new ArmEventSubscriptionProperties
+            {
+                ProvisioningState = "Succeeded",
+                Destination = new ArmEventSubscriptionDestination
+                {
+                    EndpointType = StorageQueueEndpointType,
+                    Properties = new ArmEventSubscriptionDestinationProperties
+                    {
+                        ResourceId = subscriber.SourceResourceId,
+                        QueueName = subscriber.QueueName,
                     },
                 },
                 Filter = MapFilter(subscriber.Filter),

@@ -31,6 +31,11 @@ public class ListEventSubscriptionsCommandHandler(SimulatorSettings simulatorSet
                 .Subscribers.HttpSubscribers.Select(s =>
                     EventSubscriptionMapper.MapToArm(request.Scope, s)
                 )
+                .Concat(
+                    topic.Subscribers.StorageQueueSubscribers.Select(s =>
+                        EventSubscriptionMapper.MapToArm(request.Scope, s)
+                    )
+                )
                 .ToList(),
         };
 

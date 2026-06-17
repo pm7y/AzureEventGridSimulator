@@ -2,6 +2,7 @@ using AzureEventGridSimulator.Domain.Entities.Management;
 using AzureEventGridSimulator.Domain.Services.Management;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using JetBrains.Annotations;
 
 namespace AzureEventGridSimulator.Domain.Commands;
@@ -20,7 +21,11 @@ public class GetEventSubscriptionCommandHandler(SimulatorSettings simulatorSetti
             string.Equals(t.Name, request.Scope.TopicName, StringComparison.OrdinalIgnoreCase)
         );
 
-        var subscriber = topic?.Subscribers.HttpSubscribers.FirstOrDefault(s =>
+        ISubscriberSettings? subscriber = topic?.Subscribers.HttpSubscribers.FirstOrDefault(s =>
+            string.Equals(s.Name, request.EventSubscriptionName, StringComparison.OrdinalIgnoreCase)
+        );
+
+        subscriber ??= topic?.Subscribers.StorageQueueSubscribers.FirstOrDefault(s =>
             string.Equals(s.Name, request.EventSubscriptionName, StringComparison.OrdinalIgnoreCase)
         );
 

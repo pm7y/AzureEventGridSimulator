@@ -12,7 +12,7 @@ namespace AzureEventGridSimulator.Controllers;
 ///     The ARM control-plane facade. It speaks the same HTTP that the Azure.ResourceManager.EventGrid
 ///     client emits for topic-scoped event subscriptions, so that client can create, get, list and
 ///     delete subscriptions against the simulator at runtime simply by being repointed at the
-///     management port. Only WebHook destinations are supported.
+///     management port. WebHook and StorageQueue destinations are supported.
 /// </summary>
 [ApiController]
 [ApiVersion(Constants.SupportedManagementApiVersion)]
