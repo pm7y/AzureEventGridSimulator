@@ -40,7 +40,7 @@ public class SasKeyValidatorAegSasKeyTests : SasKeyValidatorTestBase
             .Log(
                 LogLevel.Error,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => (o.ToString() ?? "").Contains("aeg-sas-key")),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains("aeg-sas-key")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );

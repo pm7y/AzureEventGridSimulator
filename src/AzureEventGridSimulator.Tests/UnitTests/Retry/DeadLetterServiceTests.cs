@@ -298,7 +298,7 @@ public class DeadLetterServiceTests : IDisposable
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => (o.ToString() ?? "").Contains("dead-lettered")),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains("dead-lettered")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
@@ -316,7 +316,7 @@ public class DeadLetterServiceTests : IDisposable
             .Log(
                 LogLevel.Debug,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => (o.ToString() ?? "").Contains("disabled")),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains("disabled")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );

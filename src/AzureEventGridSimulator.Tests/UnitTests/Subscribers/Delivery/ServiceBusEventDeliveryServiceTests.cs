@@ -101,7 +101,7 @@ public class ServiceBusEventDeliveryServiceTests
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => (o.ToString() ?? "").Contains("disabled")),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains("disabled")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
