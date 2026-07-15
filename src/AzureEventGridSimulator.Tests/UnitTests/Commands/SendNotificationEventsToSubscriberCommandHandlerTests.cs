@@ -51,7 +51,7 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => string.Concat(o).Contains("has no subscribers")),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains("has no subscribers")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
@@ -76,7 +76,9 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => string.Concat(o).Contains("has no enabled subscribers")),
+                Arg.Is<object>(o =>
+                    o != null && string.Concat(o).Contains("has no enabled subscribers")
+                ),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
@@ -103,7 +105,7 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => string.Concat(o).Contains("filtered out")),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains("filtered out")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
@@ -200,7 +202,7 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Information,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => string.Concat(o).Contains("2 event(s) received")),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains("2 event(s) received")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
@@ -225,7 +227,9 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Debug,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => string.Concat(o).Contains("Skipping disabled subscriber")),
+                Arg.Is<object>(o =>
+                    o != null && string.Concat(o).Contains("Skipping disabled subscriber")
+                ),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
@@ -249,7 +253,7 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Information,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => string.Concat(o).Contains("EventGridSchema")),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains("EventGridSchema")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
@@ -280,7 +284,7 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
             .Log(
                 LogLevel.Information,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => string.Concat(o).Contains("CloudEventV1_0")),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains("CloudEventV1_0")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );

@@ -70,7 +70,7 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
             .Log(
                 LogLevel.Error,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => string.Concat(o).Contains("aeg-sas-token")),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains("aeg-sas-token")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
@@ -131,7 +131,8 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
                 Arg.Is<object>(o =>
-                    string.Concat(o).Contains("fake\\nsignature")
+                    o != null
+                    && string.Concat(o).Contains("fake\\nsignature")
                     && !string.Concat(o).Contains("fake\nsignature")
                 ),
                 Arg.Any<Exception?>(),
@@ -157,7 +158,8 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
                 Arg.Is<object>(o =>
-                    string.Concat(o).Contains("fake\\rsignature")
+                    o != null
+                    && string.Concat(o).Contains("fake\\rsignature")
                     && !string.Concat(o).Contains("fake\rsignature")
                 ),
                 Arg.Any<Exception?>(),
@@ -183,7 +185,8 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
                 Arg.Is<object>(o =>
-                    string.Concat(o).Contains("fake\\tsignature")
+                    o != null
+                    && string.Concat(o).Contains("fake\\tsignature")
                     && !string.Concat(o).Contains("fake\tsignature")
                 ),
                 Arg.Any<Exception?>(),
@@ -209,7 +212,8 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
                 Arg.Is<object>(o =>
-                    string.Concat(o).Contains("fake\\n\\r\\t\\0signature")
+                    o != null
+                    && string.Concat(o).Contains("fake\\n\\r\\t\\0signature")
                     && !string.Concat(o).Contains("fake\n\r\t\0signature")
                 ),
                 Arg.Any<Exception?>(),
@@ -235,7 +239,8 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
                 Arg.Is<object>(o =>
-                    string.Concat(o).Contains("fake\\x7Fsignature")
+                    o != null
+                    && string.Concat(o).Contains("fake\\x7Fsignature")
                     && !string.Concat(o).Contains($"fake{(char)127}signature")
                 ),
                 Arg.Any<Exception?>(),
