@@ -47,7 +47,7 @@ public class StorageQueueClientCacheTests
             .Log(
                 LogLevel.Debug,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => (o.ToString() ?? "").Contains("Creating Storage Queue client")),
+                Arg.Is<object>(o => string.Concat(o).Contains("Creating Storage Queue client")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
@@ -58,7 +58,7 @@ public class StorageQueueClientCacheTests
             .Log(
                 LogLevel.Error,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => (o.ToString() ?? "").Contains("Failed to send event")),
+                Arg.Is<object>(o => string.Concat(o).Contains("Failed to send event")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );

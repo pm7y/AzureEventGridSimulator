@@ -57,7 +57,7 @@ public class ValidateSubscriptionCommandHandlerTests
             .Log(
                 LogLevel.Information,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => (o.ToString() ?? "").Contains("successfully validated")),
+                Arg.Is<object>(o => string.Concat(o).Contains("successfully validated")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
@@ -91,7 +91,7 @@ public class ValidateSubscriptionCommandHandlerTests
             .Log(
                 LogLevel.Warning,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(o => (o.ToString() ?? "").Contains("Validation failed")),
+                Arg.Is<object>(o => string.Concat(o).Contains("Validation failed")),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
