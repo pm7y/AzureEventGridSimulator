@@ -4,7 +4,7 @@
     </PropertyGroup>
     <ItemGroup>
         <!-- Main Application -->
-        <PackageVersion Include="Asp.Versioning.Mvc" Version="10.0.1" />
+        <PackageVersion Include="Asp.Versioning.Mvc" Version="10.2.1" />
         <!-- Serilog -->
         <PackageVersion Include="JetBrains.Annotations" Version="2026.2.0" />
         <!--
@@ -37,10 +37,10 @@
         <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
         <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.17.0" />
         <!-- Analyzers -->
-        <PackageVersion Include="Meziantou.Analyzer" Version="3.0.138" />
+        <PackageVersion Include="Meziantou.Analyzer" Version="3.0.141" />
         <!-- Testing -->
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
-        <PackageVersion Include="NSubstitute" Version="6.0.0" />
+        <PackageVersion Include="NSubstitute" Version="6.1.0" />
         <PackageVersion Include="Shouldly" Version="4.3.0" />
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
         <PackageVersion Include="xunit" Version="2.9.3" />
