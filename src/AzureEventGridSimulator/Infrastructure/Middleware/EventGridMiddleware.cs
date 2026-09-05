@@ -23,6 +23,17 @@ public class EventGridMiddleware(RequestDelegate next)
         ILogger<EventGridMiddleware> logger
     )
     {
+        // The ARM management API runs on its own port and is plain attribute-routed MVC; the
+        // data-plane request pipeline must never process it.
+        if (
+            simulatorSettings.ManagementPort is { } managementPort
+            && context.Connection.LocalPort == managementPort
+        )
+        {
+            await next(context);
+            return;
+        }
+
         // Route the request to determine its type
         var route = requestRouter.RouteRequest(context);
 

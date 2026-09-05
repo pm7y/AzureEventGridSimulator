@@ -392,6 +392,21 @@ public class Program
                     listenOptions => listenOptions.UseHttps()
                 );
             }
+
+            // The ARM management API (control plane) listens on its own port, separate from the
+            // per-topic data-plane ports, mirroring how Azure splits management.azure.com from the
+            // topic endpoint.
+            var managementPort = options
+                .ApplicationServices.GetRequiredService<SimulatorSettings>()
+                .ManagementPort;
+            if (managementPort.HasValue)
+            {
+                options.Listen(
+                    IPAddress.Any,
+                    managementPort.Value,
+                    listenOptions => listenOptions.UseHttps()
+                );
+            }
         });
 
         return builder;

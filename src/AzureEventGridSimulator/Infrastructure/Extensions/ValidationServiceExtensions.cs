@@ -20,6 +20,7 @@ public static class ValidationServiceExtensions
         services.AddSingleton<RequestBodyValidator>();
         services.AddSingleton<ContentTypeValidator>();
         services.AddSingleton<EventValidationOrchestrator>();
+        services.AddSingleton<SubscriptionValidationSender>();
 
         return services;
     }

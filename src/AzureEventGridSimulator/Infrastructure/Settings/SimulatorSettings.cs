@@ -25,11 +25,26 @@ public class SimulatorSettings
     [JsonPropertyName("eventValidationLimits")]
     public EventValidationLimits EventValidationLimits { get; set; } = new();
 
+    /// <summary>
+    ///     Optional port for the ARM management API (the control plane that creates and removes
+    ///     event subscriptions at runtime). If not set, the management API is disabled and
+    ///     subscriptions can only be configured at boot.
+    /// </summary>
+    [JsonPropertyName("managementPort")]
+    public int? ManagementPort { get; set; }
+
     public void Validate()
     {
         if (Topics.GroupBy(o => o.Port).Count() != Topics.Length)
         {
             throw new InvalidOperationException("Each topic must use a unique port.");
+        }
+
+        if (ManagementPort is { } managementPort && Topics.Any(o => o.Port == managementPort))
+        {
+            throw new InvalidOperationException(
+                "The management port must not be the same as a topic port."
+            );
         }
 
         if (Topics.GroupBy(o => o.Name).Count() != Topics.Length)

@@ -28,6 +28,14 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
     public required string QueueName { get; init; }
 
     /// <summary>
+    ///     The storage-account ARM resource id from a runtime (ARM-created) subscription's destination,
+    ///     echoed back on reads so the control-plane round-trip is faithful. Null for statically-configured
+    ///     subscribers; not part of the static config wire shape.
+    /// </summary>
+    [JsonIgnore]
+    public string? SourceResourceId { get; init; }
+
+    /// <summary>
     ///     Gets the effective connection string, either from subscriber or topic level.
     /// </summary>
     [JsonIgnore]

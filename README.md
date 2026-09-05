@@ -95,6 +95,38 @@ curl -k -X POST "https://localhost:60101/api/events?api-version=2018-01-01" \
   -d '[{"id":"1","subject":"/test","eventType":"Test","eventTime":"2024-01-01T00:00:00Z","data":{"message":"Hello"},"dataVersion":"1"}]'
 ```
 
+## Runtime subscription management (ARM control plane)
+
+By default, subscribers are configured at boot via `appsettings.json`. To also create and remove
+event subscriptions **while the simulator is running** — exactly as an app does in Azure — set a
+`managementPort`:
+
+```json
+{
+  "managementPort": 60100,
+  "topics": [ { "name": "MyTopic", "port": 60101, "key": "TheLocal+DevelopmentKey=" } ]
+}
+```
+
+The simulator then exposes an ARM control-plane facade on that port that speaks the same HTTP as the
+`Azure.ResourceManager.EventGrid` client. Point the real client at the simulator and create/get/
+list/delete topic-scoped WebHook subscriptions unmodified:
+
+```csharp
+var options = new ArmClientOptions
+{
+    Environment = new ArmEnvironment(new Uri("https://localhost:60100/"), "https://management.azure.com"),
+};
+var arm = new ArmClient(credential, subscriptionId, options); // any token; the simulator does not validate it
+var topic = arm.GetEventGridTopicResource(new ResourceIdentifier(topicResourceId));
+await topic.GetTopicEventSubscriptions()
+    .CreateOrUpdateAsync(WaitUntil.Completed, "my-sub", data);
+```
+
+Runtime subscriptions are held in memory (seeded from `appsettings.json` at boot) and reset on
+restart. Created WebHook subscriptions go through the normal validation handshake before they start
+receiving events. Only WebHook destinations are supported today.
+
 ## Dashboard
 
 Access the built-in dashboard at `https://localhost:<port>/dashboard` to view event history and delivery status.
