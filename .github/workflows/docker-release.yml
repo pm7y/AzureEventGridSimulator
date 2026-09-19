@@ -29,8 +29,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Build the tagged commit, not whatever the dispatched ref (master) points at now.
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ env.VERSION_NUMBER }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -51,6 +54,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
+          # Take sha/ref from the checked-out tag, so the image's revision label names the
+          # commit that was built rather than github.sha (master HEAD on a dispatch).
+          context: git
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=semver,pattern={{version}},value=${{ env.VERSION_NUMBER }}

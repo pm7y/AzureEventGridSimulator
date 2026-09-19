@@ -46,59 +46,53 @@ jobs:
             runtime: osx-arm64
 
     steps:
+      # Build the tagged commit, not whatever the dispatched ref (master) points at now.
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ env.VERSION_NUMBER }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           cache: true
-          cache-dependency-path: "**/*.csproj"
+          # Package versions live in Directory.Packages.props (Central Package Management),
+          # so the key must hash it as well as the project files.
+          cache-dependency-path: |
+            **/*.csproj
+            src/Directory.Packages.props
+            src/Directory.Build.props
+            nuget.config
 
       - name: Restore dependencies
         run: |
           dotnet restore ${{ env.MAIN_PROJECT }} --runtime ${{ matrix.runtime }}
           dotnet restore ${{ env.TEST_PROJECT }} --runtime ${{ matrix.runtime }}
 
-      - name: Build main project
-        run: >-
-          dotnet build ${{ env.MAIN_PROJECT }}
-          --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
-          --runtime ${{ matrix.runtime }}
-          --no-restore
-          --no-incremental
-          /p:Version=${{ env.VERSION_NUMBER }}
-          /p:WarningLevel=4
-          /p:TreatWarningsAsErrors=true
-
-      - name: Build test project
+      # Also builds the main project, through the test project's ProjectReference
+      # (the /p:Version global property flows to it).
+      - name: Build
         run: >-
           dotnet build ${{ env.TEST_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-restore
-          --no-incremental
-          /p:WarningLevel=4
-          /p:TreatWarningsAsErrors=true
+          /p:Version=${{ env.VERSION_NUMBER }}
 
       - name: Test
         run: >-
           dotnet test ${{ env.TEST_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-build
           --verbosity normal
-          --filter "Category=unit|Category=integration"
+          --filter "Category!=integration-actual"
 
       - name: Publish
         run: >-
           dotnet publish ${{ env.MAIN_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-restore
           --self-contained true

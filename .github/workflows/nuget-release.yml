@@ -33,8 +33,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Build the tagged commit, not whatever the dispatched ref (master) points at now.
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ env.VERSION_NUMBER }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6

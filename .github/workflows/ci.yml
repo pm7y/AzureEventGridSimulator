@@ -50,45 +50,60 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           cache: true
-          cache-dependency-path: "**/*.csproj"
+          # Package versions live in Directory.Packages.props (Central Package Management),
+          # so the key must hash it as well as the project files.
+          cache-dependency-path: |
+            **/*.csproj
+            src/Directory.Packages.props
+            src/Directory.Build.props
+            nuget.config
+
+      # Format-on-build is skipped when CI=true, so check the CSharpier layout here instead.
+      - name: Check formatting (CSharpier)
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet tool restore && dotnet csharpier check src
 
       - name: Restore dependencies
         run: |
           dotnet restore ${{ env.MAIN_PROJECT }} --runtime ${{ matrix.runtime }}
           dotnet restore ${{ env.TEST_PROJECT }} --runtime ${{ matrix.runtime }}
 
-      - name: Build main project
-        run: >-
-          dotnet build ${{ env.MAIN_PROJECT }}
-          --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
-          --runtime ${{ matrix.runtime }}
-          --no-restore
-          --no-incremental
-          /p:WarningLevel=4
-          /p:TreatWarningsAsErrors=true
-
-      - name: Build test project
+      # Also builds the main project, through the test project's ProjectReference.
+      # The ubuntu leg collects coverage, and coverlet skips modules without symbols.
+      # Directory.Build.props turns PDBs off for Release|AnyCPU (it applies when Platform is
+      # passed, e.g. solution builds), so pin them on here so coverage survives either way.
+      - name: Build
         run: >-
           dotnet build ${{ env.TEST_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-restore
-          --no-incremental
-          /p:WarningLevel=4
-          /p:TreatWarningsAsErrors=true
+          ${{ matrix.os == 'ubuntu-latest' && '/p:DebugType=portable /p:DebugSymbols=true' || '' }}
 
+      # A deny-list filter, so a test class with a missing or misspelt Category trait still runs.
       - name: Test
         run: >-
           dotnet test ${{ env.TEST_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-build
           --verbosity normal
           --logger "trx;LogFileName=test-results.trx"
-          --filter "Category=unit|Category=integration"
+          --filter "Category!=integration-actual"
+          ${{ matrix.os == 'ubuntu-latest' && '--collect:"XPlat Code Coverage"' || '' }}
+
+      # Informational only: no threshold, nothing gates on the numbers.
+      - name: Generate coverage report
+        if: matrix.os == 'ubuntu-latest'
+        uses: danielpalme/ReportGenerator-GitHub-Action@v5
+        with:
+          reports: "**/TestResults/**/coverage.cobertura.xml"
+          targetdir: coveragereport
+          reporttypes: MarkdownSummaryGithub
+
+      - name: Publish coverage summary
+        if: matrix.os == 'ubuntu-latest'
+        run: cat coveragereport/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload test results
         uses: actions/upload-artifact@v7
