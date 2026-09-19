@@ -168,14 +168,43 @@ public class RequestRouterTests
     }
 
     [Theory]
-    [InlineData("GET")]
-    [InlineData("PUT")]
-    [InlineData("DELETE")]
-    [InlineData("PATCH")]
-    public void GivenNonPostMethodToApiEvents_WhenRouted_ThenMethodNotAllowed(string method)
+    [InlineData("GET", "/api/events")]
+    [InlineData("PUT", "/api/events")]
+    [InlineData("DELETE", "/api/events")]
+    [InlineData("PATCH", "/api/events")]
+    [InlineData("GET", "/API/EVENTS")]
+    [InlineData("PUT", "/API/EVENTS")]
+    [InlineData("DELETE", "/API/EVENTS")]
+    [InlineData("PATCH", "/API/EVENTS")]
+    [InlineData("GET", "/api/events/")]
+    [InlineData("PUT", "/api/events/")]
+    [InlineData("DELETE", "/api/events/")]
+    [InlineData("PATCH", "/api/events/")]
+    public void GivenNonPostMethodToApiEvents_WhenRouted_ThenMethodNotAllowed(
+        string method,
+        string path
+    )
     {
         var router = CreateRouter();
-        var context = CreateContext(method, "/api/events");
+        var context = CreateContext(method, path);
+
+        var result = router.RouteRequest(context);
+
+        result.Type.ShouldBe(RequestType.MethodNotAllowed);
+    }
+
+    // The HEAD and OPTIONS routes match "/api/events" case-insensitively but don't trim a
+    // trailing slash, so "/api/events/" falls through to 405. Azure's answer hasn't been
+    // recorded yet; changing this would be a separate, flagged behaviour change.
+    [Theory]
+    [InlineData("HEAD")]
+    [InlineData("OPTIONS")]
+    public void GivenHeadOrOptionsToApiEventsWithTrailingSlash_WhenRouted_ThenMethodNotAllowed(
+        string method
+    )
+    {
+        var router = CreateRouter();
+        var context = CreateContext(method, "/api/events/");
 
         var result = router.RouteRequest(context);
 

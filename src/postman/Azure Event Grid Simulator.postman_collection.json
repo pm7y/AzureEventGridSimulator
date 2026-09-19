@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "5931e5ae-86d5-4bd9-8f70-b1dff37cde9c",
     "name": "Azure Event Grid Simulator",
-    "description": "A comprehensive collection for testing the Azure Event Grid Simulator.\n\nSupports both Event Grid Schema and CloudEvents v1.0 Schema.\n\n## Environment Variables\n- `baseUrl`: The endpoint URL (e.g., https://127.0.0.1:60101 or https://your-topic.eventgrid.azure.net)\n- `sasKey`: The SAS key for authentication\n- `schema`: **REQUIRED** - Set to either \"EventGrid\" or \"CloudEvents\" to match your endpoint\n\n## Schema-Based Test Filtering\nThe collection automatically skips tests based on the `schema` environment variable:\n- When `schema` = \"EventGrid\": Only Event Grid Schema tests run\n- When `schema` = \"CloudEvents\": Only CloudEvents Schema tests run\n- Common tests (Authentication, HTTP Errors, Health) always run\n\n## Schema Types\n1. **Event Grid Schema**: The original Azure Event Grid format\n2. **CloudEvents Schema**: CloudEvents v1.0 specification with structured, batch, and binary modes",
+    "description": "A comprehensive collection for testing the Azure Event Grid Simulator.\n\nSupports both Event Grid Schema and CloudEvents v1.0 Schema.\n\n## Environment Variables\n- `baseUrl`: The endpoint URL (e.g., https://127.0.0.1:60101 or https://your-topic.eventgrid.azure.net)\n- `sasKey`: The SAS key for authentication\n- `schema`: **REQUIRED** - Set to either \"EventGrid\" or \"CloudEvents\" to match your endpoint\n\n## Schema-Based Test Filtering\nThe collection automatically skips tests based on the `schema` environment variable:\n- When `schema` = \"EventGrid\": Only Event Grid Schema tests run\n- When `schema` = \"CloudEvents\": Only CloudEvents Schema tests run\n- Common tests (Authentication, HTTP Errors, Health) always run\n- If `schema` is unset or has any other value, the collection-level pre-request script throws an error that names the problem and ends the run\n\n## Schema Types\n1. **Event Grid Schema**: The original Azure Event Grid format\n2. **CloudEvents Schema**: CloudEvents v1.0 specification with structured, batch, and binary modes",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -15,7 +15,7 @@
             "exec": [
               "// Skip this entire folder if environment is set to CloudEvents",
               "const envSchema = pm.environment.get('schema');",
-              "if (envSchema && envSchema !== 'EventGrid') {",
+              "if (envSchema !== 'EventGrid') {",
               "    console.log('Skipping EventGrid schema test - environment is configured for ' + envSchema);",
               "    pm.execution.skipRequest();",
               "}"
@@ -34,8 +34,8 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());"
                 ],
                 "type": "text/javascript"
               }
@@ -119,10 +119,10 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId1', uuid.v4());",
-                  "pm.collectionVariables.set('eventId2', uuid.v4());",
-                  "pm.collectionVariables.set('eventId3', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                  "pm.variables.set('eventId1', uuid.v4());",
+                  "pm.variables.set('eventId2', uuid.v4());",
+                  "pm.variables.set('eventId3', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());"
                 ],
                 "type": "text/javascript"
               }
@@ -202,8 +202,8 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());"
                 ],
                 "type": "text/javascript"
               }
@@ -278,8 +278,8 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());"
                 ],
                 "type": "text/javascript"
               }
@@ -540,7 +540,7 @@
               "script": {
                 "exec": [
                   "var uuid = require('uuid');",
-                  "pm.collectionVariables.set('eventId', uuid.v4());"
+                  "pm.variables.set('eventId', uuid.v4());"
                 ],
                 "type": "text/javascript"
               }
@@ -646,7 +646,7 @@
               "script": {
                 "exec": [
                   "var uuid = require('uuid');",
-                  "pm.collectionVariables.set('eventId', uuid.v4());"
+                  "pm.variables.set('eventId', uuid.v4());"
                 ],
                 "type": "text/javascript"
               }
@@ -752,7 +752,7 @@
               "script": {
                 "exec": [
                   "var uuid = require('uuid');",
-                  "pm.collectionVariables.set('eventId', uuid.v4());"
+                  "pm.variables.set('eventId', uuid.v4());"
                 ],
                 "type": "text/javascript"
               }
@@ -854,8 +854,8 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());"
                 ],
                 "type": "text/javascript"
               }
@@ -1058,7 +1058,7 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());"
+                  "pm.variables.set('eventId', uuid.v4());"
                 ],
                 "type": "text/javascript"
               }
@@ -1165,7 +1165,7 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());"
+                  "pm.variables.set('eventId', uuid.v4());"
                 ],
                 "type": "text/javascript"
               }
@@ -1272,7 +1272,7 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());"
+                  "pm.variables.set('eventId', uuid.v4());"
                 ],
                 "type": "text/javascript"
               }
@@ -1379,7 +1379,7 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());"
+                  "pm.variables.set('eventId', uuid.v4());"
                 ],
                 "type": "text/javascript"
               }
@@ -1486,7 +1486,7 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());"
+                  "pm.variables.set('eventId', uuid.v4());"
                 ],
                 "type": "text/javascript"
               }
@@ -1565,8 +1565,8 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());"
                 ],
                 "type": "text/javascript"
               }
@@ -1858,7 +1858,7 @@
             "exec": [
               "// Skip this entire folder if environment is set to EventGrid",
               "const envSchema = pm.environment.get('schema');",
-              "if (envSchema && envSchema !== 'CloudEvents') {",
+              "if (envSchema !== 'CloudEvents') {",
               "    console.log('Skipping CloudEvents schema test - environment is configured for ' + envSchema);",
               "    pm.execution.skipRequest();",
               "}"
@@ -1880,8 +1880,8 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());",
-                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                      "pm.variables.set('eventId', uuid.v4());",
+                      "pm.variables.set('eventTime', (new Date()).toISOString());"
                     ],
                     "type": "text/javascript"
                   }
@@ -1956,8 +1956,8 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());",
-                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                      "pm.variables.set('eventId', uuid.v4());",
+                      "pm.variables.set('eventTime', (new Date()).toISOString());"
                     ],
                     "type": "text/javascript"
                   }
@@ -2032,7 +2032,7 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                      "pm.variables.set('eventId', uuid.v4());"
                     ],
                     "type": "text/javascript"
                   }
@@ -2113,10 +2113,10 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId1', uuid.v4());",
-                      "pm.collectionVariables.set('eventId2', uuid.v4());",
-                      "pm.collectionVariables.set('eventId3', uuid.v4());",
-                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                      "pm.variables.set('eventId1', uuid.v4());",
+                      "pm.variables.set('eventId2', uuid.v4());",
+                      "pm.variables.set('eventId3', uuid.v4());",
+                      "pm.variables.set('eventTime', (new Date()).toISOString());"
                     ],
                     "type": "text/javascript"
                   }
@@ -2197,8 +2197,8 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());",
-                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                      "pm.variables.set('eventId', uuid.v4());",
+                      "pm.variables.set('eventTime', (new Date()).toISOString());"
                     ],
                     "type": "text/javascript"
                   }
@@ -2303,8 +2303,8 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());",
-                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                      "pm.variables.set('eventId', uuid.v4());",
+                      "pm.variables.set('eventTime', (new Date()).toISOString());"
                     ],
                     "type": "text/javascript"
                   }
@@ -2419,7 +2419,7 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                      "pm.variables.set('eventId', uuid.v4());"
                     ],
                     "type": "text/javascript"
                   }
@@ -2514,8 +2514,8 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());",
-                      "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                      "pm.variables.set('eventId', uuid.v4());",
+                      "pm.variables.set('eventTime', (new Date()).toISOString());"
                     ],
                     "type": "text/javascript"
                   }
@@ -2658,7 +2658,7 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                      "pm.variables.set('eventId', uuid.v4());"
                     ],
                     "type": "text/javascript"
                   }
@@ -2824,7 +2824,7 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                      "pm.variables.set('eventId', uuid.v4());"
                     ],
                     "type": "text/javascript"
                   }
@@ -2899,7 +2899,7 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                      "pm.variables.set('eventId', uuid.v4());"
                     ],
                     "type": "text/javascript"
                   }
@@ -3064,7 +3064,7 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                      "pm.variables.set('eventId', uuid.v4());"
                     ],
                     "type": "text/javascript"
                   }
@@ -3170,7 +3170,7 @@
                   "script": {
                     "exec": [
                       "var uuid = require('uuid');",
-                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                      "pm.variables.set('eventId', uuid.v4());"
                     ],
                     "type": "text/javascript"
                   }
@@ -3244,7 +3244,7 @@
                   "script": {
                     "exec": [
                       "var uuid = require('uuid');",
-                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                      "pm.variables.set('eventId', uuid.v4());"
                     ],
                     "type": "text/javascript"
                   }
@@ -3350,7 +3350,7 @@
                   "script": {
                     "exec": [
                       "var uuid = require('uuid');",
-                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                      "pm.variables.set('eventId', uuid.v4());"
                     ],
                     "type": "text/javascript"
                   }
@@ -3826,7 +3826,7 @@
                     "exec": [
                       "var uuid = require('uuid');",
                       "",
-                      "pm.collectionVariables.set('eventId', uuid.v4());"
+                      "pm.variables.set('eventId', uuid.v4());"
                     ],
                     "type": "text/javascript"
                   }
@@ -4438,8 +4438,8 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());"
                 ],
                 "type": "text/javascript"
               }
@@ -4541,8 +4541,8 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());"
                 ],
                 "type": "text/javascript"
               }
@@ -4643,8 +4643,8 @@
               "script": {
                 "exec": [
                   "var uuid = require('uuid');",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());"
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());"
                 ],
                 "type": "text/javascript"
               }
@@ -4795,7 +4795,20 @@
                   "pm.test('Error message and details message match', function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.error.message).to.equal(jsonData.error.details[0].message);",
-                  "});"
+                  "});",
+                  "",
+                  "pm.test('Response has Allow header', function () {",
+                  "    pm.expect(pm.response.headers.has('Allow')).to.be.true;",
+                  "});",
+                  "",
+                  "// Azure's Allow value hasn't been recorded yet, so only a simulator run checks it",
+                  "var isSimulator = !String(pm.variables.get('baseUrl')).includes('eventgrid.azure.net');",
+                  "if (isSimulator) {",
+                  "    pm.test('Allow lists exactly OPTIONS and POST (any order)', function () {",
+                  "        var methods = pm.response.headers.get('Allow').split(',').map(function (m) { return m.trim(); }).sort();",
+                  "        pm.expect(methods).to.eql(['OPTIONS', 'POST']);",
+                  "    });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -4838,8 +4851,8 @@
               "script": {
                 "exec": [
                   "var uuid = require('uuid');",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());",
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());",
                   "",
                   "// Build request body based on schema",
                   "const schema = pm.environment.get('schema');",
@@ -4850,23 +4863,23 @@
                   "        specversion: '1.0',",
                   "        type: 'Path.Test',",
                   "        source: '/test',",
-                  "        id: pm.collectionVariables.get('eventId'),",
-                  "        time: pm.collectionVariables.get('eventTime')",
+                  "        id: pm.variables.get('eventId'),",
+                  "        time: pm.variables.get('eventTime')",
                   "    };",
                   "    pm.request.headers.upsert({key: 'Content-Type', value: 'application/cloudevents+json; charset=utf-8'});",
                   "} else {",
                   "    body = [{",
-                  "        id: pm.collectionVariables.get('eventId'),",
+                  "        id: pm.variables.get('eventId'),",
                   "        subject: '/test',",
                   "        data: {},",
                   "        eventType: 'Test',",
-                  "        eventTime: pm.collectionVariables.get('eventTime'),",
+                  "        eventTime: pm.variables.get('eventTime'),",
                   "        dataVersion: '1.0'",
                   "    }];",
                   "    pm.request.headers.upsert({key: 'Content-Type', value: 'application/json'});",
                   "}",
                   "",
-                  "pm.collectionVariables.set('pathTestBody', JSON.stringify(body));"
+                  "pm.variables.set('pathTestBody', JSON.stringify(body));"
                 ],
                 "type": "text/javascript"
               }
@@ -4933,8 +4946,8 @@
               "script": {
                 "exec": [
                   "var uuid = require('uuid');",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());",
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());",
                   "",
                   "// Build request body based on schema",
                   "const schema = pm.environment.get('schema');",
@@ -4945,23 +4958,23 @@
                   "        specversion: '1.0',",
                   "        type: 'Path.Test',",
                   "        source: '/test',",
-                  "        id: pm.collectionVariables.get('eventId'),",
-                  "        time: pm.collectionVariables.get('eventTime')",
+                  "        id: pm.variables.get('eventId'),",
+                  "        time: pm.variables.get('eventTime')",
                   "    };",
                   "    pm.request.headers.upsert({key: 'Content-Type', value: 'application/cloudevents+json; charset=utf-8'});",
                   "} else {",
                   "    body = [{",
-                  "        id: pm.collectionVariables.get('eventId'),",
+                  "        id: pm.variables.get('eventId'),",
                   "        subject: '/test',",
                   "        data: {},",
                   "        eventType: 'Test',",
-                  "        eventTime: pm.collectionVariables.get('eventTime'),",
+                  "        eventTime: pm.variables.get('eventTime'),",
                   "        dataVersion: '1.0'",
                   "    }];",
                   "    pm.request.headers.upsert({key: 'Content-Type', value: 'application/json'});",
                   "}",
                   "",
-                  "pm.collectionVariables.set('pathTestBody', JSON.stringify(body));"
+                  "pm.variables.set('pathTestBody', JSON.stringify(body));"
                 ],
                 "type": "text/javascript"
               }
@@ -5125,11 +5138,11 @@
               "script": {
                 "exec": [
                   "var uuid = require('uuid');",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());",
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());",
                   "// Generate large payload (~1.5MB)",
                   "var largeData = 'x'.repeat(1600000);",
-                  "pm.collectionVariables.set('largeData', largeData);"
+                  "pm.variables.set('largeData', largeData);"
                 ],
                 "type": "text/javascript"
               }
@@ -5226,7 +5239,7 @@
           "response": []
         },
         {
-          "name": "Method Not Allowed (HEAD)",
+          "name": "HEAD Not Found (404)",
           "event": [
             {
               "listen": "test",
@@ -5269,7 +5282,7 @@
                 }
               ]
             },
-            "description": "Tests 405 error for HEAD method."
+            "description": "Tests that HEAD on /api/events returns 404 Not Found."
           },
           "response": []
         },
@@ -5320,7 +5333,20 @@
                   "pm.test('Error message and details message match', function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.error.message).to.equal(jsonData.error.details[0].message);",
-                  "});"
+                  "});",
+                  "",
+                  "pm.test('Response has Allow header', function () {",
+                  "    pm.expect(pm.response.headers.has('Allow')).to.be.true;",
+                  "});",
+                  "",
+                  "// Azure's Allow value hasn't been recorded yet, so only a simulator run checks it",
+                  "var isSimulator = !String(pm.variables.get('baseUrl')).includes('eventgrid.azure.net');",
+                  "if (isSimulator) {",
+                  "    pm.test('Allow lists exactly OPTIONS and POST (any order)', function () {",
+                  "        var methods = pm.response.headers.get('Allow').split(',').map(function (m) { return m.trim(); }).sort();",
+                  "        pm.expect(methods).to.eql(['OPTIONS', 'POST']);",
+                  "    });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -5411,7 +5437,20 @@
                   "pm.test('Error message and details message match', function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.error.message).to.equal(jsonData.error.details[0].message);",
-                  "});"
+                  "});",
+                  "",
+                  "pm.test('Response has Allow header', function () {",
+                  "    pm.expect(pm.response.headers.has('Allow')).to.be.true;",
+                  "});",
+                  "",
+                  "// Azure's Allow value hasn't been recorded yet, so only a simulator run checks it",
+                  "var isSimulator = !String(pm.variables.get('baseUrl')).includes('eventgrid.azure.net');",
+                  "if (isSimulator) {",
+                  "    pm.test('Allow lists exactly OPTIONS and POST (any order)', function () {",
+                  "        var methods = pm.response.headers.get('Allow').split(',').map(function (m) { return m.trim(); }).sort();",
+                  "        pm.expect(methods).to.eql(['OPTIONS', 'POST']);",
+                  "    });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -5493,7 +5532,20 @@
                   "pm.test('Error message and details message match', function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.error.message).to.equal(jsonData.error.details[0].message);",
-                  "});"
+                  "});",
+                  "",
+                  "pm.test('Response has Allow header', function () {",
+                  "    pm.expect(pm.response.headers.has('Allow')).to.be.true;",
+                  "});",
+                  "",
+                  "// Azure's Allow value hasn't been recorded yet, so only a simulator run checks it",
+                  "var isSimulator = !String(pm.variables.get('baseUrl')).includes('eventgrid.azure.net');",
+                  "if (isSimulator) {",
+                  "    pm.test('Allow lists exactly OPTIONS and POST (any order)', function () {",
+                  "        var methods = pm.response.headers.get('Allow').split(',').map(function (m) { return m.trim(); }).sort();",
+                  "        pm.expect(methods).to.eql(['OPTIONS', 'POST']);",
+                  "    });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -5546,7 +5598,36 @@
                 "exec": [
                   "pm.test('Status code is 200 OK or 204 No Content', function () {",
                   "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
-                  "});"
+                  "});",
+                  "",
+                  "pm.test('Response has Allow, api-supported-versions, aeg-input-event-schema and x-ms-request-id headers', function () {",
+                  "    pm.expect(pm.response.headers.has('Allow')).to.be.true;",
+                  "    pm.expect(pm.response.headers.has('api-supported-versions')).to.be.true;",
+                  "    pm.expect(pm.response.headers.has('aeg-input-event-schema')).to.be.true;",
+                  "    pm.expect(pm.response.headers.has('x-ms-request-id')).to.be.true;",
+                  "});",
+                  "",
+                  "// Azure's values for these headers haven't been recorded yet, so only a simulator run checks them",
+                  "var isSimulator = !String(pm.variables.get('baseUrl')).includes('eventgrid.azure.net');",
+                  "if (isSimulator) {",
+                  "    pm.test('Allow lists exactly OPTIONS and POST (any order)', function () {",
+                  "        var methods = pm.response.headers.get('Allow').split(',').map(function (m) { return m.trim(); }).sort();",
+                  "        pm.expect(methods).to.eql(['OPTIONS', 'POST']);",
+                  "    });",
+                  "",
+                  "    pm.test('api-supported-versions is 2018-01-01', function () {",
+                  "        pm.expect(pm.response.headers.get('api-supported-versions')).to.equal('2018-01-01');",
+                  "    });",
+                  "",
+                  "    pm.test('aeg-input-event-schema matches the topic input schema', function () {",
+                  "        var expected = pm.environment.get('schema') === 'CloudEvents' ? 'CloudEventV10' : 'EventGridEvent';",
+                  "        pm.expect(pm.response.headers.get('aeg-input-event-schema')).to.equal(expected);",
+                  "    });",
+                  "",
+                  "    pm.test('x-ms-request-id is a GUID', function () {",
+                  "        pm.expect(pm.response.headers.get('x-ms-request-id')).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+                  "    });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -5582,7 +5663,142 @@
                 }
               ]
             },
-            "description": "Tests OPTIONS preflight request for CORS."
+            "description": "Tests OPTIONS preflight request for CORS.\n\nChecks that the response carries the Allow, api-supported-versions, aeg-input-event-schema and x-ms-request-id headers. Their exact values are only asserted against the simulator, because Azure's haven't been recorded yet."
+          },
+          "response": []
+        },
+        {
+          "name": "HEAD Trailing Slash",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Azure's answer to HEAD /api/events/ hasn't been recorded yet: log it so a Real run shows it",
+                  "console.log('HEAD /api/events/ returned ' + pm.response.code + ', Allow: ' + pm.response.headers.get('Allow'));",
+                  "",
+                  "pm.test('Response has x-ms-request-id header', function () {",
+                  "    pm.expect(pm.response.headers.has('x-ms-request-id')).to.be.true;",
+                  "});",
+                  "",
+                  "// Unlike POST, the simulator's HEAD route doesn't trim a trailing slash, so this falls through to 405",
+                  "var isSimulator = !String(pm.variables.get('baseUrl')).includes('eventgrid.azure.net');",
+                  "if (isSimulator) {",
+                  "    pm.test('Simulator returns 405 Method Not Allowed', function () {",
+                  "        pm.response.to.have.status(405);",
+                  "    });",
+                  "",
+                  "    pm.test('Allow lists exactly OPTIONS and POST (any order)', function () {",
+                  "        var methods = pm.response.headers.get('Allow').split(',').map(function (m) { return m.trim(); }).sort();",
+                  "        pm.expect(methods).to.eql(['OPTIONS', 'POST']);",
+                  "    });",
+                  "",
+                  "    pm.test('x-ms-request-id is a GUID', function () {",
+                  "        pm.expect(pm.response.headers.get('x-ms-request-id')).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "HEAD",
+            "header": [
+              {
+                "key": "aeg-sas-key",
+                "value": "{{sasKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/?api-version=2018-01-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Sends HEAD to /api/events/ (trailing slash).\n\nThe simulator returns 405 here but 404 for HEAD /api/events. Azure's answer hasn't been recorded yet: run this once against a Real environment and check the logged status before changing the simulator or asserting more here."
+          },
+          "response": []
+        },
+        {
+          "name": "OPTIONS Trailing Slash",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Azure's answer to OPTIONS /api/events/ hasn't been recorded yet: log it so a Real run shows it",
+                  "console.log('OPTIONS /api/events/ returned ' + pm.response.code + ', Allow: ' + pm.response.headers.get('Allow'));",
+                  "",
+                  "pm.test('Response has x-ms-request-id header', function () {",
+                  "    pm.expect(pm.response.headers.has('x-ms-request-id')).to.be.true;",
+                  "});",
+                  "",
+                  "// Unlike POST, the simulator's OPTIONS route doesn't trim a trailing slash, so this falls through to 405",
+                  "var isSimulator = !String(pm.variables.get('baseUrl')).includes('eventgrid.azure.net');",
+                  "if (isSimulator) {",
+                  "    pm.test('Simulator returns 405 Method Not Allowed', function () {",
+                  "        pm.response.to.have.status(405);",
+                  "    });",
+                  "",
+                  "    pm.test('Allow lists exactly OPTIONS and POST (any order)', function () {",
+                  "        var methods = pm.response.headers.get('Allow').split(',').map(function (m) { return m.trim(); }).sort();",
+                  "        pm.expect(methods).to.eql(['OPTIONS', 'POST']);",
+                  "    });",
+                  "",
+                  "    pm.test('x-ms-request-id is a GUID', function () {",
+                  "        pm.expect(pm.response.headers.get('x-ms-request-id')).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "OPTIONS",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost",
+                "type": "text"
+              },
+              {
+                "key": "Access-Control-Request-Method",
+                "value": "POST",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/?api-version=2018-01-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "api-version",
+                  "value": "2018-01-01"
+                }
+              ]
+            },
+            "description": "Sends an OPTIONS preflight to /api/events/ (trailing slash).\n\nThe simulator returns 405 here but 200 for OPTIONS /api/events. Azure's answer hasn't been recorded yet: run this once against a Real environment and check the logged status before changing the simulator or asserting more here."
           },
           "response": []
         }
@@ -5593,7 +5809,7 @@
       "name": "Subscription Validation",
       "item": [
         {
-          "name": "Manual Validation",
+          "name": "Manual Validation - Unknown Code (400)",
           "event": [
             {
               "listen": "prerequest",
@@ -5613,13 +5829,18 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Status code is 200 OK or 400 Bad Request', function () {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
                   "});",
                   "",
-                  "pm.test('Response is text or JSON', function () {",
-                  "    var contentType = pm.response.headers.get('Content-Type');",
-                  "    pm.expect(contentType).to.match(/text|json/);",
+                  "pm.test('Error details code is InputJsonInvalid', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.details[0].code).to.equal('InputJsonInvalid');",
+                  "});",
+                  "",
+                  "pm.test('Error message says the validation code was not correct', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.message).to.equal('The validation code was not correct.');",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -5644,7 +5865,7 @@
                 }
               ]
             },
-            "description": "Manually validates a subscription using a validation ID.\n\nWhen a webhook endpoint doesn't automatically respond to the validation challenge, the validation URL can be accessed manually to complete the subscription validation.\n\nThe `id` parameter should be the GUID from the validation URL provided during subscription setup."
+            "description": "Calls the manual validation URL with a code that matches no subscriber, so the simulator answers 400 Bad Request (InputJsonInvalid). Each HTTP subscriber's code is derived from a SHA-256 hash of its endpoint, so this fixed id matches none of the shipped subscribers.\n\nWhen a webhook endpoint doesn't automatically respond to the validation challenge, the validation URL can be accessed manually to complete the subscription validation.\n\nThe `id` parameter should be the GUID from the validation URL provided during subscription setup."
           },
           "response": []
         }
@@ -5716,8 +5937,8 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());",
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());",
                   "",
                   "// Build request body based on schema",
                   "const schema = pm.environment.get('schema');",
@@ -5728,22 +5949,22 @@
                   "        specversion: '1.0',",
                   "        type: 'ApiVersion.Test',",
                   "        source: '/api-version-test',",
-                  "        id: pm.collectionVariables.get('eventId'),",
-                  "        time: pm.collectionVariables.get('eventTime'),",
+                  "        id: pm.variables.get('eventId'),",
+                  "        time: pm.variables.get('eventTime'),",
                   "        data: { apiVersion: '2018-01-01' }",
                   "    };",
                   "} else {",
                   "    body = [{",
-                  "        id: pm.collectionVariables.get('eventId'),",
+                  "        id: pm.variables.get('eventId'),",
                   "        subject: '/api-version-test',",
                   "        data: { apiVersion: '2018-01-01' },",
                   "        eventType: 'ApiVersion.Test',",
-                  "        eventTime: pm.collectionVariables.get('eventTime'),",
+                  "        eventTime: pm.variables.get('eventTime'),",
                   "        dataVersion: '1.0'",
                   "    }];",
                   "}",
                   "",
-                  "pm.collectionVariables.set('apiVersionTestBody', JSON.stringify(body));",
+                  "pm.variables.set('apiVersionTestBody', JSON.stringify(body));",
                   "",
                   "// Set Content-Type based on schema",
                   "if (schema === 'CloudEvents') {",
@@ -5825,8 +6046,8 @@
                 "exec": [
                   "var uuid = require('uuid');",
                   "",
-                  "pm.collectionVariables.set('eventId', uuid.v4());",
-                  "pm.collectionVariables.set('eventTime', (new Date()).toISOString());",
+                  "pm.variables.set('eventId', uuid.v4());",
+                  "pm.variables.set('eventTime', (new Date()).toISOString());",
                   "",
                   "// Build request body based on schema",
                   "const schema = pm.environment.get('schema');",
@@ -5837,22 +6058,22 @@
                   "        specversion: '1.0',",
                   "        type: 'ApiVersion.Test',",
                   "        source: '/api-version-test',",
-                  "        id: pm.collectionVariables.get('eventId'),",
-                  "        time: pm.collectionVariables.get('eventTime'),",
+                  "        id: pm.variables.get('eventId'),",
+                  "        time: pm.variables.get('eventTime'),",
                   "        data: { apiVersion: 'default' }",
                   "    };",
                   "} else {",
                   "    body = [{",
-                  "        id: pm.collectionVariables.get('eventId'),",
+                  "        id: pm.variables.get('eventId'),",
                   "        subject: '/api-version-test',",
                   "        data: { apiVersion: 'default' },",
                   "        eventType: 'ApiVersion.Test',",
-                  "        eventTime: pm.collectionVariables.get('eventTime'),",
+                  "        eventTime: pm.variables.get('eventTime'),",
                   "        dataVersion: '1.0'",
                   "    }];",
                   "}",
                   "",
-                  "pm.collectionVariables.set('apiVersionTestBody', JSON.stringify(body));",
+                  "pm.variables.set('apiVersionTestBody', JSON.stringify(body));",
                   "",
                   "// Set Content-Type based on schema",
                   "if (schema === 'CloudEvents') {",
@@ -5929,29 +6150,12 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          ""
-        ]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          "// Capture detail code for error responses (collection-level)",
-          "if (pm.response.code >= 400) {",
-          "    try {",
-          "        var jsonData = pm.response.json();",
-          "        if (jsonData.error && jsonData.error.details && jsonData.error.details[0]) {",
-          "            var detailCode = jsonData.error.details[0].code;",
-          "            console.log('[DETAIL CODE] ' + pm.info.requestName + ' => ' + detailCode);",
-          "            ",
-          "            // Save to collection variable for reference",
-          "            pm.collectionVariables.set('lastDetailCode_' + pm.info.requestName.replace(/[^a-zA-Z0-9]/g, '_'), detailCode);",
-          "        }",
-          "    } catch (e) {",
-          "        // Not JSON or missing expected structure",
-          "    }",
+          "// Every request needs an environment that sets schema (see the collection description).",
+          "const schema = pm.environment.get('schema');",
+          "if (schema !== 'EventGrid' && schema !== 'CloudEvents') {",
+          "    // newman still sends a request whose pre-request script throws, so also end the run here",
+          "    pm.execution.setNextRequest(null);",
+          "    throw new Error(\"Select an 'Event Grid - Sim' or 'Event Grid - Real' environment: schema must be 'EventGrid' or 'CloudEvents' (got '\" + schema + \"').\");",
           "}"
         ]
       }
@@ -5966,31 +6170,6 @@
     {
       "key": "sasKey",
       "value": "TheLocal+DevelopmentKey=",
-      "type": "string"
-    },
-    {
-      "key": "eventId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "eventTime",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "eventId1",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "eventId2",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "eventId3",
-      "value": "",
       "type": "string"
     }
   ],
