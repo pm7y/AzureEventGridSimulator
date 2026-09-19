@@ -6,7 +6,8 @@ using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
 
 /// <summary>
-///     Resolves static and dynamic delivery properties for Service Bus messages.
+///     Resolves static and dynamic delivery properties for Service Bus and Event Hub messages
+///     (application properties).
 /// </summary>
 public class DeliveryPropertyResolver
 {

@@ -20,10 +20,14 @@ The simulator requires HTTPS. Generate a development certificate:
 # Trust the certificate (one-time setup)
 dotnet dev-certs https --trust
 
-# Export the certificate
+# Export the certificate (dev-certs won't create the folder)
+mkdir -p certs
 dotnet dev-certs https \
   --export-path ./certs/eventgrid.pfx \
   --password password123
+
+# The container runs as UID 1654 and dev-certs exports the file as 0600
+chmod a+r ./certs/eventgrid.pfx
 ```
 
 ### 2. Create a Configuration File
@@ -169,35 +173,24 @@ Each topic listens on its own port and can have multiple subscribers.
 
 ---
 
-## Subscriber Types
+## Subscribers
 
-The simulator supports four subscriber types: HTTP webhooks, Azure Service Bus, Azure Storage Queues, and Azure Event Hubs.
+A topic can deliver to four subscriber types, each in its own array under `subscribers`: `http`, `serviceBus`, `storageQueue` and `eventHub`. This page has one example of each; the wiki has the full reference.
 
-### Subscriber Configuration Format
-
-```json
-{
-  "subscribers": {
-    "http": [ /* HTTP webhook subscribers */ ],
-    "serviceBus": [ /* Service Bus queue/topic subscribers */ ],
-    "storageQueue": [ /* Storage Queue subscribers */ ],
-    "eventHub": [ /* Event Hub subscribers */ ]
-  }
-}
-```
-
-### HTTP Webhook Subscribers
+Every subscriber type accepts these settings:
 
 | Property | Required | Description |
 |----------|----------|-------------|
-| `name` | Yes | Subscriber name |
-| `endpoint` | Yes | HTTP/HTTPS URL to receive events |
-| `disableValidation` | No | Skip subscription validation handshake (default: false) |
-| `disabled` | No | Disable the subscriber |
-| `deliverySchema` | No | Override delivery schema |
-| `filter` | No | Event filtering rules |
-| `retryPolicy` | No | Retry policy settings (see below) |
-| `deadLetter` | No | Dead-letter settings (see below) |
+| `name` | Yes | Subscriber name (letters, numbers, dashes only; unique within the topic) |
+| `disabled` | No | Set to `true` to disable the subscriber |
+| `deliverySchema` | No | `EventGridSchema` or `CloudEventV1_0` (defaults to the topic's `outputSchema`, then the schema the event arrived in) |
+| `filter` | No | Event filtering rules, see [Filtering](https://github.com/pm7y/AzureEventGridSimulator/wiki/Filtering) |
+| `retryPolicy` | No | Retry settings, see [Retry and Dead-Letter](https://github.com/pm7y/AzureEventGridSimulator/wiki/Retry-and-Dead-Letter) |
+| `deadLetter` | No | Where undeliverable events are written, see [Retry and Dead-Letter](https://github.com/pm7y/AzureEventGridSimulator/wiki/Retry-and-Dead-Letter) |
+
+### HTTP Webhook
+
+Needs an `endpoint`. Set `disableValidation` to `true` to skip the subscription validation handshake. Reference: [HTTP Subscribers](https://github.com/pm7y/AzureEventGridSimulator/wiki/HTTP-Subscribers).
 
 ```json
 {
@@ -206,34 +199,15 @@ The simulator supports four subscriber types: HTTP webhooks, Azure Service Bus, 
       "name": "order-processor",
       "endpoint": "https://myapp.local/api/events",
       "disableValidation": true,
-      "filter": {
-        "includedEventTypes": ["Order.Created", "Order.Updated"]
-      }
+      "filter": { "includedEventTypes": ["Order.Created", "Order.Updated"] }
     }
   ]
 }
 ```
 
-### Service Bus Subscribers
+### Service Bus
 
-Events are delivered to Azure Service Bus queues or topics.
-
-| Property | Required | Description |
-|----------|----------|-------------|
-| `name` | Yes | Subscriber name |
-| `connectionString` | * | Full Service Bus connection string |
-| `namespace` | * | Service Bus namespace (alternative to connectionString) |
-| `sharedAccessKeyName` | * | SAS key name (with namespace) |
-| `sharedAccessKey` | * | SAS key value (with namespace) |
-| `queue` | ** | Queue name |
-| `topic` | ** | Topic name |
-| `properties` | No | Custom message properties (static or dynamic) |
-| `filter` | No | Event filtering rules |
-| `retryPolicy` | No | Retry policy settings (see below) |
-| `deadLetter` | No | Dead-letter settings (see below) |
-
-\* Either `connectionString` OR `namespace`+`sharedAccessKeyName`+`sharedAccessKey` required
-\** Either `queue` OR `topic` required
+Needs a `connectionString` (or `namespace`, `sharedAccessKeyName` and `sharedAccessKey`, or the topic's `serviceBusConnectionString`) and either a `queue` or a `topic`. Reference: [Service Bus Subscribers](https://github.com/pm7y/AzureEventGridSimulator/wiki/Service-Bus-Subscribers).
 
 ```json
 {
@@ -252,24 +226,11 @@ Events are delivered to Azure Service Bus queues or topics.
 }
 ```
 
-**Dynamic Property Paths:**
-- Top-level event properties: `Id`, `Subject`, `EventType`, `EventTime`, `DataVersion`, `Source`
-- Data properties: `data.propertyName`, `data.nested.property`
+`properties` (Service Bus and Event Hub) become application properties on each message. A `static` value is used as-is. A `dynamic` value is a path into the event: `Id`, `Subject`, `EventType`, `EventTime`, `DataVersion`, `Source`, `Topic`, or `data.propertyName` / `data.nested.property`.
 
-### Storage Queue Subscribers
+### Storage Queue
 
-Events are delivered to Azure Storage Queues.
-
-| Property | Required | Description |
-|----------|----------|-------------|
-| `name` | Yes | Subscriber name |
-| `connectionString` | * | Storage account connection string (or inherit from topic) |
-| `queueName` | Yes | Queue name |
-| `disabled` | No | Disable the subscriber |
-| `deliverySchema` | No | Override delivery schema |
-| `filter` | No | Event filtering rules |
-| `retryPolicy` | No | Retry policy settings (see below) |
-| `deadLetter` | No | Dead-letter settings (see below) |
+Needs a `queueName` and a `connectionString` (or the topic's `storageQueueConnectionString`). Reference: [Storage Queue Subscribers](https://github.com/pm7y/AzureEventGridSimulator/wiki/Storage-Queue-Subscribers).
 
 ```json
 {
@@ -283,24 +244,9 @@ Events are delivered to Azure Storage Queues.
 }
 ```
 
-### Event Hub Subscribers
+### Event Hub
 
-Events are delivered to Azure Event Hubs.
-
-| Property | Required | Description |
-|----------|----------|-------------|
-| `name` | Yes | Subscriber name |
-| `connectionString` | * | Event Hub connection string (or inherit from topic `eventHubConnectionString`) |
-| `namespace` | * | Event Hub namespace (alternative to connectionString) |
-| `sharedAccessKeyName` | * | SAS key name (with namespace) |
-| `sharedAccessKey` | * | SAS key value (with namespace) |
-| `eventHubName` | Yes | Event Hub name |
-| `properties` | No | Custom message properties (static or dynamic) |
-| `filter` | No | Event filtering rules |
-| `retryPolicy` | No | Retry policy settings (see below) |
-| `deadLetter` | No | Dead-letter settings (see below) |
-
-\* Either `connectionString` OR `namespace`+`sharedAccessKeyName`+`sharedAccessKey` required
+Needs an `eventHubName` and a `connectionString` (or `namespace`, `sharedAccessKeyName` and `sharedAccessKey`, or the topic's `eventHubConnectionString`). Reference: [Event Hub Subscribers](https://github.com/pm7y/AzureEventGridSimulator/wiki/Event-Hub-Subscribers).
 
 ```json
 {
@@ -317,139 +263,15 @@ Events are delivered to Azure Event Hubs.
 }
 ```
 
-### Retry Policy Settings
+### Retry, Dead-Letter and Filtering
 
-The simulator supports Azure Event Grid-compatible retry with exponential backoff. Retry is **enabled by default**.
-
-| Property | Default | Description |
-|----------|---------|-------------|
-| `enabled` | `true` | Enable or disable retry |
-| `maxDeliveryAttempts` | `30` | Maximum delivery attempts (1-30) |
-| `eventTimeToLiveInMinutes` | `1440` | Event TTL before expiration (1-1440) |
-
-**Retry Schedule:** 10s → 30s → 1m → 5m → 10m → 30m → 1h → 3h → 6h → 12h (then every 12h)
-
-```json
-{
-  "retryPolicy": {
-    "enabled": true,
-    "maxDeliveryAttempts": 10,
-    "eventTimeToLiveInMinutes": 60
-  }
-}
-```
-
-### Dead-Letter Settings
-
-Events that cannot be delivered are written to local JSON files.
-
-| Property | Default | Description |
-|----------|---------|-------------|
-| `enabled` | `true` | Enable or disable dead-lettering |
-| `folderPath` | `./dead-letters` | Folder path for dead-letter files |
-
-**File Path:** `{folderPath}/{topicName}/{subscriberName}/{timestamp}_{eventId}.json`
-
-```json
-{
-  "deadLetter": {
-    "enabled": true,
-    "folderPath": "./dead-letters"
-  }
-}
-```
-
-> **Docker Note:** Mount a volume to persist dead-letter files:
-> ```bash
-> -v $(pwd)/dead-letters:/app/dead-letters
-> ```
-
-### Disabling Retry (Fire-and-Forget)
-
-To use fire-and-forget delivery without retries:
-
-```json
-{
-  "retryPolicy": {
-    "enabled": false
-  }
-}
-```
+Failed deliveries are retried with Azure Event Grid's exponential backoff, and a subscriber's `deadLetter` settings write undeliverable events to JSON files (see *Container User and File Permissions* below to keep them outside the container). Subscribers can also filter on event type, subject and advanced conditions on event fields and data. The settings, schedules, operators and limits are in [Retry and Dead-Letter](https://github.com/pm7y/AzureEventGridSimulator/wiki/Retry-and-Dead-Letter) and [Filtering](https://github.com/pm7y/AzureEventGridSimulator/wiki/Filtering).
 
 ---
 
-## Event Filtering
+## Dashboard
 
-Subscribers can filter events using basic and advanced filters.
-
-### Basic Filtering
-
-```json
-{
-  "filter": {
-    "includedEventTypes": ["Order.Created", "Order.Updated"],
-    "subjectBeginsWith": "/orders/",
-    "subjectEndsWith": ".json",
-    "isSubjectCaseSensitive": false
-  }
-}
-```
-
-### Advanced Filtering
-
-Advanced filters support complex conditions on event data.
-
-**Limits:**
-- Maximum 25 filters per subscription
-- Maximum 25 filter values across all filters per subscription
-- String values limited to 512 characters
-
-**Available Operators:**
-
-| Operator | Value Property | Example Use |
-|----------|----------------|-------------|
-| `NumberGreaterThan` | `value` | Price > 100 |
-| `NumberGreaterThanOrEquals` | `value` | Age >= 18 |
-| `NumberLessThan` | `value` | Quantity < 10 |
-| `NumberLessThanOrEquals` | `value` | Count <= 5 |
-| `NumberIn` | `values` | Status in [1, 2, 3] |
-| `NumberNotIn` | `values` | Priority not in [0] |
-| `NumberInRange` | `values` | Age in [[18,25], [30,40]] |
-| `NumberNotInRange` | `values` | Age not in [[0,17]] |
-| `BoolEquals` | `value` | IsActive == true |
-| `StringContains` | `values` | Subject contains "test" |
-| `StringNotContains` | `values` | Subject doesn't contain "draft" |
-| `StringBeginsWith` | `values` | Category starts with "prod" |
-| `StringNotBeginsWith` | `values` | Path doesn't start with "/temp" |
-| `StringEndsWith` | `values` | FileName ends with ".json" |
-| `StringNotEndsWith` | `values` | FileName doesn't end with ".tmp" |
-| `StringIn` | `values` | Region in ["us-east", "us-west"] |
-| `StringNotIn` | `values` | Env not in ["dev", "test"] |
-| `IsNullOrUndefined` | - | OptionalField is null |
-| `IsNotNull` | - | RequiredField is not null |
-
-```json
-{
-  "filter": {
-    "advancedFilters": [
-      {
-        "operatorType": "NumberGreaterThan",
-        "key": "data.orderTotal",
-        "value": 100
-      },
-      {
-        "operatorType": "StringIn",
-        "key": "data.region",
-        "values": ["us-east", "us-west", "eu-west"]
-      },
-      {
-        "operatorType": "IsNotNull",
-        "key": "data.customerId"
-      }
-    ]
-  }
-}
-```
+The simulator serves a web dashboard showing received events, delivery attempts and rejected requests. It's served on each enabled topic's port, for example `https://localhost:60101/dashboard`, and also on `dashboardPort` if you set one (publish that port too, e.g. `-p 5000:5000`). Turn it off with `-e AEGS_dashboardEnabled=false`. More: [Dashboard](https://github.com/pm7y/AzureEventGridSimulator/wiki/Dashboard).
 
 ---
 
@@ -463,10 +285,14 @@ The simulator requires HTTPS (matching Azure Event Grid's behavior).
 # Trust the certificate locally
 dotnet dev-certs https --trust
 
-# Export for Docker
+# Export for Docker (dev-certs won't create the folder)
+mkdir -p certs
 dotnet dev-certs https \
   --export-path ./certs/eventgrid.pfx \
   --password YourSecurePassword123
+
+# The container runs as UID 1654 and dev-certs exports the file as 0600
+chmod a+r ./certs/eventgrid.pfx
 ```
 
 ### Option 2: Custom Certificate
@@ -490,6 +316,25 @@ When subscribers use self-signed certificates, enable acceptance in the simulato
 ```
 
 > **Warning**: Only use this in development environments.
+
+---
+
+## Container User and File Permissions
+
+The image runs as the non-root `app` user (UID `1654`), not as root. Inside the image, the `/app` folder and the default dead-letter folder `/app/dead-letters` belong to that user. Bind mounts keep their host ownership and permissions, so on Linux hosts (Docker Desktop on macOS and Windows usually handles this for you):
+
+- **Certificates and config files** you mount must be readable by UID 1654. A `.pfx` that only your host user can read (mode `0600`) fails to load, and `dotnet dev-certs https --export-path` writes exactly that on Linux and macOS; make it readable, e.g. `chmod a+r certs/eventgrid.pfx` (the Quick Start does this).
+- **Dead-letter and log folders** you mount must be writable by UID 1654. For example:
+
+  ```bash
+  mkdir -p dead-letters && sudo chown 1654 dead-letters
+  docker run ... -v $(pwd)/dead-letters:/app/dead-letters pmcilreavy/azureeventgridsimulator:latest
+  ```
+
+  If the folder isn't writable, the dead-letter file is not written and the simulator only logs an error.
+- **Alternatively, run as your own user** with `--user "$(id -u):$(id -g)"` (Compose: `user:`). That user can't write to the image's own `/app/dead-letters`, so mount a dead-letter folder as shown above.
+
+Topic ports below 1024 need extra privileges on some container runtimes (Docker Engine 20.10+ allows them), so prefer ports above 1024, as the examples do.
 
 ---
 
@@ -531,6 +376,7 @@ services:
       - "60101:60101"
       - "60102:60102"
     volumes:
+      # on Linux the pfx and config must be readable by UID 1654 (see Container User and File Permissions)
       - ./docker:/aegs:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
@@ -584,7 +430,7 @@ services:
       - mssql
 ```
 
-**config/appsettings.json:**
+**docker/appsettings.json:**
 
 ```json
 {
@@ -719,6 +565,10 @@ services:
 |----------|-------------|
 | `AEGS_ConfigFile` | Path to configuration JSON file |
 | `AEGS_dangerousAcceptAnyServerCertificateValidator` | Accept self-signed subscriber certs |
+| `AEGS_dashboardEnabled` | Set to `false` to turn off the dashboard (default: `true`) |
+| `AEGS_dashboardPort` | Extra port to serve the dashboard on (publish it too) |
+| `AEGS_eventValidationLimits__maximumOverallMessageSizeInBytes` | Maximum request body size (default: `1536000`) |
+| `AEGS_eventValidationLimits__maximumEventSizeInBytes` | Maximum size of a single event (default: `1049600`) |
 | `AEGS_Topics__[index]__name` | Topic name |
 | `AEGS_Topics__[index]__port` | Topic port |
 | `AEGS_Topics__[index]__key` | Topic SAS key |
@@ -832,6 +682,12 @@ Access the Seq UI at `http://localhost:8081` (when using the docker-compose exam
 **Problem:** `Address already in use`
 
 **Solution:** Ensure each topic uses a unique port and that ports are not in use by other applications.
+
+### Permission Denied
+
+**Problem:** The certificate can't be read, or dead-letter or log files aren't written (`Access to the path ... is denied`)
+
+**Solution:** The container runs as UID 1654. See *Container User and File Permissions* above.
 
 ### Events Not Delivered
 

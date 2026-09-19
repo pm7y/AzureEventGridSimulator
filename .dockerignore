@@ -1,0 +1,12 @@
+# Build context for docker/Dockerfile (the context is the repo root).
+# Keep host build output, secrets and logs out of the image build.
+# Don't exclude Dashboard/** (embedded resources), appsettings*.json or Properties/.
+**/bin/
+**/obj/
+**/nupkg/
+**/*.pfx
+**/log_*.txt
+.git/
+wiki/
+specs/
+.claude/
