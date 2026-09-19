@@ -1,19 +1,9 @@
 <Project>
-    <PropertyGroup>
-        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    </PropertyGroup>
+    <!-- ManagePackageVersionsCentrally is set in Directory.Build.props -->
     <ItemGroup>
         <!-- Main Application -->
         <PackageVersion Include="Asp.Versioning.Mvc" Version="10.2.1" />
         <!-- Serilog -->
-        <PackageVersion Include="JetBrains.Annotations" Version="2026.2.0" />
-        <!--
-            Not referenced by any of our code. This is a transitive dependency of the Aspire
-            AppHost SDK, which otherwise resolves the vulnerable MessagePack 2.5.192
-            (GHSA-hv8m-jj95-wg3x). The explicit reference in the AppHost project forces the
-            patched version; do not remove until Aspire ships a fixed transitive version.
-        -->
-        <PackageVersion Include="MessagePack" Version="3.1.8" />
         <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
         <PackageVersion Include="Serilog.Settings.Configuration" Version="10.0.1" />
         <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
@@ -24,7 +14,11 @@
         <PackageVersion Include="Azure.Messaging.EventHubs" Version="5.12.2" />
         <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.20.2" />
         <PackageVersion Include="Azure.Storage.Queues" Version="12.27.1" />
-        <!-- Aspire (Aspire.Hosting.AppHost comes implicitly from the Aspire.AppHost.Sdk) -->
+        <!--
+            Aspire (Aspire.Hosting.AppHost comes implicitly from the Aspire.AppHost.Sdk).
+            Bump the Aspire.AppHost.Sdk version in AzureEventGridSimulator.AppHost.csproj
+            in lockstep with these; Dependabot has not been updating it.
+        -->
         <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.5.3" />
         <PackageVersion Include="Aspire.Hosting.Azure.ServiceBus" Version="13.5.3" />
         <PackageVersion Include="Aspire.Hosting.Azure.EventHubs" Version="13.5.3" />

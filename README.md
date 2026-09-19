@@ -27,6 +27,9 @@ CloudEvents v1.0 schemas.
 
 ### .NET Tool (Recommended)
 
+Requires the .NET 10 runtime. If only a newer major version is installed, the tool rolls forward to it. See the
+[.NET Tool](https://github.com/pm7y/AzureEventGridSimulator/wiki/DotNet-Tool) wiki page for details.
+
 ```bash
 # Global install
 dotnet tool install -g AzureEventGridSimulator

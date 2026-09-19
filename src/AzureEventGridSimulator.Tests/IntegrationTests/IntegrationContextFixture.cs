@@ -1,12 +1,11 @@
 ﻿using AzureEventGridSimulator.Domain;
-using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Xunit;
 
 namespace AzureEventGridSimulator.Tests.IntegrationTests;
 
-[UsedImplicitly]
+// ReSharper disable once ClassNeverInstantiated.Global
 public class IntegrationContextFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
     /// <summary>
