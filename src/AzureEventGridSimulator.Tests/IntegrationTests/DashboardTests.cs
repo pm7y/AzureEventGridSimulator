@@ -31,6 +31,8 @@ public class DashboardTests(IntegrationContextFixture factory)
     // The DeliveryCatcher subscriber on this topic receives "Deliver.Me" events.
     private const string DeliveryFlowTopicBaseAddress = "https://localhost:60102";
 
+    private const string VendoredDomPurifyFileName = "purify-3.2.7.min.js";
+
     private HttpClient CreateClient(string baseAddress = TopicWithoutDeliveriesBaseAddress)
     {
         return factory.CreateClient(
@@ -155,6 +157,7 @@ public class DashboardTests(IntegrationContextFixture factory)
     [InlineData("index.html", "text/html")]
     [InlineData("styles.css", "text/css")]
     [InlineData("app.js", "application/javascript")]
+    [InlineData(VendoredDomPurifyFileName, "application/javascript")]
     public async Task GivenDashboardAsset_WhenRequested_ThenServedWithContentTypeAndCachingHeaders(
         string fileName,
         string expectedMediaType
@@ -163,6 +166,38 @@ public class DashboardTests(IntegrationContextFixture factory)
         var response = await CreateClient().GetAsync($"/dashboard/{fileName}");
 
         await ShouldBeServedAsset(response, fileName, expectedMediaType);
+    }
+
+    // The dashboard must work offline, so DOMPurify is served by the simulator rather than
+    // loaded from a CDN, and it has to load before app.js, which uses it.
+    [Fact]
+    public async Task GivenDashboardPage_WhenRequested_ThenScriptsAreLoadedFromTheSimulatorOnly()
+    {
+        var html = await CreateClient().GetStringAsync("/dashboard/");
+
+        html.ShouldNotContain("src=\"http", Case.Insensitive);
+        html.ShouldNotContain("href=\"http", Case.Insensitive);
+
+        var purifyTag = $"<script src=\"/dashboard/{VendoredDomPurifyFileName}\"></script>";
+        var appTag = "<script src=\"/dashboard/app.js\"></script>";
+        html.ShouldContain(purifyTag);
+        html.ShouldContain(appTag);
+        html.IndexOf(purifyTag, StringComparison.Ordinal)
+            .ShouldBeLessThan(html.IndexOf(appTag, StringComparison.Ordinal));
+    }
+
+    // The version in the vendored file's name is what tells maintainers which release it is, so
+    // it has to agree with the version in the library's own licence banner.
+    [Fact]
+    public void GivenVendoredDomPurify_WhenInspected_ThenItsBannerMatchesTheVersionInItsFileName()
+    {
+        var version = VendoredDomPurifyFileName["purify-".Length..^".min.js".Length];
+
+        var contents = Encoding.UTF8.GetString(
+            ReadEmbeddedDashboardFile(VendoredDomPurifyFileName)
+        );
+
+        contents.ShouldStartWith($"/*! @license DOMPurify {version} ");
     }
 
     [Fact]
@@ -283,6 +318,27 @@ public class DashboardTests(IntegrationContextFixture factory)
         payloadJson.ShouldNotBeNull();
         payloadJson.ShouldContain(eventId);
         details.GetProperty("deliveries").GetArrayLength().ShouldBe(0);
+    }
+
+    // Event ids can be any non-empty string. app.js requests details with
+    // encodeURIComponent(id), which Uri.EscapeDataString matches, and Kestrel decodes the
+    // segment back into the route value. The exception is %2F, which Kestrel leaves encoded,
+    // so ids containing '/' still can't be looked up.
+    [Theory]
+    [InlineData("?x=1")]
+    [InlineData("%41")]
+    [InlineData("#fragment")]
+    [InlineData(" with \"quotes\" & spaces")]
+    public async Task GivenEventIdWithUrlSignificantCharacters_WhenFetchedByEncodedId_ThenFound(
+        string idSuffix
+    )
+    {
+        var eventId = Guid.NewGuid() + idSuffix;
+        await PublishEvent(eventId);
+
+        var details = await GetJson($"/dashboard/api/events/{Uri.EscapeDataString(eventId)}");
+
+        details.GetProperty("id").GetString().ShouldBe(eventId);
     }
 
     [Fact]

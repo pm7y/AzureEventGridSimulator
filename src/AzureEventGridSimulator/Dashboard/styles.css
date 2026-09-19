@@ -396,6 +396,15 @@ body {
     word-break: break-all;
 }
 
+.detail-value-error {
+    color: var(--color-error);
+}
+
+.detail-note {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+
 /* Payload Display */
 .payload-container {
     background: #1e1e1e;
@@ -489,22 +498,6 @@ body {
     color: var(--color-error);
     font-size: 11px;
     margin-top: 4px;
-}
-
-/* Status Colors */
-.status-delivered {
-    color: var(--color-success);
-}
-
-.status-failed,
-.status-deadlettered {
-    color: var(--color-error);
-}
-
-.status-pending,
-.status-inprogress,
-.status-retrying {
-    color: var(--color-pending);
 }
 
 /* Responsive Design */
