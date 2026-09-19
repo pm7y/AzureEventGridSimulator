@@ -1,3 +1,4 @@
+using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
@@ -19,7 +20,9 @@ public class MissingKeyFilterSemanticsTests
         AdvancedFilterSetting.AdvancedFilterOperatorType operatorType
     )
     {
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(data: new { Name = "StringValue" });
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(data: new { Name = "StringValue" })
+        );
         var filterConfig = new FilterSetting
         {
             AdvancedFilters =
@@ -34,7 +37,7 @@ public class MissingKeyFilterSemanticsTests
             ],
         };
 
-        return filterConfig.AcceptsEvent(gridEvent);
+        return filterConfig.AcceptsEvent(simulatorEvent);
     }
 
     [Theory]
@@ -75,8 +78,8 @@ public class MissingKeyFilterSemanticsTests
     [Fact]
     public void GivenKeyPresentWithNullValue_WhenIsNullOrUndefined_ThenEventAccepted()
     {
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(
-            data: new { NullableValue = default(string) }
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(data: new { NullableValue = default(string) })
         );
         var filterConfig = new FilterSetting
         {
@@ -92,14 +95,14 @@ public class MissingKeyFilterSemanticsTests
             ],
         };
 
-        filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
+        filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue();
     }
 
     [Fact]
     public void GivenKeyPresentWithNullValue_WhenIsNotNull_ThenEventRejected()
     {
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(
-            data: new { NullableValue = default(string) }
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(data: new { NullableValue = default(string) })
         );
         var filterConfig = new FilterSetting
         {
@@ -113,13 +116,15 @@ public class MissingKeyFilterSemanticsTests
             ],
         };
 
-        filterConfig.AcceptsEvent(gridEvent).ShouldBeFalse();
+        filterConfig.AcceptsEvent(simulatorEvent).ShouldBeFalse();
     }
 
     [Fact]
     public void GivenKeyPresentWithValue_WhenIsNotNull_ThenEventAccepted()
     {
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(data: new { Name = "StringValue" });
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(data: new { Name = "StringValue" })
+        );
         var filterConfig = new FilterSetting
         {
             AdvancedFilters =
@@ -132,6 +137,6 @@ public class MissingKeyFilterSemanticsTests
             ],
         };
 
-        filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
+        filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue();
     }
 }

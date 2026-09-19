@@ -58,14 +58,12 @@ public class AdvancedFilterSetting
         }
 
         // IsNullOrUndefined and IsNotNull don't require values
-        var nullCheckOperators = new[]
-        {
-            AdvancedFilterOperatorType.IsNullOrUndefined,
-            AdvancedFilterOperatorType.IsNotNull,
-        };
-
         if (
-            !nullCheckOperators.Contains(OperatorType)
+            OperatorType
+                is not (
+                    AdvancedFilterOperatorType.IsNullOrUndefined
+                    or AdvancedFilterOperatorType.IsNotNull
+                )
             && Value == null
             && (Values == null || !Values.HasItems())
         )
@@ -99,11 +97,9 @@ public class AdvancedFilterSetting
 
         // Range operators require values to be provided in pairs (min, max)
         if (
-            new[]
-            {
-                AdvancedFilterOperatorType.NumberInRange,
-                AdvancedFilterOperatorType.NumberNotInRange,
-            }.Contains(OperatorType)
+            OperatorType
+            is AdvancedFilterOperatorType.NumberInRange
+                or AdvancedFilterOperatorType.NumberNotInRange
         )
         {
             if (Values == null || Values.Count == 0)

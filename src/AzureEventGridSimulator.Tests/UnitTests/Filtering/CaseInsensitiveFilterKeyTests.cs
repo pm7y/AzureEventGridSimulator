@@ -1,3 +1,4 @@
+using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
@@ -7,54 +8,23 @@ using Xunit;
 namespace AzureEventGridSimulator.Tests.UnitTests.Filtering;
 
 /// <summary>
-///     Azure resolves filter keys case-insensitively, both for top-level event
-///     properties and for nested data paths.
+///     Azure resolves filter keys case-insensitively. These tests cover nested data
+///     paths; top-level keys (id, eventType, subject, ...) are covered for both schemas
+///     by SimulatorEventCaseInsensitiveFilterKeyTests.
 /// </summary>
 [Trait("Category", "unit")]
 public class CaseInsensitiveFilterKeyTests
 {
     private static bool Evaluate(AdvancedFilterSetting filter)
     {
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(
-            data: new { Name = "StringValue", SubObject = new { Id = 5 } }
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(
+                data: new { Name = "StringValue", SubObject = new { Id = 5 } }
+            )
         );
         var filterConfig = new FilterSetting { AdvancedFilters = [filter] };
 
-        return filterConfig.AcceptsEvent(gridEvent);
-    }
-
-    [Theory]
-    [InlineData("EventType")]
-    [InlineData("eventtype")]
-    [InlineData("EVENTTYPE")]
-    public void GivenTopLevelKeyInAnyCase_WhenFilterEvaluated_ThenKeyResolves(string key)
-    {
-        Evaluate(
-                new AdvancedFilterSetting
-                {
-                    OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringIn,
-                    Key = key,
-                    Values = ["Test.EventType"],
-                }
-            )
-            .ShouldBeTrue(key);
-    }
-
-    [Theory]
-    [InlineData("Id")]
-    [InlineData("id")]
-    [InlineData("ID")]
-    public void GivenIdKeyInAnyCase_WhenFilterEvaluated_ThenKeyResolves(string key)
-    {
-        Evaluate(
-                new AdvancedFilterSetting
-                {
-                    OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringIn,
-                    Key = key,
-                    Values = ["test-id-123"],
-                }
-            )
-            .ShouldBeTrue(key);
+        return filterConfig.AcceptsEvent(simulatorEvent);
     }
 
     [Theory]

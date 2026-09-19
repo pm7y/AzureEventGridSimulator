@@ -1,3 +1,4 @@
+using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
@@ -13,9 +14,11 @@ public class SimpleFilterEventAcceptanceTests
     public void TestDefaultFilterSettingsAcceptsDefaultGridEvent()
     {
         var filterConfig = new FilterSetting();
-        var gridEvent = TestHelpers.CreateValidEventGridEvent();
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent()
+        );
 
-        filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
+        filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue();
     }
 
     [Theory]
@@ -25,9 +28,11 @@ public class SimpleFilterEventAcceptanceTests
     public void TestEventTypeFilteringSuccess(string[]? includedEventTypes)
     {
         var filterConfig = new FilterSetting { IncludedEventTypes = includedEventTypes };
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(eventType: "This.is.a.test");
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(eventType: "This.is.a.test")
+        );
 
-        filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
+        filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue();
     }
 
     [Theory]
@@ -40,9 +45,11 @@ public class SimpleFilterEventAcceptanceTests
     public void TestEventTypeFilteringFailure(string[] includedEventTypes)
     {
         var filterConfig = new FilterSetting { IncludedEventTypes = includedEventTypes };
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(eventType: "This.is.a.test");
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(eventType: "This.is.a.test")
+        );
 
-        filterConfig.AcceptsEvent(gridEvent).ShouldBeFalse();
+        filterConfig.AcceptsEvent(simulatorEvent).ShouldBeFalse();
     }
 
     [Theory]
@@ -77,9 +84,11 @@ public class SimpleFilterEventAcceptanceTests
             SubjectEndsWith = endsWith,
             IsSubjectCaseSensitive = caseSensitive,
         };
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(subject: "This_Is_A_Test_Subject");
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(subject: "This_Is_A_Test_Subject")
+        );
 
-        filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
+        filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue();
     }
 
     [Theory]
@@ -108,8 +117,10 @@ public class SimpleFilterEventAcceptanceTests
             SubjectEndsWith = endsWith,
             IsSubjectCaseSensitive = caseSensitive,
         };
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(subject: "This_Is_A_Test_Subject");
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(subject: "This_Is_A_Test_Subject")
+        );
 
-        filterConfig.AcceptsEvent(gridEvent).ShouldBeFalse();
+        filterConfig.AcceptsEvent(simulatorEvent).ShouldBeFalse();
     }
 }

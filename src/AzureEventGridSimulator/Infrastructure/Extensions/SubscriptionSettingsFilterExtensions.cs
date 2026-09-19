@@ -72,57 +72,31 @@ public static class SubscriptionSettingsFilterExtensions
                 retVal = Try(() => Convert.ToBoolean(value) == Convert.ToBoolean(filter.Value));
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains:
-                {
-                    var valueAsString = value as string;
-                    retVal = Try(() =>
-                        !string.IsNullOrEmpty(valueAsString)
-                        && (filter.Values ?? Array.Empty<object>())
-                            .Select(Convert.ToString)
-                            .Where(v => !string.IsNullOrEmpty(v))
-                            .Any(filterValue =>
-                                valueAsString.Contains(
-                                    filterValue!,
-                                    StringComparison.OrdinalIgnoreCase
-                                )
-                            )
-                    );
-                }
+                retVal = Try(() =>
+                    AnyStringMatch(
+                        value,
+                        filter.Values,
+                        static (s, v) => s.Contains(v, StringComparison.OrdinalIgnoreCase)
+                    )
+                );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith:
-                {
-                    // null or empty values cannot be considered to be the start character of a string
-                    var valueAsString = value as string;
-                    retVal = Try(() =>
-                        !string.IsNullOrEmpty(valueAsString)
-                        && (filter.Values ?? Array.Empty<object>())
-                            .Select(Convert.ToString)
-                            .Where(v => !string.IsNullOrEmpty(v))
-                            .Any(filterValue =>
-                                valueAsString.StartsWith(
-                                    filterValue!,
-                                    StringComparison.OrdinalIgnoreCase
-                                )
-                            )
-                    );
-                }
+                retVal = Try(() =>
+                    AnyStringMatch(
+                        value,
+                        filter.Values,
+                        static (s, v) => s.StartsWith(v, StringComparison.OrdinalIgnoreCase)
+                    )
+                );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith:
-                {
-                    // null or empty values cannot be considered to be the end character of a string
-                    var valueAsString = value as string;
-                    retVal = Try(() =>
-                        !string.IsNullOrEmpty(valueAsString)
-                        && (filter.Values ?? Array.Empty<object>())
-                            .Select(Convert.ToString)
-                            .Where(v => !string.IsNullOrEmpty(v))
-                            .Any(filterValue =>
-                                valueAsString.EndsWith(
-                                    filterValue!,
-                                    StringComparison.OrdinalIgnoreCase
-                                )
-                            )
-                    );
-                }
+                retVal = Try(() =>
+                    AnyStringMatch(
+                        value,
+                        filter.Values,
+                        static (s, v) => s.EndsWith(v, StringComparison.OrdinalIgnoreCase)
+                    )
+                );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringIn:
                 retVal = Try(() =>
@@ -144,56 +118,33 @@ public static class SubscriptionSettingsFilterExtensions
             case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotInRange:
                 retVal = Try(() => !IsNumberInRanges(value.ToNumber(), filter.Values));
                 break;
+            // Negate inside Try, never !Try(...): if evaluation throws, the filter must not match
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotContains:
-                {
-                    var valueAsString = value as string;
-                    retVal = Try(() =>
-                        string.IsNullOrEmpty(valueAsString)
-                        || !(filter.Values ?? Array.Empty<object>())
-                            .Select(Convert.ToString)
-                            .Where(v => !string.IsNullOrEmpty(v))
-                            .Any(filterValue =>
-                                valueAsString.Contains(
-                                    filterValue!,
-                                    StringComparison.OrdinalIgnoreCase
-                                )
-                            )
-                    );
-                }
+                retVal = Try(() =>
+                    !AnyStringMatch(
+                        value,
+                        filter.Values,
+                        static (s, v) => s.Contains(v, StringComparison.OrdinalIgnoreCase)
+                    )
+                );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotBeginsWith:
-                {
-                    var valueAsString = value as string;
-                    retVal = Try(() =>
-                        string.IsNullOrEmpty(valueAsString)
-                        || !(filter.Values ?? Array.Empty<object>())
-                            .Select(Convert.ToString)
-                            .Where(v => !string.IsNullOrEmpty(v))
-                            .Any(filterValue =>
-                                valueAsString.StartsWith(
-                                    filterValue!,
-                                    StringComparison.OrdinalIgnoreCase
-                                )
-                            )
-                    );
-                }
+                retVal = Try(() =>
+                    !AnyStringMatch(
+                        value,
+                        filter.Values,
+                        static (s, v) => s.StartsWith(v, StringComparison.OrdinalIgnoreCase)
+                    )
+                );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotEndsWith:
-                {
-                    var valueAsString = value as string;
-                    retVal = Try(() =>
-                        string.IsNullOrEmpty(valueAsString)
-                        || !(filter.Values ?? Array.Empty<object>())
-                            .Select(Convert.ToString)
-                            .Where(v => !string.IsNullOrEmpty(v))
-                            .Any(filterValue =>
-                                valueAsString.EndsWith(
-                                    filterValue!,
-                                    StringComparison.OrdinalIgnoreCase
-                                )
-                            )
-                    );
-                }
+                retVal = Try(() =>
+                    !AnyStringMatch(
+                        value,
+                        filter.Values,
+                        static (s, v) => s.EndsWith(v, StringComparison.OrdinalIgnoreCase)
+                    )
+                );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
             case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
@@ -429,6 +380,24 @@ public static class SubscriptionSettingsFilterExtensions
     }
 
     /// <summary>
+    ///     Whether a string event value matches any of the filter values. A value that isn't a
+    ///     string, or is empty, never matches, and null or empty filter values are ignored.
+    /// </summary>
+    private static bool AnyStringMatch(
+        object? value,
+        ICollection<object>? values,
+        Func<string, string, bool> match
+    )
+    {
+        return value is string { Length: > 0 } s
+            && (values ?? Array.Empty<object>())
+                .Select(Convert.ToString)
+                .OfType<string>()
+                .Where(v => v.Length > 0)
+                .Any(v => match(s, v));
+    }
+
+    /// <summary>
     ///     Checks if a number is within any of the specified ranges.
     ///     Ranges are specified as arrays like [[min1, max1], [min2, max2]] in the Values collection.
     /// </summary>
@@ -486,73 +455,6 @@ public static class SubscriptionSettingsFilterExtensions
         return false;
     }
 
-    private static bool TryGetValue(this EventGridEvent gridEvent, string? key, out object? value)
-    {
-        var retval = false;
-        value = null;
-
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            return retval;
-        }
-
-        // Azure filter keys are case-insensitive (e.g. "id", "eventType", "data.key1")
-        switch (key)
-        {
-            case var _ when key.Equals(nameof(gridEvent.Id), StringComparison.OrdinalIgnoreCase):
-                value = gridEvent.Id;
-                retval = true;
-                break;
-            case var _ when key.Equals(nameof(gridEvent.Topic), StringComparison.OrdinalIgnoreCase):
-                value = gridEvent.Topic;
-                retval = true;
-                break;
-            case var _
-                when key.Equals(nameof(gridEvent.Subject), StringComparison.OrdinalIgnoreCase):
-                value = gridEvent.Subject;
-                retval = true;
-                break;
-            case var _
-                when key.Equals(nameof(gridEvent.EventType), StringComparison.OrdinalIgnoreCase):
-                value = gridEvent.EventType;
-                retval = true;
-                break;
-            case var _
-                when key.Equals(nameof(gridEvent.DataVersion), StringComparison.OrdinalIgnoreCase):
-                value = gridEvent.DataVersion;
-                retval = true;
-                break;
-            case var _ when key.Equals(nameof(gridEvent.Data), StringComparison.OrdinalIgnoreCase):
-                value = gridEvent.Data;
-                retval = true;
-                break;
-            default:
-                var split = key.Split('.');
-                if (
-                    !string.Equals(
-                        split[0],
-                        nameof(gridEvent.Data),
-                        StringComparison.OrdinalIgnoreCase
-                    )
-                    || gridEvent.Data == null
-                    || split.Length <= 1
-                )
-                {
-                    break;
-                }
-
-                if (TryGetNestedValue(gridEvent.Data, split, 1, out var nestedValue))
-                {
-                    retval = true;
-                    value = nestedValue;
-                }
-
-                break;
-        }
-
-        return retval;
-    }
-
     /// <summary>
     ///     Evaluates an advanced filter against a SimulatorEvent with array filtering support.
     /// </summary>
@@ -563,35 +465,6 @@ public static class SubscriptionSettingsFilterExtensions
     )
     {
         var keyExists = simulatorEvent.TryGetValue(filter.Key, out var value);
-        var valueIsNull = keyExists && value == null;
-
-        // Handle null check operators specially - they evaluate based on key existence
-        switch (filter.OperatorType)
-        {
-            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNullOrUndefined:
-                return !keyExists || valueIsNull;
-            case AdvancedFilterSetting.AdvancedFilterOperatorType.IsNotNull:
-                return keyExists && !valueIsNull;
-        }
-
-        if (!keyExists)
-        {
-            return MatchesWhenKeyMissing(filter.OperatorType);
-        }
-
-        return EvaluateWithArraySupport(filter, value, enableArrayFiltering);
-    }
-
-    /// <summary>
-    ///     Evaluates an advanced filter against an EventGridEvent with array filtering support.
-    /// </summary>
-    private static bool AcceptsAdvancedFilter(
-        AdvancedFilterSetting filter,
-        EventGridEvent gridEvent,
-        bool enableArrayFiltering
-    )
-    {
-        var keyExists = gridEvent.TryGetValue(filter.Key, out var value);
         var valueIsNull = keyExists && value == null;
 
         // Handle null check operators specially - they evaluate based on key existence
@@ -666,59 +539,6 @@ public static class SubscriptionSettingsFilterExtensions
                         simulatorEvent,
                         filter.EnableAdvancedFilteringOnArrays
                     )
-                );
-
-            return retVal;
-        }
-
-        /// <summary>
-        ///     Checks if the filter accepts an EventGridEvent (legacy support).
-        /// </summary>
-        public bool AcceptsEvent(EventGridEvent gridEvent)
-        {
-            if (filter == null)
-            {
-                return true;
-            }
-
-            // we have a filter to parse
-            var retVal =
-                filter.IncludedEventTypes == null
-                || filter.IncludedEventTypes.Contains("All")
-                || filter.IncludedEventTypes.Contains(gridEvent.EventType);
-
-            var subject = gridEvent.Subject;
-
-            // short circuit if we have decided the event type is not acceptable
-            retVal =
-                retVal
-                && (
-                    string.IsNullOrWhiteSpace(filter.SubjectBeginsWith)
-                    || subject.StartsWith(
-                        filter.SubjectBeginsWith,
-                        filter.IsSubjectCaseSensitive
-                            ? StringComparison.Ordinal
-                            : StringComparison.OrdinalIgnoreCase
-                    )
-                );
-
-            // again, don't bother doing the comparison if we have already decided not to allow the event through the filter
-            retVal =
-                retVal
-                && (
-                    string.IsNullOrWhiteSpace(filter.SubjectEndsWith)
-                    || subject.EndsWith(
-                        filter.SubjectEndsWith,
-                        filter.IsSubjectCaseSensitive
-                            ? StringComparison.Ordinal
-                            : StringComparison.OrdinalIgnoreCase
-                    )
-                );
-
-            retVal =
-                retVal
-                && (filter.AdvancedFilters ?? Array.Empty<AdvancedFilterSetting>()).All(af =>
-                    AcceptsAdvancedFilter(af, gridEvent, filter.EnableAdvancedFilteringOnArrays)
                 );
 
             return retVal;
