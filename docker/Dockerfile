@@ -44,11 +44,12 @@ ENV ASPNETCORE_URLS=
 # copy the binary only
 COPY --from=build /artifact/AzureEventGridSimulator .
 
-# run as the base image's non-root 'app' user (APP_UID=1654), which owns /app and the default
-# /app/dead-letters folder; bind mounts keep their host ownership and permissions.
+# run as the base image's non-root 'app' user (UID 1654, the .NET images' APP_UID), which owns
+# /app and the default /app/dead-letters folder; bind mounts keep their host ownership and permissions.
+# The UID is numeric so hosts and Kubernetes' runAsNonRoot can check it without resolving a name.
 # Only the two folders are chowned: a recursive chown would copy the ~100 MB binary into another
 # layer. The binary stays root-owned (0755), so the app user can run it but not write to it.
-RUN mkdir -p /app/dead-letters && chown "$APP_UID" /app /app/dead-letters
-USER $APP_UID
+RUN mkdir -p /app/dead-letters && chown 1654 /app /app/dead-letters
+USER 1654
 
 ENTRYPOINT ["./AzureEventGridSimulator"]
