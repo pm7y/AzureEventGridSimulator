@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
 
@@ -98,17 +99,7 @@ public class SimulatorSettings
         foreach (var topic in Topics)
         {
             // Wire up topic references for connection string inheritance
-            foreach (var subscriber in topic.Subscribers.ServiceBusSubscribers)
-            {
-                subscriber.ParentTopic = topic;
-            }
-
-            foreach (var subscriber in topic.Subscribers.StorageQueueSubscribers)
-            {
-                subscriber.ParentTopic = topic;
-            }
-
-            foreach (var subscriber in topic.Subscribers.EventHubSubscribers)
+            foreach (var subscriber in topic.Subscribers.All.OfType<SubscriberSettingsBase>())
             {
                 subscriber.ParentTopic = topic;
             }

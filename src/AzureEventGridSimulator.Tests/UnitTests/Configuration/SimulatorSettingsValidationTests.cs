@@ -250,8 +250,68 @@ public class SimulatorSettingsValidationTests : SubscribersSettingsTestBase
 
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
 
-        exception.Message.ShouldContain(
-            "Event Hub subscriber 'EventHub1' must have either a connectionString"
+        exception.Message.ShouldBe(
+            "Event Hub subscriber 'EventHub1' must have either a connectionString or namespace + sharedAccessKeyName + sharedAccessKey, either at subscriber or topic level."
+        );
+    }
+
+    [Fact]
+    public void GivenServiceBusSubscriberWithoutCredentials_WhenValidated_ThenThrows()
+    {
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                CreateTopic(
+                    "topic-one",
+                    60101,
+                    new SubscribersSettings
+                    {
+                        ServiceBus =
+                        [
+                            new ServiceBusSubscriberSettings { Name = "ServiceBus1", Queue = "q" },
+                        ],
+                    }
+                ),
+            ],
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+
+        exception.Message.ShouldBe(
+            "Service Bus subscriber 'ServiceBus1' must have either a connectionString or namespace + sharedAccessKeyName + sharedAccessKey, either at subscriber or topic level."
+        );
+    }
+
+    [Fact]
+    public void GivenStorageQueueSubscriberWithoutConnectionString_WhenValidated_ThenThrows()
+    {
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                CreateTopic(
+                    "topic-one",
+                    60101,
+                    new SubscribersSettings
+                    {
+                        StorageQueue =
+                        [
+                            new StorageQueueSubscriberSettings
+                            {
+                                Name = "StorageQueue1",
+                                QueueName = "q",
+                            },
+                        ],
+                    }
+                ),
+            ],
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+
+        exception.Message.ShouldBe(
+            "Storage Queue subscriber 'StorageQueue1' must have a connectionString, either at subscriber or topic level."
         );
     }
 
@@ -371,6 +431,110 @@ public class SimulatorSettingsValidationTests : SubscribersSettingsTestBase
         serviceBus.EffectiveConnectionString.ShouldBe(serviceBusConnectionString);
         storageQueue.EffectiveConnectionString.ShouldBe(storageQueueConnectionString);
         eventHub.EffectiveConnectionString.ShouldBe(eventHubConnectionString);
+    }
+
+    [Fact]
+    public void GivenBrokerSubscribersWithoutOwnCredentials_WhenTopicHasNamespaceCredentials_ThenTheyBuildConnectionStringsFromTheTopic()
+    {
+        var serviceBus = new ServiceBusSubscriberSettings { Name = "ServiceBus1", Queue = "q" };
+        var eventHub = new EventHubSubscriberSettings { Name = "EventHub1", EventHubName = "hub" };
+
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                new TopicSettings
+                {
+                    Name = "topic-one",
+                    Port = 60101,
+                    ServiceBusNamespace = "topic-sb",
+                    ServiceBusSharedAccessKeyName = "SbKeyName",
+                    ServiceBusSharedAccessKey = "sbkey",
+                    EventHubNamespace = "topic-eh",
+                    EventHubSharedAccessKeyName = "EhKeyName",
+                    EventHubSharedAccessKey = "ehkey",
+                    Subscribers = new SubscribersSettings
+                    {
+                        ServiceBus = [serviceBus],
+                        EventHub = [eventHub],
+                    },
+                },
+            ],
+        };
+
+        Should.NotThrow(() => settings.Validate());
+        serviceBus.EffectiveConnectionString.ShouldBe(
+            "Endpoint=sb://topic-sb.servicebus.windows.net/;SharedAccessKeyName=SbKeyName;SharedAccessKey=sbkey"
+        );
+        eventHub.EffectiveConnectionString.ShouldBe(
+            "Endpoint=sb://topic-eh.servicebus.windows.net/;SharedAccessKeyName=EhKeyName;SharedAccessKey=ehkey"
+        );
+    }
+
+    [Fact]
+    public void GivenBrokerSubscribersOnTwoTopics_WhenValidated_ThenEachInheritsItsOwnTopicsCredentials()
+    {
+        var serviceBusOne = new ServiceBusSubscriberSettings { Name = "ServiceBus", Queue = "q" };
+        var serviceBusTwo = new ServiceBusSubscriberSettings { Name = "ServiceBus", Queue = "q" };
+        var storageQueueOne = new StorageQueueSubscriberSettings
+        {
+            Name = "StorageQueue",
+            QueueName = "q",
+        };
+        var storageQueueTwo = new StorageQueueSubscriberSettings
+        {
+            Name = "StorageQueue",
+            QueueName = "q",
+        };
+        var eventHubOne = new EventHubSubscriberSettings
+        {
+            Name = "EventHub",
+            EventHubName = "hub",
+        };
+        var eventHubTwo = new EventHubSubscriberSettings
+        {
+            Name = "EventHub",
+            EventHubName = "hub",
+        };
+
+        TopicSettings CreateBrokerTopic(
+            string name,
+            int port,
+            ServiceBusSubscriberSettings serviceBus,
+            StorageQueueSubscriberSettings storageQueue,
+            EventHubSubscriberSettings eventHub
+        ) =>
+            new()
+            {
+                Name = name,
+                Port = port,
+                ServiceBusConnectionString = $"sb-{name}",
+                StorageQueueConnectionString = $"sq-{name}",
+                EventHubConnectionString = $"eh-{name}",
+                Subscribers = new SubscribersSettings
+                {
+                    ServiceBus = [serviceBus],
+                    StorageQueue = [storageQueue],
+                    EventHub = [eventHub],
+                },
+            };
+
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                CreateBrokerTopic("topic-one", 60101, serviceBusOne, storageQueueOne, eventHubOne),
+                CreateBrokerTopic("topic-two", 60102, serviceBusTwo, storageQueueTwo, eventHubTwo),
+            ],
+        };
+
+        Should.NotThrow(() => settings.Validate());
+        serviceBusOne.EffectiveConnectionString.ShouldBe("sb-topic-one");
+        storageQueueOne.EffectiveConnectionString.ShouldBe("sq-topic-one");
+        eventHubOne.EffectiveConnectionString.ShouldBe("eh-topic-one");
+        serviceBusTwo.EffectiveConnectionString.ShouldBe("sb-topic-two");
+        storageQueueTwo.EffectiveConnectionString.ShouldBe("sq-topic-two");
+        eventHubTwo.EffectiveConnectionString.ShouldBe("eh-topic-two");
     }
 
     [Theory]
