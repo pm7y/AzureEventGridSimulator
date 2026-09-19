@@ -4,9 +4,10 @@ namespace AzureEventGridSimulator.Tests.ActualSimulatorTests;
 
 /// <summary>
 ///     Keeps a child simulator process hermetic. The simulator reads AEGS_ and ASPNETCORE_
-///     environment variables after its --ConfigFile, so any the test host inherited from a
-///     developer's shell (e.g. AEGS_dashboardEnabled or AEGS_topics__0__port) would silently
-///     override the test's own configuration.
+///     environment variables after its appsettings files and --ConfigFile, so any the test host
+///     inherited from a developer's shell (e.g. AEGS_dashboardEnabled or AEGS_topics__0__port)
+///     would silently override the test's own configuration. Callers that need a variable, such
+///     as ASPNETCORE_ENVIRONMENT, set it after calling this.
 /// </summary>
 internal static class SimulatorProcessEnvironment
 {

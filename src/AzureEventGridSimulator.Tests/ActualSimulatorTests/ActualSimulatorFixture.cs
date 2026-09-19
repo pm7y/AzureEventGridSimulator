@@ -1,13 +1,21 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using Xunit;
 
 namespace AzureEventGridSimulator.Tests.ActualSimulatorTests;
 
+/// <summary>
+///     Starts the compiled simulator (the apphost in the test output directory) as a child process
+///     for the integration-actual tests. It listens on the topic ports in appsettings.test.json and
+///     serves HTTPS with the ASP.NET Core development certificate, so a machine without one needs
+///     <c>dotnet dev-certs https</c> first.
+/// </summary>
 public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
 {
     private const string SimulatorFileName = "AzureEventGridSimulator";
     private const int MaxStartupWaitTimeMs = 30000;
     private const int PollingIntervalMs = 100;
+    private readonly ConcurrentQueue<string> _output = new();
     private bool _disposed;
     private string? _simulatorExePath;
     private Process? _simulatorProcess;
@@ -20,21 +28,42 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
 
         KillExistingSimulators();
 
-        _simulatorProcess = Process.Start(
-            new ProcessStartInfo(_simulatorExePath)
-            {
-                WorkingDirectory = simulatorDirectory,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true,
-                Environment =
-                {
-                    new KeyValuePair<string, string?>("ASPNETCORE_ENVIRONMENT", "Test"),
-                },
-            }
-        );
+        var startInfo = new ProcessStartInfo(_simulatorExePath)
+        {
+            WorkingDirectory = simulatorDirectory,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+        SimulatorProcessEnvironment.RemoveInheritedSimulatorConfiguration(startInfo);
+        // The simulator loads appsettings.{environment}.json, and file names are case sensitive
+        // on Linux, so this has to match appsettings.test.json exactly. Otherwise only the copied
+        // appsettings.json is loaded, and its subscribers deliver to requestcatcher.com.
+        startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "test";
 
-        await WaitForSimulatorToBeReady();
+        var process = new Process { StartInfo = startInfo };
+        // Keep reading both pipes: once a pipe that nobody reads fills up, the simulator's
+        // console logging blocks
+        process.OutputDataReceived += CaptureOutput;
+        process.ErrorDataReceived += CaptureOutput;
+        try
+        {
+            process.Start();
+        }
+        catch
+        {
+            // e.g. the apphost is missing. Dispose reads HasExited, which throws for a process
+            // that never started, so only a started process goes in the field.
+            process.Dispose();
+            throw;
+        }
+
+        _simulatorProcess = process;
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+
+        await WaitForSimulatorToBeReady(process);
     }
 
     public Task DisposeAsync()
@@ -58,7 +87,17 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
         }
     }
 
-    private static async Task WaitForSimulatorToBeReady()
+    private string Output => string.Join(Environment.NewLine, _output);
+
+    private void CaptureOutput(object sender, DataReceivedEventArgs e)
+    {
+        if (e.Data is not null)
+        {
+            _output.Enqueue(e.Data);
+        }
+    }
+
+    private async Task WaitForSimulatorToBeReady(Process simulatorProcess)
     {
         using var handler = new HttpClientHandler();
         handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
@@ -69,6 +108,16 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
 
         while (stopwatch.ElapsedMilliseconds < MaxStartupWaitTimeMs)
         {
+            // e.g. Kestrel couldn't bind HTTPS because there's no development certificate
+            if (simulatorProcess.HasExited)
+            {
+                // Also waits for the rest of the redirected output
+                await simulatorProcess.WaitForExitAsync();
+                throw new InvalidOperationException(
+                    $"The simulator exited with code {simulatorProcess.ExitCode} before it was ready.{Environment.NewLine}{Output}"
+                );
+            }
+
             try
             {
                 // Try to connect to the simulator's endpoint
@@ -91,7 +140,7 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
         }
 
         throw new InvalidOperationException(
-            $"Simulator did not start within {MaxStartupWaitTimeMs}ms"
+            $"Simulator did not start within {MaxStartupWaitTimeMs}ms.{Environment.NewLine}{Output}"
         );
     }
 
