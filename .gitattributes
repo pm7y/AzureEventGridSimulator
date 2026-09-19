@@ -1,7 +1,7 @@
 # Normalize line endings
 * text=auto
 
-# Vendored DOMPurify must keep its exact bytes (the dashboard SRI hash covers them), so never
+# Vendored DOMPurify must keep its exact upstream bytes on every OS (it's embedded in the build), so never
 # convert its line endings; also keep it out of language stats and diffs
 src/AzureEventGridSimulator/Dashboard/purify-*.min.js -text linguist-vendored -diff
 

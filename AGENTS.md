@@ -14,7 +14,7 @@ dotnet build src/AzureEventGridSimulator.slnx --configuration Release
 
 # Test
 dotnet test src/AzureEventGridSimulator.slnx --configuration Release    # every category, including integration-actual
-dotnet test src/AzureEventGridSimulator.slnx --filter "Category!=integration-actual"    # the tests CI runs
+dotnet test src/AzureEventGridSimulator.slnx --filter "Category!=integration-actual"    # the main CI test step (all three OSes)
 dotnet test src/AzureEventGridSimulator.slnx --filter "Category=unit"
 dotnet test src/AzureEventGridSimulator.slnx --filter "Category=integration"
 
@@ -25,7 +25,7 @@ dotnet run --project src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
 dotnet csharpier format src
 ```
 
-**Test categories:** `unit`; `integration` (no Docker or external services needed; `IntegrationTests/` hosts the app in-process with `WebApplicationFactory`); `integration-actual` (starts the built simulator on `https://localhost:60101`, so it clashes with anything already listening on that port). CI doesn't run `integration-actual`.
+**Test categories:** `unit`; `integration` (no Docker or external services needed; `IntegrationTests/` hosts the app in-process with `WebApplicationFactory`); `integration-actual` (starts the built simulator on `https://localhost:60101`, so it clashes with anything already listening on that port). CI runs `Category!=integration-actual` on Windows, Linux and macOS, runs `integration-actual` on the ubuntu leg only (after `dotnet dev-certs https`), and runs the Postman parity suite in a separate job.
 
 **Parity tests:** `src/postman/` holds a Postman/newman collection designed to run against both real Azure Event Grid and the simulator. See [Using Postman](https://github.com/pm7y/AzureEventGridSimulator/wiki/Schema-Support#using-postman).
 

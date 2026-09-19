@@ -15,7 +15,8 @@ public class SimulatorSettings
     public bool DashboardEnabled { get; set; } = true;
 
     /// <summary>
-    ///     Optional port for the dashboard. If not set, dashboard is served on each topic's port.
+    ///     Optional extra port to serve the dashboard on. The dashboard is always served on each
+    ///     enabled topic's port as well.
     /// </summary>
     [JsonPropertyName("dashboardPort")]
     public int? DashboardPort { get; set; }
