@@ -226,37 +226,32 @@ public static class SubscriptionSettingsFilterExtensions
             return false;
         }
 
-        // Map common property names to SimulatorEvent accessors
+        // Map common property names to SimulatorEvent accessors.
+        // Azure filter keys are case-insensitive (e.g. "id", "EVENTTYPE", "data.key1")
         switch (key)
         {
-            case "Id":
-            case "id":
+            case var _ when key.Equals("Id", StringComparison.OrdinalIgnoreCase):
                 value = simulatorEvent.Id;
                 return true;
-            case "Topic":
-            case "topic":
-            case "Source":
-            case "source":
+            case var _
+                when key.Equals("Topic", StringComparison.OrdinalIgnoreCase)
+                    || key.Equals("Source", StringComparison.OrdinalIgnoreCase):
                 value = simulatorEvent.Source;
                 return true;
-            case "Subject":
-            case "subject":
+            case var _ when key.Equals("Subject", StringComparison.OrdinalIgnoreCase):
                 value = simulatorEvent.Subject;
                 return true;
-            case "EventType":
-            case "eventType":
-            case "Type":
-            case "type":
+            case var _
+                when key.Equals("EventType", StringComparison.OrdinalIgnoreCase)
+                    || key.Equals("Type", StringComparison.OrdinalIgnoreCase):
                 value = simulatorEvent.EventType;
                 return true;
-            case "DataVersion":
-            case "dataVersion":
-            case "DataSchema":
-            case "dataschema":
+            case var _
+                when key.Equals("DataVersion", StringComparison.OrdinalIgnoreCase)
+                    || key.Equals("DataSchema", StringComparison.OrdinalIgnoreCase):
                 value = simulatorEvent.DataVersion;
                 return true;
-            case "Data":
-            case "data":
+            case var _ when key.Equals("Data", StringComparison.OrdinalIgnoreCase):
                 value = simulatorEvent.Data;
                 return true;
             default:
