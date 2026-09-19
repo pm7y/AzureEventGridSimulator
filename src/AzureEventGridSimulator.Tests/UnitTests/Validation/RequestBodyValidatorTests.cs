@@ -1,6 +1,7 @@
 using System.Net;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Services.Validation;
+using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
@@ -40,6 +41,7 @@ public class RequestBodyValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.StatusCode.ShouldBe(HttpStatusCode.RequestEntityTooLarge);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.PayloadTooLarge);
         result.FailureReason.ShouldBe(BodyValidationFailureReason.OverallSizeTooLarge);
     }
 
@@ -64,6 +66,7 @@ public class RequestBodyValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.StatusCode.ShouldBe(HttpStatusCode.RequestEntityTooLarge);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.PayloadTooLarge);
         result.ErrorMessage.ShouldNotBeNullAnd().ShouldContain("maximum size");
     }
 
@@ -80,6 +83,7 @@ public class RequestBodyValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.InputJsonInvalid);
         result.FailureReason.ShouldBe(BodyValidationFailureReason.EmptyBodyInBinaryMode);
     }
 
@@ -129,6 +133,7 @@ public class RequestBodyValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.StatusCode.ShouldBe(HttpStatusCode.RequestEntityTooLarge);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.PayloadTooLarge);
         result.FailureReason.ShouldBe(BodyValidationFailureReason.IndividualEventTooLarge);
     }
 
@@ -162,6 +167,7 @@ public class RequestBodyValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.StatusCode.ShouldBe(HttpStatusCode.RequestEntityTooLarge);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.PayloadTooLarge);
         result.FailureReason.ShouldBe(BodyValidationFailureReason.IndividualEventTooLarge);
     }
 }

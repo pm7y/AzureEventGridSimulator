@@ -1,5 +1,6 @@
 ﻿using AzureEventGridSimulator.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using static AzureEventGridSimulator.Infrastructure.Extensions.HttpContextExtensions;
 
 namespace AzureEventGridSimulator.Controllers;
 
@@ -11,7 +12,7 @@ public class HealthController : ControllerBase
     public IActionResult Get()
     {
         // Azure returns x-ms-request-id but NOT api-supported-versions for health endpoint
-        HttpContext.Response.Headers["x-ms-request-id"] = HttpContext.GetRequestId().ToString();
+        HttpContext.Response.Headers[RequestIdKey] = HttpContext.GetRequestId().ToString();
         return Ok("OK");
     }
 }

@@ -75,5 +75,7 @@ public class ParityHeaderTests(IntegrationContextFixture factory)
 
         response.StatusCode.ShouldBe(HttpStatusCode.MethodNotAllowed);
         response.Content.Headers.Allow.ShouldBe(["OPTIONS", "POST"]);
+        response.Headers.GetValues("api-supported-versions").ShouldBe(["2018-01-01"]);
+        Guid.TryParse(response.Headers.GetValues("x-ms-request-id").Single(), out _).ShouldBeTrue();
     }
 }

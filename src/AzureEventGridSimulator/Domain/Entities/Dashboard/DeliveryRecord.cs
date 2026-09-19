@@ -4,8 +4,10 @@ namespace AzureEventGridSimulator.Domain.Entities.Dashboard;
 
 /// <summary>
 ///     Represents the delivery status for a single subscriber endpoint.
+///     Immutable: EventHistoryService records an update by publishing a copy made with a
+///     <c>with</c> expression, so concurrent dashboard readers never see a record change.
 /// </summary>
-public class DeliveryRecord
+public sealed record DeliveryRecord
 {
     /// <summary>
     ///     Name of the subscriber.
@@ -25,24 +27,24 @@ public class DeliveryRecord
     /// <summary>
     ///     Current delivery status.
     /// </summary>
-    public DeliveryStatus Status { get; set; } = DeliveryStatus.Pending;
+    public DeliveryStatus Status { get; init; } = DeliveryStatus.Pending;
 
     /// <summary>
     ///     Individual delivery attempts.
-    ///     Updates are copy-on-write (see EventHistoryService): a published record's list is
-    ///     never mutated, so concurrent dashboard readers can enumerate it safely.
+    ///     A published record's list is never mutated (an update gets a new list), so
+    ///     concurrent dashboard readers can enumerate it safely.
     /// </summary>
     public List<AttemptRecord> Attempts { get; init; } = [];
 
     /// <summary>
     ///     When the last attempt was made.
     /// </summary>
-    public DateTimeOffset? LastAttemptAt { get; set; }
+    public DateTimeOffset? LastAttemptAt { get; init; }
 
     /// <summary>
     ///     When delivery completed (success or dead-letter).
     /// </summary>
-    public DateTimeOffset? CompletedAt { get; set; }
+    public DateTimeOffset? CompletedAt { get; init; }
 
     /// <summary>
     ///     Creates a DeliveryRecord from subscriber settings.

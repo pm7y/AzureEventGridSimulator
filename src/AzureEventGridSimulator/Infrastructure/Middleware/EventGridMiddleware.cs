@@ -7,6 +7,7 @@ using AzureEventGridSimulator.Domain.Services.Routing;
 using AzureEventGridSimulator.Domain.Services.Validation;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using static AzureEventGridSimulator.Infrastructure.Extensions.HttpContextExtensions;
 
 namespace AzureEventGridSimulator.Infrastructure.Middleware;
 
@@ -20,6 +21,7 @@ public class EventGridMiddleware(RequestDelegate next)
         SasKeyValidator sasKeyValidator,
         EventValidationOrchestrator validationOrchestrator,
         IEventHistoryService eventHistoryService,
+        TimeProvider timeProvider,
         ILogger<EventGridMiddleware> logger
     )
     {
@@ -35,6 +37,7 @@ public class EventGridMiddleware(RequestDelegate next)
                     sasKeyValidator,
                     validationOrchestrator,
                     eventHistoryService,
+                    timeProvider,
                     logger
                 );
                 return;
@@ -85,6 +88,7 @@ public class EventGridMiddleware(RequestDelegate next)
         SasKeyValidator sasKeyValidator,
         EventValidationOrchestrator validationOrchestrator,
         IEventHistoryService eventHistoryService,
+        TimeProvider timeProvider,
         ILogger logger
     )
     {
@@ -125,22 +129,22 @@ public class EventGridMiddleware(RequestDelegate next)
         var requestBody = await context.RequestBody();
 
         // 3. Validate events through the orchestrator
-        var validationResult2 = await validationOrchestrator.ValidateEvents(
+        var eventValidation = await validationOrchestrator.ValidateEvents(
             context,
             topic,
             requestBody
         );
 
-        if (!validationResult2.IsValid)
+        if (!eventValidation.IsValid)
         {
             // Add Report suffix to error message if not already present
             // Azure does not add Report suffix for 413 (RequestEntityTooLarge) errors
             var errorMessage =
-                validationResult2.ErrorMessage!.Contains("Report '", StringComparison.Ordinal)
-                    ? validationResult2.ErrorMessage
-                : validationResult2.StatusCode == HttpStatusCode.RequestEntityTooLarge
-                    ? validationResult2.ErrorMessage
-                : validationResult2.ErrorMessage + context.GenerateReportSuffix();
+                eventValidation.ErrorMessage!.Contains("Report '", StringComparison.Ordinal)
+                    ? eventValidation.ErrorMessage
+                : eventValidation.StatusCode == HttpStatusCode.RequestEntityTooLarge
+                    ? eventValidation.ErrorMessage
+                : eventValidation.ErrorMessage + context.GenerateReportSuffix();
 
             // Record the rejection in event history
             var contentType = context.Request.Headers.ContentType.FirstOrDefault();
@@ -148,24 +152,28 @@ public class EventGridMiddleware(RequestDelegate next)
                 eventHistoryService,
                 topic.Name,
                 topic.Port,
-                validationResult2.StatusCode!.Value,
+                eventValidation.StatusCode!.Value,
                 errorMessage,
+                timeProvider.GetUtcNow(),
                 requestBody,
                 contentType
             );
 
             await context.WriteErrorResponse(
-                validationResult2.StatusCode!.Value,
+                eventValidation.StatusCode!.Value,
                 errorMessage,
                 null,
-                validationResult2.ErrorCode
+                eventValidation.ErrorCode
             );
             return;
         }
 
-        // 4. Store parsed events in HttpContext for use by the controller
-        context.Items["ParsedEvents"] = validationResult2.Events;
-        context.Items["DetectedSchema"] = validationResult2.DetectedSchema;
+        // 4. Hand the topic and the parsed events to NotificationController
+        context.SetValidatedPublish(
+            topic,
+            eventValidation.Events!,
+            eventValidation.DetectedSchema!.Value
+        );
 
         await next(context);
     }
@@ -193,9 +201,9 @@ public class EventGridMiddleware(RequestDelegate next)
             topic?.InputSchema == EventSchema.CloudEventV1_0 ? "CloudEventV10" : "EventGridEvent";
 
         context.Response.Headers.Append("Allow", "POST, OPTIONS");
-        context.Response.Headers.Append("api-supported-versions", "2018-01-01");
+        context.Response.Headers.Append("api-supported-versions", Constants.SupportedApiVersion);
         context.Response.Headers.Append("aeg-input-event-schema", schemaName);
-        context.Response.Headers["x-ms-request-id"] = context.GetRequestId().ToString();
+        context.Response.Headers[RequestIdKey] = context.GetRequestId().ToString();
         context.Response.StatusCode = 200;
     }
 
@@ -205,6 +213,7 @@ public class EventGridMiddleware(RequestDelegate next)
         int topicPort,
         HttpStatusCode statusCode,
         string errorMessage,
+        DateTimeOffset rejectedAt,
         string? rawBody,
         string? contentType
     )
@@ -214,6 +223,7 @@ public class EventGridMiddleware(RequestDelegate next)
             topicPort,
             statusCode,
             errorMessage,
+            rejectedAt,
             rawBody,
             contentType
         );

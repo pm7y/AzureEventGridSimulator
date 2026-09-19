@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Entities.Dashboard;
 using AzureEventGridSimulator.Infrastructure.Settings;
@@ -11,13 +12,20 @@ namespace AzureEventGridSimulator.Domain.Services.Dashboard;
 public class EventHistoryService(
     EventHistoryStore store,
     SimulatorSettings settings,
+    TimeProvider timeProvider,
     ILogger<EventHistoryService> logger
 ) : IEventHistoryService
 {
     /// <inheritdoc />
     public void RecordEventReceived(SimulatorEvent evt, TopicSettings topic, EventSchema schema)
     {
-        var record = EventHistoryRecord.FromSimulatorEvent(evt, topic.Name, topic.Port, schema);
+        var record = EventHistoryRecord.FromSimulatorEvent(
+            evt,
+            topic.Name,
+            topic.Port,
+            schema,
+            timeProvider.GetUtcNow()
+        );
         store.Add(record);
 
         logger.LogDebug(
@@ -47,46 +55,22 @@ public class EventHistoryService(
         DeliveryAttempt attempt
     )
     {
-        var record = store.Get(eventId);
-        if (record == null)
+        if (!TryGetDelivery(eventId, subscriberName, "delivery attempt update", out var delivery))
         {
-            logger.LogDebug(
-                "Event {EventId} not found in history for delivery attempt update",
-                eventId
-            );
             return;
         }
 
-        var deliveries = record.GetDeliveries();
-        var delivery = deliveries.FirstOrDefault(d => d.SubscriberName == subscriberName);
-
-        if (delivery == null)
+        // Copy-on-write: dashboard readers may be enumerating the published record, so build a
+        // replacement and swap it in under the record's lock via UpdateDelivery.
+        var updatedDelivery = delivery with
         {
-            logger.LogDebug(
-                "Delivery for subscriber '{SubscriberName}' not found for event {EventId}",
-                subscriberName,
-                eventId
-            );
-            return;
-        }
-
-        // Copy-on-write: never mutate the published record, dashboard readers may be
-        // enumerating it concurrently. Build a replacement and swap it in under the
-        // record's lock via UpdateDelivery.
-        var attemptRecord = AttemptRecord.FromDeliveryAttempt(attempt);
-        var updatedDelivery = new DeliveryRecord
-        {
-            SubscriberName = delivery.SubscriberName,
-            SubscriberType = delivery.SubscriberType,
-            Endpoint = delivery.Endpoint,
             Status = attempt.Outcome switch
             {
                 DeliveryOutcome.Success => DeliveryStatus.Delivered,
                 _ => DeliveryStatus.Retrying,
             },
-            Attempts = [.. delivery.Attempts, attemptRecord],
+            Attempts = [.. delivery.Attempts, AttemptRecord.FromDeliveryAttempt(attempt)],
             LastAttemptAt = attempt.AttemptTime,
-            CompletedAt = delivery.CompletedAt,
         };
 
         store.UpdateDelivery(eventId, updatedDelivery);
@@ -108,42 +92,15 @@ public class EventHistoryService(
         DateTimeOffset completedAt
     )
     {
-        var record = store.Get(eventId);
-        if (record == null)
+        if (
+            !TryGetDelivery(eventId, subscriberName, "delivery completion update", out var delivery)
+        )
         {
-            logger.LogDebug(
-                "Event {EventId} not found in history for delivery completion update",
-                eventId
-            );
-            return;
-        }
-
-        var deliveries = record.GetDeliveries();
-        var delivery = deliveries.FirstOrDefault(d => d.SubscriberName == subscriberName);
-
-        if (delivery == null)
-        {
-            logger.LogDebug(
-                "Delivery for subscriber '{SubscriberName}' not found for event {EventId}",
-                subscriberName,
-                eventId
-            );
             return;
         }
 
         // Copy-on-write: see RecordDeliveryAttempt
-        var updatedDelivery = new DeliveryRecord
-        {
-            SubscriberName = delivery.SubscriberName,
-            SubscriberType = delivery.SubscriberType,
-            Endpoint = delivery.Endpoint,
-            Status = status,
-            Attempts = delivery.Attempts,
-            LastAttemptAt = delivery.LastAttemptAt,
-            CompletedAt = completedAt,
-        };
-
-        store.UpdateDelivery(eventId, updatedDelivery);
+        store.UpdateDelivery(eventId, delivery with { Status = status, CompletedAt = completedAt });
 
         logger.LogDebug(
             "Recorded delivery completed for event {EventId} to '{SubscriberName}' with status {Status}",
@@ -190,5 +147,46 @@ public class EventHistoryService(
     public IReadOnlyList<RejectedEventRecord> GetRecentRejections()
     {
         return store.GetAllRejections();
+    }
+
+    /// <summary>
+    ///     Finds the published delivery record for a subscriber of an event in the history,
+    ///     logging at debug level when the event or the subscriber's delivery isn't there.
+    /// </summary>
+    /// <param name="eventId">The event ID.</param>
+    /// <param name="subscriberName">The subscriber name.</param>
+    /// <param name="operation">What the lookup is for, used in the log message.</param>
+    /// <param name="delivery">The delivery record, when found.</param>
+    private bool TryGetDelivery(
+        string? eventId,
+        string? subscriberName,
+        string operation,
+        [NotNullWhen(true)] out DeliveryRecord? delivery
+    )
+    {
+        var record = store.Get(eventId);
+        if (record == null)
+        {
+            logger.LogDebug(
+                "Event {EventId} not found in history for {Operation}",
+                eventId,
+                operation
+            );
+            delivery = null;
+            return false;
+        }
+
+        delivery = record.GetDeliveries().FirstOrDefault(d => d.SubscriberName == subscriberName);
+        if (delivery == null)
+        {
+            logger.LogDebug(
+                "Delivery for subscriber '{SubscriberName}' not found for event {EventId}",
+                subscriberName,
+                eventId
+            );
+            return false;
+        }
+
+        return true;
     }
 }

@@ -1,6 +1,7 @@
 using System.Net;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services.Validation;
+using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
 using Shouldly;
@@ -59,6 +60,7 @@ public class ContentTypeValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.StatusCode.ShouldBe(HttpStatusCode.UnsupportedMediaType);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.InvalidContentType);
         result.ErrorMessage.ShouldNotBeNullAnd().ShouldContain("Content-Type header");
     }
 
@@ -78,6 +80,7 @@ public class ContentTypeValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.InputJsonInvalid);
         result.ErrorMessage.ShouldNotBeNullAnd().ShouldContain("Conflicting content mode");
     }
 
@@ -107,5 +110,6 @@ public class ContentTypeValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.StatusCode.ShouldBe(HttpStatusCode.UnsupportedMediaType);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.InvalidContentType);
     }
 }

@@ -71,11 +71,17 @@ public class EventHistoryRecord
     /// <summary>
     ///     Creates an EventHistoryRecord from a SimulatorEvent.
     /// </summary>
+    /// <param name="evt">The received event.</param>
+    /// <param name="topicName">Name of the topic that received the event.</param>
+    /// <param name="topicPort">Port the topic is listening on.</param>
+    /// <param name="inputSchema">The schema the event arrived in.</param>
+    /// <param name="receivedAt">When the simulator received the event.</param>
     public static EventHistoryRecord FromSimulatorEvent(
         SimulatorEvent evt,
         string topicName,
         int topicPort,
-        EventSchema inputSchema
+        EventSchema inputSchema,
+        DateTimeOffset receivedAt
     )
     {
         var payloadJson = evt.Schema switch
@@ -94,7 +100,7 @@ public class EventHistoryRecord
         return new EventHistoryRecord
         {
             Id = evt.Id,
-            ReceivedAt = DateTimeOffset.UtcNow,
+            ReceivedAt = receivedAt,
             TopicName = topicName,
             TopicPort = topicPort,
             EventType = evt.EventType,

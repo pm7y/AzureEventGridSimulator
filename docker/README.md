@@ -136,6 +136,8 @@ docker run -d \
 
 Each topic listens on its own port and can have multiple subscribers.
 
+**Publish each topic's port on the same host port**, e.g. `-p 60101:60101` for a topic with `"port": 60101`. The validation URL that the simulator sends to HTTP subscribers (`https://<address>:<port>/validate?id=...`) is built from the topic's configured `port`, not the published host port, so with `-p 8443:60101` a subscriber that follows it through the Docker host can't complete the validation handshake. Events posted through a remapped port still reach the topic, because the simulator picks the topic by the port the connection arrives on inside the container. Subscribers with `disableValidation: true` aren't sent a validation URL.
+
 | Property | Required | Description |
 |----------|----------|-------------|
 | `name` | Yes | Topic name (letters, numbers, dashes only) |

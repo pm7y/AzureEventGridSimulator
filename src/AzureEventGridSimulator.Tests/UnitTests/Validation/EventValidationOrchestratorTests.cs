@@ -3,6 +3,7 @@ using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Validation;
+using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
@@ -106,6 +107,7 @@ public class EventValidationOrchestratorTests
         result.IsValid.ShouldBeFalse();
         result.FailureStage.ShouldBe(ValidationFailureStage.BodySize);
         result.StatusCode.ShouldBe(HttpStatusCode.RequestEntityTooLarge);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.PayloadTooLarge);
     }
 
     [Fact]
@@ -123,6 +125,7 @@ public class EventValidationOrchestratorTests
         result.IsValid.ShouldBeFalse();
         result.FailureStage.ShouldBe(ValidationFailureStage.Parsing);
         result.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.InputJsonInvalid);
     }
 
     [Fact]
@@ -139,6 +142,7 @@ public class EventValidationOrchestratorTests
 
         result.IsValid.ShouldBeFalse();
         result.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.InputJsonInvalid);
         result
             .ErrorMessage.ShouldNotBeNullAnd()
             .ShouldContain("does not conform to the expected schema");
@@ -163,6 +167,7 @@ public class EventValidationOrchestratorTests
         result.IsValid.ShouldBeFalse();
         result.FailureStage.ShouldBe(ValidationFailureStage.EventValidation);
         result.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.Unauthorized);
     }
 
     [Fact]
@@ -181,6 +186,7 @@ public class EventValidationOrchestratorTests
         result.IsValid.ShouldBeFalse();
         result.FailureStage.ShouldBe(ValidationFailureStage.EventSize);
         result.StatusCode.ShouldBe(HttpStatusCode.RequestEntityTooLarge);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.PayloadTooLarge);
     }
 
     [Fact]
@@ -199,6 +205,7 @@ public class EventValidationOrchestratorTests
         result.IsValid.ShouldBeFalse();
         result.FailureStage.ShouldBe(ValidationFailureStage.ContentType);
         result.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.InputJsonInvalid);
     }
 
     [Fact]
@@ -224,6 +231,7 @@ public class EventValidationOrchestratorTests
         result.IsValid.ShouldBeFalse();
         result.FailureStage.ShouldBe(ValidationFailureStage.Parsing);
         result.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.InputJsonInvalid);
     }
 
     [Fact]

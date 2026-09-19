@@ -3,6 +3,7 @@ using AzureEventGridSimulator.Domain.Entities.Dashboard;
 using AzureEventGridSimulator.Domain.Services.Dashboard;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -12,10 +13,13 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Dashboard;
 [Trait("Category", "unit")]
 public class EventHistoryServiceTests
 {
+    private static readonly DateTimeOffset Now = new(2025, 1, 5, 14, 7, 9, TimeSpan.Zero);
+
     private readonly ILogger<EventHistoryService> _logger;
     private readonly EventHistoryService _service;
     private readonly SimulatorSettings _settings;
     private readonly EventHistoryStore _store;
+    private readonly FakeTimeProvider _timeProvider = new(Now);
 
     public EventHistoryServiceTests()
     {
@@ -40,7 +44,48 @@ public class EventHistoryServiceTests
             ],
         };
         _logger = Substitute.For<ILogger<EventHistoryService>>();
-        _service = new EventHistoryService(_store, _settings, _logger);
+        _service = new EventHistoryService(_store, _settings, _timeProvider, _logger);
+    }
+
+    [Fact]
+    public void GivenTimeProvider_WhenEventIsRecorded_ThenReceivedAtComesFromTimeProvider()
+    {
+        _service.RecordEventReceived(
+            CreateTestEvent("event-1"),
+            new TopicSettings
+            {
+                Name = "test-topic",
+                Port = 60101,
+                Key = "key",
+            },
+            EventSchema.EventGridSchema
+        );
+        _timeProvider.Advance(TimeSpan.FromMinutes(5));
+
+        _store.Get("event-1").ShouldNotBeNullAnd().ReceivedAt.ShouldBe(Now);
+    }
+
+    [Fact]
+    public void GivenRejection_WhenRecorded_ThenItIsReturnedWithTheTimeItWasCreatedWith()
+    {
+        var rejection = RejectedEventRecord.Create(
+            "test-topic",
+            60101,
+            System.Net.HttpStatusCode.BadRequest,
+            "Invalid JSON",
+            Now,
+            "[]",
+            "application/json"
+        );
+
+        _service.RecordEventRejected(rejection);
+
+        var recorded = _service.GetRecentRejections().ShouldHaveSingleItem();
+        recorded.RejectedAt.ShouldBe(Now);
+        recorded.TopicName.ShouldBe("test-topic");
+        recorded.StatusCode.ShouldBe(System.Net.HttpStatusCode.BadRequest);
+        recorded.RawBody.ShouldBe("[]");
+        recorded.ContentType.ShouldBe("application/json");
     }
 
     [Fact]
@@ -262,6 +307,242 @@ public class EventHistoryServiceTests
         stats.EventsInHistory.ShouldBe(1);
         // One topic is enabled, one is disabled
         stats.TopicsActive.ShouldBe(1);
+    }
+
+    [Fact]
+    public void GivenQueuedDelivery_WhenAttemptsAreRecorded_ThenAttemptsAccumulateAndOtherFieldsAreKept()
+    {
+        RecordQueuedHttpDelivery("event-1", "http-subscriber");
+        var firstAttemptAt = new DateTimeOffset(2025, 1, 5, 14, 0, 0, TimeSpan.Zero);
+        var secondAttemptAt = firstAttemptAt.AddSeconds(10);
+
+        _service.RecordDeliveryAttempt(
+            "event-1",
+            "http-subscriber",
+            new DeliveryAttempt(1, DeliveryOutcome.HttpError, firstAttemptAt, 503)
+        );
+        _service.RecordDeliveryAttempt(
+            "event-1",
+            "http-subscriber",
+            new DeliveryAttempt(2, DeliveryOutcome.Success, secondAttemptAt, 200)
+        );
+
+        var delivery = _store
+            .Get("event-1")
+            .ShouldNotBeNullAnd()
+            .GetDeliveries()
+            .ShouldHaveSingleItem();
+        delivery.SubscriberName.ShouldBe("http-subscriber");
+        delivery.SubscriberType.ShouldBe("http");
+        delivery.Endpoint.ShouldBe("https://example.com/webhook");
+        delivery.Status.ShouldBe(DeliveryStatus.Delivered);
+        delivery.LastAttemptAt.ShouldBe(secondAttemptAt);
+        delivery.CompletedAt.ShouldBeNull();
+        delivery.Attempts.Select(a => a.AttemptNumber).ShouldBe([1, 2]);
+        delivery.Attempts[0].Outcome.ShouldBe(DeliveryOutcome.HttpError);
+        delivery.Attempts[0].HttpStatusCode.ShouldBe(503);
+        delivery.Attempts[0].AttemptedAt.ShouldBe(firstAttemptAt);
+    }
+
+    [Fact]
+    public void GivenFailedAttempt_WhenRecorded_ThenStatusIsRetrying()
+    {
+        RecordQueuedHttpDelivery("event-1", "http-subscriber");
+
+        _service.RecordDeliveryAttempt(
+            "event-1",
+            "http-subscriber",
+            new DeliveryAttempt(1, DeliveryOutcome.Timeout, DateTimeOffset.UtcNow)
+        );
+
+        _store
+            .Get("event-1")
+            .ShouldNotBeNullAnd()
+            .GetDeliveries()
+            .ShouldHaveSingleItem()
+            .Status.ShouldBe(DeliveryStatus.Retrying);
+    }
+
+    [Fact]
+    public void GivenPublishedDelivery_WhenAttemptIsRecorded_ThenThePublishedRecordIsNotChanged()
+    {
+        // Copy-on-write: dashboard readers may be enumerating the record they already hold
+        RecordQueuedHttpDelivery("event-1", "http-subscriber");
+        var published = _store.Get("event-1").ShouldNotBeNullAnd().GetDeliveries()[0];
+
+        _service.RecordDeliveryAttempt(
+            "event-1",
+            "http-subscriber",
+            new DeliveryAttempt(1, DeliveryOutcome.Success, DateTimeOffset.UtcNow, 200)
+        );
+
+        published.Status.ShouldBe(DeliveryStatus.Pending);
+        published.Attempts.ShouldBeEmpty();
+        published.LastAttemptAt.ShouldBeNull();
+        _store.Get("event-1").ShouldNotBeNullAnd().GetDeliveries()[0].ShouldNotBeSameAs(published);
+    }
+
+    [Fact]
+    public void GivenAttemptedDelivery_WhenCompleted_ThenAttemptsAndLastAttemptAreKept()
+    {
+        RecordQueuedHttpDelivery("event-1", "http-subscriber");
+        var attemptAt = new DateTimeOffset(2025, 1, 5, 14, 0, 0, TimeSpan.Zero);
+        var completedAt = attemptAt.AddMinutes(1);
+        _service.RecordDeliveryAttempt(
+            "event-1",
+            "http-subscriber",
+            new DeliveryAttempt(1, DeliveryOutcome.HttpError, attemptAt, 500)
+        );
+
+        _service.RecordDeliveryCompleted(
+            "event-1",
+            "http-subscriber",
+            DeliveryStatus.DeadLettered,
+            completedAt
+        );
+
+        var delivery = _store
+            .Get("event-1")
+            .ShouldNotBeNullAnd()
+            .GetDeliveries()
+            .ShouldHaveSingleItem();
+        delivery.Status.ShouldBe(DeliveryStatus.DeadLettered);
+        delivery.CompletedAt.ShouldBe(completedAt);
+        delivery.LastAttemptAt.ShouldBe(attemptAt);
+        delivery.Attempts.ShouldHaveSingleItem().HttpStatusCode.ShouldBe(500);
+        delivery.SubscriberType.ShouldBe("http");
+        delivery.Endpoint.ShouldBe("https://example.com/webhook");
+    }
+
+    [Fact]
+    public void GivenCompletedDelivery_WhenLateAttemptIsRecorded_ThenCompletedAtIsKept()
+    {
+        RecordQueuedHttpDelivery("event-1", "http-subscriber");
+        var completedAt = new DateTimeOffset(2025, 1, 5, 14, 0, 0, TimeSpan.Zero);
+        _service.RecordDeliveryCompleted(
+            "event-1",
+            "http-subscriber",
+            DeliveryStatus.Delivered,
+            completedAt
+        );
+
+        _service.RecordDeliveryAttempt(
+            "event-1",
+            "http-subscriber",
+            new DeliveryAttempt(1, DeliveryOutcome.Success, completedAt, 200)
+        );
+
+        _store
+            .Get("event-1")
+            .ShouldNotBeNullAnd()
+            .GetDeliveries()
+            .ShouldHaveSingleItem()
+            .CompletedAt.ShouldBe(completedAt);
+    }
+
+    [Theory]
+    [InlineData(
+        "unknown-event",
+        "http-subscriber",
+        "not found in history for delivery attempt update"
+    )]
+    [InlineData(
+        "event-1",
+        "unknown-subscriber",
+        "Delivery for subscriber 'unknown-subscriber' not found"
+    )]
+    public void GivenUnknownEventOrSubscriber_WhenAttemptIsRecorded_ThenNothingChangesAndItIsLogged(
+        string eventId,
+        string subscriberName,
+        string expectedLogFragment
+    )
+    {
+        RecordQueuedHttpDelivery("event-1", "http-subscriber");
+
+        _service.RecordDeliveryAttempt(
+            eventId,
+            subscriberName,
+            new DeliveryAttempt(1, DeliveryOutcome.Success, DateTimeOffset.UtcNow, 200)
+        );
+
+        _store
+            .Get("event-1")
+            .ShouldNotBeNullAnd()
+            .GetDeliveries()
+            .ShouldHaveSingleItem()
+            .Status.ShouldBe(DeliveryStatus.Pending);
+        ShouldHaveLoggedDebug(expectedLogFragment);
+    }
+
+    [Theory]
+    [InlineData(
+        "unknown-event",
+        "http-subscriber",
+        "not found in history for delivery completion update"
+    )]
+    [InlineData(
+        "event-1",
+        "unknown-subscriber",
+        "Delivery for subscriber 'unknown-subscriber' not found"
+    )]
+    public void GivenUnknownEventOrSubscriber_WhenCompletionIsRecorded_ThenNothingChangesAndItIsLogged(
+        string eventId,
+        string subscriberName,
+        string expectedLogFragment
+    )
+    {
+        RecordQueuedHttpDelivery("event-1", "http-subscriber");
+
+        _service.RecordDeliveryCompleted(
+            eventId,
+            subscriberName,
+            DeliveryStatus.Delivered,
+            DateTimeOffset.UtcNow
+        );
+
+        var delivery = _store
+            .Get("event-1")
+            .ShouldNotBeNullAnd()
+            .GetDeliveries()
+            .ShouldHaveSingleItem();
+        delivery.Status.ShouldBe(DeliveryStatus.Pending);
+        delivery.CompletedAt.ShouldBeNull();
+        ShouldHaveLoggedDebug(expectedLogFragment);
+    }
+
+    private void RecordQueuedHttpDelivery(string eventId, string subscriberName)
+    {
+        _service.RecordEventReceived(
+            CreateTestEvent(eventId),
+            new TopicSettings
+            {
+                Name = "test-topic",
+                Port = 60101,
+                Key = "key",
+            },
+            EventSchema.EventGridSchema
+        );
+        _service.RecordDeliveryQueued(
+            eventId,
+            new HttpSubscriberSettings
+            {
+                Name = subscriberName,
+                Endpoint = "https://example.com/webhook",
+            }
+        );
+    }
+
+    private void ShouldHaveLoggedDebug(string fragment)
+    {
+        _logger
+            .Received(1)
+            .Log(
+                LogLevel.Debug,
+                Arg.Any<EventId>(),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains(fragment)),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
+            );
     }
 
     private static SimulatorEvent CreateTestEvent(string id)
