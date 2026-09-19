@@ -6,9 +6,11 @@ namespace AzureEventGridSimulator.Tests.ActualSimulatorTests;
 
 /// <summary>
 ///     Starts the compiled simulator (the apphost in the test output directory) as a child process
-///     for the integration-actual tests. It listens on the topic ports in appsettings.test.json and
-///     serves HTTPS with the ASP.NET Core development certificate, so a machine without one needs
-///     <c>dotnet dev-certs https</c> first.
+///     for the integration-actual tests. It runs from an empty working directory and loads only
+///     appsettings.test.json (via --ConfigFile), so the shipped appsettings.json, whose legacy
+///     subscribers deliver to requestcatcher.com, is never layered in. It listens on the topic
+///     ports in appsettings.test.json and serves HTTPS with the ASP.NET Core development
+///     certificate, so a machine without one needs <c>dotnet dev-certs https</c> first.
 /// </summary>
 public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
 {
@@ -16,6 +18,9 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
     private const int MaxStartupWaitTimeMs = 30000;
     private const int PollingIntervalMs = 100;
     private readonly ConcurrentQueue<string> _output = new();
+    private readonly string _workingDirectory = Directory
+        .CreateTempSubdirectory("aegs-actual-")
+        .FullName;
     private bool _disposed;
     private string? _simulatorExePath;
     private Process? _simulatorProcess;
@@ -30,17 +35,16 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
 
         var startInfo = new ProcessStartInfo(_simulatorExePath)
         {
-            WorkingDirectory = simulatorDirectory,
+            WorkingDirectory = _workingDirectory,
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             CreateNoWindow = true,
         };
+        startInfo.ArgumentList.Add(
+            $"--ConfigFile={Path.Combine(simulatorDirectory, "appsettings.test.json")}"
+        );
         SimulatorProcessEnvironment.RemoveInheritedSimulatorConfiguration(startInfo);
-        // The simulator loads appsettings.{environment}.json, and file names are case sensitive
-        // on Linux, so this has to match appsettings.test.json exactly. Otherwise only the copied
-        // appsettings.json is loaded, and its subscribers deliver to requestcatcher.com.
-        startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "test";
 
         var process = new Process { StartInfo = startInfo };
         // Keep reading both pipes: once a pipe that nobody reads fills up, the simulator's
@@ -82,12 +86,47 @@ public class ActualSimulatorFixture : IDisposable, IAsyncLifetime
                 _simulatorProcess.WaitForExit();
             }
 
+            try
+            {
+                Directory.Delete(_workingDirectory, true);
+            }
+            catch (IOException)
+            {
+                // Best effort: a leftover empty temp folder is harmless
+            }
+
             _disposed = true;
             GC.SuppressFinalize(this);
         }
     }
 
-    private string Output => string.Join(Environment.NewLine, _output);
+    /// <summary>
+    ///     Everything the simulator has written to stdout and stderr so far.
+    /// </summary>
+    internal string Output => string.Join(Environment.NewLine, _output);
+
+    /// <summary>
+    ///     Waits until the simulator's output contains <paramref name="text" />, e.g. the
+    ///     startup summary it logs after the subscription validation sweep.
+    /// </summary>
+    internal async Task<string> WaitForOutput(string text, TimeSpan timeout)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        while (!Output.Contains(text, StringComparison.Ordinal))
+        {
+            if (stopwatch.Elapsed > timeout)
+            {
+                throw new TimeoutException(
+                    $"The simulator didn't write '{text}' within {timeout}.{Environment.NewLine}{Output}"
+                );
+            }
+
+            await Task.Delay(PollingIntervalMs);
+        }
+
+        return Output;
+    }
 
     private void CaptureOutput(object sender, DataReceivedEventArgs e)
     {
