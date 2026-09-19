@@ -1,6 +1,6 @@
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Filtering;
 using AzureEventGridSimulator.Domain.Services;
-using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;

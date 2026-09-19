@@ -1,5 +1,6 @@
 using System.Text;
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Filtering;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;

@@ -1,5 +1,5 @@
 using AzureEventGridSimulator.Domain.Entities;
-using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Domain.Filtering;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
 using Xunit;

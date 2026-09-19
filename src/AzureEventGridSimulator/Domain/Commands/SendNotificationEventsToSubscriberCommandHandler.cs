@@ -1,7 +1,7 @@
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Filtering;
 using AzureEventGridSimulator.Domain.Services.Dashboard;
 using AzureEventGridSimulator.Domain.Services.Retry;
-using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;

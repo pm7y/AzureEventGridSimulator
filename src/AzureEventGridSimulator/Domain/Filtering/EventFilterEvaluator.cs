@@ -3,9 +3,9 @@ using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 
-namespace AzureEventGridSimulator.Infrastructure.Extensions;
+namespace AzureEventGridSimulator.Domain.Filtering;
 
-public static class SubscriptionSettingsFilterExtensions
+public static class EventFilterEvaluator
 {
     private static bool IsNegationOperator(
         AdvancedFilterSetting.AdvancedFilterOperatorType operatorType
