@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AzureEventGridSimulator.Infrastructure.JsonConverters;
 
 namespace AzureEventGridSimulator.Domain.Entities.Dashboard;
 
@@ -88,11 +89,11 @@ public class EventHistoryRecord
         {
             EventSchema.EventGridSchema => JsonSerializer.Serialize(
                 evt.EventGridEvent,
-                new JsonSerializerOptions { WriteIndented = true }
+                JsonSerializerOptionsProvider.Indented
             ),
             EventSchema.CloudEventV1_0 => JsonSerializer.Serialize(
                 evt.CloudEvent,
-                new JsonSerializerOptions { WriteIndented = true }
+                JsonSerializerOptionsProvider.Indented
             ),
             _ => "{}",
         };

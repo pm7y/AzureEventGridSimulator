@@ -347,8 +347,7 @@ public class Program
         builder.Services.AddHostedService<RetryDeliveryBackgroundService>();
 
         // Register dashboard services
-        builder.Services.AddSingleton<EventHistoryStore>();
-        builder.Services.AddSingleton<IEventHistoryService, EventHistoryService>();
+        AddEventHistoryServices(builder.Services);
 
         // One named client for webhook delivery and subscription validation, so the timeout
         // and the optional certificate bypass below apply to both
@@ -456,6 +455,25 @@ public class Program
         });
 
         return builder;
+    }
+
+    /// <summary>
+    ///     Registers the dashboard's event history. When the dashboard is disabled nothing reads
+    ///     the history, so a <see cref="NullEventHistoryService" /> that records nothing is used.
+    /// </summary>
+    /// <remarks>
+    ///     The choice is made when the service is first resolved, not here: the settings bound by
+    ///     AddSimulatorSettings aren't in scope, and tests replace the SimulatorSettings singleton
+    ///     after this registration.
+    /// </remarks>
+    internal static void AddEventHistoryServices(IServiceCollection services)
+    {
+        services.AddSingleton<EventHistoryStore>();
+        services.AddSingleton<IEventHistoryService>(sp =>
+            sp.GetRequiredService<SimulatorSettings>().DashboardEnabled
+                ? ActivatorUtilities.CreateInstance<EventHistoryService>(sp)
+                : new NullEventHistoryService()
+        );
     }
 
     /// <summary>

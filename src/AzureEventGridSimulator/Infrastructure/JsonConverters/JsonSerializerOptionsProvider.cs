@@ -13,4 +13,11 @@ public static class JsonSerializerOptionsProvider
     /// </summary>
     public static JsonSerializerOptions Default { get; } =
         new() { AllowTrailingCommas = true, PropertyNameCaseInsensitive = true };
+
+    /// <summary>
+    ///     Gets the options for writing indented JSON, such as the payloads shown on the dashboard
+    ///     and the subscription validation event. Share this instance rather than creating new
+    ///     options on each call (CA1869).
+    /// </summary>
+    public static JsonSerializerOptions Indented { get; } = new() { WriteIndented = true };
 }

@@ -3,6 +3,7 @@ using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Infrastructure;
+using AzureEventGridSimulator.Infrastructure.JsonConverters;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
@@ -70,7 +71,7 @@ public class ValidateAllSubscriptionsCommandHandler(
 
             var json = JsonSerializer.Serialize(
                 new[] { evt },
-                new JsonSerializerOptions { WriteIndented = true }
+                JsonSerializerOptionsProvider.Indented
             );
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
             // Use the named client so its timeout and the optional
