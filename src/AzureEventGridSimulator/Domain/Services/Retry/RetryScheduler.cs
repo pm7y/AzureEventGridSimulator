@@ -3,7 +3,7 @@ namespace AzureEventGridSimulator.Domain.Services.Retry;
 /// <summary>
 ///     Calculates next retry time based on Azure Event Grid retry schedule.
 /// </summary>
-public class RetryScheduler
+public class RetryScheduler(TimeProvider timeProvider)
 {
     /// <summary>
     ///     Azure Event Grid retry schedule with exponential backoff.
@@ -27,13 +27,6 @@ public class RetryScheduler
     /// </summary>
     private static readonly int[] ImmediateDeadLetterStatusCodes = [400, 401, 403, 413];
 
-    private readonly TimeProvider _timeProvider;
-
-    public RetryScheduler(TimeProvider timeProvider)
-    {
-        _timeProvider = timeProvider;
-    }
-
     /// <summary>
     ///     Calculates the next retry time based on attempt number and HTTP status code.
     /// </summary>
@@ -49,7 +42,7 @@ public class RetryScheduler
     public DateTimeOffset GetNextRetryTime(int attemptNumber, int? httpStatusCode = null)
     {
         var delay = GetRetryDelay(attemptNumber, httpStatusCode);
-        return _timeProvider.GetUtcNow().Add(delay);
+        return timeProvider.GetUtcNow().Add(delay);
     }
 
     /// <summary>

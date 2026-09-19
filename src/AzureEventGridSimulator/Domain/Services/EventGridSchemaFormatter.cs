@@ -39,7 +39,7 @@ public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaF
     public Dictionary<string, string> GetHeaders(SimulatorEvent evt)
     {
         // Event Grid schema doesn't require special headers for delivery
-        return new Dictionary<string, string>();
+        return [];
     }
 
     /// <summary>

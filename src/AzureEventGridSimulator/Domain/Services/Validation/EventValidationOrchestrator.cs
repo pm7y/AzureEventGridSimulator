@@ -76,7 +76,7 @@ public class EventValidationOrchestrator(
     /// <param name="topic">The topic configuration.</param>
     /// <param name="requestBody">The request body content.</param>
     /// <returns>Validation result with parsed events or error details.</returns>
-    public async Task<EventValidationResult> ValidateEvents(
+    public EventValidationResult ValidateEvents(
         HttpContext context,
         TopicSettings topic,
         string requestBody

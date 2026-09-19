@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
@@ -60,7 +61,7 @@ public abstract class NamespaceSubscriberSettingsBase : SubscriberSettingsBase
             // Subscriber-level namespace components
             if (HasSubscriberNamespaceCredentials())
             {
-                return BuildConnectionString(Namespace!, SharedAccessKeyName!, SharedAccessKey!);
+                return BuildConnectionString(Namespace, SharedAccessKeyName, SharedAccessKey);
             }
 
             // Fall back to topic-level connection string
@@ -73,9 +74,9 @@ public abstract class NamespaceSubscriberSettingsBase : SubscriberSettingsBase
             if (HasTopicNamespaceCredentials())
             {
                 return BuildConnectionString(
-                    TopicNamespace!,
-                    TopicSharedAccessKeyName!,
-                    TopicSharedAccessKey!
+                    TopicNamespace,
+                    TopicSharedAccessKeyName,
+                    TopicSharedAccessKey
                 );
             }
 
@@ -159,6 +160,12 @@ public abstract class NamespaceSubscriberSettingsBase : SubscriberSettingsBase
         }
     }
 
+    [MemberNotNullWhen(
+        true,
+        nameof(Namespace),
+        nameof(SharedAccessKeyName),
+        nameof(SharedAccessKey)
+    )]
     private bool HasSubscriberNamespaceCredentials()
     {
         return !string.IsNullOrWhiteSpace(Namespace)
@@ -173,6 +180,12 @@ public abstract class NamespaceSubscriberSettingsBase : SubscriberSettingsBase
             || !string.IsNullOrWhiteSpace(SharedAccessKey);
     }
 
+    [MemberNotNullWhen(
+        true,
+        nameof(TopicNamespace),
+        nameof(TopicSharedAccessKeyName),
+        nameof(TopicSharedAccessKey)
+    )]
     private bool HasTopicNamespaceCredentials()
     {
         return !string.IsNullOrWhiteSpace(TopicNamespace)

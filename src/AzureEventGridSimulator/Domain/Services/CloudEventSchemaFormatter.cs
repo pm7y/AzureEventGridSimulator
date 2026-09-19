@@ -45,7 +45,7 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     {
         // Structured mode includes all attributes in the body
         // No additional CloudEvents headers needed
-        return new Dictionary<string, string>();
+        return [];
     }
 
     /// <summary>

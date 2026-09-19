@@ -6,7 +6,7 @@ namespace AzureEventGridSimulator.Infrastructure.Settings;
 public class SimulatorSettings
 {
     [JsonPropertyName("topics")]
-    public TopicSettings[] Topics { get; set; } = Array.Empty<TopicSettings>();
+    public TopicSettings[] Topics { get; set; } = [];
 
     /// <summary>
     ///     Enable or disable the dashboard. Defaults to true.

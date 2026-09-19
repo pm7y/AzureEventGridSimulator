@@ -55,13 +55,13 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenValidEventGridArray_WhenValidated_ThenSucceedsWithEventGridSchema()
+    public void GivenValidEventGridArray_WhenValidated_ThenSucceedsWithEventGridSchema()
     {
         var orchestrator = CreateOrchestrator();
         var context = TestHelpers.CreateHttpContext();
         var body = SerializeEvents(TestHelpers.CreateValidEventGridEvent());
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             body
@@ -73,14 +73,14 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenValidSingleEventGridObject_WhenValidated_ThenSucceeds()
+    public void GivenValidSingleEventGridObject_WhenValidated_ThenSucceeds()
     {
         // Azure accepts a single object as well as an array for the EventGrid schema
         var orchestrator = CreateOrchestrator();
         var context = TestHelpers.CreateHttpContext();
         var body = JsonSerializer.Serialize(TestHelpers.CreateValidEventGridEvent());
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             body
@@ -91,7 +91,7 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenOversizedBody_WhenValidated_ThenFailsAtBodySizeStageBeforeParsing()
+    public void GivenOversizedBody_WhenValidated_ThenFailsAtBodySizeStageBeforeParsing()
     {
         // The body is deliberately not valid JSON; failing at the BodySize stage
         // (rather than Parsing) proves the size check short-circuits the pipeline.
@@ -99,7 +99,7 @@ public class EventValidationOrchestratorTests
         var context = TestHelpers.CreateHttpContext();
         var body = new string('x', 100);
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             body
@@ -112,12 +112,12 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenMalformedJson_WhenValidated_ThenFailsAtParsingStageWith400()
+    public void GivenMalformedJson_WhenValidated_ThenFailsAtParsingStageWith400()
     {
         var orchestrator = CreateOrchestrator();
         var context = TestHelpers.CreateHttpContext();
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             "{ this is not json"
@@ -130,12 +130,12 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenEmptyJsonArray_WhenValidated_ThenFailsWith400AndSchemaMessage()
+    public void GivenEmptyJsonArray_WhenValidated_ThenFailsWith400AndSchemaMessage()
     {
         var orchestrator = CreateOrchestrator();
         var context = TestHelpers.CreateHttpContext();
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             "[]"
@@ -150,13 +150,13 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenBinaryModeRequestWithoutARequiredHeader_WhenValidated_ThenFailsWithInvalidCloudEventHeader()
+    public void GivenBinaryModeRequestWithoutARequiredHeader_WhenValidated_ThenFailsWithInvalidCloudEventHeader()
     {
         var orchestrator = CreateOrchestrator();
         var context = TestHelpers.CreateCloudEventsBinaryModeContext();
         context.Request.Headers.Remove(Constants.CeSourceHeader);
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             "{}"
@@ -170,12 +170,12 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenBinaryModeRequestWithAnEmptyRequiredHeader_WhenValidated_ThenFailsWithInvalidCloudEventHeader()
+    public void GivenBinaryModeRequestWithAnEmptyRequiredHeader_WhenValidated_ThenFailsWithInvalidCloudEventHeader()
     {
         var orchestrator = CreateOrchestrator();
         var context = TestHelpers.CreateCloudEventsBinaryModeContext(id: "");
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             "{}"
@@ -189,7 +189,7 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenMalformedJsonWhoseErrorPathMentionsHeaders_WhenValidated_ThenFailsWithInputJsonInvalid()
+    public void GivenMalformedJsonWhoseErrorPathMentionsHeaders_WhenValidated_ThenFailsWithInputJsonInvalid()
     {
         // STJ's error reads "... Path: $[0].headers ...". The error code comes from the kind of
         // failure, not from the word "header" appearing in the message.
@@ -199,7 +199,7 @@ public class EventValidationOrchestratorTests
             [{ "specversion": "1.0", "type": "t", "source": "s", "id": "1", "headers": [1,}]
             """;
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             body
@@ -213,7 +213,7 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenPublisherSetTopic_WhenValidated_ThenFailsWith401AtEventValidationStage()
+    public void GivenPublisherSetTopic_WhenValidated_ThenFailsWith401AtEventValidationStage()
     {
         // Azure returns 401 when the publisher sets the topic property themselves
         var orchestrator = CreateOrchestrator();
@@ -222,7 +222,7 @@ public class EventValidationOrchestratorTests
         evt.SetTopic("/publisher/should/not/set/this");
         var body = SerializeEvents(evt);
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             body
@@ -235,13 +235,13 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenEventExceedingPerEventLimit_WhenValidated_ThenFailsAtEventSizeStage()
+    public void GivenEventExceedingPerEventLimit_WhenValidated_ThenFailsAtEventSizeStage()
     {
         var orchestrator = CreateOrchestrator(CreateSettingsWithLimits(perEventBytes: 50));
         var context = TestHelpers.CreateHttpContext();
         var body = SerializeEvents(TestHelpers.CreateValidEventGridEvent());
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             body
@@ -254,13 +254,13 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenBinaryHeadersWithStructuredContentType_WhenValidated_ThenFailsAtContentTypeStage()
+    public void GivenBinaryHeadersWithStructuredContentType_WhenValidated_ThenFailsAtContentTypeStage()
     {
         var orchestrator = CreateOrchestrator();
         var context = TestHelpers.CreateCloudEventsBinaryModeContext();
         context.Request.ContentType = "application/cloudevents+json";
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             "{}"
@@ -273,7 +273,7 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenTopicInputSchemaOverride_WhenBodyDoesNotMatchSchema_ThenFailsAtParsing()
+    public void GivenTopicInputSchemaOverride_WhenBodyDoesNotMatchSchema_ThenFailsAtParsing()
     {
         // The topic forces CloudEvents input; an array body with application/json
         // content type is invalid for CloudEvents single-event mode.
@@ -290,7 +290,7 @@ public class EventValidationOrchestratorTests
             [{ "specversion": "1.0", "type": "com.example.test", "source": "/test/source", "id": "abc-1" }]
             """;
 
-        var result = await orchestrator.ValidateEvents(context, topic, body);
+        var result = orchestrator.ValidateEvents(context, topic, body);
 
         result.IsValid.ShouldBeFalse();
         result.FailureStage.ShouldBe(ValidationFailureStage.Parsing);
@@ -299,7 +299,7 @@ public class EventValidationOrchestratorTests
     }
 
     [Fact]
-    public async Task GivenValidStructuredCloudEvent_WhenValidated_ThenSucceedsWithCloudEventSchema()
+    public void GivenValidStructuredCloudEvent_WhenValidated_ThenSucceedsWithCloudEventSchema()
     {
         var orchestrator = CreateOrchestrator();
         var context = TestHelpers.CreateCloudEventsStructuredModeContext();
@@ -307,7 +307,7 @@ public class EventValidationOrchestratorTests
             { "specversion": "1.0", "type": "com.example.test", "source": "/test/source", "id": "abc-1" }
             """;
 
-        var result = await orchestrator.ValidateEvents(
+        var result = orchestrator.ValidateEvents(
             context,
             TestHelpers.CreateValidTopicSettings(),
             body

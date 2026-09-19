@@ -55,7 +55,7 @@ public class EventGridMiddleware(RequestDelegate next)
                 return;
 
             case RequestType.OptionsPreFlight:
-                await HandleOptionsRequest(context, route.Topic);
+                HandleOptionsRequest(context, route.Topic);
                 return;
 
             case RequestType.HeadApiEvents:
@@ -129,20 +129,20 @@ public class EventGridMiddleware(RequestDelegate next)
         var requestBody = await context.RequestBody();
 
         // 3. Validate events through the orchestrator
-        var eventValidation = await validationOrchestrator.ValidateEvents(
-            context,
-            topic,
-            requestBody
-        );
+        var eventValidation = validationOrchestrator.ValidateEvents(context, topic, requestBody);
 
-        if (!eventValidation.IsValid)
+        // Every failure the orchestrator returns carries a message and a status code
+        if (
+            eventValidation is
+            { IsValid: false, ErrorMessage: { } message, StatusCode: { } statusCode }
+        )
         {
             // Add the Report suffix to the error message
             // Azure does not add Report suffix for 413 (RequestEntityTooLarge) errors
             var errorMessage =
-                eventValidation.StatusCode == HttpStatusCode.RequestEntityTooLarge
-                    ? eventValidation.ErrorMessage!
-                    : eventValidation.ErrorMessage + context.GenerateReportSuffix();
+                statusCode == HttpStatusCode.RequestEntityTooLarge
+                    ? message
+                    : message + context.GenerateReportSuffix();
 
             // Record the rejection in event history
             var contentType = context.Request.Headers.ContentType.FirstOrDefault();
@@ -150,7 +150,7 @@ public class EventGridMiddleware(RequestDelegate next)
                 eventHistoryService,
                 topic.Name,
                 topic.Port,
-                eventValidation.StatusCode!.Value,
+                statusCode,
                 errorMessage,
                 timeProvider.GetUtcNow(),
                 requestBody,
@@ -158,7 +158,7 @@ public class EventGridMiddleware(RequestDelegate next)
             );
 
             await context.WriteErrorResponse(
-                eventValidation.StatusCode!.Value,
+                statusCode,
                 errorMessage,
                 null,
                 eventValidation.ErrorCode
@@ -193,7 +193,7 @@ public class EventGridMiddleware(RequestDelegate next)
         await next(context);
     }
 
-    private async Task HandleOptionsRequest(HttpContext context, TopicSettings? topic)
+    private static void HandleOptionsRequest(HttpContext context, TopicSettings? topic)
     {
         var schemaName = (topic?.InputSchema ?? EventSchema.EventGridSchema).ToAzureSchemaName();
 
