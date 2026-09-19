@@ -16,7 +16,7 @@ public class EventGridSchemaParserTests
     [Fact]
     public void GivenValidEventGridEventsArray_WhenParsed_ThenEventsCreated()
     {
-        var context = CreateEventGridContext();
+        var context = TestHelpers.CreateHttpContext();
         const string requestBody = """
             [{
                         "id": "test-id-123",
@@ -41,7 +41,7 @@ public class EventGridSchemaParserTests
     [Fact]
     public void GivenMultipleEvents_WhenParsed_ThenAllEventsReturned()
     {
-        var context = CreateEventGridContext();
+        var context = TestHelpers.CreateHttpContext();
         const string requestBody = """
             [
                         {
@@ -73,7 +73,7 @@ public class EventGridSchemaParserTests
     [Fact]
     public void GivenEventWithAllOptionalFields_WhenParsed_ThenAllFieldsPopulated()
     {
-        var context = CreateEventGridContext();
+        var context = TestHelpers.CreateHttpContext();
         const string requestBody = """
             [{
                         "id": "test-id-123",
@@ -90,13 +90,15 @@ public class EventGridSchemaParserTests
 
         events.ShouldHaveSingleItem();
         events[0].EventGridEvent.ShouldNotBeNullAnd().MetadataVersion.ShouldBe("1");
-        events[0].EventGridEvent.ShouldNotBeNullAnd().Data.ShouldNotBeNull();
+        var data = events[0].EventGridEvent.ShouldNotBeNullAnd().Data.ShouldBeOfType<JsonElement>();
+        data.GetProperty("Key1").GetString().ShouldBe("Value1");
+        data.GetProperty("Key2").GetInt32().ShouldBe(42);
     }
 
     [Fact]
     public void GivenEventWithMinimalFields_WhenParsed_ThenRequiredFieldsPresent()
     {
-        var context = CreateEventGridContext();
+        var context = TestHelpers.CreateHttpContext();
         const string requestBody = """
             [{
                         "id": "min-id",
@@ -114,37 +116,16 @@ public class EventGridSchemaParserTests
         events[0].EventGridEvent.ShouldNotBeNullAnd().EventType.ShouldBe("Min.Type");
     }
 
-    [Fact]
-    public void GivenEmptyBody_WhenParsed_ThenExceptionThrown()
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void GivenEmptyWhitespaceOrNullBody_WhenParsed_ThenExceptionThrown(string? requestBody)
     {
-        var context = CreateEventGridContext();
-        const string requestBody = "";
+        var context = TestHelpers.CreateHttpContext();
 
         var exception = Should.Throw<InvalidOperationException>(() =>
-            _parser.Parse(context, requestBody)
-        );
-        exception.Message.ShouldContain("Unexpected end when reading JSON");
-    }
-
-    [Fact]
-    public void GivenWhitespaceBody_WhenParsed_ThenExceptionThrown()
-    {
-        var context = CreateEventGridContext();
-        const string requestBody = "   ";
-
-        var exception = Should.Throw<InvalidOperationException>(() =>
-            _parser.Parse(context, requestBody)
-        );
-        exception.Message.ShouldContain("Unexpected end when reading JSON");
-    }
-
-    [Fact]
-    public void GivenNullBody_WhenParsed_ThenExceptionThrown()
-    {
-        var context = CreateEventGridContext();
-
-        var exception = Should.Throw<InvalidOperationException>(() =>
-            _parser.Parse(context, null!)
+            _parser.Parse(context, requestBody!)
         );
         exception.Message.ShouldContain("Unexpected end when reading JSON");
     }
@@ -152,7 +133,7 @@ public class EventGridSchemaParserTests
     [Fact]
     public void GivenMalformedJson_WhenParsed_ThenExceptionThrown()
     {
-        var context = CreateEventGridContext();
+        var context = TestHelpers.CreateHttpContext();
         const string requestBody = "[{ invalid json }]";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
@@ -169,7 +150,7 @@ public class EventGridSchemaParserTests
     [Fact]
     public void GivenEmptyArray_WhenParsed_ThenExceptionThrown()
     {
-        var context = CreateEventGridContext();
+        var context = TestHelpers.CreateHttpContext();
         const string requestBody = "[]";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
@@ -200,7 +181,7 @@ public class EventGridSchemaParserTests
     [Fact]
     public void GivenEventJsonWithMissingId_WhenParsed_ThenExceptionThrown()
     {
-        var context = CreateEventGridContext();
+        var context = TestHelpers.CreateHttpContext();
         const string requestBody = """
             [{
                 "subject": "/test/subject",
@@ -220,7 +201,7 @@ public class EventGridSchemaParserTests
     [Fact]
     public void GivenEventJsonWithMissingSubject_WhenParsed_ThenExceptionThrown()
     {
-        var context = CreateEventGridContext();
+        var context = TestHelpers.CreateHttpContext();
         const string requestBody = """
             [{
                 "id": "test-id",
@@ -258,7 +239,7 @@ public class EventGridSchemaParserTests
         bool singleObject
     )
     {
-        var context = CreateEventGridContext();
+        var context = TestHelpers.CreateHttpContext();
         var evt = new Dictionary<string, object>(StringComparer.Ordinal)
         {
             ["id"] = "test-id",
@@ -303,7 +284,7 @@ public class EventGridSchemaParserTests
     [Fact]
     public void GivenEventWithComplexData_WhenParsed_ThenDataPreserved()
     {
-        var context = CreateEventGridContext();
+        var context = TestHelpers.CreateHttpContext();
         const string requestBody = """
             [{
                         "id": "test-id-123",
@@ -323,17 +304,15 @@ public class EventGridSchemaParserTests
         var events = _parser.Parse(context, requestBody);
 
         events.ShouldHaveSingleItem();
-        events[0].EventGridEvent.ShouldNotBeNullAnd().Data.ShouldNotBeNull();
+        var data = events[0].EventGridEvent.ShouldNotBeNullAnd().Data.ShouldBeOfType<JsonElement>();
+        data.GetProperty("nested").GetProperty("value").GetInt32().ShouldBe(123);
+        data.GetProperty("nested").GetProperty("array")[2].GetInt32().ShouldBe(3);
+        data.GetProperty("string").GetString().ShouldBe("test");
     }
 
     [Fact]
     public void Schema_ShouldReturnEventGridSchema()
     {
         _parser.Schema.ShouldBe(EventSchema.EventGridSchema);
-    }
-
-    private static DefaultHttpContext CreateEventGridContext()
-    {
-        return new DefaultHttpContext { Request = { ContentType = "application/json" } };
     }
 }

@@ -264,18 +264,24 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
         result.ShouldBe(Valid);
     }
 
-    [Fact]
-    public void GivenTokenWithSignatureContainingNewline_WhenValidated_ThenSanitizesNewlineInLog()
+    [Theory]
+    [InlineData("fake\nsignature", "fake\\nsignature")]
+    [InlineData("fake\rsignature", "fake\\rsignature")]
+    [InlineData("fake\tsignature", "fake\\tsignature")]
+    [InlineData("fake\n\r\t\0signature", "fake\\n\\r\\t\\0signature")]
+    [InlineData("fake\u007Fsignature", "fake\\x7Fsignature")] // DEL (ASCII 127)
+    public void GivenTokenWithSignatureContainingControlCharacters_WhenValidated_ThenSanitizesThemInLog(
+        string maliciousSignature,
+        string sanitizedSignature
+    )
     {
-        // Create a token with an invalid signature containing a newline character
-        const string maliciousSignature = "fake\nsignature";
         var token =
             $"r=http%3A%2F%2Flocalhost&e={DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()}&s={maliciousSignature}";
         var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
 
         Validator.Validate(headers, ValidTopicKey);
 
-        // Verify that the logger was called with the sanitized signature (\\n instead of \n)
+        // The signature comes from the caller, so its control characters are escaped
         Logger
             .Received()
             .Log(
@@ -283,116 +289,8 @@ public class SasKeyValidatorAegSasTokenTests : SasKeyValidatorTestBase
                 Arg.Any<EventId>(),
                 Arg.Is<object>(o =>
                     o != null
-                    && string.Concat(o).Contains("fake\\nsignature")
-                    && !string.Concat(o).Contains("fake\nsignature")
-                ),
-                Arg.Any<Exception?>(),
-                Arg.Any<Func<object, Exception?, string>>()
-            );
-    }
-
-    [Fact]
-    public void GivenTokenWithSignatureContainingCarriageReturn_WhenValidated_ThenSanitizesCarriageReturnInLog()
-    {
-        // Create a token with an invalid signature containing a carriage return character
-        const string maliciousSignature = "fake\rsignature";
-        var token =
-            $"r=http%3A%2F%2Flocalhost&e={DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()}&s={maliciousSignature}";
-        var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
-
-        Validator.Validate(headers, ValidTopicKey);
-
-        // Verify that the logger was called with the sanitized signature (\\r instead of \r)
-        Logger
-            .Received()
-            .Log(
-                LogLevel.Warning,
-                Arg.Any<EventId>(),
-                Arg.Is<object>(o =>
-                    o != null
-                    && string.Concat(o).Contains("fake\\rsignature")
-                    && !string.Concat(o).Contains("fake\rsignature")
-                ),
-                Arg.Any<Exception?>(),
-                Arg.Any<Func<object, Exception?, string>>()
-            );
-    }
-
-    [Fact]
-    public void GivenTokenWithSignatureContainingTab_WhenValidated_ThenSanitizesTabInLog()
-    {
-        // Create a token with an invalid signature containing a tab character
-        const string maliciousSignature = "fake\tsignature";
-        var token =
-            $"r=http%3A%2F%2Flocalhost&e={DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()}&s={maliciousSignature}";
-        var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
-
-        Validator.Validate(headers, ValidTopicKey);
-
-        // Verify that the logger was called with the sanitized signature (\\t instead of \t)
-        Logger
-            .Received()
-            .Log(
-                LogLevel.Warning,
-                Arg.Any<EventId>(),
-                Arg.Is<object>(o =>
-                    o != null
-                    && string.Concat(o).Contains("fake\\tsignature")
-                    && !string.Concat(o).Contains("fake\tsignature")
-                ),
-                Arg.Any<Exception?>(),
-                Arg.Any<Func<object, Exception?, string>>()
-            );
-    }
-
-    [Fact]
-    public void GivenTokenWithSignatureContainingMultipleControlCharacters_WhenValidated_ThenSanitizesAllControlCharactersInLog()
-    {
-        // Create a token with an invalid signature containing multiple control characters
-        const string maliciousSignature = "fake\n\r\t\0signature";
-        var token =
-            $"r=http%3A%2F%2Flocalhost&e={DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()}&s={maliciousSignature}";
-        var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
-
-        Validator.Validate(headers, ValidTopicKey);
-
-        // Verify that all control characters are sanitized
-        Logger
-            .Received()
-            .Log(
-                LogLevel.Warning,
-                Arg.Any<EventId>(),
-                Arg.Is<object>(o =>
-                    o != null
-                    && string.Concat(o).Contains("fake\\n\\r\\t\\0signature")
-                    && !string.Concat(o).Contains("fake\n\r\t\0signature")
-                ),
-                Arg.Any<Exception?>(),
-                Arg.Any<Func<object, Exception?, string>>()
-            );
-    }
-
-    [Fact]
-    public void GivenTokenWithSignatureContainingDelCharacter_WhenValidated_ThenSanitizesDelInLog()
-    {
-        // Create a token with an invalid signature containing the DEL character (ASCII 127)
-        var maliciousSignature = $"fake{(char)127}signature";
-        var token =
-            $"r=http%3A%2F%2Flocalhost&e={DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()}&s={maliciousSignature}";
-        var headers = new HeaderDictionary { { Constants.AegSasTokenHeader, token } };
-
-        Validator.Validate(headers, ValidTopicKey);
-
-        // Verify that the DEL character is sanitized as \x7F
-        Logger
-            .Received()
-            .Log(
-                LogLevel.Warning,
-                Arg.Any<EventId>(),
-                Arg.Is<object>(o =>
-                    o != null
-                    && string.Concat(o).Contains("fake\\x7Fsignature")
-                    && !string.Concat(o).Contains($"fake{(char)127}signature")
+                    && string.Concat(o).Contains(sanitizedSignature)
+                    && !string.Concat(o).Contains(maliciousSignature)
                 ),
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()

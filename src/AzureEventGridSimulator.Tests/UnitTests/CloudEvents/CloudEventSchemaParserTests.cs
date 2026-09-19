@@ -24,12 +24,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenBinaryModeRequest_WhenParsed_ThenCloudEventCreatedFromHeaders()
     {
-        var context = CreateBinaryModeContext(
-            "1.0",
-            "com.example.test",
-            "/test/source",
-            "test-id-123"
-        );
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext();
         const string requestBody = "{\"Property\": \"Value\"}";
 
         var events = _parser.Parse(context, requestBody);
@@ -46,15 +41,11 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenBinaryModeRequestWithOptionalHeaders_WhenParsed_ThenOptionalFieldsPopulated()
     {
-        var context = CreateBinaryModeContext(
-            "1.0",
-            "com.example.test",
-            "/test/source",
-            "test-id-123",
-            "2025-01-15T10:30:00Z",
-            "/test/subject",
-            "application/json",
-            "https://example.com/schema"
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext(
+            time: "2025-01-15T10:30:00Z",
+            subject: "/test/subject",
+            dataContentType: "application/json",
+            dataSchema: "https://example.com/schema"
         );
         const string requestBody = "{\"Property\": \"Value\"}";
 
@@ -71,28 +62,20 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenBinaryModeRequestWithJsonBody_WhenParsed_ThenDataIsDeserializedObject()
     {
-        var context = CreateBinaryModeContext(
-            "1.0",
-            "com.example.test",
-            "/test/source",
-            "test-id-123"
-        );
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext();
         const string requestBody = "{\"Property\": \"Value\", \"Number\": 42}";
 
         var events = _parser.Parse(context, requestBody);
 
-        events[0].CloudEvent.ShouldNotBeNullAnd().Data.ShouldNotBeNull();
+        var data = events[0].CloudEvent.ShouldNotBeNullAnd().Data.ShouldBeOfType<JsonElement>();
+        data.GetProperty("Property").GetString().ShouldBe("Value");
+        data.GetProperty("Number").GetInt32().ShouldBe(42);
     }
 
     [Fact]
     public void GivenBinaryModeRequestWithNonJsonBody_WhenParsed_ThenDataIsString()
     {
-        var context = CreateBinaryModeContext(
-            "1.0",
-            "com.example.test",
-            "/test/source",
-            "test-id-123"
-        );
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext();
         const string requestBody = "plain text data";
 
         var events = _parser.Parse(context, requestBody);
@@ -103,12 +86,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenBinaryModeRequestWithEmptyBody_WhenParsed_ThenDataIsNull()
     {
-        var context = CreateBinaryModeContext(
-            "1.0",
-            "com.example.test",
-            "/test/source",
-            "test-id-123"
-        );
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext();
         const string requestBody = "";
 
         var events = _parser.Parse(context, requestBody);
@@ -119,7 +97,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenStructuredModeRequest_WhenParsed_ThenCloudEventCreatedFromBody()
     {
-        var context = CreateStructuredModeContext();
+        var context = TestHelpers.CreateCloudEventsStructuredModeContext();
         const string requestBody = """
             {
                         "specversion": "1.0",
@@ -142,7 +120,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenStructuredModeRequestWithOptionalFields_WhenParsed_ThenAllFieldsPopulated()
     {
-        var context = CreateStructuredModeContext();
+        var context = TestHelpers.CreateCloudEventsStructuredModeContext();
         const string requestBody = """
             {
                         "specversion": "1.0",
@@ -164,13 +142,18 @@ public class CloudEventSchemaParserTests
         events[0].CloudEvent.ShouldNotBeNullAnd().Subject.ShouldBe("/test/subject");
         events[0].CloudEvent.ShouldNotBeNullAnd().DataContentType.ShouldBe("application/json");
         events[0].CloudEvent.ShouldNotBeNullAnd().DataSchema.ShouldBe("https://example.com/schema");
-        events[0].CloudEvent.ShouldNotBeNullAnd().Data.ShouldNotBeNull();
+        events[0]
+            .CloudEvent.ShouldNotBeNullAnd()
+            .Data.ShouldBeOfType<JsonElement>()
+            .GetProperty("Property")
+            .GetString()
+            .ShouldBe("Value");
     }
 
     [Fact]
     public void GivenStructuredModeRequestWithArrayOfOne_WhenParsed_ThenSingleEventReturned()
     {
-        var context = CreateStructuredModeContext();
+        var context = TestHelpers.CreateCloudEventsStructuredModeContext();
         var requestBody = """
             [{
                         "specversion": "1.0",
@@ -189,7 +172,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenStructuredModeRequestWithEmptyBody_WhenParsed_ThenExceptionThrown()
     {
-        var context = CreateStructuredModeContext();
+        var context = TestHelpers.CreateCloudEventsStructuredModeContext();
         var requestBody = "";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
@@ -201,7 +184,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenStructuredModeRequestWithMalformedJson_WhenParsed_ThenExceptionThrown()
     {
-        var context = CreateStructuredModeContext();
+        var context = TestHelpers.CreateCloudEventsStructuredModeContext();
         var requestBody = "{ invalid json }";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
@@ -216,7 +199,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenStructuredModeRequestWithEmptyArray_WhenParsed_ThenExceptionThrown()
     {
-        var context = CreateStructuredModeContext();
+        var context = TestHelpers.CreateCloudEventsStructuredModeContext();
         var requestBody = "[]";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
@@ -228,7 +211,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenBatchModeRequest_WhenParsed_ThenMultipleEventsReturned()
     {
-        var context = CreateBatchModeContext();
+        var context = TestHelpers.CreateCloudEventsBatchModeContext();
         var requestBody = """
             [
                         {
@@ -258,7 +241,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenBatchModeRequestWithSingleEvent_WhenParsed_ThenSingleEventReturned()
     {
-        var context = CreateBatchModeContext();
+        var context = TestHelpers.CreateCloudEventsBatchModeContext();
         var requestBody = """
             [{
                         "specversion": "1.0",
@@ -277,7 +260,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenBatchModeRequestWithEmptyBody_WhenParsed_ThenExceptionThrown()
     {
-        var context = CreateBatchModeContext();
+        var context = TestHelpers.CreateCloudEventsBatchModeContext();
         var requestBody = "";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
@@ -289,7 +272,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenBatchModeRequestWithEmptyArray_WhenParsed_ThenExceptionThrown()
     {
-        var context = CreateBatchModeContext();
+        var context = TestHelpers.CreateCloudEventsBatchModeContext();
         var requestBody = "[]";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
@@ -301,7 +284,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenBatchModeRequestWithMalformedJson_WhenParsed_ThenExceptionThrown()
     {
-        var context = CreateBatchModeContext();
+        var context = TestHelpers.CreateCloudEventsBatchModeContext();
         var requestBody = "[{ invalid }]";
 
         var exception = Should.Throw<InvalidOperationException>(() =>
@@ -343,7 +326,7 @@ public class CloudEventSchemaParserTests
         string expectedField
     )
     {
-        var context = CreateStructuredModeContext();
+        var context = TestHelpers.CreateCloudEventsStructuredModeContext();
         var evt = new Dictionary<string, object>(StringComparer.Ordinal)
         {
             ["specversion"] = "1.0",
@@ -387,7 +370,7 @@ public class CloudEventSchemaParserTests
     public void GivenApplicationJsonArray_WhenParsed_ThenRejectedAsNotConformingToSingleEventSchema()
     {
         // With application/json, Azure expects a single CloudEvent object, not an array
-        var context = new DefaultHttpContext { Request = { ContentType = "application/json" } };
+        var context = TestHelpers.CreateHttpContext();
         const string requestBody = """
             [{ "specversion": "1.0", "type": "com.example.test", "source": "/test/source", "id": "abc-1" }]
             """;
@@ -407,12 +390,9 @@ public class CloudEventSchemaParserTests
     public void GivenBinaryModeRequestWithPercentEncodedHeaders_WhenParsed_ThenValuesAreDecoded()
     {
         // CloudEvents HTTP binding requires percent-encoding for spaces and non-ASCII characters
-        var context = CreateBinaryModeContextWithRawHeaders(
-            "1.0",
-            "com.example.test",
-            "/test/source%20with%20spaces", // Space encoded as %20
-            "test-id-123",
-            "Euro%20%E2%82%AC" // "Euro €" percent-encoded
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext(
+            source: "/test/source%20with%20spaces", // Space encoded as %20
+            subject: "Euro%20%E2%82%AC" // "Euro €" percent-encoded
         );
         var requestBody = "{\"Property\": \"Value\"}";
 
@@ -426,12 +406,7 @@ public class CloudEventSchemaParserTests
     [Fact]
     public void GivenBinaryModeRequestWithNonEncodedHeaders_WhenParsed_ThenValuesPassThrough()
     {
-        var context = CreateBinaryModeContext(
-            "1.0",
-            "com.example.test",
-            "/test/source",
-            "test-id-123"
-        );
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext();
         var requestBody = "{\"Property\": \"Value\"}";
 
         var events = _parser.Parse(context, requestBody);
@@ -449,12 +424,7 @@ public class CloudEventSchemaParserTests
         string header
     )
     {
-        var context = CreateBinaryModeContext(
-            "1.0",
-            "com.example.test",
-            "/test/source",
-            "test-id-123"
-        );
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext();
         context.Request.Headers.Remove(header);
 
         var exception = Should.Throw<EventParseException>(() => _parser.Parse(context, "{}"));
@@ -475,12 +445,7 @@ public class CloudEventSchemaParserTests
         string header
     )
     {
-        var context = CreateBinaryModeContext(
-            "1.0",
-            "com.example.test",
-            "/test/source",
-            "test-id-123"
-        );
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext();
         context.Request.Headers[header] = "";
 
         var exception = Should.Throw<EventParseException>(() => _parser.Parse(context, "{}"));
@@ -490,103 +455,5 @@ public class CloudEventSchemaParserTests
             $"{header} header is empty for the cloud event. "
                 + "Please check required attributes at https://github.com/cloudevents/spec/blob/v1.0/spec.md#required-attributes"
         );
-    }
-
-    private static DefaultHttpContext CreateBinaryModeContext(
-        string specVersion,
-        string type,
-        string source,
-        string id,
-        string? time = null,
-        string? subject = null,
-        string? dataContentType = null,
-        string? dataSchema = null
-    )
-    {
-        var context = new DefaultHttpContext
-        {
-            Request =
-            {
-                ContentType = "application/json",
-                Headers =
-                {
-                    [Constants.CeSpecVersionHeader] = specVersion,
-                    [Constants.CeTypeHeader] = type,
-                    [Constants.CeSourceHeader] = source,
-                    [Constants.CeIdHeader] = id,
-                },
-            },
-        };
-
-        if (time != null)
-        {
-            context.Request.Headers[Constants.CeTimeHeader] = time;
-        }
-
-        if (subject != null)
-        {
-            context.Request.Headers[Constants.CeSubjectHeader] = subject;
-        }
-
-        if (dataContentType != null)
-        {
-            context.Request.Headers[Constants.CeDataContentTypeHeader] = dataContentType;
-        }
-
-        if (dataSchema != null)
-        {
-            context.Request.Headers[Constants.CeDataSchemaHeader] = dataSchema;
-        }
-
-        return context;
-    }
-
-    private static DefaultHttpContext CreateStructuredModeContext()
-    {
-        var context = new DefaultHttpContext
-        {
-            Request = { ContentType = "application/cloudevents+json" },
-        };
-        return context;
-    }
-
-    private static DefaultHttpContext CreateBatchModeContext()
-    {
-        var context = new DefaultHttpContext
-        {
-            Request = { ContentType = "application/cloudevents-batch+json" },
-        };
-        return context;
-    }
-
-    private static DefaultHttpContext CreateBinaryModeContextWithRawHeaders(
-        string specVersion,
-        string type,
-        string source,
-        string id,
-        string? subject = null
-    )
-    {
-        var context = new DefaultHttpContext
-        {
-            Request =
-            {
-                ContentType = "application/json",
-                Headers =
-                {
-                    [Constants.CeSpecVersionHeader] = specVersion,
-                    [Constants.CeTypeHeader] = type,
-                    [Constants.CeSourceHeader] = source,
-                    [Constants.CeIdHeader] = id,
-                },
-            },
-        };
-
-        if (subject != null)
-        {
-            context.Request.Headers[Constants.CeSubjectHeader] = subject;
-        }
-
-        return context;
     }
 }

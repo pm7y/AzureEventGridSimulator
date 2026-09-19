@@ -15,7 +15,9 @@ namespace AzureEventGridSimulator.Tests.UnitTests.EventGrid;
 [Trait("Category", "unit")]
 public class EventGridSchemaFormatterConversionTests
 {
-    private readonly EventGridSchemaFormatter _formatter = new(TimeProvider.System);
+    private static readonly DateTimeOffset FixedTime = new(2025, 6, 1, 8, 15, 30, TimeSpan.Zero);
+
+    private readonly EventGridSchemaFormatter _formatter = new(new FakeTimeProvider(FixedTime));
 
     private string ConvertToJson(CloudEvent cloudEvent)
     {
@@ -117,6 +119,18 @@ public class EventGridSchemaFormatterConversionTests
 
         using var doc = JsonDocument.Parse(json);
         doc.RootElement.GetProperty("metadataVersion").GetString().ShouldBe("1");
+    }
+
+    [Fact]
+    public void GivenCloudEventWithoutTime_WhenConverted_ThenEventTimeIsProviderNow()
+    {
+        var cloudEvent = TestHelpers.CreateValidCloudEvent(time: null);
+
+        var json = ConvertToJson(cloudEvent);
+
+        // "o" on a DateTimeOffset writes the offset as "+00:00", not "Z"
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.GetProperty("eventTime").GetString().ShouldBe(FixedTime.ToString("o"));
     }
 
     [Fact]

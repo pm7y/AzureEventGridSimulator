@@ -187,50 +187,26 @@ public class CloudEventValidationTests
         Should.NotThrow(() => cloudEvent.Validate());
     }
 
-    [Fact]
-    public void GivenCloudEventWithEmptyId_WhenValidated_ThenExceptionThrown()
+    [Theory]
+    [InlineData("", "com.example.test", "id")]
+    [InlineData("   ", "com.example.test", "id")]
+    [InlineData("test-id-123", "", "eventType")]
+    public void GivenCloudEventWithEmptyRequiredField_WhenValidated_ThenMessageNamesTheField(
+        string id,
+        string type,
+        string expectedField
+    )
     {
         var cloudEvent = new CloudEvent
         {
             SpecVersion = "1.0",
-            Type = "com.example.test",
+            Type = type,
             Source = "/test/source",
-            Id = "",
+            Id = id,
         };
 
         var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
-        exception.Message.ShouldContain("'id'");
-        exception.Message.ShouldContain("CloudEventV10");
-    }
-
-    [Fact]
-    public void GivenCloudEventWithWhitespaceId_WhenValidated_ThenExceptionThrown()
-    {
-        var cloudEvent = new CloudEvent
-        {
-            SpecVersion = "1.0",
-            Type = "com.example.test",
-            Source = "/test/source",
-            Id = "   ",
-        };
-
-        var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
-        exception.Message.ShouldContain("'id'");
-    }
-
-    [Fact]
-    public void GivenCloudEventWithEmptyType_WhenValidated_ThenExceptionThrown()
-    {
-        var cloudEvent = new CloudEvent
-        {
-            SpecVersion = "1.0",
-            Type = "",
-            Source = "/test/source",
-            Id = "test-id-123",
-        };
-
-        var exception = Should.Throw<InvalidOperationException>(() => cloudEvent.Validate());
-        exception.Message.ShouldContain("'eventType'");
+        exception.Message.ShouldContain($"'{expectedField}'");
         exception.Message.ShouldContain("CloudEventV10");
     }
 

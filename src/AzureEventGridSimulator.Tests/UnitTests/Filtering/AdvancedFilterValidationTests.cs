@@ -39,34 +39,13 @@ public class AdvancedFilterValidationTests
         };
     }
 
-    [Fact]
-    public void TestDefaultFilterValidation()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void GivenFilterWithoutAKey_WhenValidated_ThenKeyIsRequired(string? key)
     {
-        var filterConfig = new AdvancedFilterSetting();
-        var exception = Should.Throw<ArgumentException>(() =>
-            GetValidSimulatorSettings(filterConfig).Validate()
-        );
-
-        exception.ParamName.ShouldBe(nameof(filterConfig.Key));
-        exception.Message.ShouldBe("A filter key must be provided (Parameter 'Key')");
-    }
-
-    [Fact]
-    public void TestFilterValidationWithEmptyKey()
-    {
-        var filterConfig = new AdvancedFilterSetting { Key = "" };
-        var exception = Should.Throw<ArgumentException>(() =>
-            GetValidSimulatorSettings(filterConfig).Validate()
-        );
-
-        exception.ParamName.ShouldBe(nameof(filterConfig.Key));
-        exception.Message.ShouldBe("A filter key must be provided (Parameter 'Key')");
-    }
-
-    [Fact]
-    public void TestFilterValidationWithWhitespaceKey()
-    {
-        var filterConfig = new AdvancedFilterSetting { Key = " " };
+        var filterConfig = new AdvancedFilterSetting { Key = key };
         var exception = Should.Throw<ArgumentException>(() =>
             GetValidSimulatorSettings(filterConfig).Validate()
         );
@@ -163,46 +142,41 @@ public class AdvancedFilterValidationTests
         );
     }
 
-    [Fact]
-    public void TestFilterValidationWithFiveValues()
+    public static TheoryData<AdvancedFilterSetting.AdvancedFilterOperatorType> AllOperators =>
+        new(Enum.GetValues<AdvancedFilterSetting.AdvancedFilterOperatorType>());
+
+    [Theory]
+    [MemberData(nameof(AllOperators))]
+    public void GivenFilterWithFiveValues_WhenValidated_ThenNoExceptionThrown(
+        AdvancedFilterSetting.AdvancedFilterOperatorType operatorType
+    )
     {
-        Should.NotThrow(() =>
+        var filterConfig = new AdvancedFilterSetting
         {
-            foreach (
-                var operatorType in Enum.GetValues<AdvancedFilterSetting.AdvancedFilterOperatorType>()
-            )
-            {
-                var filterConfig = new AdvancedFilterSetting
-                {
-                    Key = "Data",
-                    Values = new object[5],
-                    OperatorType = operatorType,
-                };
-                GetValidSimulatorSettings(filterConfig).Validate();
-            }
-        });
+            Key = "Data",
+            Values = new object[5],
+            OperatorType = operatorType,
+        };
+
+        Should.NotThrow(() => GetValidSimulatorSettings(filterConfig).Validate());
     }
 
-    [Fact]
-    public void TestFilterValidationWithSixValues()
+    [Theory]
+    [MemberData(nameof(AllOperators))]
+    public void GivenFilterWithSixValues_WhenValidated_ThenNoExceptionThrown(
+        AdvancedFilterSetting.AdvancedFilterOperatorType operatorType
+    )
     {
         // Azure Event Grid limits filter values to 25 across all filters per subscription;
         // there is no per-operator five-value limit.
-        Should.NotThrow(() =>
+        var filterConfig = new AdvancedFilterSetting
         {
-            foreach (
-                var operatorType in Enum.GetValues<AdvancedFilterSetting.AdvancedFilterOperatorType>()
-            )
-            {
-                var filterConfig = new AdvancedFilterSetting
-                {
-                    Key = "Data",
-                    Values = new object[6],
-                    OperatorType = operatorType,
-                };
-                GetValidSimulatorSettings(filterConfig).Validate();
-            }
-        });
+            Key = "Data",
+            Values = new object[6],
+            OperatorType = operatorType,
+        };
+
+        Should.NotThrow(() => GetValidSimulatorSettings(filterConfig).Validate());
     }
 
     [Fact]
