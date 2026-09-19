@@ -31,37 +31,7 @@ dotnet csharpier format src
 
 ## Project Structure
 
-```
-src/
-├── AzureEventGridSimulator/                  # The simulator (also packed as the .NET tool)
-│   ├── Controllers/                          # HTTP endpoints
-│   ├── Dashboard/                            # Embedded dashboard UI assets
-│   ├── Domain/
-│   │   ├── Commands/                         # Command handlers (mediator pattern)
-│   │   ├── Entities/                         # Domain models (Dashboard/ for dashboard entities)
-│   │   ├── Filtering/                        # Subscription filter evaluation (EventFilterEvaluator)
-│   │   └── Services/                         # Schema detection/parsing/formatting; Dashboard/, Delivery/, Retry/, Routing/, Validation/
-│   ├── Infrastructure/
-│   │   ├── Dashboard/                        # Dashboard middleware and endpoints
-│   │   ├── Extensions/                       # Configuration, Kestrel and DI extensions
-│   │   ├── JsonConverters/                   # Custom JSON serialization
-│   │   ├── Mediator/                         # Custom mediator (no MediatR)
-│   │   ├── Middleware/                       # Request validation and parsing, SAS auth
-│   │   └── Settings/                         # Configuration models (Subscribers/ for subscriber settings)
-│   └── Program.cs                            # Entry point
-├── AzureEventGridSimulator.AppHost/          # .NET Aspire orchestration (local development)
-├── AzureEventGridSimulator.ServiceDefaults/  # Aspire service defaults (OpenTelemetry, health checks)
-├── AzureEventGridSimulator.Tests/
-│   ├── UnitTests/                            # Unit tests, one folder per area (Dashboard/, Retry/, Routing/, ...)
-│   │   └── Common/                           # Shared test helpers (TestHelpers, FakeTimeProvider)
-│   ├── IntegrationTests/                     # In-process tests using WebApplicationFactory
-│   └── ActualSimulatorTests/                 # Tests that launch the built simulator as a separate process
-├── postman/                                  # Postman/newman parity collection and environments
-├── Directory.Build.props                     # Shared MSBuild properties
-└── Directory.Packages.props                  # Central Package Management
-```
-
-The canonical, fuller tree is on the wiki: [Architecture: Source Code Structure](https://github.com/pm7y/AzureEventGridSimulator/wiki/Architecture#source-code-structure).
+The source tree is documented on the wiki: [Architecture: Source Code Structure](https://github.com/pm7y/AzureEventGridSimulator/wiki/Architecture#source-code-structure).
 
 ## Code Style
 
