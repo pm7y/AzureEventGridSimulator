@@ -438,7 +438,9 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
         _deliveryQueue
             .Received(1)
             .Enqueue(
-                Arg.Is<PendingDelivery>(d => d.Subscriber == subscriber && d.Event.Id == eventId)
+                Arg.Is<PendingDelivery>(d =>
+                    ReferenceEquals(d.Subscriber, subscriber) && d.Event.Id == eventId
+                )
             );
         _eventHistoryService.Received(1).RecordDeliveryQueued(eventId, subscriber);
     }
@@ -447,7 +449,7 @@ public class SendNotificationEventsToSubscriberCommandHandlerTests
     {
         _deliveryQueue
             .DidNotReceive()
-            .Enqueue(Arg.Is<PendingDelivery>(d => d.Subscriber == subscriber));
+            .Enqueue(Arg.Is<PendingDelivery>(d => ReferenceEquals(d.Subscriber, subscriber)));
         _eventHistoryService.DidNotReceive().RecordDeliveryQueued(Arg.Any<string?>(), subscriber);
     }
 

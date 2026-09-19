@@ -42,7 +42,7 @@ public class AdvancedFilterOperatorTruthTableTests
                 NumericString = "5",
                 Text = "Hello",
                 BoolValue = true,
-                NullValue = (string?)null,
+                NullValue = default(string),
                 Numbers = new[] { 1, 5 },
                 Strings = new[] { "Hello", "World" },
             }
