@@ -74,12 +74,7 @@ public class EventGridMiddleware(RequestDelegate next)
                 return;
 
             case RequestType.NotFound:
-                await context.WriteErrorResponse(
-                    HttpStatusCode.NotFound,
-                    $"No HTTP resource was found that matches the request URI '{Uri.EscapeDataString($"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}")}'.{context.GenerateReportSuffix()}",
-                    null,
-                    ErrorDetailCodes.ResourceNotFound
-                );
+                await context.WriteResourceNotFoundResponse();
                 return;
         }
     }

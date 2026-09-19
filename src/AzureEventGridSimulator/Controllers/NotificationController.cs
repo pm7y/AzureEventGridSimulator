@@ -19,7 +19,7 @@ public class NotificationController(SimulatorSettings simulatorSettings, IMediat
     public async Task<IActionResult> Post()
     {
         var topicSettingsForCurrentRequestPort = simulatorSettings.Topics.First(t =>
-            t.Port == HttpContext.Request.Host.Port
+            !t.Disabled && t.Port == HttpContext.Request.Host.Port
         );
 
         // Events are parsed and validated by EventParsingMiddleware

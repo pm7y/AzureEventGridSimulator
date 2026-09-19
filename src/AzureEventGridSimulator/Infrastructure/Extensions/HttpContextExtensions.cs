@@ -81,5 +81,18 @@ public static class HttpContextExtensions
                 )
             );
         }
+
+        /// <summary>
+        /// Writes the Azure-style 404 for a request URI that no resource matches.
+        /// </summary>
+        public Task WriteResourceNotFoundResponse()
+        {
+            return context.WriteErrorResponse(
+                HttpStatusCode.NotFound,
+                $"No HTTP resource was found that matches the request URI '{Uri.EscapeDataString($"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}")}'.{context.GenerateReportSuffix()}",
+                null,
+                ErrorDetailCodes.ResourceNotFound
+            );
+        }
     }
 }
