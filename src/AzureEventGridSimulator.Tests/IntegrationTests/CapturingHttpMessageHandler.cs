@@ -25,14 +25,35 @@ public sealed class CapturedRequest
 ///     integration tests can observe outbound deliveries without any network
 ///     access. Acts as a fake subscriber: subscription validation events sent to
 ///     the echo-handshaker.test host get the validation code echoed back (the
-///     synchronous handshake); every other request, including ordinary event
-///     deliveries to that host, gets a plain 200.
+///     synchronous handshake); requests to the stalling-subscriber.test host get
+///     no answer while a test holds it (see <see cref="HoldStallingSubscriber" />);
+///     every other request, including ordinary event deliveries to those hosts,
+///     gets a plain 200.
 /// </summary>
 public sealed class CapturingHttpMessageHandler : HttpMessageHandler
 {
+    /// <summary>
+    ///     The host of StallingSubscriber in appsettings.test.json.
+    /// </summary>
+    public const string StallingSubscriberHost = "stalling-subscriber.test";
+
     private readonly ConcurrentQueue<CapturedRequest> _requests = new();
 
+    private Task _stallingSubscriberReleased = Task.CompletedTask;
+
     public IReadOnlyList<CapturedRequest> Requests => _requests.ToArray();
+
+    /// <summary>
+    ///     Captures each request to <see cref="StallingSubscriberHost" /> but holds back its
+    ///     response until the returned hold is disposed, or until the simulator gives up on
+    ///     the request (its client times out after 60 seconds).
+    /// </summary>
+    public IDisposable HoldStallingSubscriber()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Volatile.Write(ref _stallingSubscriberReleased, release.Task);
+        return new StallingSubscriberHold(release);
+    }
 
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
@@ -64,6 +85,17 @@ public sealed class CapturingHttpMessageHandler : HttpMessageHandler
                 Headers = headers,
             }
         );
+
+        if (
+            string.Equals(
+                request.RequestUri?.Host,
+                StallingSubscriberHost,
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
+        {
+            await Volatile.Read(ref _stallingSubscriberReleased).WaitAsync(cancellationToken);
+        }
 
         if (
             string.Equals(
@@ -102,5 +134,13 @@ public sealed class CapturingHttpMessageHandler : HttpMessageHandler
                 "application/json"
             ),
         };
+    }
+
+    private sealed class StallingSubscriberHold(TaskCompletionSource release) : IDisposable
+    {
+        public void Dispose()
+        {
+            release.TrySetResult();
+        }
     }
 }

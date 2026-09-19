@@ -22,6 +22,11 @@ public class RetryDeliveryBackgroundService(
     ILogger<RetryDeliveryBackgroundService> logger
 ) : BackgroundService
 {
+    /// <summary>
+    ///     The most subscribers a pass delivers to at the same time.
+    /// </summary>
+    private const int MaxConcurrentSubscribers = 8;
+
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
 
     /// <inheritdoc />
@@ -47,7 +52,9 @@ public class RetryDeliveryBackgroundService(
 
             try
             {
-                await Task.Delay(PollInterval, stoppingToken);
+                // A delay after each pass, not a fixed period, so a slow pass isn't followed
+                // straight away by another
+                await Task.Delay(PollInterval, timeProvider, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -60,16 +67,73 @@ public class RetryDeliveryBackgroundService(
     }
 
     /// <summary>
-    ///     Processes all deliveries that are due.
+    ///     Processes all deliveries that are due. Each subscriber's deliveries are processed one at
+    ///     a time, in the order they fell due, while different subscribers are processed
+    ///     concurrently, so a slow or unreachable subscriber doesn't hold up the others. The pass
+    ///     ends when every subscriber's deliveries have been processed. If it's cancelled (at
+    ///     shutdown), the deliveries in flight finish, the rest are dropped without being sent
+    ///     (they are off the queue, which shutdown discards anyway), and the pass throws an
+    ///     <see cref="OperationCanceledException" />.
     /// </summary>
     internal async Task ProcessDueDeliveriesAsync(CancellationToken cancellationToken)
     {
+        var dueDeliveries = new List<PendingDelivery>();
         await foreach (var delivery in queue.GetDueDeliveriesAsync(cancellationToken))
         {
             // Remove from queue before processing (we'll re-add if retry needed)
             queue.Remove(delivery.Id);
+            dueDeliveries.Add(delivery);
+        }
 
+        // GroupBy keeps the due order within each group
+        var subscriberGroups = dueDeliveries.GroupBy(d => (d.Topic.Name, d.Subscriber.Name));
+
+        await Parallel.ForEachAsync(
+            subscriberGroups,
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = MaxConcurrentSubscribers,
+                CancellationToken = cancellationToken,
+            },
+            async (subscriberDeliveries, ct) =>
+            {
+                foreach (var delivery in subscriberDeliveries)
+                {
+                    // Once the pass is cancelled, don't start another delivery: it would go out
+                    // with a cancelled token and be recorded as a failed attempt, or even
+                    // dead-lettered, without ever being sent
+                    if (ct.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    await ProcessDeliveryIsolatedAsync(delivery, ct);
+                }
+            }
+        );
+    }
+
+    /// <summary>
+    ///     Processes a delivery, logging an unexpected error instead of letting it end the pass,
+    ///     which would cancel the deliveries in flight to other subscribers.
+    /// </summary>
+    private async Task ProcessDeliveryIsolatedAsync(
+        PendingDelivery delivery,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
             await ProcessDeliveryAsync(delivery, cancellationToken);
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogError(
+                ex,
+                "Error processing event {EventId} for subscriber '{SubscriberName}'",
+                delivery.Event.Id,
+                delivery.Subscriber.Name
+            );
         }
     }
 

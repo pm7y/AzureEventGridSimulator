@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
@@ -18,15 +19,21 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Retry;
 /// <summary>
 ///     Drives the retry and dead-letter state machine one poll at a time through
 ///     ProcessDueDeliveriesAsync, so no timers are involved: the fake clock only moves when a test,
-///     or the stub HTTP endpoint, moves it. The dead-letter reasons are read back from the JSON file
-///     the real DeadLetterService writes, and are asserted as literals because they are output.
+///     or the stub HTTP endpoint, moves it. (Only the poll-wait test starts the service, on a clock
+///     whose timers never fire.) The dead-letter reasons are read back from the JSON file the real
+///     DeadLetterService writes, and are asserted as literals because they are output.
 /// </summary>
 [Trait("Category", "unit")]
 public sealed class RetryDeliveryBackgroundServiceTests : IAsyncLifetime
 {
     private const string EventId = "test-id-123";
     private const string SubscriberName = "TestSubscriber";
+    private const string HangingSubscriberName = "HangingSubscriber";
+    private const string HangingHost = "hanging.example.com";
     private static readonly DateTimeOffset FixedTime = new(2025, 1, 15, 12, 0, 0, TimeSpan.Zero);
+
+    // How long a test waits for something that should happen straight away
+    private static readonly TimeSpan PromptTimeout = TimeSpan.FromSeconds(5);
 
     private readonly string _deadLetterFolder = Path.Combine(
         Path.GetTempPath(),
@@ -488,7 +495,197 @@ public sealed class RetryDeliveryBackgroundServiceTests : IAsyncLifetime
         _eventHistory.ReceivedCalls().ShouldBeEmpty();
     }
 
-    private RetryDeliveryBackgroundService CreateService()
+    [Fact]
+    public async Task GivenASubscriberThatNeverResponds_WhenAnotherSubscribersDeliveryIsDue_ThenItIsDeliveredWithoutWaiting()
+    {
+        var hangingRequestSent = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+        var releaseHangingRequest = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+        _endpoint.OnSendAsync = async (request, cancellationToken) =>
+        {
+            if (request.RequestUri?.Host == HangingHost)
+            {
+                hangingRequestSent.TrySetResult();
+                await releaseHangingRequest.Task.WaitAsync(cancellationToken);
+            }
+        };
+        var healthyDelivered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+        _eventHistory
+            .When(h =>
+                h.RecordDeliveryCompleted(
+                    EventId,
+                    SubscriberName,
+                    DeliveryStatus.Delivered,
+                    Arg.Any<DateTimeOffset>()
+                )
+            )
+            .Do(_ => healthyDelivered.TrySetResult());
+
+        // The hanging subscriber's delivery falls due first, so a single loop over every due
+        // delivery would reach it first and wait on it
+        var hanging = CreateHttpSubscriber(
+            name: HangingSubscriberName,
+            endpoint: $"https://{HangingHost}/webhook"
+        );
+        _queue.Enqueue(CreateDelivery(hanging, nextAttemptTime: FixedTime.AddSeconds(-1)));
+        _queue.Enqueue(CreateDelivery(CreateHttpSubscriber()));
+
+        var poll = _service.ProcessDueDeliveriesAsync(CancellationToken.None);
+        try
+        {
+            await hangingRequestSent.Task.WaitAsync(PromptTimeout);
+            await healthyDelivered.Task.WaitAsync(PromptTimeout);
+
+            // The poll itself still waits for the hanging subscriber
+            poll.IsCompleted.ShouldBeFalse();
+        }
+        finally
+        {
+            releaseHangingRequest.TrySetResult();
+        }
+
+        await poll;
+
+        _endpoint.CallCount.ShouldBe(2);
+        _queue.Count.ShouldBe(0);
+        _eventHistory
+            .Received(1)
+            .RecordDeliveryCompleted(
+                EventId,
+                HangingSubscriberName,
+                DeliveryStatus.Delivered,
+                FixedTime
+            );
+    }
+
+    [Fact]
+    public async Task GivenSeveralDeliveriesForOneSubscriber_WhenDue_ThenTheyAreSentOneAtATimeInDueOrder()
+    {
+        var inFlight = 0;
+        var maxInFlight = 0;
+        var sentEventIds = new ConcurrentQueue<string>();
+        _endpoint.OnSendAsync = async (request, cancellationToken) =>
+        {
+            InterlockedMax(ref maxInFlight, Interlocked.Increment(ref inFlight));
+
+            var body = await request.Content!.ReadAsStringAsync(cancellationToken);
+            using (var document = JsonDocument.Parse(body))
+            {
+                sentEventIds.Enqueue(document.RootElement[0].GetProperty("id").GetString()!);
+            }
+
+            // Long enough for an overlapping send to the same subscriber to show up
+            await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken);
+            Interlocked.Decrement(ref inFlight);
+        };
+        var subscriber = CreateHttpSubscriber();
+
+        // Queued in the reverse of the order they fall due
+        _queue.Enqueue(
+            CreateDelivery(subscriber, eventId: "third", nextAttemptTime: FixedTime.AddSeconds(-1))
+        );
+        _queue.Enqueue(
+            CreateDelivery(subscriber, eventId: "second", nextAttemptTime: FixedTime.AddSeconds(-2))
+        );
+        _queue.Enqueue(
+            CreateDelivery(subscriber, eventId: "first", nextAttemptTime: FixedTime.AddSeconds(-3))
+        );
+
+        await _service.ProcessDueDeliveriesAsync(CancellationToken.None);
+
+        sentEventIds.ShouldBe(["first", "second", "third"]);
+        maxInFlight.ShouldBe(1);
+        _queue.Count.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task GivenThePassIsCancelledDuringADelivery_WhenTheSubscriberHasMoreDue_ThenTheyAreNotSentOrDeadLettered()
+    {
+        // Shutdown starts while the first delivery is in flight, and the endpoint gives up on
+        // the request as a real one would. Retry is disabled, so any delivery that fails
+        // because of the cancellation is dead-lettered straight away
+        using var shutdown = new CancellationTokenSource();
+        _endpoint.OnSendAsync = (_, cancellationToken) =>
+        {
+            shutdown.Cancel();
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        var subscriber = CreateHttpSubscriber(new RetryPolicySettings { Enabled = false });
+        _queue.Enqueue(
+            CreateDelivery(subscriber, eventId: "first", nextAttemptTime: FixedTime.AddSeconds(-3))
+        );
+        _queue.Enqueue(
+            CreateDelivery(subscriber, eventId: "second", nextAttemptTime: FixedTime.AddSeconds(-2))
+        );
+        _queue.Enqueue(
+            CreateDelivery(subscriber, eventId: "third", nextAttemptTime: FixedTime.AddSeconds(-1))
+        );
+
+        await Should.ThrowAsync<OperationCanceledException>(() =>
+            _service.ProcessDueDeliveriesAsync(shutdown.Token)
+        );
+
+        // Only the delivery in flight when the pass was cancelled was attempted, and so only it
+        // was dead-lettered
+        _endpoint.CallCount.ShouldBe(1);
+        _eventHistory.ReceivedWithAnyArgs(1).RecordDeliveryAttempt(default, default, default!);
+        Path.GetFileName(DeadLetterFiles().ShouldHaveSingleItem()).ShouldEndWith("_first.json");
+    }
+
+    [Fact]
+    public async Task GivenOneSubscribersDeliveryThrows_WhenProcessed_ThenTheErrorIsLoggedAndOtherSubscribersAreStillDeliveredTo()
+    {
+        const string brokenSubscriberName = "BrokenSubscriber";
+        _eventHistory
+            .When(h =>
+                h.RecordDeliveryAttempt(EventId, brokenSubscriberName, Arg.Any<DeliveryAttempt>())
+            )
+            .Do(_ => throw new InvalidOperationException("The dashboard store is broken"));
+        var broken = CreateHttpSubscriber(name: brokenSubscriberName);
+
+        // The broken subscriber's delivery falls due first
+        _queue.Enqueue(CreateDelivery(broken, nextAttemptTime: FixedTime.AddSeconds(-1)));
+        _queue.Enqueue(CreateDelivery(CreateHttpSubscriber()));
+
+        await _service.ProcessDueDeliveriesAsync(CancellationToken.None);
+
+        _endpoint.CallCount.ShouldBe(2);
+        _queue.Count.ShouldBe(0);
+        _eventHistory
+            .Received(1)
+            .RecordDeliveryCompleted(EventId, SubscriberName, DeliveryStatus.Delivered, FixedTime);
+        _logger.ShouldHaveLogged(
+            LogLevel.Error,
+            $"Error processing event {EventId} for subscriber '{brokenSubscriberName}'"
+        );
+    }
+
+    [Fact]
+    public async Task GivenTheServiceIsRunning_WhenAPollFinishes_ThenTheOneSecondWaitIsTimedByTheInjectedClock()
+    {
+        var clock = new TimerRecordingTimeProvider(FixedTime);
+        using var service = CreateService(clock);
+
+        await service.StartAsync(CancellationToken.None);
+        try
+        {
+            var dueTime = await clock.FirstTimerDueTime.WaitAsync(PromptTimeout);
+
+            dueTime.ShouldBe(TimeSpan.FromSeconds(1));
+        }
+        finally
+        {
+            await service.StopAsync(CancellationToken.None);
+        }
+    }
+
+    private RetryDeliveryBackgroundService CreateService(TimeProvider? timeProvider = null)
     {
         return new RetryDeliveryBackgroundService(
             _queue,
@@ -499,7 +696,7 @@ public sealed class RetryDeliveryBackgroundServiceTests : IAsyncLifetime
             new DeadLetterService(Substitute.For<ILogger<DeadLetterService>>()),
             _eventHistory,
             _retryScheduler,
-            _timeProvider,
+            timeProvider ?? _timeProvider,
             _logger
         );
     }
@@ -510,6 +707,21 @@ public sealed class RetryDeliveryBackgroundServiceTests : IAsyncLifetime
         await _service.ProcessDueDeliveriesAsync(CancellationToken.None);
     }
 
+    private static void InterlockedMax(ref int target, int value)
+    {
+        var current = Volatile.Read(ref target);
+        while (value > current)
+        {
+            var seen = Interlocked.CompareExchange(ref target, value, current);
+            if (seen == current)
+            {
+                return;
+            }
+
+            current = seen;
+        }
+    }
+
     private DeadLetterSettings DeadLetterToTempFolder()
     {
         return new DeadLetterSettings { Enabled = true, FolderPath = _deadLetterFolder };
@@ -517,13 +729,15 @@ public sealed class RetryDeliveryBackgroundServiceTests : IAsyncLifetime
 
     private HttpSubscriberSettings CreateHttpSubscriber(
         RetryPolicySettings? retryPolicy = null,
-        bool deadLetter = true
+        bool deadLetter = true,
+        string name = SubscriberName,
+        string endpoint = "https://example.com/webhook"
     )
     {
         return new HttpSubscriberSettings
         {
-            Name = SubscriberName,
-            Endpoint = "https://example.com/webhook",
+            Name = name,
+            Endpoint = endpoint,
             DisableValidation = true,
             ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful,
             RetryPolicy = retryPolicy,
@@ -536,17 +750,19 @@ public sealed class RetryDeliveryBackgroundServiceTests : IAsyncLifetime
     private static PendingDelivery CreateDelivery(
         ISubscriberSettings subscriber,
         int attemptCount = 0,
-        DateTimeOffset? enqueuedTime = null
+        DateTimeOffset? enqueuedTime = null,
+        string eventId = EventId,
+        DateTimeOffset? nextAttemptTime = null
     )
     {
         return new PendingDelivery
         {
-            Event = TestHelpers.CreateSimulatorEventFromEventGrid(id: EventId),
+            Event = TestHelpers.CreateSimulatorEventFromEventGrid(id: eventId),
             Subscriber = subscriber,
             Topic = TestHelpers.CreateValidTopicSettings(),
             InputSchema = EventSchema.EventGridSchema,
             EnqueuedTime = enqueuedTime ?? FixedTime,
-            NextAttemptTime = FixedTime,
+            NextAttemptTime = nextAttemptTime ?? FixedTime,
             AttemptCount = attemptCount,
         };
     }
@@ -608,31 +824,84 @@ public sealed class RetryDeliveryBackgroundServiceTests : IAsyncLifetime
 
     /// <summary>
     ///     An HTTP endpoint that answers every request with <see cref="StatusCode" />, after running
-    ///     <see cref="OnSend" /> (which can move the fake clock to simulate a slow endpoint).
+    ///     <see cref="OnSend" /> (which can move the fake clock to simulate a slow endpoint) and
+    ///     <see cref="OnSendAsync" /> (which can hold a request up). Requests to different
+    ///     subscribers can arrive concurrently.
     /// </summary>
     private sealed class StubHttpMessageHandler : HttpMessageHandler
     {
+        private int _callCount;
+
         public HttpStatusCode StatusCode { get; set; } = HttpStatusCode.OK;
 
         public Action? OnSend { get; set; }
 
-        public int CallCount { get; private set; }
+        public Func<HttpRequestMessage, CancellationToken, Task>? OnSendAsync { get; set; }
 
-        protected override Task<HttpResponseMessage> SendAsync(
+        public int CallCount => Volatile.Read(ref _callCount);
+
+        protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken
         )
         {
-            CallCount++;
+            Interlocked.Increment(ref _callCount);
             OnSend?.Invoke();
 
-            return Task.FromResult(
-                new HttpResponseMessage(StatusCode)
-                {
-                    Content = new StringContent(""),
-                    ReasonPhrase = StatusCode.ToString(),
-                }
-            );
+            if (OnSendAsync is { } onSendAsync)
+            {
+                await onSendAsync(request, cancellationToken);
+            }
+
+            return new HttpResponseMessage(StatusCode)
+            {
+                Content = new StringContent(""),
+                ReasonPhrase = StatusCode.ToString(),
+            };
+        }
+    }
+
+    /// <summary>
+    ///     A clock that stands still and records the due time of the first timer made from it. Its
+    ///     timers never fire, so a delay on this clock lasts until it is cancelled.
+    /// </summary>
+    private sealed class TimerRecordingTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        private readonly TaskCompletionSource<TimeSpan> _firstTimerDueTime = new(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+
+        public Task<TimeSpan> FirstTimerDueTime => _firstTimerDueTime.Task;
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            return now;
+        }
+
+        public override ITimer CreateTimer(
+            TimerCallback callback,
+            object? state,
+            TimeSpan dueTime,
+            TimeSpan period
+        )
+        {
+            _firstTimerDueTime.TrySetResult(dueTime);
+            return new NeverFiringTimer();
+        }
+
+        private sealed class NeverFiringTimer : ITimer
+        {
+            public bool Change(TimeSpan dueTime, TimeSpan period)
+            {
+                return true;
+            }
+
+            public void Dispose() { }
+
+            public ValueTask DisposeAsync()
+            {
+                return ValueTask.CompletedTask;
+            }
         }
     }
 

@@ -39,14 +39,25 @@ public class EventDeliveryFlowTests(IntegrationContextFixture factory)
         return client;
     }
 
-    private async Task PublishEvent(string eventId, string eventType)
+    private Task PublishEvent(string eventId, string eventType)
+    {
+        return PublishEvents((eventId, eventType));
+    }
+
+    // All the events go in one request, so they are queued together
+    private async Task PublishEvents(params (string Id, string EventType)[] events)
     {
         var client = CreateTopicClient();
-        var testEvent = new EventGridEvent("/test/subject", eventType, "1.0", new { Value = 1 })
+        var testEvents = events.Select(e => new EventGridEvent(
+            "/test/subject",
+            e.EventType,
+            "1.0",
+            new { Value = 1 }
+        )
         {
-            Id = eventId,
-        };
-        var json = JsonSerializer.Serialize(new[] { testEvent });
+            Id = e.Id,
+        });
+        var json = JsonSerializer.Serialize(testEvents);
 
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
         var response = await client.PostAsync("/api/events", content);
@@ -55,7 +66,12 @@ public class EventDeliveryFlowTests(IntegrationContextFixture factory)
         response.StatusCode.ShouldBe(HttpStatusCode.OK, responseBody);
     }
 
-    private async Task<CapturedRequest> WaitForDelivery(string eventId)
+    private Task<CapturedRequest> WaitForDelivery(string eventId)
+    {
+        return WaitForRequest(DeliveryCatcherHost, eventId);
+    }
+
+    private async Task<CapturedRequest> WaitForRequest(string host, string eventId)
     {
         // Delivery is asynchronous (the background service polls every second),
         // so poll the captured requests with a generous timeout.
@@ -63,7 +79,7 @@ public class EventDeliveryFlowTests(IntegrationContextFixture factory)
         while (DateTimeOffset.UtcNow < deadline)
         {
             var delivered = factory.OutboundHttp.Requests.FirstOrDefault(r =>
-                r.Url.Contains(DeliveryCatcherHost, StringComparison.OrdinalIgnoreCase)
+                r.Url.Contains(host, StringComparison.OrdinalIgnoreCase)
                 && r.Body.Contains(eventId, StringComparison.Ordinal)
             );
 
@@ -76,7 +92,7 @@ public class EventDeliveryFlowTests(IntegrationContextFixture factory)
         }
 
         throw new ShouldAssertException(
-            $"Event {eventId} was not delivered to {DeliveryCatcherHost} within the timeout."
+            $"Event {eventId} was not delivered to {host} within the timeout."
         );
     }
 
@@ -125,5 +141,24 @@ public class EventDeliveryFlowTests(IntegrationContextFixture factory)
                 && r.Body.Contains(filteredOutId, StringComparison.Ordinal)
             )
             .ShouldBeFalse("the filtered-out event must never reach the filtered subscriber");
+    }
+
+    [Fact]
+    public async Task GivenASubscriberThatNeverResponds_WhenEventsArePublished_ThenAnotherSubscriberStillGetsItsEvent()
+    {
+        var stalledId = Guid.NewGuid().ToString();
+        var deliveredId = Guid.NewGuid().ToString();
+
+        using (factory.OutboundHttp.HoldStallingSubscriber())
+        {
+            // One request, so both deliveries fall due in the same poll. StallingSubscriber
+            // comes first in appsettings.test.json, so its delivery is queued first.
+            await PublishEvents((stalledId, "Stall.Me"), (deliveredId, "Deliver.Me"));
+
+            // StallingSubscriber has been sent its event and gets no answer while the hold
+            // lasts, like an endpoint that hangs until the simulator's 60-second timeout
+            await WaitForRequest(CapturingHttpMessageHandler.StallingSubscriberHost, stalledId);
+            await WaitForDelivery(deliveredId);
+        }
     }
 }

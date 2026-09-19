@@ -8,8 +8,6 @@ namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 /// </summary>
 public class HttpSubscriberSettings : SubscriberSettingsBase
 {
-    private readonly DateTimeOffset _createdAt = DateTimeOffset.UtcNow;
-
     // Computed once on first read (Endpoint is init-only, so the code never changes).
     // Lazy rather than a Guid? field: the /validate handler reads this from request threads
     // and a Nullable<Guid> write is not atomic. PublicationOnly keeps today's behaviour of
@@ -35,6 +33,13 @@ public class HttpSubscriberSettings : SubscriberSettingsBase
 
     [JsonIgnore]
     public override string SubscriberType => "http";
+
+    /// <summary>
+    ///     Gets when these settings were created, which starts the 5-minute validation window.
+    ///     It's stamped from the wall clock because the settings are bound and validated at
+    ///     startup, before a <see cref="TimeProvider" /> can be resolved. Tests can set it.
+    /// </summary>
+    internal DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 
     public override void Validate()
     {
@@ -73,7 +78,7 @@ public class HttpSubscriberSettings : SubscriberSettingsBase
     /// </returns>
     public bool ValidationPeriodExpired(DateTimeOffset now)
     {
-        return now > _createdAt.AddMinutes(5);
+        return now > CreatedAt.AddMinutes(5);
     }
 
     public Guid GetValidationCode()
