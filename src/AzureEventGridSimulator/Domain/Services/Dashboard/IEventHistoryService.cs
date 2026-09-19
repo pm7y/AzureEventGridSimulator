@@ -59,4 +59,9 @@ public interface IEventHistoryService
     ///     Gets recent rejected events.
     /// </summary>
     IReadOnlyList<RejectedEventRecord> GetRecentRejections();
+
+    /// <summary>
+    ///     Clears all event history and rejections and resets the running totals.
+    /// </summary>
+    void Clear();
 }

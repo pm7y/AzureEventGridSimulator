@@ -186,4 +186,69 @@ public class EventHistoryStoreConcurrencyTests
         store.TotalRejections.ShouldBe(writers * rejectionsPerWriter);
         store.GetAllRejections().Count.ShouldBe(EventHistoryStore.MaxRejectedCapacity);
     }
+
+    [Fact]
+    public async Task Clear_WhileWritersAreAdding_EachTopicRefillsToExactlyCapacity()
+    {
+        // A Clear that interleaves with an Add must not leave a topic's eviction bookkeeping
+        // out of step with the records it tracks: that shows up afterwards as a topic that
+        // settles at one below capacity, or as a record that is never evicted. The race is
+        // timing-dependent, so run several rounds and check every topic after each one.
+        const int rounds = 20;
+        const int topics = 4;
+        const int clearsPerRound = 200;
+        const int refillPerTopic = EventHistoryStore.MaxCapacityPerTopic + 10;
+
+        for (var round = 0; round < rounds; round++)
+        {
+            var store = new EventHistoryStore();
+            var stop = 0;
+
+            var writers = Enumerable
+                .Range(0, topics)
+                .Select(t =>
+                    Task.Run(() =>
+                    {
+                        for (var i = 0; Volatile.Read(ref stop) == 0; i++)
+                        {
+                            store.Add(CreateRecord($"r{round}-t{t}-live-{i}", $"topic-{t}"));
+                        }
+                    })
+                )
+                .ToList();
+
+            // Wait until every writer is adding, then clear repeatedly while they still are
+            SpinWait
+                .SpinUntil(() => store.TotalEventsReceived >= topics * 10, TimeSpan.FromSeconds(10))
+                .ShouldBeTrue("the writers never started adding");
+
+            for (var c = 0; c < clearsPerRound; c++)
+            {
+                store.Clear();
+            }
+
+            Volatile.Write(ref stop, 1);
+            await Task.WhenAll(writers);
+
+            for (var t = 0; t < topics; t++)
+            {
+                for (var i = 0; i < refillPerTopic; i++)
+                {
+                    store.Add(CreateRecord($"r{round}-t{t}-refill-{i}", $"topic-{t}"));
+                }
+            }
+
+            for (var t = 0; t < topics; t++)
+            {
+                store
+                    .GetByTopic($"topic-{t}")
+                    .Count.ShouldBe(
+                        EventHistoryStore.MaxCapacityPerTopic,
+                        $"topic-{t} after round {round}"
+                    );
+            }
+
+            store.Count.ShouldBe(topics * EventHistoryStore.MaxCapacityPerTopic);
+        }
+    }
 }

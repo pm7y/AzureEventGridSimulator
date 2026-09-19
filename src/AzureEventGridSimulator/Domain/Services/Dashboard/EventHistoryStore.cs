@@ -34,49 +34,36 @@ public class EventHistoryStore
     private readonly ConcurrentDictionary<string, RejectedEventRecord> _rejections = new();
 
     /// <summary>
-    ///     Per-topic queues for FIFO eviction tracking.
+    ///     Per-topic eviction bookkeeping. A topic's order queue, and the records it tracks,
+    ///     only change while that topic's gate is held, so they can't drift apart under
+    ///     concurrent writers or a concurrent <see cref="Clear" />.
     /// </summary>
-    private readonly ConcurrentDictionary<string, ConcurrentQueue<string>> _topicOrders = new(
-        StringComparer.OrdinalIgnoreCase
-    );
-
-    /// <summary>
-    ///     Per-topic event counts for efficient capacity checking.
-    /// </summary>
-    private readonly ConcurrentDictionary<string, int> _topicCounts = new(
-        StringComparer.OrdinalIgnoreCase
-    );
-
-    /// <summary>
-    ///     Per-topic locks serialising the add/evict cycle so the order queue and count
-    ///     can't drift apart under concurrent writers.
-    /// </summary>
-    private readonly ConcurrentDictionary<string, object> _topicLocks = new(
+    private readonly ConcurrentDictionary<string, TopicBucket> _topics = new(
         StringComparer.OrdinalIgnoreCase
     );
 
     /// <summary>
     ///     Lock serialising the rejection add/evict cycle.
     /// </summary>
-    private readonly object _rejectionLock = new();
+    private readonly Lock _rejectionLock = new();
 
     /// <summary>
-    ///     Counter for total events received (may exceed MaxCapacity).
+    ///     Counter for total events received (not capped by <see cref="MaxCapacityPerTopic" />).
     /// </summary>
     private int _totalEventsReceived;
 
     /// <summary>
-    ///     Counter for total rejections.
+    ///     Counter for total rejections (not capped by <see cref="MaxRejectedCapacity" />).
     /// </summary>
     private int _totalRejections;
 
     /// <summary>
-    ///     Gets the total number of events received since startup.
+    ///     Gets the total number of events received since startup or the last <see cref="Clear" />.
     /// </summary>
     public int TotalEventsReceived => _totalEventsReceived;
 
     /// <summary>
-    ///     Gets the total number of rejections since startup.
+    ///     Gets the total number of rejections since startup or the last <see cref="Clear" />.
     /// </summary>
     public int TotalRejections => _totalRejections;
 
@@ -97,9 +84,9 @@ public class EventHistoryStore
     {
         Interlocked.Increment(ref _totalEventsReceived);
 
-        var topicLock = _topicLocks.GetOrAdd(record.TopicName, _ => new object());
+        var topic = _topics.GetOrAdd(record.TopicName, _ => new TopicBucket());
 
-        lock (topicLock)
+        lock (topic.Gate)
         {
             // A replayed event with the same id replaces the stored record without taking a
             // second slot in the order queue (which would corrupt the eviction accounting).
@@ -111,27 +98,12 @@ public class EventHistoryStore
                 return;
             }
 
-            // Get or create the topic's order queue
-            var topicOrder = _topicOrders.GetOrAdd(
-                record.TopicName,
-                _ => new ConcurrentQueue<string>()
-            );
-            topicOrder.Enqueue(record.Id);
-
-            // Increment topic count
-            var topicCount = _topicCounts.AddOrUpdate(record.TopicName, 1, (_, count) => count + 1);
+            topic.Order.Enqueue(record.Id);
 
             // Evict oldest for this topic if over capacity
-            while (topicCount > MaxCapacityPerTopic && topicOrder.TryDequeue(out var oldestId))
+            while (topic.Order.Count > MaxCapacityPerTopic)
             {
-                if (_records.TryRemove(oldestId, out _))
-                {
-                    topicCount = _topicCounts.AddOrUpdate(
-                        record.TopicName,
-                        0,
-                        (_, count) => Math.Max(0, count - 1)
-                    );
-                }
+                _records.TryRemove(topic.Order.Dequeue(), out _);
             }
         }
     }
@@ -227,14 +199,26 @@ public class EventHistoryStore
     /// </summary>
     public void Clear()
     {
-        _records.Clear();
-        _topicOrders.Clear();
-        _topicCounts.Clear();
-
-        _rejections.Clear();
-        while (_rejectionOrder.TryDequeue(out _))
+        // Empty each topic under the same gate Add holds, so a concurrent Add lands either
+        // wholly before its topic is emptied or wholly after it.
+        foreach (var topic in _topics.Values)
         {
-            // Clear the rejections queue
+            lock (topic.Gate)
+            {
+                while (topic.Order.TryDequeue(out var id))
+                {
+                    _records.TryRemove(id, out _);
+                }
+            }
+        }
+
+        lock (_rejectionLock)
+        {
+            _rejections.Clear();
+            while (_rejectionOrder.TryDequeue(out _))
+            {
+                // Clear the rejections queue
+            }
         }
 
         Interlocked.Exchange(ref _totalEventsReceived, 0);
@@ -270,5 +254,22 @@ public class EventHistoryStore
     public IReadOnlyList<RejectedEventRecord> GetAllRejections()
     {
         return _rejections.Values.OrderByDescending(r => r.RejectedAt).ToList();
+    }
+
+    /// <summary>
+    ///     A topic's eviction order and the gate that guards it.
+    /// </summary>
+    private sealed class TopicBucket
+    {
+        /// <summary>
+        ///     Held for the whole add/evict cycle, and by <see cref="EventHistoryStore.Clear" />.
+        /// </summary>
+        public Lock Gate { get; } = new();
+
+        /// <summary>
+        ///     Ids of the topic's stored events, oldest first; its count is the topic's event
+        ///     count. Only touched while <see cref="Gate" /> is held.
+        /// </summary>
+        public Queue<string> Order { get; } = new();
     }
 }

@@ -9,9 +9,9 @@ namespace AzureEventGridSimulator.Domain.Entities.Dashboard;
 public class EventHistoryRecord
 {
     /// <summary>
-    ///     The lock object for thread-safe updates to deliveries.
+    ///     The lock for thread-safe updates to deliveries.
     /// </summary>
-    private readonly object _deliveriesLock = new();
+    private readonly Lock _deliveriesLock = new();
 
     /// <summary>
     ///     Unique identifier (from event).

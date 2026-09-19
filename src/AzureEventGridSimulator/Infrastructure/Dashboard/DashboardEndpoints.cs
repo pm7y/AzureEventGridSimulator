@@ -70,9 +70,9 @@ public static class DashboardEndpoints
     /// <summary>
     ///     DELETE /dashboard/api/clear - Clears all event history and rejections.
     /// </summary>
-    private static IResult ClearHistory(EventHistoryStore store)
+    private static IResult ClearHistory(IEventHistoryService eventHistoryService)
     {
-        store.Clear();
+        eventHistoryService.Clear();
         return Results.Ok(new { message = "History cleared" });
     }
 

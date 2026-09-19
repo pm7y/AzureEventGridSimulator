@@ -149,6 +149,14 @@ public class EventHistoryService(
         return store.GetAllRejections();
     }
 
+    /// <inheritdoc />
+    public void Clear()
+    {
+        store.Clear();
+
+        logger.LogInformation("Dashboard history cleared");
+    }
+
     /// <summary>
     ///     Finds the published delivery record for a subscriber of an event in the history,
     ///     logging at debug level when the event or the subscriber's delivery isn't there.

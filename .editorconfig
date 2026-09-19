@@ -547,9 +547,6 @@ dotnet_diagnostic.MA0051.severity = suggestion
 # MA0055: Do not use finalizer - allowed in test fixtures for cleanup safety nets
 dotnet_diagnostic.MA0055.severity = suggestion
 
-# MA0158: Use System.Threading.Lock (.NET 9+) - lowered due to multi-targeting .NET 8 which doesn't have Lock
-dotnet_diagnostic.MA0158.severity = suggestion
-
 # MA0074: Use overload with StringComparison parameter
 dotnet_diagnostic.MA0074.severity = warning
 

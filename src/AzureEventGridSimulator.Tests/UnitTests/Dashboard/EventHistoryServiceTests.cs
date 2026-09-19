@@ -510,6 +510,45 @@ public class EventHistoryServiceTests
         ShouldHaveLoggedDebug(expectedLogFragment);
     }
 
+    [Fact]
+    public void GivenEventsAndRejections_WhenCleared_ThenHistoryAndTotalsAreResetAndItIsLogged()
+    {
+        RecordQueuedHttpDelivery("event-1", "http-subscriber");
+        _service.RecordEventRejected(
+            RejectedEventRecord.Create(
+                "test-topic",
+                60101,
+                System.Net.HttpStatusCode.BadRequest,
+                "Invalid JSON",
+                Now,
+                "[]",
+                "application/json"
+            )
+        );
+
+        _service.Clear();
+
+        _service.GetRecentEvents().ShouldBeEmpty();
+        _service.GetEvent("event-1").ShouldBeNull();
+        _service.GetRecentRejections().ShouldBeEmpty();
+        var stats = _service.GetStats();
+        stats.TotalEventsReceived.ShouldBe(0);
+        stats.EventsInHistory.ShouldBe(0);
+        stats.TotalPending.ShouldBe(0);
+        stats.TotalRejected.ShouldBe(0);
+        _logger
+            .Received(1)
+            .Log(
+                LogLevel.Information,
+                Arg.Any<EventId>(),
+                Arg.Is<object>(o =>
+                    o != null && string.Concat(o).Contains("Dashboard history cleared")
+                ),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
+            );
+    }
+
     private void RecordQueuedHttpDelivery(string eventId, string subscriberName)
     {
         _service.RecordEventReceived(
