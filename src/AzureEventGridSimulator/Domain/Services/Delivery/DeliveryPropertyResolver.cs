@@ -145,10 +145,8 @@ public class DeliveryPropertyResolver
     {
         try
         {
-            // Convert the data object to JSON for navigation
-            var json = JsonSerializer.Serialize(data);
-            using var document = JsonDocument.Parse(json);
-            var current = document.RootElement;
+            // Parsed event data is already a JsonElement; anything else is serialised to one
+            var current = data is JsonElement je ? je : JsonSerializer.SerializeToElement(data);
 
             for (var i = startIndex; i < pathParts.Length; i++)
             {
@@ -204,7 +202,8 @@ public class DeliveryPropertyResolver
             JsonValueKind.True => true,
             JsonValueKind.False => false,
             JsonValueKind.Null => null,
-            _ => element.GetRawText(),
+            // Objects and arrays: compact JSON re-escaped by the default encoder
+            _ => JsonSerializer.Serialize(element),
         };
     }
 

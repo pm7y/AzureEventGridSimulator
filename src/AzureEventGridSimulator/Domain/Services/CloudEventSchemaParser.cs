@@ -82,11 +82,11 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
         // Parse the body as data
         if (!string.IsNullOrWhiteSpace(requestBody))
         {
-            // Try to parse as JSON, otherwise treat as string
+            // Try to parse as JSON, otherwise treat as string. Default options on purpose: they
+            // reject trailing commas, which JsonSerializerOptionsProvider.Default would accept.
             try
             {
-                using var doc = JsonDocument.Parse(requestBody);
-                cloudEvent.Data = JsonSerializer.Deserialize<object>(doc.RootElement.GetRawText());
+                cloudEvent.Data = JsonSerializer.Deserialize<object>(requestBody);
             }
             catch (JsonException)
             {

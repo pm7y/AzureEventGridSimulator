@@ -39,6 +39,8 @@ public static class SubscriptionSettingsFilterExtensions
     private static bool EvaluateAdvancedFilter(AdvancedFilterSetting filter, object? value)
     {
         bool retVal;
+        // Array.Empty rather than []: [] as an ICollection<object> allocates a List every call
+        var filterValues = filter.Values ?? Array.Empty<object>();
 
         switch (filter.OperatorType)
         {
@@ -56,16 +58,12 @@ public static class SubscriptionSettingsFilterExtensions
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberIn:
                 retVal = Try(() =>
-                    (filter.Values ?? Array.Empty<object>())
-                        .Select(v => v.ToNumber())
-                        .Contains(value.ToNumber())
+                    filterValues.Select(v => v.ToNumber()).Contains(value.ToNumber())
                 );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotIn:
                 retVal = Try(() =>
-                    !(filter.Values ?? Array.Empty<object>())
-                        .Select(v => v.ToNumber())
-                        .Contains(value.ToNumber())
+                    !filterValues.Select(v => v.ToNumber()).Contains(value.ToNumber())
                 );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.BoolEquals:
@@ -75,7 +73,7 @@ public static class SubscriptionSettingsFilterExtensions
                 retVal = Try(() =>
                     AnyStringMatch(
                         value,
-                        filter.Values,
+                        filterValues,
                         static (s, v) => s.Contains(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
@@ -84,7 +82,7 @@ public static class SubscriptionSettingsFilterExtensions
                 retVal = Try(() =>
                     AnyStringMatch(
                         value,
-                        filter.Values,
+                        filterValues,
                         static (s, v) => s.StartsWith(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
@@ -93,37 +91,37 @@ public static class SubscriptionSettingsFilterExtensions
                 retVal = Try(() =>
                     AnyStringMatch(
                         value,
-                        filter.Values,
+                        filterValues,
                         static (s, v) => s.EndsWith(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringIn:
                 retVal = Try(() =>
-                    (filter.Values ?? Array.Empty<object>())
+                    filterValues
                         .Select(v => Convert.ToString(v)?.ToUpperInvariant())
                         .Contains(Convert.ToString(value)?.ToUpperInvariant())
                 );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn:
                 retVal = Try(() =>
-                    !(filter.Values ?? Array.Empty<object>())
+                    !filterValues
                         .Select(v => Convert.ToString(v)?.ToUpperInvariant())
                         .Contains(Convert.ToString(value)?.ToUpperInvariant())
                 );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberInRange:
-                retVal = Try(() => IsNumberInRanges(value.ToNumber(), filter.Values));
+                retVal = Try(() => IsNumberInRanges(value.ToNumber(), filterValues));
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.NumberNotInRange:
-                retVal = Try(() => !IsNumberInRanges(value.ToNumber(), filter.Values));
+                retVal = Try(() => !IsNumberInRanges(value.ToNumber(), filterValues));
                 break;
             // Negate inside Try, never !Try(...): if evaluation throws, the filter must not match
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotContains:
                 retVal = Try(() =>
                     !AnyStringMatch(
                         value,
-                        filter.Values,
+                        filterValues,
                         static (s, v) => s.Contains(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
@@ -132,7 +130,7 @@ public static class SubscriptionSettingsFilterExtensions
                 retVal = Try(() =>
                     !AnyStringMatch(
                         value,
-                        filter.Values,
+                        filterValues,
                         static (s, v) => s.StartsWith(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
@@ -141,7 +139,7 @@ public static class SubscriptionSettingsFilterExtensions
                 retVal = Try(() =>
                     !AnyStringMatch(
                         value,
-                        filter.Values,
+                        filterValues,
                         static (s, v) => s.EndsWith(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
@@ -235,9 +233,7 @@ public static class SubscriptionSettingsFilterExtensions
         value = null;
         try
         {
-            var json = JsonSerializer.Serialize(data);
-            using var document = JsonDocument.Parse(json);
-            var current = document.RootElement;
+            var current = data is JsonElement je ? je : JsonSerializer.SerializeToElement(data);
 
             for (var i = startIndex; i < pathParts.Length; i++)
             {
@@ -271,7 +267,7 @@ public static class SubscriptionSettingsFilterExtensions
                 }
             }
 
-            value = ConvertJsonElement(current);
+            value = ConvertJsonElement(current, rawObjectText: false);
             return value != null || current.ValueKind == JsonValueKind.Null;
         }
         catch
@@ -280,7 +276,13 @@ public static class SubscriptionSettingsFilterExtensions
         }
     }
 
-    private static object? ConvertJsonElement(JsonElement element)
+    /// <summary>
+    ///     Converts a JsonElement to a filterable value. An object becomes text. Through a data.*
+    ///     key that text is compact JSON re-escaped by the default encoder, which is what the
+    ///     lookup has always returned. With rawObjectText it is the client's own text, which the
+    ///     whole-data array path has always used.
+    /// </summary>
+    private static object? ConvertJsonElement(JsonElement element, bool rawObjectText)
     {
         return element.ValueKind switch
         {
@@ -290,17 +292,17 @@ public static class SubscriptionSettingsFilterExtensions
             JsonValueKind.True => true,
             JsonValueKind.False => false,
             JsonValueKind.Null => null,
-            JsonValueKind.Array => ConvertJsonArray(element),
-            _ => element.GetRawText(),
+            JsonValueKind.Array => ConvertJsonArray(element, rawObjectText),
+            _ => rawObjectText ? element.GetRawText() : JsonSerializer.Serialize(element),
         };
     }
 
-    private static List<object?> ConvertJsonArray(JsonElement arrayElement)
+    private static List<object?> ConvertJsonArray(JsonElement arrayElement, bool rawObjectText)
     {
         var result = new List<object?>();
         foreach (var item in arrayElement.EnumerateArray())
         {
-            result.Add(ConvertJsonElement(item));
+            result.Add(ConvertJsonElement(item, rawObjectText));
         }
 
         return result;
@@ -316,7 +318,10 @@ public static class SubscriptionSettingsFilterExtensions
         {
             List<object?> list => list,
             IEnumerable<object> enumerable => enumerable.Cast<object?>(),
-            JsonElement { ValueKind: JsonValueKind.Array } jsonArray => ConvertJsonArray(jsonArray),
+            JsonElement { ValueKind: JsonValueKind.Array } jsonArray => ConvertJsonArray(
+                jsonArray,
+                rawObjectText: true
+            ),
             _ => null,
         };
     }
@@ -385,12 +390,12 @@ public static class SubscriptionSettingsFilterExtensions
     /// </summary>
     private static bool AnyStringMatch(
         object? value,
-        ICollection<object>? values,
+        ICollection<object> values,
         Func<string, string, bool> match
     )
     {
         return value is string { Length: > 0 } s
-            && (values ?? Array.Empty<object>())
+            && values
                 .Select(Convert.ToString)
                 .OfType<string>()
                 .Where(v => v.Length > 0)
@@ -484,10 +489,11 @@ public static class SubscriptionSettingsFilterExtensions
         return EvaluateWithArraySupport(filter, value, enableArrayFiltering);
     }
 
-    extension(FilterSetting filter)
+    extension(FilterSetting? filter)
     {
         /// <summary>
-        ///     Checks if the filter accepts a SimulatorEvent (schema-agnostic).
+        ///     Checks if the filter accepts a SimulatorEvent (schema-agnostic). A null filter, like
+        ///     an empty one, accepts every event.
         /// </summary>
         public bool AcceptsEvent(SimulatorEvent simulatorEvent)
         {
