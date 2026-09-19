@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Azure.Messaging.EventGrid;
@@ -303,5 +304,39 @@ public class RequestPipelineTests(IntegrationContextFixture factory)
             ErrorDetailCodes.ResourceNotFound
         );
         mediator.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(60101, "application/json", "[null]")]
+    [InlineData(
+        60101,
+        "application/json",
+        """[{"id":"with-null-1","subject":"s","eventType":"t","eventTime":"2025-01-01T00:00:00Z","dataVersion":"1.0","data":{}},null]"""
+    )]
+    [InlineData(60104, "application/cloudevents-batch+json", "[null]")]
+    [InlineData(
+        60104,
+        "application/cloudevents-batch+json",
+        """[{"specversion":"1.0","id":"with-null-2","source":"/s","type":"t"},null]"""
+    )]
+    [InlineData(60104, "application/cloudevents+json", "[null]")]
+    public async Task GivenBatchContainingANullEvent_WhenPosted_ThenBadRequest(
+        int port,
+        string contentType,
+        string body
+    )
+    {
+        var client = CreateClient(port: port);
+
+        using var content = new StringContent(body, Encoding.UTF8);
+        content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+        var response = await client.PostAsync("/api/events", content);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        ShouldHaveErrorCodes(
+            await ReadErrorAsync(response),
+            "BadRequest",
+            ErrorDetailCodes.InputJsonInvalid
+        );
     }
 }

@@ -51,7 +51,8 @@ public class EventGridSchemaParser : IEventSchemaParser
             );
         }
 
-        if (events == null || events.Length == 0)
+        // A null element (e.g. "[null]") doesn't conform either, the same as an empty array
+        if (events == null || events.Length == 0 || Array.Exists(events, e => e is null))
         {
             throw new InvalidOperationException(SchemaErrorMessages.NotConforming(Schema));
         }
