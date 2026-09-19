@@ -664,7 +664,7 @@ Add Seq configuration:
 }
 ```
 
-Access the Seq UI at `http://localhost:8081` (when using the docker-compose example above).
+Access the Seq UI at `http://localhost:8081` (when using the Docker Compose example above).
 
 ---
 

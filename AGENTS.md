@@ -39,10 +39,11 @@ src/
 │   ├── Domain/
 │   │   ├── Commands/                         # Command handlers (mediator pattern)
 │   │   ├── Entities/                         # Domain models (Dashboard/ for dashboard entities)
+│   │   ├── Filtering/                        # Subscription filter evaluation (EventFilterEvaluator)
 │   │   └── Services/                         # Schema detection/parsing/formatting; Dashboard/, Delivery/, Retry/, Routing/, Validation/
 │   ├── Infrastructure/
 │   │   ├── Dashboard/                        # Dashboard middleware and endpoints
-│   │   ├── Extensions/                       # Configuration, Kestrel, DI and filter extensions
+│   │   ├── Extensions/                       # Configuration, Kestrel and DI extensions
 │   │   ├── JsonConverters/                   # Custom JSON serialization
 │   │   ├── Mediator/                         # Custom mediator (no MediatR)
 │   │   ├── Middleware/                       # Request validation and parsing, SAS auth
@@ -94,6 +95,7 @@ public class MyTests
 - **Message limits** - defaults: 1,049,600 bytes (~1 MB) per event, 1,536,000 bytes (~1.5 MB) overall body
 - **Schemas** - EventGrid (default) or CloudEvents v1.0, auto-detected or configured
 - **Build flavours** - the AppHost builds the simulator with `ASPIRE_ENABLED=true` into separate `bin/aspire/` and `obj/aspire/` paths; the regular build uses `bin/`/`obj/`. Don't mix artifacts between the two.
+- **Vendored DOMPurify** - the dashboard serves its own copy, `Dashboard/purify-<version>.min.js` (embedded, with `-text` in `.gitattributes` so its bytes never change). Dependabot can't see it, so bump it by hand: replace the file and update the `<script src>` in `Dashboard/index.html`.
 
 ## Commits & Releases
 
