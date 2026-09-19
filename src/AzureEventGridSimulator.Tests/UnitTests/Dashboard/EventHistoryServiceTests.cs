@@ -7,7 +7,7 @@ using NSubstitute;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.Domain.Services.Dashboard;
+namespace AzureEventGridSimulator.Tests.UnitTests.Dashboard;
 
 [Trait("Category", "unit")]
 public class EventHistoryServiceTests

@@ -2,7 +2,7 @@ using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services.Retry;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
-using AzureEventGridSimulator.Tests.Helpers;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
 using Shouldly;
 using Xunit;

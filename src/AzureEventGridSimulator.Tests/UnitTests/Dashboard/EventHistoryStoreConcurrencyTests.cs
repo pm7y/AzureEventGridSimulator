@@ -5,7 +5,7 @@ using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.Domain.Services.Dashboard;
+namespace AzureEventGridSimulator.Tests.UnitTests.Dashboard;
 
 /// <summary>
 ///     Exercises the thread-safety guarantees of the store: per-topic locks keep

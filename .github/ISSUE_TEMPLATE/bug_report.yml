@@ -90,7 +90,7 @@ body:
     attributes:
       label: .NET Version
       description: Output of `dotnet --version`
-      placeholder: "8.0.100"
+      placeholder: "10.0.100"
 
   - type: textarea
     id: config

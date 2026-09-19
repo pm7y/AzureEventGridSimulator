@@ -4,7 +4,7 @@
 
 Azure Event Grid Simulator - local HTTPS simulator for Azure Event Grid topics/subscribers. Compatible with Microsoft.Azure.EventGrid client library, supports EventGrid and CloudEvents v1.0 schemas.
 
-**Stack:** .NET (multi-targets net8.0/net9.0/net10.0; tests run net10.0), C#, Serilog, xUnit/Shouldly/NSubstitute
+**Stack:** .NET 10 (net10.0), C#, Serilog, xUnit/Shouldly/NSubstitute
 
 ## Commands
 
@@ -13,7 +13,8 @@ Azure Event Grid Simulator - local HTTPS simulator for Azure Event Grid topics/s
 dotnet build src/AzureEventGridSimulator.slnx --configuration Release
 
 # Test
-dotnet test src/AzureEventGridSimulator.slnx --configuration Release
+dotnet test src/AzureEventGridSimulator.slnx --configuration Release    # every category, including integration-actual
+dotnet test src/AzureEventGridSimulator.slnx --filter "Category!=integration-actual"    # the tests CI runs
 dotnet test src/AzureEventGridSimulator.slnx --filter "Category=unit"
 dotnet test src/AzureEventGridSimulator.slnx --filter "Category=integration"
 
@@ -24,25 +25,42 @@ dotnet run --project src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
 dotnet csharpier format src
 ```
 
+**Test categories:** `unit`; `integration` (no Docker or external services needed; `IntegrationTests/` hosts the app in-process with `WebApplicationFactory`); `integration-actual` (starts the built simulator on `https://localhost:60101`, so it clashes with anything already listening on that port). CI doesn't run `integration-actual`.
+
+**Parity tests:** `src/postman/` holds a Postman/newman collection designed to run against both real Azure Event Grid and the simulator. See [Using Postman](https://github.com/pm7y/AzureEventGridSimulator/wiki/Schema-Support#using-postman).
+
 ## Project Structure
 
 ```
 src/
-├── AzureEventGridSimulator/           # Main application
-│   ├── Controllers/                    # API endpoints
-│   ├── Domain/                         # Business logic
-│   │   ├── Commands/                   # Command handlers
-│   │   ├── Entities/                   # Domain models
-│   │   └── Services/                   # Domain services (Delivery/, Retry/)
-│   ├── Infrastructure/                 # Cross-cutting concerns
-│   │   ├── Mediator/                   # Custom mediator (no MediatR)
-│   │   ├── Middleware/                 # HTTP middleware
-│   │   └── Settings/                   # Configuration models
-│   └── Program.cs                      # Entry point
-├── AzureEventGridSimulator.Tests/      # Tests (UnitTests/, IntegrationTests/)
-├── Directory.Build.props               # Shared MSBuild properties
-└── Directory.Packages.props            # Central Package Management
+├── AzureEventGridSimulator/                  # The simulator (also packed as the .NET tool)
+│   ├── Controllers/                          # HTTP endpoints
+│   ├── Dashboard/                            # Embedded dashboard UI assets
+│   ├── Domain/
+│   │   ├── Commands/                         # Command handlers (mediator pattern)
+│   │   ├── Entities/                         # Domain models (Dashboard/ for dashboard entities)
+│   │   └── Services/                         # Schema detection/parsing/formatting; Dashboard/, Delivery/, Retry/, Routing/, Validation/
+│   ├── Infrastructure/
+│   │   ├── Dashboard/                        # Dashboard middleware and endpoints
+│   │   ├── Extensions/                       # Configuration, Kestrel, DI and filter extensions
+│   │   ├── JsonConverters/                   # Custom JSON serialization
+│   │   ├── Mediator/                         # Custom mediator (no MediatR)
+│   │   ├── Middleware/                       # Request validation and parsing, SAS auth
+│   │   └── Settings/                         # Configuration models (Subscribers/ for subscriber settings)
+│   └── Program.cs                            # Entry point
+├── AzureEventGridSimulator.AppHost/          # .NET Aspire orchestration (local development)
+├── AzureEventGridSimulator.ServiceDefaults/  # Aspire service defaults (OpenTelemetry, health checks)
+├── AzureEventGridSimulator.Tests/
+│   ├── UnitTests/                            # Unit tests, one folder per area (Dashboard/, Retry/, Routing/, ...)
+│   │   └── Common/                           # Shared test helpers (TestHelpers, FakeTimeProvider)
+│   ├── IntegrationTests/                     # In-process tests using WebApplicationFactory
+│   └── ActualSimulatorTests/                 # Tests that launch the built simulator as a separate process
+├── postman/                                  # Postman/newman parity collection and environments
+├── Directory.Build.props                     # Shared MSBuild properties
+└── Directory.Packages.props                  # Central Package Management
 ```
+
+The canonical, fuller tree is on the wiki: [Architecture: Source Code Structure](https://github.com/pm7y/AzureEventGridSimulator/wiki/Architecture#source-code-structure).
 
 ## Code Style
 
@@ -54,12 +72,14 @@ src/
 
 ## Testing
 
+Name tests `GivenX_WhenY_ThenZ`, e.g. `GivenExpiredAuthorizationHeader_WhenValidated_ThenReturnsFalse`.
+
 ```csharp
 [Trait("Category", "unit")]  // or "integration"
 public class MyTests
 {
     [Fact]
-    public void Should_DoX_When_Y()
+    public void GivenX_WhenY_ThenZ()
     {
         // Arrange/Act/Assert with Shouldly
         result.ShouldBe(expected);
@@ -70,7 +90,7 @@ public class MyTests
 ## Key Constraints
 
 - **HTTPS only** - all topic endpoints require HTTPS
-- **Authentication** - `aeg-sas-key` or `aeg-sas-token` headers when topic has `key` configured
+- **Authentication** - `aeg-sas-key`, `aeg-sas-token` or `Authorization: SharedAccessSignature` header when topic has `key` configured
 - **Message limits** - defaults: 1,049,600 bytes (~1 MB) per event, 1,536,000 bytes (~1.5 MB) overall body
 - **Schemas** - EventGrid (default) or CloudEvents v1.0, auto-detected or configured
 - **Build flavours** - the AppHost builds the simulator with `ASPIRE_ENABLED=true` into separate `bin/aspire/` and `obj/aspire/` paths; the regular build uses `bin/`/`obj/`. Don't mix artifacts between the two.

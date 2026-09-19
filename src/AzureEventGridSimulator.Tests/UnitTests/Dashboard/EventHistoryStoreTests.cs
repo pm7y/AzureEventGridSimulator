@@ -4,7 +4,7 @@ using AzureEventGridSimulator.Domain.Services.Dashboard;
 using Shouldly;
 using Xunit;
 
-namespace AzureEventGridSimulator.Tests.Domain.Services.Dashboard;
+namespace AzureEventGridSimulator.Tests.UnitTests.Dashboard;
 
 [Trait("Category", "unit")]
 public class EventHistoryStoreTests

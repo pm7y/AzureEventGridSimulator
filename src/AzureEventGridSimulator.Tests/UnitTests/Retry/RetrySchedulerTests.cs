@@ -1,5 +1,5 @@
 using AzureEventGridSimulator.Domain.Services.Retry;
-using AzureEventGridSimulator.Tests.Helpers;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;
 using Xunit;
 
