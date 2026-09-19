@@ -25,7 +25,7 @@ public class EventSchemaDetector
         }
 
         // Check for CloudEvents binary mode (header based)
-        if (IsCloudEventBinaryMode(context))
+        if (IsBinaryMode(context))
         {
             return EventSchema.CloudEventV1_0;
         }
@@ -55,36 +55,13 @@ public class EventSchemaDetector
     }
 
     /// <summary>
-    ///     Checks if the request is using CloudEvents binary content mode.
-    ///     Binary mode uses ce-* headers for CloudEvents attributes.
-    ///     Azure detects binary mode when ANY ce-* header is present, then validates required headers.
-    /// </summary>
-    private bool IsCloudEventBinaryMode(HttpContext context)
-    {
-        var headers = context.Request.Headers;
-
-        // Binary mode is detected when any ce-* header is present
-        // Azure validates required headers during parsing and returns specific errors
-        return headers.ContainsKey(Constants.CeSpecVersionHeader)
-            || headers.ContainsKey(Constants.CeIdHeader)
-            || headers.ContainsKey(Constants.CeSourceHeader)
-            || headers.ContainsKey(Constants.CeTypeHeader);
-    }
-
-    /// <summary>
     ///     Determines if the request is using CloudEvents binary mode.
+    ///     Binary mode uses ce-* headers for CloudEvents attributes; see
+    ///     <see cref="CloudEventsHttp.IsBinaryMode" />.
     /// </summary>
     public bool IsBinaryMode(HttpContext context)
     {
-        return IsCloudEventBinaryMode(context);
-    }
-
-    /// <summary>
-    ///     Determines if the request is using CloudEvents structured mode.
-    /// </summary>
-    public bool IsStructuredMode(HttpContext context)
-    {
-        return IsCloudEventStructuredMode(context);
+        return CloudEventsHttp.IsBinaryMode(context.Request.Headers);
     }
 
     /// <summary>

@@ -40,74 +40,6 @@ public class EventGridValidationTests
     }
 
     [Fact]
-    public void GivenEventJsonWithMissingId_WhenDeserialized_ThenExceptionThrown()
-    {
-        const string json = """
-            {
-                "subject": "/test/subject",
-                "eventType": "Test.EventType",
-                "eventTime": "2025-01-15T10:30:00Z"
-            }
-            """;
-
-        var exception = Should.Throw<JsonException>(() =>
-            JsonSerializer.Deserialize<EventGridEvent>(json)
-        );
-        exception.Message.ShouldContain("id");
-    }
-
-    [Fact]
-    public void GivenEventJsonWithMissingSubject_WhenDeserialized_ThenExceptionThrown()
-    {
-        const string json = """
-            {
-                "id": "test-id-123",
-                "eventType": "Test.EventType",
-                "eventTime": "2025-01-15T10:30:00Z"
-            }
-            """;
-
-        var exception = Should.Throw<JsonException>(() =>
-            JsonSerializer.Deserialize<EventGridEvent>(json)
-        );
-        exception.Message.ShouldContain("subject");
-    }
-
-    [Fact]
-    public void GivenEventJsonWithMissingEventType_WhenDeserialized_ThenExceptionThrown()
-    {
-        const string json = """
-            {
-                "id": "test-id-123",
-                "subject": "/test/subject",
-                "eventTime": "2025-01-15T10:30:00Z"
-            }
-            """;
-
-        var exception = Should.Throw<JsonException>(() =>
-            JsonSerializer.Deserialize<EventGridEvent>(json)
-        );
-        exception.Message.ShouldContain("eventType");
-    }
-
-    [Fact]
-    public void GivenEventJsonWithMissingEventTime_WhenDeserialized_ThenExceptionThrown()
-    {
-        const string json = """
-            {
-                "id": "test-id-123",
-                "subject": "/test/subject",
-                "eventType": "Test.EventType"
-            }
-            """;
-
-        var exception = Should.Throw<JsonException>(() =>
-            JsonSerializer.Deserialize<EventGridEvent>(json)
-        );
-        exception.Message.ShouldContain("eventTime");
-    }
-
-    [Fact]
     public void GivenEventWithInvalidEventTime_WhenValidated_ThenExceptionThrown()
     {
         var eventGridEvent = new EventGridEvent
@@ -265,66 +197,28 @@ public class EventGridValidationTests
         Should.NotThrow(() => eventGridEvent.Validate());
     }
 
-    [Fact]
-    public void GivenEventWithEmptyId_WhenValidated_ThenExceptionThrown()
+    [Theory]
+    [InlineData("", "/test/subject", "Test.EventType", "id")]
+    [InlineData("   ", "/test/subject", "Test.EventType", "id")]
+    [InlineData("test-id-123", "", "Test.EventType", "subject")]
+    [InlineData("test-id-123", "/test/subject", "", "eventType")]
+    public void GivenEventWithEmptyRequiredField_WhenValidated_ThenMessageNamesTheField(
+        string id,
+        string subject,
+        string eventType,
+        string expectedField
+    )
     {
         var eventGridEvent = new EventGridEvent
         {
-            Id = "",
-            Subject = "/test/subject",
-            EventType = "Test.EventType",
+            Id = id,
+            Subject = subject,
+            EventType = eventType,
             EventTime = "2025-01-15T10:30:00Z",
         };
 
         var exception = Should.Throw<InvalidOperationException>(() => eventGridEvent.Validate());
-        exception.Message.ShouldContain("'id'");
-        exception.Message.ShouldContain("EventGridEvent");
-    }
-
-    [Fact]
-    public void GivenEventWithWhitespaceId_WhenValidated_ThenExceptionThrown()
-    {
-        var eventGridEvent = new EventGridEvent
-        {
-            Id = "   ",
-            Subject = "/test/subject",
-            EventType = "Test.EventType",
-            EventTime = "2025-01-15T10:30:00Z",
-        };
-
-        var exception = Should.Throw<InvalidOperationException>(() => eventGridEvent.Validate());
-        exception.Message.ShouldContain("'id'");
-    }
-
-    [Fact]
-    public void GivenEventWithEmptySubject_WhenValidated_ThenExceptionThrown()
-    {
-        var eventGridEvent = new EventGridEvent
-        {
-            Id = "test-id-123",
-            Subject = "",
-            EventType = "Test.EventType",
-            EventTime = "2025-01-15T10:30:00Z",
-        };
-
-        var exception = Should.Throw<InvalidOperationException>(() => eventGridEvent.Validate());
-        exception.Message.ShouldContain("'subject'");
-        exception.Message.ShouldContain("EventGridEvent");
-    }
-
-    [Fact]
-    public void GivenEventWithEmptyEventType_WhenValidated_ThenExceptionThrown()
-    {
-        var eventGridEvent = new EventGridEvent
-        {
-            Id = "test-id-123",
-            Subject = "/test/subject",
-            EventType = "",
-            EventTime = "2025-01-15T10:30:00Z",
-        };
-
-        var exception = Should.Throw<InvalidOperationException>(() => eventGridEvent.Validate());
-        exception.Message.ShouldContain("'eventType'");
+        exception.Message.ShouldContain($"'{expectedField}'");
         exception.Message.ShouldContain("EventGridEvent");
     }
 

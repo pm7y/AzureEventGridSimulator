@@ -37,7 +37,8 @@ public class DeadLetterServiceTests : IDisposable
         string folderPath = "./dead-letters",
         string? eventId = null,
         string topicName = "TestTopic",
-        string subscriberName = "TestSubscriber"
+        string subscriberName = "TestSubscriber",
+        DateTimeOffset? enqueuedTime = null
     )
     {
         var subscriber = new HttpSubscriberSettings
@@ -80,6 +81,7 @@ public class DeadLetterServiceTests : IDisposable
             Subscriber = subscriber,
             Topic = topic,
             InputSchema = EventSchema.EventGridSchema,
+            EnqueuedTime = enqueuedTime ?? DateTimeOffset.UtcNow,
         };
     }
 
@@ -284,6 +286,70 @@ public class DeadLetterServiceTests : IDisposable
         );
         var files = Directory.GetFiles(expectedFolder, "*.json");
         files.Length.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task GivenTwoDeliveriesWithSameEventIdAndEnqueuedTime_WhenWriting_ThenSecondOverwritesFirstAndLogsWarning()
+    {
+        // The file name is {timestamp to the second}_{sanitised id}.json, so these collide
+        var enqueuedTime = new DateTimeOffset(2025, 1, 15, 10, 30, 0, TimeSpan.Zero);
+        var first = CreatePendingDelivery(
+            true,
+            _tempFolder,
+            "duplicate-id",
+            enqueuedTime: enqueuedTime
+        );
+        var second = CreatePendingDelivery(
+            true,
+            _tempFolder,
+            "duplicate-id",
+            enqueuedTime: enqueuedTime
+        );
+
+        await _service.WriteDeadLetterAsync(first, "FirstReason");
+        await _service.WriteDeadLetterAsync(second, "SecondReason");
+
+        var expectedFolder = Path.Combine(_tempFolder, first.Topic.Name!, first.Subscriber.Name!);
+        var files = Directory.GetFiles(expectedFolder, "*.json");
+        files.Length.ShouldBe(1);
+        Path.GetFileName(files[0]).ShouldBe("20250115_103000_duplicate-id.json");
+
+        // The later dead letter replaces the earlier one
+        var json = JsonDocument.Parse(await File.ReadAllTextAsync(files[0]));
+        json.RootElement.GetProperty("deadLetterReason").GetString().ShouldBe("SecondReason");
+
+        // Only the second write finds an existing file, and it says so
+        _logger
+            .Received(1)
+            .Log(
+                LogLevel.Warning,
+                Arg.Any<EventId>(),
+                Arg.Is<object>(o =>
+                    o != null
+                    && string.Concat(o).Contains("already exists")
+                    && string.Concat(o).Contains("20250115_103000_duplicate-id.json")
+                ),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
+            );
+    }
+
+    [Fact]
+    public async Task GivenNoExistingFile_WhenWriting_ThenDoesNotLogOverwriteWarning()
+    {
+        var delivery = CreatePendingDelivery(true, _tempFolder);
+
+        await _service.WriteDeadLetterAsync(delivery, "TestReason");
+
+        _logger
+            .DidNotReceive()
+            .Log(
+                LogLevel.Warning,
+                Arg.Any<EventId>(),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains("already exists")),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
+            );
     }
 
     [Fact]

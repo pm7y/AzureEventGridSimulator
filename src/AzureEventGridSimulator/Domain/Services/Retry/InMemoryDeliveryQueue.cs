@@ -55,17 +55,6 @@ public class InMemoryDeliveryQueue(TimeProvider timeProvider, ILogger<InMemoryDe
     }
 
     /// <inheritdoc />
-    public IEnumerable<PendingDelivery> GetDueDeliveries()
-    {
-        var now = timeProvider.GetUtcNow();
-
-        return _queue
-            .Values.Where(d => d.NextAttemptTime <= now)
-            .OrderBy(d => d.NextAttemptTime)
-            .ToList(); // Materialize to avoid modification during enumeration
-    }
-
-    /// <inheritdoc />
     public async IAsyncEnumerable<PendingDelivery> GetDueDeliveriesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )

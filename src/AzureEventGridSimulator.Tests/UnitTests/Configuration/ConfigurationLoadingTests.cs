@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;
@@ -11,7 +12,7 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Configuration;
 public class ConfigurationLoadingTests
 {
     [Fact]
-    public void IConfigurationBind_ShouldLoadEventHubSubscribers()
+    public void GivenEventHubSubscriber_WhenConfigurationBound_ThenEventHubSubscriberIsLoaded()
     {
         const string json = """
             {
@@ -59,7 +60,7 @@ public class ConfigurationLoadingTests
     }
 
     [Fact]
-    public void JsonDeserialize_LegacyFormat_ShouldLoadHttpSubscribers()
+    public void GivenLegacySubscribersArray_WhenJsonDeserialized_ThenHttpSubscribersAreLoaded()
     {
         // This test uses the legacy format (array of subscribers) to verify backwards compatibility
         const string json = """
@@ -115,5 +116,78 @@ public class ConfigurationLoadingTests
         {
             settings.Validate();
         });
+    }
+
+    // The schema names below are the literal values users put in inputSchema, outputSchema and
+    // deliverySchema. Keep them as string literals (not nameof), so renaming an EventSchema
+    // member fails these tests instead of silently breaking existing config files.
+    [Theory]
+    [InlineData("CloudEventV1_0", EventSchema.CloudEventV1_0)]
+    [InlineData("EventGridSchema", EventSchema.EventGridSchema)]
+    public void GivenSchemaNames_WhenConfigurationBound_ThenSchemasBindByEnumMemberName(
+        string schemaName,
+        EventSchema expected
+    )
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(CreateSchemaJson(schemaName)));
+        var configuration = new ConfigurationBuilder().AddJsonStream(stream).Build();
+
+        var settings = new SimulatorSettings();
+        configuration.Bind(settings);
+
+        AssertSchemas(settings, expected);
+    }
+
+    [Theory]
+    [InlineData("CloudEventV1_0", EventSchema.CloudEventV1_0)]
+    [InlineData("EventGridSchema", EventSchema.EventGridSchema)]
+    public void GivenSchemaNames_WhenJsonDeserialized_ThenSchemasBindByEnumMemberName(
+        string schemaName,
+        EventSchema expected
+    )
+    {
+        var settings = JsonSerializer.Deserialize<SimulatorSettings>(CreateSchemaJson(schemaName));
+
+        AssertSchemas(settings.ShouldNotBeNullAnd(), expected);
+    }
+
+    private static string CreateSchemaJson(string schemaName)
+    {
+        return $$"""
+            {
+                "topics": [{
+                    "name": "SchemaTopic",
+                    "port": 60101,
+                    "key": "TheLocal+DevelopmentKey=",
+                    "inputSchema": "{{schemaName}}",
+                    "outputSchema": "{{schemaName}}",
+                    "subscribers": {
+                        "http": [{
+                            "name": "HttpSubscriber",
+                            "endpoint": "https://example.com/webhook",
+                            "disableValidation": true,
+                            "deliverySchema": "{{schemaName}}"
+                        }],
+                        "serviceBus": [{
+                            "name": "ServiceBusSubscriber",
+                            "connectionString": "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=Key;SharedAccessKey=abc123",
+                            "queue": "test-queue",
+                            "deliverySchema": "{{schemaName}}"
+                        }]
+                    }
+                }]
+            }
+            """;
+    }
+
+    private static void AssertSchemas(SimulatorSettings settings, EventSchema expected)
+    {
+        var topic = settings.Topics.ShouldHaveSingleItem();
+        topic.InputSchema.ShouldBe(expected);
+        topic.OutputSchema.ShouldBe(expected);
+        topic.Subscribers.HttpSubscribers.ShouldHaveSingleItem().DeliverySchema.ShouldBe(expected);
+        topic
+            .Subscribers.ServiceBusSubscribers.ShouldHaveSingleItem()
+            .DeliverySchema.ShouldBe(expected);
     }
 }

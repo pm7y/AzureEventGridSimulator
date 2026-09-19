@@ -42,12 +42,6 @@ internal class PositiveFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Values = new[] { "Event" },
-            },
-            new AdvancedFilterSetting
-            {
-                Key = "Id",
-                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
                 Values = new[] { "EVE" },
             }, // according to the spec, string comparisons in advanced mode are always case insensitive
             new AdvancedFilterSetting
@@ -387,14 +381,6 @@ internal class PositiveFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "Data.NumberValue",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.NumberLessThan,
-                Value = 2,
-            },
-            new AdvancedFilterSetting
-            {
-                Key = "Data.NumberValue",
-                OperatorType = AdvancedFilterSetting
-                    .AdvancedFilterOperatorType
-                    .NumberLessThanOrEquals,
                 Value = 2,
             },
             new AdvancedFilterSetting

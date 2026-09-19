@@ -3,7 +3,8 @@ using System.Text.Json.Serialization;
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
 /// <summary>
-///     Settings for a delivery property that can be added to Service Bus messages.
+///     Settings for a delivery property that can be added to Service Bus and Event Hub messages as
+///     application properties.
 /// </summary>
 public class DeliveryPropertySettings
 {

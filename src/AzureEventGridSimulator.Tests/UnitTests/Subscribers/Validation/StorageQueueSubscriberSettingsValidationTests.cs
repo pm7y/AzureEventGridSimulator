@@ -139,7 +139,7 @@ public class StorageQueueSubscriberSettingsValidationTests
             QueueName = "my-queue",
             Filter = new FilterSetting
             {
-                IncludedEventTypes = new List<string> { "MyEvent" },
+                IncludedEventTypes = ["MyEvent"],
                 SubjectBeginsWith = "test/",
             },
         };
@@ -225,5 +225,109 @@ public class StorageQueueSubscriberSettingsValidationTests
         var settings = CreateValidSettings();
 
         settings.Filter.ShouldBeNull();
+    }
+
+    [Fact]
+    public void GivenInvalidRetryPolicy_WhenValidated_ThenThrowsArgumentException()
+    {
+        var settings = new StorageQueueSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
+            QueueName = "my-queue",
+            RetryPolicy = new RetryPolicySettings { MaxDeliveryAttempts = 0 },
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+        exception.Message.ShouldBe(
+            "MaxDeliveryAttempts must be between 1 and 30. (Parameter 'MaxDeliveryAttempts')"
+        );
+    }
+
+    // Validation order for Storage Queue: name, connectionString, queueName, then filter,
+    // retry policy and dead-letter. Each test below breaks two adjacent rules and pins which
+    // message wins, word for word.
+
+    [Fact]
+    public void GivenBlankNameAndEverythingElseInvalid_WhenValidated_ThenNameErrorIsReported()
+    {
+        var settings = new StorageQueueSubscriberSettings
+        {
+            Name = "   ",
+            QueueName = "   ",
+            RetryPolicy = new RetryPolicySettings { MaxDeliveryAttempts = 0 },
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+        exception.Message.ShouldBe("Subscriber name is required. (Parameter 'Name')");
+    }
+
+    [Fact]
+    public void GivenNoConnectionStringAndBlankQueueName_WhenValidated_ThenConnectionStringErrorIsReported()
+    {
+        var settings = new StorageQueueSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            QueueName = "   ",
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+        exception.Message.ShouldBe(
+            "Storage Queue subscriber 'TestSubscriber' must have a connectionString, either at subscriber or topic level."
+        );
+    }
+
+    [Fact]
+    public void GivenBlankQueueNameAndInvalidFilter_WhenValidated_ThenQueueNameErrorIsReported()
+    {
+        var settings = new StorageQueueSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
+            QueueName = "   ",
+            Filter = new FilterSetting { AdvancedFilters = [new AdvancedFilterSetting()] },
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+        exception.Message.ShouldBe(
+            "Storage Queue subscriber 'TestSubscriber' must have a queueName."
+        );
+    }
+
+    [Fact]
+    public void GivenInvalidFilterAndInvalidRetryPolicy_WhenValidated_ThenFilterErrorIsReported()
+    {
+        var settings = new StorageQueueSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
+            QueueName = "my-queue",
+            Filter = new FilterSetting { AdvancedFilters = [new AdvancedFilterSetting()] },
+            RetryPolicy = new RetryPolicySettings { MaxDeliveryAttempts = 0 },
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+        exception.Message.ShouldBe("A filter key must be provided (Parameter 'Key')");
+    }
+
+    [Fact]
+    public void GivenDeadLetterWithBlankFolderPath_WhenValidated_ThenDefaultFolderPathIsApplied()
+    {
+        var deadLetter = new DeadLetterSettings { FolderPath = "" };
+        var settings = new StorageQueueSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString =
+                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
+            QueueName = "my-queue",
+            DeadLetter = deadLetter,
+        };
+
+        settings.Validate();
+
+        deadLetter.FolderPath.ShouldBe("./dead-letters");
     }
 }

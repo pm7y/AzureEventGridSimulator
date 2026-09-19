@@ -15,6 +15,7 @@ using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Middleware;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using Microsoft.AspNetCore.Diagnostics;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Hosting;
@@ -31,6 +32,12 @@ public class Program
         {
             // Build it and fire it up
             var app = CreateWebHostBuilder(args).Build();
+
+            // First, so an exception from anywhere in the pipeline gets an Azure-style 500
+            // rather than an empty 500 (or the developer exception page in Development)
+            app.UseExceptionHandler(
+                new ExceptionHandlerOptions { ExceptionHandler = WriteUnhandledExceptionResponse }
+            );
 
             app.UseSerilogRequestLogging(options =>
             {
@@ -73,6 +80,32 @@ public class Program
         {
             await Log.CloseAndFlushAsync();
         }
+    }
+
+    /// <summary>
+    ///     Writes the response for a request that threw an exception nothing else handled. The
+    ///     exception handler middleware has already logged the exception and cleared the response.
+    ///     Requests Kestrel itself rejects keep Kestrel's status and empty body.
+    /// </summary>
+    internal static Task WriteUnhandledExceptionResponse(HttpContext context)
+    {
+        // Kestrel throws BadHttpRequestException for requests it rejects, such as a 413 for a body
+        // over MaxRequestBodySize or a 408 for one that arrives too slowly. Keep that status: a 500
+        // would also make Azure SDK clients retry a request that can never succeed.
+        if (
+            context.Features.Get<IExceptionHandlerFeature>()?.Error
+            is BadHttpRequestException rejection
+        )
+        {
+            context.Response.StatusCode = rejection.StatusCode;
+            return Task.CompletedTask;
+        }
+
+        return context.WriteErrorResponse(
+            HttpStatusCode.InternalServerError,
+            $"The simulator encountered an unexpected error while processing the request.{context.GenerateReportSuffix()}",
+            null
+        );
     }
 
     public static async Task StartSimulator(WebApplication host, CancellationToken token = default)
@@ -119,7 +152,11 @@ public class Program
 
             var mediator = app.ApplicationServices.GetRequiredService<IMediator>();
 
-            await mediator.Send(new ValidateAllSubscriptionsCommand());
+            // Pass the stopping token so Ctrl-C isn't held up by a subscriber that doesn't answer
+            await mediator.Send(
+                new ValidateAllSubscriptionsCommand(),
+                lifetime.ApplicationStopping
+            );
 
             // Log all configured subscribers
             foreach (var topic in simulatorSettings.Topics.Where(t => !t.Disabled))
@@ -310,10 +347,14 @@ public class Program
         builder.Services.AddHostedService<RetryDeliveryBackgroundService>();
 
         // Register dashboard services
-        builder.Services.AddSingleton<EventHistoryStore>();
-        builder.Services.AddSingleton<IEventHistoryService, EventHistoryService>();
+        AddEventHistoryServices(builder.Services);
 
-        var httpClientBuilder = builder.Services.AddHttpClient(nameof(AzureEventGridSimulator));
+        // One named client for webhook delivery and subscription validation, so the timeout
+        // and the optional certificate bypass below apply to both
+        var httpClientBuilder = builder.Services.AddHttpClient(
+            Constants.HttpClientName,
+            client => client.Timeout = TimeSpan.FromSeconds(60)
+        );
         if (configuration.GetValue<bool>("dangerousAcceptAnyServerCertificateValidator"))
         {
             Log.Warning(
@@ -395,7 +436,13 @@ public class Program
         builder.Configuration.AddConfiguration(configuration);
         builder.WebHost.UseKestrel(options =>
         {
-            var debugView = ((IConfigurationRoot)configuration).GetDebugView().Normalize();
+            // Mask topic keys, connection strings and passwords (the configuration includes the
+            // AEGS_ and ASPNETCORE_ environment variables)
+            var debugView = ((IConfigurationRoot)configuration)
+                .GetDebugView(context =>
+                    SecretRedactor.IsSecretKey(context.Key) ? "***" : context.Value ?? string.Empty
+                )
+                .Normalize();
             // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
             Log.Verbose(debugView);
 
@@ -408,6 +455,25 @@ public class Program
         });
 
         return builder;
+    }
+
+    /// <summary>
+    ///     Registers the dashboard's event history. When the dashboard is disabled nothing reads
+    ///     the history, so a <see cref="NullEventHistoryService" /> that records nothing is used.
+    /// </summary>
+    /// <remarks>
+    ///     The choice is made when the service is first resolved, not here: the settings bound by
+    ///     AddSimulatorSettings aren't in scope, and tests replace the SimulatorSettings singleton
+    ///     after this registration.
+    /// </remarks>
+    internal static void AddEventHistoryServices(IServiceCollection services)
+    {
+        services.AddSingleton<EventHistoryStore>();
+        services.AddSingleton<IEventHistoryService>(sp =>
+            sp.GetRequiredService<SimulatorSettings>().DashboardEnabled
+                ? ActivatorUtilities.CreateInstance<EventHistoryService>(sp)
+                : new NullEventHistoryService()
+        );
     }
 
     /// <summary>

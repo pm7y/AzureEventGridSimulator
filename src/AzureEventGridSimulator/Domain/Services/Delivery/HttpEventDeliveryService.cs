@@ -31,20 +31,15 @@ public class HttpEventDeliveryService(
 
         try
         {
-            // Determine the delivery schema
-            var deliverySchema =
-                httpSubscriber.DeliverySchema
-                ?? delivery.Topic.OutputSchema
-                ?? delivery.InputSchema;
-
+            var deliverySchema = delivery.DeliverySchema;
             var formatter = formatterFactory.GetFormatter(deliverySchema);
             var json = formatter.Serialize(delivery.Event);
 
             using var content = new StringContent(json, Encoding.UTF8);
             content.Headers.ContentType = MediaTypeHeaderValue.Parse(formatter.ContentType);
 
-            var httpClient = httpClientFactory.CreateClient("AzureEventGridSimulator");
-            httpClient.Timeout = TimeSpan.FromSeconds(60);
+            // The named client is registered with the 60s timeout (see Program)
+            var httpClient = httpClientFactory.CreateClient(Constants.HttpClientName);
 
             // Per-delivery headers belong on the request message, not the client
             using var request = new HttpRequestMessage(HttpMethod.Post, httpSubscriber.Endpoint)

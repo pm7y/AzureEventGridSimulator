@@ -11,6 +11,7 @@ services:
     volumes:
       # map this folder to a read-only folder '/aegs' in the container
       # this allows us to access files (e.g. settings or certificates) from within the container
+      # the container runs as UID 1654, so on Linux these files must be readable by it (e.g. chmod a+r azureEventGridSimulator.pfx)
       - .:/aegs:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Development

@@ -8,14 +8,6 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Subscribers;
 public class SubscribersSettingsDefaultTests : SubscribersSettingsTestBase
 {
     [Fact]
-    public void GivenEmptySettings_WhenValidated_ThenNoException()
-    {
-        var settings = new SubscribersSettings();
-
-        Should.NotThrow(() => settings.Validate());
-    }
-
-    [Fact]
     public void GivenDefaultSettings_ThenAllArraysAreNull()
     {
         var settings = new SubscribersSettings();
@@ -31,12 +23,10 @@ public class SubscribersSettingsDefaultTests : SubscribersSettingsTestBase
         settings.ServiceBusSubscribers.ShouldBeEmpty();
         settings.StorageQueueSubscribers.ShouldBeEmpty();
         settings.EventHubSubscribers.ShouldBeEmpty();
-        settings.Any.ShouldBeFalse();
-        settings.Count.ShouldBe(0);
     }
 
     [Fact]
-    public void GivenUniqueNames_WhenValidated_ThenNoException()
+    public void GivenTwoSubscribersOfEachType_ThenAllReturnsEveryOneInTypeOrder()
     {
         var settings = new SubscribersSettings
         {
@@ -51,10 +41,24 @@ public class SubscribersSettingsDefaultTests : SubscribersSettingsTestBase
                 CreateValidStorageQueueSubscriber("StorageQueue1"),
                 CreateValidStorageQueueSubscriber("StorageQueue2"),
             ],
+            EventHub =
+            [
+                CreateValidEventHubSubscriber("EventHub1"),
+                CreateValidEventHubSubscriber("EventHub2"),
+            ],
         };
 
-        Should.NotThrow(() => settings.Validate());
-        settings.Count.ShouldBe(6);
-        settings.Any.ShouldBeTrue();
+        settings
+            .All.Select(s => s.Name)
+            .ShouldBe([
+                "Http1",
+                "Http2",
+                "ServiceBus1",
+                "ServiceBus2",
+                "StorageQueue1",
+                "StorageQueue2",
+                "EventHub1",
+                "EventHub2",
+            ]);
     }
 }

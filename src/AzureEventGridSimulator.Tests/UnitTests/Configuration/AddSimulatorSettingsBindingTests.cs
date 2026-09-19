@@ -1,5 +1,6 @@
 using System.Text;
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Filtering;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
@@ -180,7 +181,7 @@ public class AddSimulatorSettingsBindingTests
         var settings = LoadSettings(configuration);
 
         settings
-            .Topics.Select(t => $"{t.Name}={t.Subscribers.Count}")
+            .Topics.Select(t => $"{t.Name}={t.Subscribers.All.Count()}")
             .ShouldBe([
                 "MyAwesomeTopic=1",
                 "ATopicWithNoSubscribers=0",

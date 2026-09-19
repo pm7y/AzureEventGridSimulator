@@ -1,5 +1,4 @@
 using System.Text.Json;
-using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
@@ -54,7 +53,7 @@ public class CloudEventExtensionAttributesTests
     [Fact]
     public void GivenStructuredModeRequestWithExtensionAttribute_WhenParsed_ThenAttributeIsCaptured()
     {
-        var context = CreateStructuredModeContext();
+        var context = TestHelpers.CreateCloudEventsStructuredModeContext();
         const string requestBody = """
             {
                 "specversion": "1.0",
@@ -79,21 +78,8 @@ public class CloudEventExtensionAttributesTests
     public void GivenBinaryModeRequestWithExtensionHeader_WhenParsed_ThenAttributeIsCaptured()
     {
         // In binary mode, extension attributes arrive as ce-<name> HTTP headers.
-        var context = new DefaultHttpContext
-        {
-            Request =
-            {
-                ContentType = "application/json",
-                Headers =
-                {
-                    [Constants.CeSpecVersionHeader] = "1.0",
-                    [Constants.CeTypeHeader] = "com.example.test",
-                    [Constants.CeSourceHeader] = "/test/source",
-                    [Constants.CeIdHeader] = "test-id-123",
-                    ["ce-claimcheckurl"] = "http://localhost/payload.json",
-                },
-            },
-        };
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext();
+        context.Request.Headers["ce-claimcheckurl"] = "http://localhost/payload.json";
 
         var events = _parser.Parse(context, "{\"Property\": \"Value\"}");
 
@@ -110,21 +96,8 @@ public class CloudEventExtensionAttributesTests
     {
         // A present-but-empty ce-<name> header is still an extension attribute and must be
         // preserved (matching GetHeaderValue, which keeps empty strings rather than dropping them).
-        var context = new DefaultHttpContext
-        {
-            Request =
-            {
-                ContentType = "application/json",
-                Headers =
-                {
-                    [Constants.CeSpecVersionHeader] = "1.0",
-                    [Constants.CeTypeHeader] = "com.example.test",
-                    [Constants.CeSourceHeader] = "/test/source",
-                    [Constants.CeIdHeader] = "test-id-123",
-                    ["ce-emptyext"] = "",
-                },
-            },
-        };
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext();
+        context.Request.Headers["ce-emptyext"] = "";
 
         var events = _parser.Parse(context, "{\"Property\": \"Value\"}");
 
@@ -139,7 +112,7 @@ public class CloudEventExtensionAttributesTests
     {
         // End-to-end: an extension attribute published to the simulator must reach subscribers,
         // matching Azure Event Grid's pass-through behaviour. Delivery uses the batch array form.
-        var context = CreateStructuredModeContext();
+        var context = TestHelpers.CreateCloudEventsStructuredModeContext();
         const string requestBody = """
             {
                 "specversion": "1.0",
@@ -160,13 +133,5 @@ public class CloudEventExtensionAttributesTests
             .GetProperty("claimcheckurl")
             .GetString()
             .ShouldBe("http://localhost/payload.json");
-    }
-
-    private static DefaultHttpContext CreateStructuredModeContext()
-    {
-        return new DefaultHttpContext
-        {
-            Request = { ContentType = "application/cloudevents+json" },
-        };
     }
 }

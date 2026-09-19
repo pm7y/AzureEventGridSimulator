@@ -7,7 +7,6 @@
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
         <AnalysisLevel>latest</AnalysisLevel>
-        <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
 
@@ -42,7 +41,7 @@
     <Target
         Name="CSharpier"
         BeforeTargets="BeforeBuild"
-        Condition="'$(DesignTimeBuild)' != 'true' And '$(MSBuildProjectName)' == 'AzureEventGridSimulator' And '$(TargetFramework)' == 'net10.0' And '$(CI)' != 'true'"
+        Condition="'$(DesignTimeBuild)' != 'true' And '$(MSBuildProjectName)' == 'AzureEventGridSimulator' And '$(CI)' != 'true'"
     >
         <Exec
             Command="dotnet tool restore"
@@ -61,7 +60,7 @@
     <Target
         Name="ConfigureGitHooks"
         BeforeTargets="BeforeBuild"
-        Condition="'$(DesignTimeBuild)' != 'true' And '$(MSBuildProjectName)' == 'AzureEventGridSimulator' And '$(TargetFramework)' == 'net10.0' And Exists('$(MSBuildThisFileDirectory)../.git') And '$(CI)' != 'true'"
+        Condition="'$(DesignTimeBuild)' != 'true' And '$(MSBuildProjectName)' == 'AzureEventGridSimulator' And Exists('$(MSBuildThisFileDirectory)../.git') And '$(CI)' != 'true'"
     >
         <Exec
             Command="git config core.hooksPath .githooks"

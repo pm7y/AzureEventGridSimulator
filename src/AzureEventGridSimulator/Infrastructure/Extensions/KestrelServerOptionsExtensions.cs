@@ -12,24 +12,22 @@ public static class KestrelServerOptionsExtensions
         var configuration = options.ApplicationServices.GetRequiredService<IConfiguration>();
 
         var certificateFile = configuration["Kestrel:Certificates:Default:Path"];
-        var certificateFileSpecified = !string.IsNullOrWhiteSpace(certificateFile);
-
         var certificatePassword = configuration["Kestrel:Certificates:Default:Password"];
-        var certificatePasswordSpecified = !string.IsNullOrWhiteSpace(certificatePassword);
 
         X509Certificate2? certificate = null;
-        if (certificateFileSpecified && certificatePasswordSpecified)
+        if (!string.IsNullOrWhiteSpace(certificateFile))
         {
+            if (string.IsNullOrWhiteSpace(certificatePassword))
+            {
+                // The certificate file was specified but the password wasn't.
+                throw new InvalidOperationException("A certificate with a password is required.");
+            }
+
             // The certificate file and password was specified.
             certificate = X509CertificateLoader.LoadPkcs12FromFile(
-                certificateFile!,
+                certificateFile,
                 certificatePassword
             );
-        }
-        else if (certificateFileSpecified)
-        {
-            // The certificate file was specified but the password wasn't.
-            throw new InvalidOperationException("A certificate with a password is required.");
         }
 
         options.ConfigureHttpsDefaults(httpsOptions =>

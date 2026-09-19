@@ -35,37 +35,37 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = null,
+                Values = [],
             },
             new AdvancedFilterSetting
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = string.Empty,
+                Values = [string.Empty],
             },
             new AdvancedFilterSetting
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = "A",
+                Values = ["A"],
             },
             new AdvancedFilterSetting
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = "a",
+                Values = ["a"],
             },
             new AdvancedFilterSetting
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains,
-                Value = null,
+                Values = [],
             },
             new AdvancedFilterSetting
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains,
-                Value = string.Empty,
+                Values = [string.Empty],
             },
             new AdvancedFilterSetting
             {
@@ -77,7 +77,7 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "Id",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains,
-                Value = "TEN",
+                Values = ["TEN"],
             },
             new AdvancedFilterSetting
             {
@@ -162,19 +162,19 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "Topic",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = "HE",
+                Values = ["HE"],
             },
             new AdvancedFilterSetting
             {
                 Key = "Topic",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = "he_",
+                Values = ["he_"],
             },
             new AdvancedFilterSetting
             {
                 Key = "Topic",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains,
-                Value = "everest",
+                Values = ["everest"],
             },
             new AdvancedFilterSetting
             {
@@ -205,19 +205,19 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "Subject",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = "E",
+                Values = ["E"],
             },
             new AdvancedFilterSetting
             {
                 Key = "Subject",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = "able",
+                Values = ["able"],
             },
             new AdvancedFilterSetting
             {
                 Key = "Subject",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains,
-                Value = "x",
+                Values = ["x"],
             },
             new AdvancedFilterSetting
             {
@@ -248,19 +248,19 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "EventType",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = "his",
+                Values = ["his"],
             },
             new AdvancedFilterSetting
             {
                 Key = "EventType",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = "hIs",
+                Values = ["hIs"],
             },
             new AdvancedFilterSetting
             {
                 Key = "EventType",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains,
-                Value = "..",
+                Values = [".."],
             },
             new AdvancedFilterSetting
             {
@@ -291,13 +291,13 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "DataVersion",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = "a",
+                Values = ["a"],
             },
             new AdvancedFilterSetting
             {
                 Key = "DataVersion",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains,
-                Value = "_",
+                Values = ["_"],
             },
             new AdvancedFilterSetting
             {
@@ -455,13 +455,13 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
             {
                 Key = "Data.Name",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = null,
+                Values = [],
             },
             new AdvancedFilterSetting
             {
                 Key = "Data.Name",
                 OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith,
-                Value = "String_Value",
+                Values = ["String_Value"],
             },
             new AdvancedFilterSetting
             {
@@ -642,22 +642,33 @@ internal class NegativeFilterTestCaseContainer : IEnumerable<object[]>
 
     private static AdvancedFilterSetting[] GetNegativeEventIdFilterConfigurations()
     {
-        // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn't not conform to the cloud schema
-        // special case for use with the cloud event schema (https://docs.microsoft.com/en-us/azure/event-grid/cloudevents-schema)
+        // The simulator doesn't resolve "EventId" (the event id is read with "Id" for both
+        // schemas), so the key is treated as missing, and the default operator
+        // (NumberGreaterThan) doesn't match a missing key.
         return [new AdvancedFilterSetting { Key = "EventId" }];
     }
 
     private static AdvancedFilterSetting[] GetNegativeSourceFilterConfigurations()
     {
-        // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn't not conform to the cloud schema
-        // no positive tests are available for this key yet since no support for the cloud event schema is available at the moment
-        return [new AdvancedFilterSetting { Key = "Source" }];
+        // "Source" resolves to the event topic (it's the CloudEvents name for it), so a
+        // StringNotIn that lists the topic doesn't match. If "Source" stopped resolving, the
+        // key would be missing and StringNotIn would match instead.
+        return
+        [
+            new AdvancedFilterSetting
+            {
+                Key = "Source",
+                OperatorType = AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotIn,
+                Values = ["THE_EVENT_TOPIC"],
+            },
+        ];
     }
 
     private static AdvancedFilterSetting[] GetNegativeEventTypeVersionFilterConfigurations()
     {
-        // everything with this key is considered negative at the moment given that the key will never be found on an event that doesn't not conform to the cloud schema
-        // no positive tests are available for this key yet since no support for the cloud event schema is available at the moment
+        // The simulator doesn't resolve "EventTypeVersion" for either schema, so the key is
+        // treated as missing, and the default operator (NumberGreaterThan) doesn't match a
+        // missing key.
         return [new AdvancedFilterSetting { Key = "EventTypeVersion" }];
     }
 }

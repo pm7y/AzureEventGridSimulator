@@ -5,7 +5,7 @@ namespace AzureEventGridSimulator.Infrastructure.Dashboard;
 /// <summary>
 ///     Middleware to serve embedded dashboard resources (HTML, CSS, JS).
 /// </summary>
-public class DashboardMiddleware
+public class DashboardMiddleware(RequestDelegate next, ILogger<DashboardMiddleware> logger)
 {
     private static readonly Dictionary<string, string> ContentTypes = new(
         StringComparer.OrdinalIgnoreCase
@@ -20,45 +20,36 @@ public class DashboardMiddleware
         { ".ico", "image/x-icon" },
     };
 
-    private readonly Assembly _assembly;
-    private readonly string _etagValue;
-    private readonly ILogger<DashboardMiddleware> _logger;
-    private readonly RequestDelegate _next;
-    private readonly string _resourcePrefix;
+    private static readonly Assembly ResourceAssembly = typeof(DashboardMiddleware).Assembly;
 
-    public DashboardMiddleware(RequestDelegate next, ILogger<DashboardMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-        _assembly = typeof(DashboardMiddleware).Assembly;
-        _resourcePrefix = $"{_assembly.GetName().Name}.Dashboard.";
+    private static readonly string ResourcePrefix = $"{ResourceAssembly.GetName().Name}.Dashboard.";
 
-        // Generate ETag based on assembly MVID (Module Version ID) - unique per compilation
-        // This works reliably in containers where file timestamps may not change
-        var mvid = _assembly.ManifestModule.ModuleVersionId;
-        _etagValue = $"\"{mvid}\"";
-    }
+    // Generate ETag based on assembly MVID (Module Version ID) - unique per compilation
+    // This works reliably in containers where file timestamps may not change
+    private static readonly string ETagValue =
+        $"\"{ResourceAssembly.ManifestModule.ModuleVersionId}\"";
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var path = context.Request.Path.Value ?? string.Empty;
-
-        // Only handle /dashboard paths (but not /dashboard/api)
+        // Only handle the /dashboard segment, matched the same way as RequestRouter. Anything
+        // starting /dashboard/api (a plain prefix, as before) is left to the API endpoints.
         if (
-            !path.StartsWith("/dashboard", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWith("/dashboard/api", StringComparison.OrdinalIgnoreCase)
+            !context.Request.Path.StartsWithSegments(
+                "/dashboard",
+                StringComparison.OrdinalIgnoreCase,
+                out var remaining
+            )
+            || remaining.Value?.StartsWith("/api", StringComparison.OrdinalIgnoreCase) == true
         )
         {
-            await _next(context);
+            await next(context);
             return;
         }
 
-        // Determine the resource to serve
-        var resourcePath =
-            path.Equals("/dashboard", StringComparison.OrdinalIgnoreCase)
-            || path.Equals("/dashboard/", StringComparison.OrdinalIgnoreCase)
-                ? "index.html"
-                : path["/dashboard/".Length..];
+        // Determine the resource to serve. remaining is "" for /dashboard and otherwise starts
+        // with '/'. Drop exactly one '/', so /dashboard//styles.css still isn't an asset.
+        var remainingPath = remaining.Value ?? string.Empty;
+        var resourcePath = remainingPath is "" or "/" ? "index.html" : remainingPath[1..];
 
         // Security: prevent directory traversal
         if (
@@ -71,19 +62,19 @@ public class DashboardMiddleware
         }
 
         // Build the embedded resource name
-        var resourceName = _resourcePrefix + resourcePath.Replace('/', '.');
+        var resourceName = ResourcePrefix + resourcePath.Replace('/', '.');
 
-        await using var stream = _assembly.GetManifestResourceStream(resourceName);
+        await using var stream = ResourceAssembly.GetManifestResourceStream(resourceName);
         if (stream == null)
         {
-            _logger.LogDebug("Dashboard resource not found: {ResourceName}", resourceName);
+            logger.LogDebug("Dashboard resource not found: {ResourceName}", resourceName);
             context.Response.StatusCode = 404;
             return;
         }
 
         // Check If-None-Match header for conditional requests
         var requestEtag = context.Request.Headers.IfNoneMatch.FirstOrDefault();
-        if (requestEtag == _etagValue)
+        if (requestEtag == ETagValue)
         {
             context.Response.StatusCode = 304; // Not Modified
             return;
@@ -97,7 +88,7 @@ public class DashboardMiddleware
         );
 
         // Set ETag and cache headers
-        context.Response.Headers.ETag = _etagValue;
+        context.Response.Headers.ETag = ETagValue;
         context.Response.Headers.CacheControl = "no-cache"; // Always revalidate, but use cached if unchanged
 
         await stream.CopyToAsync(context.Response.Body);

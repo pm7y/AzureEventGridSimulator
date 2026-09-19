@@ -2,7 +2,7 @@
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/pm7y/AzureEventGridSimulator/ci.yml)
 ![License](https://img.shields.io/github/license/pm7y/AzureEventGridSimulator)
-![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-512BD4)
+![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20macos%20%7C%20linux-lightgrey)
 
 ![NuGet Version](https://img.shields.io/nuget/v/AzureEventGridSimulator)
@@ -18,13 +18,17 @@
 
 A simulator that provides HTTPS endpoints to
 mimic [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers. Compatible with
-the `Microsoft.Azure.EventGrid` client library and supports both EventGrid and CloudEvents v1.0 schemas.
+the `Azure.Messaging.EventGrid` SDK (and the legacy `Microsoft.Azure.EventGrid` client) and supports both EventGrid and
+CloudEvents v1.0 schemas.
 
 > **Note:** This simulator is intended for **local development and testing only**.
 
 ## Installation
 
 ### .NET Tool (Recommended)
+
+Requires the .NET 10 runtime. If only a newer major version is installed, the tool rolls forward to it. See the
+[.NET Tool](https://github.com/pm7y/AzureEventGridSimulator/wiki/DotNet-Tool) wiki page for details.
 
 ```bash
 # Global install

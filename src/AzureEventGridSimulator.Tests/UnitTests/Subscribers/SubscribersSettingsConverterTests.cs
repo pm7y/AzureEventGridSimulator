@@ -1,7 +1,12 @@
+using System.Text;
 using System.Text.Json;
+using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Xunit;
 
@@ -423,5 +428,191 @@ public class SubscribersSettingsConverterTests
             """;
 
         Should.Throw<JsonException>(() => JsonSerializer.Deserialize<SimulatorSettings>(json));
+    }
+
+    // The tests below pin the config shape of each subscriber type: the JSON property names it
+    // reads and writes, and that the properties every type shares bind through both loading
+    // paths (System.Text.Json and ConfigurationBinder).
+
+    private const string SharedSubscriberPropertiesJson = """
+        {
+            "topics": [{
+                "name": "SharedTopic",
+                "port": 60101,
+                "subscribers": {
+                    "http": [{
+                        "name": "HttpSubscriber",
+                        "endpoint": "https://example.com/webhook",
+                        "disabled": true,
+                        "deliverySchema": "CloudEventV1_0",
+                        "filter": { "includedEventTypes": ["Order.Created"] },
+                        "retryPolicy": { "maxDeliveryAttempts": 5, "eventTimeToLiveInMinutes": 60 },
+                        "deadLetter": { "folderPath": "./dl" }
+                    }],
+                    "serviceBus": [{
+                        "name": "ServiceBusSubscriber",
+                        "namespace": "sb-ns",
+                        "sharedAccessKeyName": "SbKey",
+                        "sharedAccessKey": "sbsecret",
+                        "topic": "orders",
+                        "properties": { "Source": { "type": "static", "value": "simulator" } },
+                        "disabled": true,
+                        "deliverySchema": "CloudEventV1_0",
+                        "filter": { "includedEventTypes": ["Order.Created"] },
+                        "retryPolicy": { "maxDeliveryAttempts": 5, "eventTimeToLiveInMinutes": 60 },
+                        "deadLetter": { "folderPath": "./dl" }
+                    }],
+                    "storageQueue": [{
+                        "name": "StorageQueueSubscriber",
+                        "connectionString": "UseDevelopmentStorage=true",
+                        "queueName": "orders",
+                        "disabled": true,
+                        "deliverySchema": "CloudEventV1_0",
+                        "filter": { "includedEventTypes": ["Order.Created"] },
+                        "retryPolicy": { "maxDeliveryAttempts": 5, "eventTimeToLiveInMinutes": 60 },
+                        "deadLetter": { "folderPath": "./dl" }
+                    }],
+                    "eventHub": [{
+                        "name": "EventHubSubscriber",
+                        "namespace": "eh-ns",
+                        "sharedAccessKeyName": "EhKey",
+                        "sharedAccessKey": "ehsecret",
+                        "eventHubName": "orders-hub",
+                        "properties": { "Source": { "type": "static", "value": "simulator" } },
+                        "disabled": true,
+                        "deliverySchema": "CloudEventV1_0",
+                        "filter": { "includedEventTypes": ["Order.Created"] },
+                        "retryPolicy": { "maxDeliveryAttempts": 5, "eventTimeToLiveInMinutes": 60 },
+                        "deadLetter": { "folderPath": "./dl" }
+                    }]
+                }
+            }]
+        }
+        """;
+
+    [Fact]
+    public void GivenSharedPropertiesOnEverySubscriberType_WhenDeserialized_ThenEveryTypeBindsThem()
+    {
+        var settings = JsonSerializer
+            .Deserialize<SimulatorSettings>(SharedSubscriberPropertiesJson)
+            .ShouldNotBeNullAnd();
+        settings.Validate();
+
+        ShouldHaveSharedPropertiesOnEveryType(settings);
+    }
+
+    [Fact]
+    public void GivenSharedPropertiesOnEverySubscriberType_WhenBoundFromConfiguration_ThenEveryTypeBindsThem()
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(SharedSubscriberPropertiesJson));
+        var configuration = new ConfigurationBuilder().AddJsonStream(stream).Build();
+        using var serviceProvider = new ServiceCollection()
+            .AddSimulatorSettings(configuration)
+            .BuildServiceProvider();
+
+        ShouldHaveSharedPropertiesOnEveryType(
+            serviceProvider.GetRequiredService<SimulatorSettings>()
+        );
+    }
+
+    [Fact]
+    public void GivenEachSubscriberType_WhenSerialized_ThenOnlyItsConfigPropertiesAreWritten()
+    {
+        string[] shared =
+        [
+            "name",
+            "filter",
+            "disabled",
+            "deliverySchema",
+            "retryPolicy",
+            "deadLetter",
+        ];
+        string[] namespaceCredentials =
+        [
+            "connectionString",
+            "namespace",
+            "sharedAccessKeyName",
+            "sharedAccessKey",
+            "properties",
+        ];
+
+        SerializedPropertyNames(
+                new HttpSubscriberSettings { Name = "Http", Endpoint = "https://example.com" }
+            )
+            .ShouldBe([.. shared, "endpoint", "disableValidation"], ignoreOrder: true);
+        SerializedPropertyNames(
+                new ServiceBusSubscriberSettings
+                {
+                    Name = "ServiceBus",
+                    ConnectionString = "Endpoint=sb://ns.servicebus.windows.net/",
+                    Queue = "my-queue",
+                    ParentTopic = new TopicSettings { Name = "topic", Port = 60101 },
+                }
+            )
+            .ShouldBe([.. shared, .. namespaceCredentials, "topic", "queue"], ignoreOrder: true);
+        SerializedPropertyNames(
+                new StorageQueueSubscriberSettings
+                {
+                    Name = "StorageQueue",
+                    ConnectionString = "UseDevelopmentStorage=true",
+                    QueueName = "my-queue",
+                    ParentTopic = new TopicSettings { Name = "topic", Port = 60101 },
+                }
+            )
+            .ShouldBe([.. shared, "connectionString", "queueName"], ignoreOrder: true);
+        SerializedPropertyNames(
+                new EventHubSubscriberSettings
+                {
+                    Name = "EventHub",
+                    ConnectionString = "Endpoint=sb://ns.servicebus.windows.net/",
+                    EventHubName = "my-hub",
+                    ParentTopic = new TopicSettings { Name = "topic", Port = 60101 },
+                }
+            )
+            .ShouldBe([.. shared, .. namespaceCredentials, "eventHubName"], ignoreOrder: true);
+    }
+
+    private static string[] SerializedPropertyNames(ISubscriberSettings subscriber)
+    {
+        using var document = JsonDocument.Parse(
+            JsonSerializer.Serialize(subscriber, subscriber.GetType())
+        );
+
+        return [.. document.RootElement.EnumerateObject().Select(p => p.Name)];
+    }
+
+    private static void ShouldHaveSharedPropertiesOnEveryType(SimulatorSettings settings)
+    {
+        var subscribers = settings.Topics.ShouldHaveSingleItem().Subscribers;
+        subscribers
+            .All.Select(s => s.SubscriberType)
+            .ShouldBe(["http", "serviceBus", "storageQueue", "eventHub"]);
+
+        foreach (var subscriber in subscribers.All)
+        {
+            subscriber.Disabled.ShouldBeTrue(subscriber.Name);
+            subscriber.DeliverySchema.ShouldBe(EventSchema.CloudEventV1_0, subscriber.Name);
+            subscriber
+                .Filter.ShouldNotBeNullAnd(subscriber.Name)
+                .IncludedEventTypes.ShouldBe(["Order.Created"], subscriber.Name);
+            var retryPolicy = subscriber.RetryPolicy.ShouldNotBeNullAnd(subscriber.Name);
+            retryPolicy.MaxDeliveryAttempts.ShouldBe(5, subscriber.Name);
+            retryPolicy.EventTimeToLiveInMinutes.ShouldBe(60, subscriber.Name);
+            subscriber
+                .DeadLetter.ShouldNotBeNullAnd(subscriber.Name)
+                .FolderPath.ShouldBe("./dl", subscriber.Name);
+        }
+
+        var serviceBus = subscribers.ServiceBusSubscribers.Single();
+        serviceBus.EffectiveConnectionString.ShouldBe(
+            "Endpoint=sb://sb-ns.servicebus.windows.net/;SharedAccessKeyName=SbKey;SharedAccessKey=sbsecret"
+        );
+        serviceBus.Properties.ShouldNotBeNullAnd()["Source"].Value.ShouldBe("simulator");
+
+        var eventHub = subscribers.EventHubSubscribers.Single();
+        eventHub.EffectiveConnectionString.ShouldBe(
+            "Endpoint=sb://eh-ns.servicebus.windows.net/;SharedAccessKeyName=EhKey;SharedAccessKey=ehsecret"
+        );
+        eventHub.Properties.ShouldNotBeNullAnd()["Source"].Value.ShouldBe("simulator");
     }
 }

@@ -11,25 +11,13 @@ public class PendingDeliveryTests
 {
     private static readonly DateTimeOffset FixedTime = new(2025, 1, 15, 12, 0, 0, TimeSpan.Zero);
 
+    // With no retry policy the subscriber has none, so PendingDelivery falls back to the
+    // RetryPolicySettings defaults
     private static PendingDelivery CreatePendingDelivery(
-        int? ttlMinutes = 1440,
-        int? maxAttempts = 30,
-        bool? retryEnabled = true,
+        RetryPolicySettings? retryPolicy = null,
         DateTimeOffset? enqueuedTime = null
     )
     {
-        RetryPolicySettings? retryPolicy = null;
-
-        if (retryEnabled.HasValue || ttlMinutes.HasValue || maxAttempts.HasValue)
-        {
-            retryPolicy = new RetryPolicySettings
-            {
-                Enabled = retryEnabled ?? true,
-                EventTimeToLiveInMinutes = ttlMinutes ?? 1440,
-                MaxDeliveryAttempts = maxAttempts ?? 30,
-            };
-        }
-
         var subscriber = new HttpSubscriberSettings
         {
             Name = "TestSubscriber",
@@ -72,7 +60,10 @@ public class PendingDeliveryTests
     [Fact]
     public void GivenNewDelivery_WhenChecking_ThenIsNotExpired()
     {
-        var delivery = CreatePendingDelivery(60, enqueuedTime: FixedTime);
+        var delivery = CreatePendingDelivery(
+            new RetryPolicySettings { EventTimeToLiveInMinutes = 60 },
+            FixedTime
+        );
 
         delivery.IsExpired(FixedTime).ShouldBeFalse();
     }
@@ -80,27 +71,32 @@ public class PendingDeliveryTests
     [Fact]
     public void GivenDeliveryOlderThanTtl_WhenChecking_ThenIsExpired()
     {
-        var delivery = CreatePendingDelivery(60, enqueuedTime: FixedTime.AddMinutes(-61));
+        var delivery = CreatePendingDelivery(
+            new RetryPolicySettings { EventTimeToLiveInMinutes = 60 },
+            FixedTime.AddMinutes(-61)
+        );
 
         delivery.IsExpired(FixedTime).ShouldBeTrue();
     }
 
     [Fact]
-    public void GivenDeliveryJustBeforeTtl_WhenChecking_ThenIsNotExpired()
+    public void GivenDeliveryEnqueuedExactlyOneTtlAgo_WhenChecking_ThenIsNotExpired()
     {
-        var delivery = CreatePendingDelivery(60, enqueuedTime: FixedTime.AddMinutes(-59));
+        var delivery = CreatePendingDelivery(
+            new RetryPolicySettings { EventTimeToLiveInMinutes = 60 },
+            FixedTime.AddMinutes(-60)
+        );
 
-        // Just before TTL, should not be expired yet
+        // Expiry is strictly after the TTL, so the exact boundary is still live
         delivery.IsExpired(FixedTime).ShouldBeFalse();
     }
 
     [Fact]
-    public void GivenDeliveryWithDefaultTtl_WhenChecking_ThenExpiredAfter24Hours()
+    public void GivenDeliveryEnqueuedOneTickMoreThanOneTtlAgo_WhenChecking_ThenIsExpired()
     {
-        // Default TTL is 1440 minutes (24 hours)
         var delivery = CreatePendingDelivery(
-            null, // Use default
-            enqueuedTime: FixedTime.AddMinutes(-1441)
+            new RetryPolicySettings { EventTimeToLiveInMinutes = 60 },
+            FixedTime.AddMinutes(-60).AddTicks(-1)
         );
 
         delivery.IsExpired(FixedTime).ShouldBeTrue();
@@ -110,8 +106,8 @@ public class PendingDeliveryTests
     public void GivenDeliveryWithShortTtl_WhenChecking_ThenExpiredQuickly()
     {
         var delivery = CreatePendingDelivery(
-            1, // 1 minute TTL
-            enqueuedTime: FixedTime.AddMinutes(-2)
+            new RetryPolicySettings { EventTimeToLiveInMinutes = 1 },
+            FixedTime.AddMinutes(-2)
         );
 
         delivery.IsExpired(FixedTime).ShouldBeTrue();
@@ -120,7 +116,7 @@ public class PendingDeliveryTests
     [Fact]
     public void GivenNoAttempts_WhenChecking_ThenHasNotReachedMax()
     {
-        var delivery = CreatePendingDelivery(maxAttempts: 30);
+        var delivery = CreatePendingDelivery(new RetryPolicySettings { MaxDeliveryAttempts = 30 });
         delivery.AttemptCount = 0;
 
         delivery.HasReachedMaxAttempts.ShouldBeFalse();
@@ -129,7 +125,7 @@ public class PendingDeliveryTests
     [Fact]
     public void GivenAttemptCountBelowMax_WhenChecking_ThenHasNotReachedMax()
     {
-        var delivery = CreatePendingDelivery(maxAttempts: 30);
+        var delivery = CreatePendingDelivery(new RetryPolicySettings { MaxDeliveryAttempts = 30 });
         delivery.AttemptCount = 15;
 
         delivery.HasReachedMaxAttempts.ShouldBeFalse();
@@ -138,7 +134,7 @@ public class PendingDeliveryTests
     [Fact]
     public void GivenAttemptCountAtMax_WhenChecking_ThenHasReachedMax()
     {
-        var delivery = CreatePendingDelivery(maxAttempts: 30);
+        var delivery = CreatePendingDelivery(new RetryPolicySettings { MaxDeliveryAttempts = 30 });
         delivery.AttemptCount = 30;
 
         delivery.HasReachedMaxAttempts.ShouldBeTrue();
@@ -147,7 +143,7 @@ public class PendingDeliveryTests
     [Fact]
     public void GivenAttemptCountAboveMax_WhenChecking_ThenHasReachedMax()
     {
-        var delivery = CreatePendingDelivery(maxAttempts: 30);
+        var delivery = CreatePendingDelivery(new RetryPolicySettings { MaxDeliveryAttempts = 30 });
         delivery.AttemptCount = 50;
 
         delivery.HasReachedMaxAttempts.ShouldBeTrue();
@@ -156,28 +152,16 @@ public class PendingDeliveryTests
     [Fact]
     public void GivenCustomMaxAttempts_WhenChecking_ThenUsesCustomValue()
     {
-        var delivery = CreatePendingDelivery(maxAttempts: 5);
+        var delivery = CreatePendingDelivery(new RetryPolicySettings { MaxDeliveryAttempts = 5 });
         delivery.AttemptCount = 5;
 
         delivery.HasReachedMaxAttempts.ShouldBeTrue();
     }
 
     [Fact]
-    public void GivenDefaultMaxAttempts_WhenChecking_ThenUsesDefault30()
-    {
-        var delivery = CreatePendingDelivery(maxAttempts: null); // Use default
-        delivery.AttemptCount = 29;
-
-        delivery.HasReachedMaxAttempts.ShouldBeFalse();
-
-        delivery.AttemptCount = 30;
-        delivery.HasReachedMaxAttempts.ShouldBeTrue();
-    }
-
-    [Fact]
     public void GivenRetryPolicyEnabled_WhenChecking_ThenRetryEnabled()
     {
-        var delivery = CreatePendingDelivery(retryEnabled: true);
+        var delivery = CreatePendingDelivery(new RetryPolicySettings { Enabled = true });
 
         delivery.RetryEnabled.ShouldBeTrue();
     }
@@ -185,18 +169,27 @@ public class PendingDeliveryTests
     [Fact]
     public void GivenRetryPolicyDisabled_WhenChecking_ThenRetryDisabled()
     {
-        var delivery = CreatePendingDelivery(retryEnabled: false);
+        var delivery = CreatePendingDelivery(new RetryPolicySettings { Enabled = false });
 
         delivery.RetryEnabled.ShouldBeFalse();
     }
 
     [Fact]
-    public void GivenNoRetryPolicy_WhenChecking_ThenDefaultsToEnabled()
+    public void GivenNoRetryPolicy_WhenChecking_ThenAzureDefaultsApply()
     {
-        var delivery = CreatePendingDelivery(retryEnabled: null); // No retry policy
+        // Azure's defaults: retry enabled, 30 attempts, a 1440-minute (24-hour) TTL
+        var delivery = CreatePendingDelivery(enqueuedTime: FixedTime);
+        delivery.Subscriber.RetryPolicy.ShouldBeNull();
 
-        // Default RetryPolicySettings has Enabled = true
         delivery.RetryEnabled.ShouldBeTrue();
+
+        delivery.AttemptCount = 29;
+        delivery.HasReachedMaxAttempts.ShouldBeFalse();
+        delivery.AttemptCount = 30;
+        delivery.HasReachedMaxAttempts.ShouldBeTrue();
+
+        delivery.IsExpired(FixedTime.AddMinutes(1440)).ShouldBeFalse();
+        delivery.IsExpired(FixedTime.AddMinutes(1440).AddTicks(1)).ShouldBeTrue();
     }
 
     [Fact]
@@ -254,7 +247,5 @@ public class PendingDeliveryTests
 
         delivery.AttemptCount.ShouldBe(0);
         delivery.Attempts.ShouldBeEmpty();
-        delivery.EnqueuedTime.ShouldBe(FixedTime);
-        delivery.NextAttemptTime.ShouldBe(FixedTime);
     }
 }

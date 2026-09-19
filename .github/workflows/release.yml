@@ -34,6 +34,7 @@ jobs:
   build-test-publish:
     name: "AEGS: Build (${{ matrix.runtime }})"
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -46,59 +47,53 @@ jobs:
             runtime: osx-arm64
 
     steps:
+      # Build the tagged commit, not whatever the dispatched ref (master) points at now.
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ env.VERSION_NUMBER }}
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           cache: true
-          cache-dependency-path: "**/*.csproj"
+          # Package versions live in Directory.Packages.props (Central Package Management),
+          # so the key must hash it as well as the project files.
+          cache-dependency-path: |
+            **/*.csproj
+            src/Directory.Packages.props
+            src/Directory.Build.props
+            nuget.config
 
       - name: Restore dependencies
         run: |
           dotnet restore ${{ env.MAIN_PROJECT }} --runtime ${{ matrix.runtime }}
           dotnet restore ${{ env.TEST_PROJECT }} --runtime ${{ matrix.runtime }}
 
-      - name: Build main project
-        run: >-
-          dotnet build ${{ env.MAIN_PROJECT }}
-          --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
-          --runtime ${{ matrix.runtime }}
-          --no-restore
-          --no-incremental
-          /p:Version=${{ env.VERSION_NUMBER }}
-          /p:WarningLevel=4
-          /p:TreatWarningsAsErrors=true
-
-      - name: Build test project
+      # Also builds the main project, through the test project's ProjectReference
+      # (the /p:Version global property flows to it).
+      - name: Build
         run: >-
           dotnet build ${{ env.TEST_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-restore
-          --no-incremental
-          /p:WarningLevel=4
-          /p:TreatWarningsAsErrors=true
+          /p:Version=${{ env.VERSION_NUMBER }}
 
       - name: Test
         run: >-
           dotnet test ${{ env.TEST_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-build
           --verbosity normal
-          --filter "Category=unit|Category=integration"
+          --filter "Category!=integration-actual"
 
       - name: Publish
         run: >-
           dotnet publish ${{ env.MAIN_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-restore
           --self-contained true
@@ -127,7 +122,7 @@ jobs:
           "$hash  AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip" | Out-File -Encoding utf8 AzureEventGridSimulator-${{ matrix.runtime }}-${{ env.VERSION_NUMBER }}.zip.sha256
 
       - name: Upload release artifacts
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           name: ${{ env.VERSION_NUMBER }}
           tag_name: ${{ env.VERSION_NUMBER }}

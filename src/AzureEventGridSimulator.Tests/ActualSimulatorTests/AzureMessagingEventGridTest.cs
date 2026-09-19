@@ -9,11 +9,13 @@ using Xunit;
 namespace AzureEventGridSimulator.Tests.ActualSimulatorTests;
 
 /// <summary>
-///     Simple tests to check that we can send an event via Azure.Messaging.EventGrid library.
-///     NOTE: These tests require (and automatically start) an actual instance of
-///     AzureEventGridSimulator.exe as there is no way to inject an HttpClient (from a
-///     WebApplicationFactory)
-///     into Azure.Messaging.EventGrid.
+///     A smoke test of the compiled simulator. The Azure.Messaging.EventGrid SDK publishes over a
+///     real socket and HTTPS to the process that <see cref="ActualSimulatorFixture" /> starts, so
+///     it covers what the in-process test server skips: the apphost, Kestrel's HTTPS binding with
+///     the development certificate, and the topics the process reads from its appsettings files.
+///     The SDK tests themselves are in IntegrationTests/AzureMessagingEventGridSdkTests, which hand
+///     the test server's handler to the SDK's HttpClientTransport. CI runs this class on the
+///     ubuntu leg only, after <c>dotnet dev-certs https</c>.
 /// </summary>
 [Collection(nameof(ActualSimulatorFixtureCollection))]
 [Trait("Category", "integration-actual")]
@@ -53,84 +55,5 @@ public class AzureMessagingEventGridTest
         );
 
         response.Status.ShouldBe((int)HttpStatusCode.OK);
-    }
-
-    [Fact]
-    public async Task GivenValidEvents_WhenUriContainsNonStandardPort_TheyShouldBeAccepted()
-    {
-        var client = new EventGridPublisherClient(
-            new Uri("https://localhost:60101/api/events"),
-            new AzureKeyCredential("TheLocal+DevelopmentKey="),
-            CreateClientOptions()
-        );
-
-        var events = new[]
-        {
-            new EventGridEvent(
-                "/the/subject1",
-                "The.Event.Type1",
-                "v1",
-                new { Id = 1, Foo = "Bar" }
-            ),
-            new EventGridEvent(
-                "/the/subject2",
-                "The.Event.Type2",
-                "v1",
-                new { Id = 2, Foo = "Baz" }
-            ),
-        };
-
-        var response = await client.SendEventsAsync(events);
-
-        response.Status.ShouldBe((int)HttpStatusCode.OK);
-    }
-
-    [Fact]
-    public async Task GivenValidEvent_WhenUriContainsNonExistentPort_ThenItShouldNotBeAccepted()
-    {
-        var client = new EventGridPublisherClient(
-            new Uri("https://localhost:19999/api/events"),
-            new AzureKeyCredential("TheLocal+DevelopmentKey="),
-            CreateClientOptions()
-        );
-
-        var exception = await Should.ThrowAsync<RequestFailedException>(async () =>
-        {
-            await client.SendEventAsync(
-                new EventGridEvent(
-                    "/the/subject",
-                    "The.Event.Type",
-                    "v1",
-                    new { Id = 1, Foo = "Bar" }
-                )
-            );
-        });
-
-        exception.Message.ShouldContain("refused");
-        exception.Status.ShouldBe(0);
-    }
-
-    [Fact]
-    public async Task GivenValidEvent_WhenKeyIsWrong_ThenItShouldNotBeAccepted()
-    {
-        var client = new EventGridPublisherClient(
-            new Uri("https://localhost:60101/api/events"),
-            new AzureKeyCredential("TheWrongLocal+DevelopmentKey="),
-            CreateClientOptions()
-        );
-
-        var exception = await Should.ThrowAsync<RequestFailedException>(async () =>
-        {
-            await client.SendEventAsync(
-                new EventGridEvent(
-                    "/the/subject",
-                    "The.Event.Type",
-                    "v1",
-                    new { Id = 1, Foo = "Bar" }
-                )
-            );
-        });
-
-        exception.Status.ShouldBe((int)HttpStatusCode.Unauthorized);
     }
 }

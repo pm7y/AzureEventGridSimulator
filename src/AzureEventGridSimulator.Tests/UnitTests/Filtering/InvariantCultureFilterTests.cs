@@ -1,5 +1,6 @@
 using System.Globalization;
-using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Filtering;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;
@@ -37,7 +38,9 @@ public class InvariantCultureFilterTests
         string cultureName
     )
     {
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(data: new { DoubleValue = 3.5 });
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(data: new { DoubleValue = 3.5 })
+        );
         var filterConfig = new FilterSetting
         {
             AdvancedFilters =
@@ -57,7 +60,7 @@ public class InvariantCultureFilterTests
         // become 35 and the comparison (3.5 >= 35) would fail.
         RunWithCulture(
             cultureName,
-            () => filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue(cultureName)
+            () => filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue(cultureName)
         );
     }
 
@@ -68,7 +71,9 @@ public class InvariantCultureFilterTests
         string cultureName
     )
     {
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(data: new { DoubleValue = 3.5 });
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(data: new { DoubleValue = 3.5 })
+        );
         var filterConfig = new FilterSetting
         {
             AdvancedFilters =
@@ -85,14 +90,16 @@ public class InvariantCultureFilterTests
         // Culture-sensitive parsing would read the range as [15, 45] and exclude 3.5
         RunWithCulture(
             cultureName,
-            () => filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue(cultureName)
+            () => filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue(cultureName)
         );
     }
 
     [Fact]
     public void GivenNumberNotInRangeFilter_WhenValueOutsideRanges_ThenAcceptedUnderNonInvariantCulture()
     {
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(data: new { DoubleValue = 10.5 });
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(data: new { DoubleValue = 10.5 })
+        );
         var filterConfig = new FilterSetting
         {
             AdvancedFilters =
@@ -108,6 +115,6 @@ public class InvariantCultureFilterTests
             ],
         };
 
-        RunWithCulture("de-DE", () => filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue());
+        RunWithCulture("de-DE", () => filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue());
     }
 }

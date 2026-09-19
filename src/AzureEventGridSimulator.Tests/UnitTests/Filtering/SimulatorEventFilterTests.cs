@@ -1,5 +1,5 @@
 using AzureEventGridSimulator.Domain.Entities;
-using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Domain.Filtering;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
 using Xunit;
@@ -181,7 +181,7 @@ public class SimulatorEventFilterTests
         };
         var simulatorEvent = SimulatorEvent.FromCloudEvent(cloudEvent);
 
-        // The extension method handles null by returning true (accepts all events)
-        (filter?.AcceptsEvent(simulatorEvent) ?? true).ShouldBeTrue();
+        // The receiver is nullable, and a null filter accepts every event
+        filter.AcceptsEvent(simulatorEvent).ShouldBeTrue();
     }
 }

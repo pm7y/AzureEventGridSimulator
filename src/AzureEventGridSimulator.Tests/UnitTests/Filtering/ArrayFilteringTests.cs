@@ -1,5 +1,5 @@
 using AzureEventGridSimulator.Domain.Entities;
-using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Domain.Filtering;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Shouldly;
 using Xunit;
@@ -12,7 +12,7 @@ public class ArrayFilteringTests
     /// <summary>
     ///     Test event with array data for filtering tests.
     /// </summary>
-    private static EventGridEvent CreateEventWithArrayData()
+    private static SimulatorEvent CreateEventWithArrayData()
     {
         var evt = new EventGridEvent
         {
@@ -31,7 +31,7 @@ public class ArrayFilteringTests
             MetadataVersion = "1",
         };
         evt.SetTopic("test-topic");
-        return evt;
+        return SimulatorEvent.FromEventGridEvent(evt);
     }
 
     [Fact]

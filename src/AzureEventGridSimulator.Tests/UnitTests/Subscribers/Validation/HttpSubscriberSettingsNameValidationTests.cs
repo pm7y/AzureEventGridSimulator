@@ -37,4 +37,13 @@ public class HttpSubscriberSettingsNameValidationTests
         var exception = Should.Throw<ArgumentException>(() => settings.Validate());
         exception.Message.ShouldContain("name");
     }
+
+    [Fact]
+    public void GivenBlankNameAndBlankEndpoint_WhenValidated_ThenNameErrorIsReported()
+    {
+        var settings = new HttpSubscriberSettings { Name = "   ", Endpoint = "   " };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+        exception.Message.ShouldBe("Subscriber name is required. (Parameter 'Name')");
+    }
 }

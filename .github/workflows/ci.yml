@@ -29,6 +29,7 @@ jobs:
   build-and-test:
     name: "AEGS: Build & Test (${{ matrix.os }})"
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -43,57 +44,188 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           cache: true
-          cache-dependency-path: "**/*.csproj"
+          # Package versions live in Directory.Packages.props (Central Package Management),
+          # so the key must hash it as well as the project files.
+          cache-dependency-path: |
+            **/*.csproj
+            src/Directory.Packages.props
+            src/Directory.Build.props
+            nuget.config
+
+      # Format-on-build is skipped when CI=true, so check the CSharpier layout here instead.
+      - name: Check formatting (CSharpier)
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet tool restore && dotnet csharpier check src
 
       - name: Restore dependencies
         run: |
           dotnet restore ${{ env.MAIN_PROJECT }} --runtime ${{ matrix.runtime }}
           dotnet restore ${{ env.TEST_PROJECT }} --runtime ${{ matrix.runtime }}
 
-      - name: Build main project
-        run: >-
-          dotnet build ${{ env.MAIN_PROJECT }}
-          --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
-          --runtime ${{ matrix.runtime }}
-          --no-restore
-          --no-incremental
-          /p:WarningLevel=4
-          /p:TreatWarningsAsErrors=true
-
-      - name: Build test project
+      # Also builds the main project, through the test project's ProjectReference.
+      # The ubuntu leg collects coverage, and coverlet skips modules without symbols.
+      # Directory.Build.props turns PDBs off for Release|AnyCPU (it applies when Platform is
+      # passed, e.g. solution builds), so pin them on here so coverage survives either way.
+      - name: Build
         run: >-
           dotnet build ${{ env.TEST_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-restore
-          --no-incremental
-          /p:WarningLevel=4
-          /p:TreatWarningsAsErrors=true
+          ${{ matrix.os == 'ubuntu-latest' && '/p:DebugType=portable /p:DebugSymbols=true' || '' }}
 
+      # A deny-list filter, so a test class with a missing or misspelt Category trait still runs.
       - name: Test
         run: >-
           dotnet test ${{ env.TEST_PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
-          --framework net10.0
           --runtime ${{ matrix.runtime }}
           --no-build
           --verbosity normal
           --logger "trx;LogFileName=test-results.trx"
-          --filter "Category=unit|Category=integration"
+          --filter "Category!=integration-actual"
+          ${{ matrix.os == 'ubuntu-latest' && '--collect:"XPlat Code Coverage"' || '' }}
+
+      # Informational only: no threshold, nothing gates on the numbers.
+      - name: Generate coverage report
+        if: matrix.os == 'ubuntu-latest'
+        uses: danielpalme/ReportGenerator-GitHub-Action@d3ebf1f760f7d8ab92cc44d9bcfee7ad73722a31 # v5.5.11
+        with:
+          reports: "**/TestResults/**/coverage.cobertura.xml"
+          targetdir: coveragereport
+          reporttypes: MarkdownSummaryGithub
+
+      - name: Publish coverage summary
+        if: matrix.os == 'ubuntu-latest'
+        run: cat coveragereport/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      # The integration-actual smoke test starts the compiled simulator, which has no certificate
+      # configured, so Kestrel serves HTTPS with the development certificate and can't start
+      # without one. One OS is enough for a smoke test.
+      - name: Create development certificate
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet dev-certs https
+
+      - name: Test the compiled simulator
+        if: matrix.os == 'ubuntu-latest'
+        run: >-
+          dotnet test ${{ env.TEST_PROJECT }}
+          --configuration ${{ env.CONFIGURATION }}
+          --runtime ${{ matrix.runtime }}
+          --no-build
+          --verbosity normal
+          --logger "trx;LogFileName=test-results-actual.trx"
+          --filter "Category=integration-actual"
 
       - name: Upload test results
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: test-results-${{ matrix.os }}
           path: "**/TestResults/*.trx"
+          retention-days: 7
+
+  # Runs the Postman collection against the compiled simulator with both Sim environments. The
+  # collection's assertions (status codes, error codes, messages and headers) were checked against
+  # real Azure using the Real environments, and the xUnit tests don't pin most of them.
+  parity-smoke:
+    name: "AEGS: Postman Parity Smoke (ubuntu-latest)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SIMULATOR_DIR: parity/simulator
+      RESULTS_DIR: parity/results
+      POSTMAN_COLLECTION: src/postman/Azure Event Grid Simulator.postman_collection.json
+      # 6.1.0 added pm.execution.skipRequest, which the collection uses to skip the other
+      # schema's requests
+      NEWMAN_VERSION: "6.2.2"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # No NuGet cache here. With build-and-test's cache-dependency-path this job would share the
+      # ubuntu leg's key, and as it restores only the main project it would usually save first,
+      # leaving that leg an exact hit (which never re-saves) that lacks the test packages.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Build
+        run: >-
+          dotnet build ${{ env.MAIN_PROJECT }}
+          --configuration ${{ env.CONFIGURATION }}
+          --output ${{ env.SIMULATOR_DIR }}
+
+      # No certificate is configured, so Kestrel serves HTTPS with the development certificate
+      - name: Create development certificate
+        run: dotnet dev-certs https
+
+      # The shipped appsettings.json delivers events to requestcatcher.com, and an overlay can't
+      # remove its subscribers (arrays merge by index), so replace it with two subscriber-free
+      # topics on the ports the Sim environments use.
+      - name: Use the parity configuration
+        run: cp .github/parity/appsettings.json "$SIMULATOR_DIR/appsettings.json"
+
+      # The simulator reads appsettings.json from its working directory
+      - name: Start simulator
+        id: simulator
+        working-directory: ${{ env.SIMULATOR_DIR }}
+        run: |
+          nohup dotnet AzureEventGridSimulator.dll > simulator.log 2>&1 &
+          pid=$!
+          echo "SIMULATOR_PID=$pid" >> "$GITHUB_ENV"
+          for port in 60101 60102; do
+            attempt=0
+            until curl --silent --fail --insecure --max-time 5 --output /dev/null "https://127.0.0.1:$port/api/health"; do
+              attempt=$((attempt + 1))
+              if ! kill -0 "$pid" 2>/dev/null || [ "$attempt" -ge 60 ]; then
+                echo "::error::The simulator isn't answering on port $port"
+                cat simulator.log
+                exit 1
+              fi
+              sleep 1
+            done
+          done
+
+      # --insecure accepts the development certificate
+      - name: Run Postman collection (EventGrid schema)
+        run: >-
+          npx --yes "newman@$NEWMAN_VERSION" run "$POSTMAN_COLLECTION"
+          --environment "src/postman/environments/Event Grid - Sim - EventGrid Schema.postman_environment.json"
+          --insecure
+          --timeout-request 30000
+          --reporters cli,junit
+          --reporter-junit-export "$RESULTS_DIR/newman-eventgrid-schema.xml"
+
+      - name: Run Postman collection (CloudEvents schema)
+        if: ${{ !cancelled() && steps.simulator.outcome == 'success' }}
+        run: >-
+          npx --yes "newman@$NEWMAN_VERSION" run "$POSTMAN_COLLECTION"
+          --environment "src/postman/environments/Event Grid - Sim - CloudEvents Schema.postman_environment.json"
+          --insecure
+          --timeout-request 30000
+          --reporters cli,junit
+          --reporter-junit-export "$RESULTS_DIR/newman-cloudevents-schema.xml"
+
+      - name: Stop simulator
+        if: ${{ always() && env.SIMULATOR_PID != '' }}
+        run: kill "$SIMULATOR_PID" || true
+
+      - name: Upload parity results
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: parity-results
+          path: |
+            ${{ env.RESULTS_DIR }}/*.xml
+            ${{ env.SIMULATOR_DIR }}/simulator.log
           retention-days: 7

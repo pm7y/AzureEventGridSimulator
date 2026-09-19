@@ -1,6 +1,7 @@
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -10,13 +11,16 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Commands;
 [Trait("Category", "unit")]
 public class ValidateSubscriptionCommandHandlerTests
 {
+    // Every subscriber here is created at this time, and _handler's clock stands still at it
+    private static readonly DateTimeOffset CreatedAt = new(2025, 1, 15, 10, 30, 0, TimeSpan.Zero);
+
     private readonly ValidateSubscriptionCommandHandler _handler;
     private readonly ILogger<ValidateSubscriptionCommandHandler> _logger;
 
     public ValidateSubscriptionCommandHandlerTests()
     {
         _logger = Substitute.For<ILogger<ValidateSubscriptionCommandHandler>>();
-        _handler = new ValidateSubscriptionCommandHandler(TimeProvider.System, _logger);
+        _handler = new ValidateSubscriptionCommandHandler(new FakeTimeProvider(CreatedAt), _logger);
     }
 
     [Fact]
@@ -97,6 +101,43 @@ public class ValidateSubscriptionCommandHandlerTests
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
+    }
+
+    [Fact]
+    public async Task GivenValidationCodeAtTheEndOfTheFiveMinuteWindow_WhenHandled_ThenReturnsTrue()
+    {
+        // The five-minute window runs from the subscriber's CreatedAt, measured on the
+        // handler's clock, and includes its last instant
+        var subscriber = CreateHttpSubscriber("https://example.com/webhook");
+        var topic = CreateTopicWithSubscriber(subscriber);
+        var command = new ValidateSubscriptionCommand(topic, subscriber.ValidationCode);
+        var handler = new ValidateSubscriptionCommandHandler(
+            new FakeTimeProvider(CreatedAt.AddMinutes(5)),
+            _logger
+        );
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.ShouldBeTrue();
+        subscriber.ValidationStatus.ShouldBe(SubscriptionValidationStatus.ValidationSuccessful);
+    }
+
+    [Fact]
+    public async Task GivenValidationCodeAfterFiveMinutes_WhenHandled_ThenReturnsFalseAndStatusUnchanged()
+    {
+        // One tick past the five-minute window that starts at the subscriber's CreatedAt
+        var subscriber = CreateHttpSubscriber("https://example.com/webhook");
+        var topic = CreateTopicWithSubscriber(subscriber);
+        var command = new ValidateSubscriptionCommand(topic, subscriber.ValidationCode);
+        var handler = new ValidateSubscriptionCommandHandler(
+            new FakeTimeProvider(CreatedAt.AddMinutes(5).AddTicks(1)),
+            _logger
+        );
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.ShouldBeFalse();
+        subscriber.ValidationStatus.ShouldBe(default);
     }
 
     [Fact]
@@ -206,6 +247,7 @@ public class ValidateSubscriptionCommandHandlerTests
         {
             Name = $"Subscriber_{Guid.NewGuid():N}",
             Endpoint = endpoint,
+            CreatedAt = CreatedAt,
         };
     }
 

@@ -50,11 +50,19 @@ public class RejectedEventRecord
     /// <summary>
     ///     Creates a RejectedEventRecord from request context.
     /// </summary>
+    /// <param name="topicName">Name of the topic that received the request.</param>
+    /// <param name="topicPort">Port the topic is listening on.</param>
+    /// <param name="statusCode">HTTP status code returned to the client.</param>
+    /// <param name="errorMessage">Error message returned to the client.</param>
+    /// <param name="rejectedAt">When the request was rejected.</param>
+    /// <param name="rawBody">The raw request body; truncated after 4096 characters.</param>
+    /// <param name="contentType">Content-Type header from the request.</param>
     public static RejectedEventRecord Create(
         string topicName,
         int topicPort,
         HttpStatusCode statusCode,
         string errorMessage,
+        DateTimeOffset rejectedAt,
         string? rawBody = null,
         string? contentType = null
     )
@@ -69,7 +77,7 @@ public class RejectedEventRecord
         return new RejectedEventRecord
         {
             Id = Guid.NewGuid().ToString(),
-            RejectedAt = DateTimeOffset.UtcNow,
+            RejectedAt = rejectedAt,
             TopicName = topicName,
             TopicPort = topicPort,
             StatusCode = statusCode,

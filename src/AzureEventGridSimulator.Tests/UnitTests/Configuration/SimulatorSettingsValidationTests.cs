@@ -1,12 +1,13 @@
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using AzureEventGridSimulator.Tests.UnitTests.Subscribers;
 using Shouldly;
 using Xunit;
 
 namespace AzureEventGridSimulator.Tests.UnitTests.Configuration;
 
 [Trait("Category", "unit")]
-public class SimulatorSettingsValidationTests
+public class SimulatorSettingsValidationTests : SubscribersSettingsTestBase
 {
     private static HttpSubscriberSettings CreateSubscriber(string name)
     {
@@ -29,6 +30,17 @@ public class SimulatorSettingsValidationTests
             Port = port,
             Key = "TheLocal+DevelopmentKey=",
             Subscribers = new SubscribersSettings { Http = subscribers },
+        };
+    }
+
+    private static TopicSettings CreateTopic(string name, int port, SubscribersSettings subscribers)
+    {
+        return new TopicSettings
+        {
+            Name = name,
+            Port = port,
+            Key = "TheLocal+DevelopmentKey=",
+            Subscribers = subscribers,
         };
     }
 
@@ -92,6 +104,31 @@ public class SimulatorSettingsValidationTests
     }
 
     [Fact]
+    public void GivenMultipleDuplicateSubscriberNames_WhenValidated_ThenAllDuplicatesListed()
+    {
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                CreateTopic(
+                    "topic-one",
+                    60101,
+                    CreateSubscriber("Dup1"),
+                    CreateSubscriber("Dup1"),
+                    CreateSubscriber("Dup2"),
+                    CreateSubscriber("Dup2")
+                ),
+            ],
+        };
+
+        var exception = Should.Throw<InvalidOperationException>(() => settings.Validate());
+
+        exception.Message.ShouldBe(
+            "Each subscriber on a topic must have a unique name. Duplicate name(s) on topic 'topic-one': Dup1, Dup2."
+        );
+    }
+
+    [Fact]
     public void GivenDuplicateTopicPorts_WhenValidated_ThenThrows()
     {
         var settings = new SimulatorSettings
@@ -115,5 +152,413 @@ public class SimulatorSettingsValidationTests
         var exception = Should.Throw<InvalidOperationException>(() => settings.Validate());
 
         exception.Message.ShouldContain("unique name");
+    }
+
+    [Fact]
+    public void GivenUniqueSubscriberNamesAcrossAllTypes_WhenValidated_ThenSucceeds()
+    {
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                CreateTopic(
+                    "topic-one",
+                    60101,
+                    new SubscribersSettings
+                    {
+                        Http =
+                        [
+                            CreateValidHttpSubscriber("Http1"),
+                            CreateValidHttpSubscriber("Http2"),
+                        ],
+                        ServiceBus =
+                        [
+                            CreateValidServiceBusSubscriber("ServiceBus1"),
+                            CreateValidServiceBusSubscriber("ServiceBus2"),
+                        ],
+                        StorageQueue =
+                        [
+                            CreateValidStorageQueueSubscriber("StorageQueue1"),
+                            CreateValidStorageQueueSubscriber("StorageQueue2"),
+                        ],
+                        EventHub =
+                        [
+                            CreateValidEventHubSubscriber("EventHub1"),
+                            CreateValidEventHubSubscriber("EventHub2"),
+                        ],
+                    }
+                ),
+            ],
+        };
+
+        Should.NotThrow(() => settings.Validate());
+        settings.Topics[0].Subscribers.All.Count().ShouldBe(8);
+    }
+
+    [Fact]
+    public void GivenDuplicateNamesAcrossSubscriberTypes_WhenValidated_ThenThrows()
+    {
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                CreateTopic(
+                    "topic-one",
+                    60101,
+                    new SubscribersSettings
+                    {
+                        Http = [CreateValidHttpSubscriber("SharedName")],
+                        EventHub = [CreateValidEventHubSubscriber("SharedName")],
+                    }
+                ),
+            ],
+        };
+
+        var exception = Should.Throw<InvalidOperationException>(() => settings.Validate());
+
+        exception.Message.ShouldBe(
+            "Each subscriber on a topic must have a unique name. Duplicate name(s) on topic 'topic-one': SharedName."
+        );
+    }
+
+    [Fact]
+    public void GivenEventHubSubscriberWithoutCredentials_WhenValidated_ThenThrows()
+    {
+        // Subscriber-level errors propagate unwrapped, so this is an ArgumentException
+        // rather than the InvalidOperationException used by the cross-subscriber rules.
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                CreateTopic(
+                    "topic-one",
+                    60101,
+                    new SubscribersSettings
+                    {
+                        EventHub =
+                        [
+                            new EventHubSubscriberSettings
+                            {
+                                Name = "EventHub1",
+                                EventHubName = "test-hub",
+                            },
+                        ],
+                    }
+                ),
+            ],
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+
+        exception.Message.ShouldBe(
+            "Event Hub subscriber 'EventHub1' must have either a connectionString or namespace + sharedAccessKeyName + sharedAccessKey, either at subscriber or topic level."
+        );
+    }
+
+    [Fact]
+    public void GivenServiceBusSubscriberWithoutCredentials_WhenValidated_ThenThrows()
+    {
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                CreateTopic(
+                    "topic-one",
+                    60101,
+                    new SubscribersSettings
+                    {
+                        ServiceBus =
+                        [
+                            new ServiceBusSubscriberSettings { Name = "ServiceBus1", Queue = "q" },
+                        ],
+                    }
+                ),
+            ],
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+
+        exception.Message.ShouldBe(
+            "Service Bus subscriber 'ServiceBus1' must have either a connectionString or namespace + sharedAccessKeyName + sharedAccessKey, either at subscriber or topic level."
+        );
+    }
+
+    [Fact]
+    public void GivenStorageQueueSubscriberWithoutConnectionString_WhenValidated_ThenThrows()
+    {
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                CreateTopic(
+                    "topic-one",
+                    60101,
+                    new SubscribersSettings
+                    {
+                        StorageQueue =
+                        [
+                            new StorageQueueSubscriberSettings
+                            {
+                                Name = "StorageQueue1",
+                                QueueName = "q",
+                            },
+                        ],
+                    }
+                ),
+            ],
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+
+        exception.Message.ShouldBe(
+            "Storage Queue subscriber 'StorageQueue1' must have a connectionString, either at subscriber or topic level."
+        );
+    }
+
+    [Fact]
+    public void GivenTopicWithNoSubscribers_WhenValidated_ThenSucceeds()
+    {
+        var settings = new SimulatorSettings { Topics = [CreateTopic("topic-one", 60101)] };
+
+        Should.NotThrow(() => settings.Validate());
+    }
+
+    [Theory]
+    [InlineData("topic_one")]
+    [InlineData("topic one")]
+    [InlineData("topic.one")]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void GivenTopicNameWithInvalidCharacters_WhenValidated_ThenThrows(string topicName)
+    {
+        var settings = new SimulatorSettings
+        {
+            Topics = [CreateTopic(topicName, 60101, CreateSubscriber("subscriber-one"))],
+        };
+
+        var exception = Should.Throw<InvalidOperationException>(() => settings.Validate());
+
+        exception.Message.ShouldBe("A topic name can only contain letters, numbers, and dashes.");
+    }
+
+    [Theory]
+    [InlineData("subscriber_one")]
+    [InlineData("subscriber one")]
+    [InlineData("subscriber.one")]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void GivenSubscriberNameWithInvalidCharacters_WhenValidated_ThenThrows(
+        string subscriberName
+    )
+    {
+        var settings = new SimulatorSettings
+        {
+            Topics = [CreateTopic("topic-one", 60101, CreateSubscriber(subscriberName))],
+        };
+
+        var exception = Should.Throw<InvalidOperationException>(() => settings.Validate());
+
+        exception.Message.ShouldBe(
+            "A subscriber name can only contain letters, numbers, and dashes."
+        );
+    }
+
+    [Fact]
+    public void GivenValidTopicAndSubscriberNames_WhenValidated_ThenSucceeds()
+    {
+        var settings = new SimulatorSettings
+        {
+            Topics = [CreateTopic("Topic-1", 60101, CreateSubscriber("Subscriber-2"))],
+        };
+
+        Should.NotThrow(() => settings.Validate());
+    }
+
+    [Fact]
+    public void GivenInvalidTopicAndSubscriberNames_WhenValidated_ThenTopicNameIsReportedFirst()
+    {
+        var settings = new SimulatorSettings
+        {
+            Topics = [CreateTopic("topic_one", 60101, CreateSubscriber("subscriber_one"))],
+        };
+
+        var exception = Should.Throw<InvalidOperationException>(() => settings.Validate());
+
+        exception.Message.ShouldBe("A topic name can only contain letters, numbers, and dashes.");
+    }
+
+    [Fact]
+    public void GivenBrokerSubscribersWithoutOwnCredentials_WhenValidated_ThenTheyInheritTopicCredentials()
+    {
+        // Parent-topic wiring has to happen before the subscribers validate their credentials.
+        const string serviceBusConnectionString =
+            "Endpoint=sb://topic-sb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123";
+        const string storageQueueConnectionString =
+            "DefaultEndpointsProtocol=https;AccountName=topic;AccountKey=abc123;EndpointSuffix=core.windows.net";
+        const string eventHubConnectionString =
+            "Endpoint=sb://topic-eh.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123";
+
+        var serviceBus = new ServiceBusSubscriberSettings { Name = "ServiceBus1", Queue = "q" };
+        var storageQueue = new StorageQueueSubscriberSettings
+        {
+            Name = "StorageQueue1",
+            QueueName = "q",
+        };
+        var eventHub = new EventHubSubscriberSettings { Name = "EventHub1", EventHubName = "hub" };
+
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                new TopicSettings
+                {
+                    Name = "topic-one",
+                    Port = 60101,
+                    ServiceBusConnectionString = serviceBusConnectionString,
+                    StorageQueueConnectionString = storageQueueConnectionString,
+                    EventHubConnectionString = eventHubConnectionString,
+                    Subscribers = new SubscribersSettings
+                    {
+                        ServiceBus = [serviceBus],
+                        StorageQueue = [storageQueue],
+                        EventHub = [eventHub],
+                    },
+                },
+            ],
+        };
+
+        Should.NotThrow(() => settings.Validate());
+        serviceBus.EffectiveConnectionString.ShouldBe(serviceBusConnectionString);
+        storageQueue.EffectiveConnectionString.ShouldBe(storageQueueConnectionString);
+        eventHub.EffectiveConnectionString.ShouldBe(eventHubConnectionString);
+    }
+
+    [Fact]
+    public void GivenBrokerSubscribersWithoutOwnCredentials_WhenTopicHasNamespaceCredentials_ThenTheyBuildConnectionStringsFromTheTopic()
+    {
+        var serviceBus = new ServiceBusSubscriberSettings { Name = "ServiceBus1", Queue = "q" };
+        var eventHub = new EventHubSubscriberSettings { Name = "EventHub1", EventHubName = "hub" };
+
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                new TopicSettings
+                {
+                    Name = "topic-one",
+                    Port = 60101,
+                    ServiceBusNamespace = "topic-sb",
+                    ServiceBusSharedAccessKeyName = "SbKeyName",
+                    ServiceBusSharedAccessKey = "sbkey",
+                    EventHubNamespace = "topic-eh",
+                    EventHubSharedAccessKeyName = "EhKeyName",
+                    EventHubSharedAccessKey = "ehkey",
+                    Subscribers = new SubscribersSettings
+                    {
+                        ServiceBus = [serviceBus],
+                        EventHub = [eventHub],
+                    },
+                },
+            ],
+        };
+
+        Should.NotThrow(() => settings.Validate());
+        serviceBus.EffectiveConnectionString.ShouldBe(
+            "Endpoint=sb://topic-sb.servicebus.windows.net/;SharedAccessKeyName=SbKeyName;SharedAccessKey=sbkey"
+        );
+        eventHub.EffectiveConnectionString.ShouldBe(
+            "Endpoint=sb://topic-eh.servicebus.windows.net/;SharedAccessKeyName=EhKeyName;SharedAccessKey=ehkey"
+        );
+    }
+
+    [Fact]
+    public void GivenBrokerSubscribersOnTwoTopics_WhenValidated_ThenEachInheritsItsOwnTopicsCredentials()
+    {
+        var serviceBusOne = new ServiceBusSubscriberSettings { Name = "ServiceBus", Queue = "q" };
+        var serviceBusTwo = new ServiceBusSubscriberSettings { Name = "ServiceBus", Queue = "q" };
+        var storageQueueOne = new StorageQueueSubscriberSettings
+        {
+            Name = "StorageQueue",
+            QueueName = "q",
+        };
+        var storageQueueTwo = new StorageQueueSubscriberSettings
+        {
+            Name = "StorageQueue",
+            QueueName = "q",
+        };
+        var eventHubOne = new EventHubSubscriberSettings
+        {
+            Name = "EventHub",
+            EventHubName = "hub",
+        };
+        var eventHubTwo = new EventHubSubscriberSettings
+        {
+            Name = "EventHub",
+            EventHubName = "hub",
+        };
+
+        TopicSettings CreateBrokerTopic(
+            string name,
+            int port,
+            ServiceBusSubscriberSettings serviceBus,
+            StorageQueueSubscriberSettings storageQueue,
+            EventHubSubscriberSettings eventHub
+        ) =>
+            new()
+            {
+                Name = name,
+                Port = port,
+                ServiceBusConnectionString = $"sb-{name}",
+                StorageQueueConnectionString = $"sq-{name}",
+                EventHubConnectionString = $"eh-{name}",
+                Subscribers = new SubscribersSettings
+                {
+                    ServiceBus = [serviceBus],
+                    StorageQueue = [storageQueue],
+                    EventHub = [eventHub],
+                },
+            };
+
+        var settings = new SimulatorSettings
+        {
+            Topics =
+            [
+                CreateBrokerTopic("topic-one", 60101, serviceBusOne, storageQueueOne, eventHubOne),
+                CreateBrokerTopic("topic-two", 60102, serviceBusTwo, storageQueueTwo, eventHubTwo),
+            ],
+        };
+
+        Should.NotThrow(() => settings.Validate());
+        serviceBusOne.EffectiveConnectionString.ShouldBe("sb-topic-one");
+        storageQueueOne.EffectiveConnectionString.ShouldBe("sq-topic-one");
+        eventHubOne.EffectiveConnectionString.ShouldBe("eh-topic-one");
+        serviceBusTwo.EffectiveConnectionString.ShouldBe("sb-topic-two");
+        storageQueueTwo.EffectiveConnectionString.ShouldBe("sq-topic-two");
+        eventHubTwo.EffectiveConnectionString.ShouldBe("eh-topic-two");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void GivenDeadLetterWithBlankFolderPath_WhenValidated_ThenDefaultFolderPathIsApplied(
+        string? folderPath
+    )
+    {
+        var deadLetter = new DeadLetterSettings { FolderPath = folderPath! };
+        var subscriber = new HttpSubscriberSettings
+        {
+            Name = "subscriber-one",
+            Endpoint = "https://localhost:5000/webhook",
+            DeadLetter = deadLetter,
+        };
+        var settings = new SimulatorSettings
+        {
+            Topics = [CreateTopic("topic-one", 60101, subscriber)],
+        };
+
+        settings.Validate();
+
+        deadLetter.FolderPath.ShouldBe("./dead-letters");
     }
 }

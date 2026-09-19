@@ -1,11 +1,12 @@
 ﻿using System.Text.Json.Serialization;
+using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings;
 
 public class SimulatorSettings
 {
     [JsonPropertyName("topics")]
-    public TopicSettings[] Topics { get; set; } = Array.Empty<TopicSettings>();
+    public TopicSettings[] Topics { get; set; } = [];
 
     /// <summary>
     ///     Enable or disable the dashboard. Defaults to true.
@@ -14,7 +15,8 @@ public class SimulatorSettings
     public bool DashboardEnabled { get; set; } = true;
 
     /// <summary>
-    ///     Optional port for the dashboard. If not set, dashboard is served on each topic's port.
+    ///     Optional extra port to serve the dashboard on. The dashboard is always served on each
+    ///     enabled topic's port as well.
     /// </summary>
     [JsonPropertyName("dashboardPort")]
     public int? DashboardPort { get; set; }
@@ -27,6 +29,8 @@ public class SimulatorSettings
 
     public void Validate()
     {
+        Normalize();
+
         if (Topics.GroupBy(o => o.Port).Count() != Topics.Length)
         {
             throw new InvalidOperationException("Each topic must use a unique port.");
@@ -57,63 +61,24 @@ public class SimulatorSettings
             }
         }
 
-        if (
-            Topics
-                .Select(t => t.Name)
-                .Any(name =>
-                    string.IsNullOrWhiteSpace(name)
-                    || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))
-                )
-        )
+        if (Topics.Any(t => !IsValidResourceName(t.Name)))
         {
             throw new InvalidOperationException(
                 "A topic name can only contain letters, numbers, and dashes."
             );
         }
 
-        if (
-            allSubscribers
-                .Select(s => s.Name)
-                .Any(name =>
-                    string.IsNullOrWhiteSpace(name)
-                    || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))
-                )
-        )
+        if (allSubscribers.Any(s => !IsValidResourceName(s.Name)))
         {
             throw new InvalidOperationException(
                 "A subscriber name can only contain letters, numbers, and dashes."
             );
         }
 
-        // Wire up topic references for connection string inheritance
-        foreach (var topic in Topics)
-        {
-            foreach (var subscriber in topic.Subscribers.ServiceBusSubscribers)
-            {
-                subscriber.ParentTopic = topic;
-            }
-
-            foreach (var subscriber in topic.Subscribers.StorageQueueSubscribers)
-            {
-                subscriber.ParentTopic = topic;
-            }
-
-            foreach (var subscriber in topic.Subscribers.EventHubSubscribers)
-            {
-                subscriber.ParentTopic = topic;
-            }
-        }
-
-        // Validate each subscriber
+        // Validate each subscriber (this also validates its filter, retry policy and dead-letter settings)
         foreach (var subscriber in allSubscribers)
         {
             subscriber.Validate();
-        }
-
-        // Validate filters
-        foreach (var filter in allSubscribers.Where(s => s.Filter != null).Select(s => s.Filter!))
-        {
-            filter.Validate();
         }
 
         // Validate dashboard port is determinable if dashboard is enabled
@@ -124,4 +89,29 @@ public class SimulatorSettings
             );
         }
     }
+
+    /// <summary>
+    ///     Wires up parent-topic references and applies defaults. Runs as the first step of
+    ///     <see cref="Validate" /> because subscriber validation reads <c>ParentTopic</c> to
+    ///     resolve topic-level credentials.
+    /// </summary>
+    private void Normalize()
+    {
+        foreach (var topic in Topics)
+        {
+            // Wire up topic references for connection string inheritance
+            foreach (var subscriber in topic.Subscribers.All.OfType<SubscriberSettingsBase>())
+            {
+                subscriber.ParentTopic = topic;
+            }
+
+            foreach (var subscriber in topic.Subscribers.All)
+            {
+                subscriber.DeadLetter?.ApplyDefaults();
+            }
+        }
+    }
+
+    private static bool IsValidResourceName(string? name) =>
+        !string.IsNullOrWhiteSpace(name) && name.All(c => char.IsLetterOrDigit(c) || c == '-');
 }

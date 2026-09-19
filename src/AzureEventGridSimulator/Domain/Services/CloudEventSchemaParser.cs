@@ -1,7 +1,6 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using AzureEventGridSimulator.Domain.Entities;
-using AzureEventGridSimulator.Infrastructure.Extensions;
+using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.JsonConverters;
 
 namespace AzureEventGridSimulator.Domain.Services;
@@ -10,17 +9,8 @@ namespace AzureEventGridSimulator.Domain.Services;
 ///     Parses events using the CloudEvents v1.0 schema.
 ///     Supports both binary and structured content modes.
 /// </summary>
-public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEventSchemaParser
+public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEventSchemaParser
 {
-    // Matches System.Text.Json missing required properties error
-    [GeneratedRegex(
-        @"missing required properties.*including:\s*(?<props>.+)$",
-        RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.NonBacktracking
-    )]
-    private static partial Regex MissingPropertiesRegex();
-
-    private const string SchemaName = "CloudEventV10";
-
     /// <inheritdoc />
     public EventSchema Schema => EventSchema.CloudEventV1_0;
 
@@ -34,7 +24,7 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
 
         if (schemaDetector.IsBatchMode(context))
         {
-            return ParseBatchStructuredMode(context, requestBody);
+            return ParseBatchStructuredMode(requestBody);
         }
 
         // Check if using application/json (strict single-event mode)
@@ -44,7 +34,7 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
             && contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase)
             && !contentType.Contains("cloudevents", StringComparison.OrdinalIgnoreCase);
 
-        return ParseStructuredMode(context, requestBody, isApplicationJson);
+        return ParseStructuredMode(requestBody, isApplicationJson);
     }
 
     /// <inheritdoc />
@@ -82,11 +72,11 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
         // Parse the body as data
         if (!string.IsNullOrWhiteSpace(requestBody))
         {
-            // Try to parse as JSON, otherwise treat as string
+            // Try to parse as JSON, otherwise treat as string. Default options on purpose: they
+            // reject trailing commas, which JsonSerializerOptionsProvider.Default would accept.
             try
             {
-                using var doc = JsonDocument.Parse(requestBody);
-                cloudEvent.Data = JsonSerializer.Deserialize<object>(doc.RootElement.GetRawText());
+                cloudEvent.Data = JsonSerializer.Deserialize<object>(requestBody);
             }
             catch (JsonException)
             {
@@ -101,17 +91,12 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
     ///     Parses a single CloudEvent from structured content mode.
     ///     In structured mode, all CloudEvents attributes are in the JSON body.
     /// </summary>
-    /// <param name="context">The HTTP context for the request.</param>
     /// <param name="requestBody">The request body containing the CloudEvent.</param>
     /// <param name="strictSingleEvent">
     ///     When true (application/json content-type), arrays are rejected per Azure behavior.
     ///     When false (application/cloudevents+json), arrays are accepted as single-element batches.
     /// </param>
-    private SimulatorEvent[] ParseStructuredMode(
-        HttpContext context,
-        string requestBody,
-        bool strictSingleEvent
-    )
+    private SimulatorEvent[] ParseStructuredMode(string requestBody, bool strictSingleEvent)
     {
         if (string.IsNullOrWhiteSpace(requestBody))
         {
@@ -131,18 +116,14 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
                 if (strictSingleEvent)
                 {
                     throw new InvalidOperationException(
-                        $"This resource is configured to receive event in '{SchemaName}' schema. "
-                            + "The JSON received does not conform to the expected schema. "
-                            + $"Token Expected: StartObject, Actual Token Received: StartArray.{context.GenerateReportSuffix()}"
+                        SchemaErrorMessages.NotConforming(Schema)
+                            + " Token Expected: StartObject, Actual Token Received: StartArray."
                     );
                 }
 
                 if (document.RootElement.GetArrayLength() == 0)
                 {
-                    throw new InvalidOperationException(
-                        $"This resource is configured to receive event in '{SchemaName}' schema. "
-                            + "The JSON received does not conform to the expected schema."
-                    );
+                    throw new InvalidOperationException(SchemaErrorMessages.NotConforming(Schema));
                 }
 
                 // Handle single event in array format (for application/cloudevents+json)
@@ -150,7 +131,14 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
                     requestBody,
                     JsonSerializerOptionsProvider.Default
                 );
-                return events?.Select(SimulatorEvent.FromCloudEvent).ToArray() ?? [];
+
+                // A null element (e.g. "[null]") doesn't conform, the same as an empty array
+                if (events == null || Array.Exists(events, e => e is null))
+                {
+                    throw new InvalidOperationException(SchemaErrorMessages.NotConforming(Schema));
+                }
+
+                return [.. events.Select(SimulatorEvent.FromCloudEvent)];
             }
 
             cloudEvent = JsonSerializer.Deserialize<CloudEvent>(
@@ -160,7 +148,7 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
         }
         catch (JsonException ex)
         {
-            throw new InvalidOperationException(FormatJsonError(ex.Message, context), ex);
+            throw new InvalidOperationException(FormatJsonError(ex.Message), ex);
         }
 
         if (cloudEvent == null)
@@ -174,7 +162,7 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
     /// <summary>
     ///     Parses multiple CloudEvents from batch structured content mode.
     /// </summary>
-    private SimulatorEvent[] ParseBatchStructuredMode(HttpContext context, string requestBody)
+    private SimulatorEvent[] ParseBatchStructuredMode(string requestBody)
     {
         if (string.IsNullOrWhiteSpace(requestBody))
         {
@@ -192,18 +180,16 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
         }
         catch (JsonException ex)
         {
-            throw new InvalidOperationException(FormatJsonError(ex.Message, context), ex);
+            throw new InvalidOperationException(FormatJsonError(ex.Message), ex);
         }
 
-        if (events == null || events.Length == 0)
+        // A null element (e.g. "[null]") doesn't conform either, the same as an empty array
+        if (events == null || events.Length == 0 || Array.Exists(events, e => e is null))
         {
-            throw new InvalidOperationException(
-                $"This resource is configured to receive event in '{SchemaName}' schema. "
-                    + "The JSON received does not conform to the expected schema."
-            );
+            throw new InvalidOperationException(SchemaErrorMessages.NotConforming(Schema));
         }
 
-        return events.Select(SimulatorEvent.FromCloudEvent).ToArray();
+        return [.. events.Select(SimulatorEvent.FromCloudEvent)];
     }
 
     // CloudEvents binary-mode headers that map to known attributes; any other "ce-" header
@@ -285,22 +271,27 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
     ///     Gets and decodes a required header value.
     ///     Throws if the header is missing or empty.
     /// </summary>
+    /// <exception cref="EventParseException">
+    ///     The header is missing or empty (error code InvalidCloudEventHeader).
+    /// </exception>
     private static string GetRequiredHeaderValue(IHeaderDictionary headers, string headerName)
     {
         if (!headers.TryGetValue(headerName, out var values))
         {
-            throw new InvalidOperationException(
+            throw new EventParseException(
                 $"{headerName} header is missing for the cloud event. "
-                    + "Please check required attributes at https://github.com/cloudevents/spec/blob/v1.0/spec.md#required-attributes"
+                    + "Please check required attributes at https://github.com/cloudevents/spec/blob/v1.0/spec.md#required-attributes",
+                ErrorDetailCodes.InvalidCloudEventHeader
             );
         }
 
         var value = values.FirstOrDefault();
         if (string.IsNullOrEmpty(value))
         {
-            throw new InvalidOperationException(
+            throw new EventParseException(
                 $"{headerName} header is empty for the cloud event. "
-                    + "Please check required attributes at https://github.com/cloudevents/spec/blob/v1.0/spec.md#required-attributes"
+                    + "Please check required attributes at https://github.com/cloudevents/spec/blob/v1.0/spec.md#required-attributes",
+                ErrorDetailCodes.InvalidCloudEventHeader
             );
         }
 
@@ -337,35 +328,13 @@ public partial class CloudEventSchemaParser(EventSchemaDetector schemaDetector) 
         ["type"] = "eventType",
     };
 
-    private static string FormatJsonError(string message, HttpContext context)
+    private static string FormatJsonError(string message)
     {
-        // Check for missing required properties pattern
-        var match = MissingPropertiesRegex().Match(message);
-        if (match.Success)
-        {
-            // Extract all missing property names
-            // System.Text.Json format: "missing required properties including: 'id'."
-            var propertiesPart = match.Groups["props"].Value.TrimEnd('.');
-            var missingProps = propertiesPart
-                .Split(',')
-                .Select(p => p.Trim().Trim('\'', '"'))
-                .Where(p => !string.IsNullOrEmpty(p))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            // Pick the first property in Azure's validation order
-            var firstProperty =
-                FieldPriority.FirstOrDefault(f => missingProps.Contains(f))
-                ?? missingProps.FirstOrDefault();
-
-            if (!string.IsNullOrEmpty(firstProperty))
-            {
-                // Use Azure's display name if available (e.g., 'type' -> 'eventType')
-                var displayName = FieldDisplayNames.GetValueOrDefault(firstProperty, firstProperty);
-                return $"This resource is configured for '{SchemaName}' schema and requires '{displayName}' property to be set.{context.GenerateReportSuffix()}";
-            }
-        }
-
-        // Return original message for other JSON errors
-        return message;
+        return SchemaErrorMessages.FormatMissingPropertiesError(
+            message,
+            EventSchema.CloudEventV1_0,
+            FieldPriority,
+            FieldDisplayNames
+        );
     }
 }

@@ -68,6 +68,18 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
             var fileName = $"{timestamp}_{eventId}.json";
             var filePath = Path.Combine(folder, fileName);
 
+            // The name only has one-second precision and a sanitised, truncated id, and the file
+            // system may ignore case (the macOS and Windows defaults do), so a second event can map
+            // to an existing file. Keep overwriting it, but don't do it silently.
+            if (File.Exists(filePath))
+            {
+                logger.LogWarning(
+                    "Dead-letter file {FilePath} already exists and will be overwritten by event {EventId} (an earlier dead letter for this subscriber mapped to the same file name)",
+                    filePath,
+                    delivery.Event.Id
+                );
+            }
+
             var json = JsonSerializer.Serialize(deadLetterEvent, JsonOptions);
             await File.WriteAllTextAsync(filePath, json);
 
@@ -113,12 +125,14 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
 
     /// <summary>
     ///     Sanitizes a string to be safe for use as a file name.
-    ///     Note: Event IDs are GUIDs which only contain valid path characters.
+    ///     Note: Event IDs come from the publisher and can be any string, not just GUIDs, so
+    ///     characters that aren't valid in a file name are removed here and the result is
+    ///     truncated to 50 characters. Different IDs can therefore produce the same file name.
     /// </summary>
     private static string SanitizeFileName(string name)
     {
         var invalidChars = Path.GetInvalidFileNameChars();
-        var sanitized = new string(name.Where(c => !invalidChars.Contains(c)).ToArray());
+        var sanitized = new string([.. name.Where(c => !invalidChars.Contains(c))]);
 
         // Limit length
         return sanitized.Length > 50 ? sanitized[..50] : sanitized;
@@ -135,7 +149,7 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
             .Concat([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar])
             .ToHashSet();
 
-        var sanitized = new string(name.Where(c => !invalidChars.Contains(c)).ToArray());
+        var sanitized = new string([.. name.Where(c => !invalidChars.Contains(c))]);
 
         // Limit length
         return sanitized.Length > 100 ? sanitized[..100] : sanitized;

@@ -1,15 +1,23 @@
 using System.Text;
 using System.Text.Json.Serialization;
-using AzureEventGridSimulator.Domain.Entities;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
 /// <summary>
 ///     Settings for HTTP webhook subscribers.
 /// </summary>
-public class HttpSubscriberSettings : ISubscriberSettings
+public class HttpSubscriberSettings : SubscriberSettingsBase
 {
-    private readonly DateTimeOffset _createdAt = DateTimeOffset.UtcNow;
+    // Computed once on first read (Endpoint is init-only, so the code never changes).
+    // Lazy rather than a Guid? field: the /validate handler reads this from request threads
+    // and a Nullable<Guid> write is not atomic. PublicationOnly keeps today's behaviour of
+    // not caching a failure (e.g. a null Endpoint throws again on the next read).
+    private readonly Lazy<Guid> _validationCode;
+
+    public HttpSubscriberSettings()
+    {
+        _validationCode = new Lazy<Guid>(GetValidationCode, LazyThreadSafetyMode.PublicationOnly);
+    }
 
     [JsonPropertyName("endpoint")]
     public required string Endpoint { get; init; }
@@ -21,48 +29,21 @@ public class HttpSubscriberSettings : ISubscriberSettings
     public SubscriptionValidationStatus ValidationStatus { get; set; }
 
     [JsonIgnore]
-    public Guid ValidationCode => GetValidationCode();
-
-    [JsonPropertyName("name")]
-    public required string Name { get; init; }
-
-    [JsonPropertyName("filter")]
-    public FilterSetting? Filter { get; init; }
-
-    [JsonPropertyName("disabled")]
-    public bool Disabled { get; init; }
-
-    /// <summary>
-    ///     Gets or sets the delivery schema for events sent to this subscriber.
-    ///     If null, uses the topic's output schema or the original event schema.
-    /// </summary>
-    [JsonPropertyName("deliverySchema")]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public EventSchema? DeliverySchema { get; init; }
-
-    /// <summary>
-    ///     Gets or sets the retry policy for this subscriber.
-    ///     If null, default Azure Event Grid retry behavior is used (enabled with 30 attempts, 24h TTL).
-    /// </summary>
-    [JsonPropertyName("retryPolicy")]
-    public RetryPolicySettings? RetryPolicy { get; init; }
-
-    /// <summary>
-    ///     Gets or sets the dead-letter settings for this subscriber.
-    ///     Events that cannot be delivered are written to the dead-letter destination.
-    /// </summary>
-    [JsonPropertyName("deadLetter")]
-    public DeadLetterSettings? DeadLetter { get; init; }
+    public Guid ValidationCode => _validationCode.Value;
 
     [JsonIgnore]
-    public string SubscriberType => "http";
+    public override string SubscriberType => "http";
 
-    public void Validate()
+    /// <summary>
+    ///     Gets when these settings were created, which starts the 5-minute validation window.
+    ///     It's stamped from the wall clock because the settings are bound and validated at
+    ///     startup, before a <see cref="TimeProvider" /> can be resolved. Tests can set it.
+    /// </summary>
+    internal DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
+
+    public override void Validate()
     {
-        if (string.IsNullOrWhiteSpace(Name))
-        {
-            throw new ArgumentException("Subscriber name is required.", nameof(Name));
-        }
+        ValidateName();
 
         if (string.IsNullOrWhiteSpace(Endpoint))
         {
@@ -83,9 +64,7 @@ public class HttpSubscriberSettings : ISubscriberSettings
             );
         }
 
-        Filter?.Validate();
-        RetryPolicy?.Validate();
-        DeadLetter?.Validate();
+        ValidateCommonTail();
     }
 
     /// <summary>
@@ -99,7 +78,7 @@ public class HttpSubscriberSettings : ISubscriberSettings
     /// </returns>
     public bool ValidationPeriodExpired(DateTimeOffset now)
     {
-        return now > _createdAt.AddMinutes(5);
+        return now > CreatedAt.AddMinutes(5);
     }
 
     public Guid GetValidationCode()

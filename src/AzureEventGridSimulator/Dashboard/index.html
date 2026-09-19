@@ -53,18 +53,22 @@
 
             <section class="events-section">
                 <div class="events-header">
-                    <div class="tab-container">
+                    <div class="tab-container" role="tablist">
                         <button
+                            aria-controls="eventsTab"
+                            aria-selected="true"
                             class="tab-btn active"
-                            data-tab="events"
                             id="tabEvents"
+                            role="tab"
                         >
                             Events
                         </button>
                         <button
+                            aria-controls="rejectionsTab"
+                            aria-selected="false"
                             class="tab-btn"
-                            data-tab="rejections"
                             id="tabRejections"
+                            role="tab"
                         >
                             Rejections
                             <span
@@ -73,14 +77,25 @@
                             ></span>
                         </button>
                     </div>
-                    <select class="topic-filter" id="topicFilter">
+                    <select
+                        aria-label="Filter by topic"
+                        class="topic-filter"
+                        id="topicFilter"
+                    >
                         <option value="">All Topics</option>
                     </select>
                 </div>
 
-                <div class="tab-content" id="eventsTab">
+                <div
+                    aria-labelledby="tabEvents"
+                    class="tab-content"
+                    id="eventsTab"
+                    role="tabpanel"
+                >
                     <div class="empty-state" id="emptyState">
-                        <div class="empty-state-icon">&#128235;</div>
+                        <div aria-hidden="true" class="empty-state-icon">
+                            &#128235;
+                        </div>
                         <h3>No events received yet</h3>
                         <p>
                             Events will appear here when they are published to
@@ -90,9 +105,16 @@
                     <div class="events-list" id="eventsList"></div>
                 </div>
 
-                <div class="tab-content hidden" id="rejectionsTab">
+                <div
+                    aria-labelledby="tabRejections"
+                    class="tab-content hidden"
+                    id="rejectionsTab"
+                    role="tabpanel"
+                >
                     <div class="empty-state" id="emptyRejectionsState">
-                        <div class="empty-state-icon">&#10003;</div>
+                        <div aria-hidden="true" class="empty-state-icon">
+                            &#10003;
+                        </div>
                         <h3>No rejected events</h3>
                         <p>
                             Validation errors will appear here when invalid
@@ -106,7 +128,11 @@
             <aside class="detail-panel" id="detailPanel">
                 <div class="detail-header">
                     <h3>Event Details</h3>
-                    <button class="close-btn" id="closeDetail">&times;</button>
+                    <button
+                        aria-label="Close details"
+                        class="close-btn"
+                        id="closeDetail"
+                    >&times;</button>
                 </div>
                 <div class="detail-content" id="detailContent">
                     <p class="detail-placeholder">
@@ -116,12 +142,12 @@
             </aside>
         </main>
 
-        <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.7/purify.min.js"
-            integrity="sha512-78KH17QLT5e55GJqP76vutp1D2iAoy06WcYBXB6iBCsmO6wWzx0Qdg8EDpm8mKXv68BcvHOyeeP4wxAL0twJGQ=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer"
-        ></script>
+        <!--
+            DOMPurify 3.2.7, vendored unchanged from cdnjs so the dashboard works offline
+            (cdnjs SRI: sha512-78KH17QLT5e55GJqP76vutp1D2iAoy06WcYBXB6iBCsmO6wWzx0Qdg8EDpm8mKXv68BcvHOyeeP4wxAL0twJGQ==).
+            Dependabot can't see it: to upgrade, replace the file and keep the version in its name.
+        -->
+        <script src="/dashboard/purify-3.2.7.min.js"></script>
         <script src="/dashboard/app.js"></script>
     </body>
 </html>

@@ -1,5 +1,13 @@
 # EditorConfig for AzureEventGridSimulator
 # https://editorconfig.org
+#
+# This is the only .editorconfig that applies to the C# code. `root = true` stops the lookup
+# here, so the repo-root .editorconfig never reaches files under src/. docker/Dockerfile also
+# copies just this file into the image build, so it has to stand on its own.
+#
+# Directory.Build.props sets EnforceCodeStyleInBuild and TreatWarningsAsErrors, and since
+# .NET 9 the build honours `option = value : severity`. Any IDE rule set to `warning` here
+# therefore fails the build when code breaks it.
 
 root = true
 
@@ -14,6 +22,25 @@ insert_final_newline = true
 [*.cs]
 # Require braces on all control flow blocks
 csharp_prefer_braces = true : error
+
+# File-scoped namespaces (IDE0161)
+csharp_style_namespace_declarations = file_scoped : warning
+
+# using directives go outside the namespace (IDE0065)
+csharp_using_directive_placement = outside_namespace : warning
+
+# Use var everywhere (IDE0007)
+csharp_style_var_for_built_in_types = true : warning
+csharp_style_var_when_type_is_apparent = true : warning
+csharp_style_var_elsewhere = true : warning
+
+# Primary constructors (IDE0290)
+csharp_style_prefer_primary_constructors = true : warning
+
+# Collection expressions (IDE0028, IDE0300-IDE0305). `true` only flags code where the collection
+# expression would produce the same collection type, so `ICollection<T> x = ... ?? Array.Empty<T>()`
+# is left alone (`[]` there would allocate a List<T>).
+dotnet_style_prefer_collection_expression = true : warning
 
 # Meziantou.Analyzer rules - downgrade to suggestions for existing code
 # These can be gradually fixed over time
@@ -60,6 +87,3 @@ dotnet_diagnostic.MA0051.severity = suggestion
 # MA0055: Do not use finalizer
 # Finalizers are used in test fixtures for cleanup, which is acceptable
 dotnet_diagnostic.MA0055.severity = suggestion
-
-# MA0158: Use System.Threading.Lock
-dotnet_diagnostic.MA0158.severity = suggestion

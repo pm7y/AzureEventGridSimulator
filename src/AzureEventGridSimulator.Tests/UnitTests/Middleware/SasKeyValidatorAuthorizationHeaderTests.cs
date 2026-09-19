@@ -1,4 +1,5 @@
 using AzureEventGridSimulator.Domain;
+using AzureEventGridSimulator.Infrastructure.Middleware;
 using Microsoft.Net.Http.Headers;
 using NSubstitute;
 using Shouldly;
@@ -22,9 +23,9 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
             { HeaderNames.Authorization, $"{Constants.SasAuthorizationType} {token}" },
         };
 
-        var result = Validator.IsValid(headers, ValidTopicKey);
+        var result = Validator.Validate(headers, ValidTopicKey);
 
-        result.ShouldBeTrue();
+        result.ShouldBe(Valid);
     }
 
     [Fact]
@@ -40,9 +41,9 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
             { HeaderNames.Authorization, $"{Constants.SasAuthorizationType} {token}" },
         };
 
-        var result = Validator.IsValid(headers, ValidTopicKey);
+        var result = Validator.Validate(headers, ValidTopicKey);
 
-        result.ShouldBeFalse();
+        result.ShouldBe(Failed(SasValidationFailureReason.TokenExpired));
     }
 
     [Fact]
@@ -58,9 +59,28 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
             { HeaderNames.Authorization, $"{Constants.SasAuthorizationType} {token}" },
         };
 
-        var result = Validator.IsValid(headers, ValidTopicKey);
+        var result = Validator.Validate(headers, ValidTopicKey);
 
-        result.ShouldBeFalse();
+        result.ShouldBe(Failed(SasValidationFailureReason.SignatureMismatch));
+    }
+
+    [Fact]
+    public void GivenTokenWhoseResourceContainsTheSchemeName_WhenValidated_ThenReturnsTrue()
+    {
+        // Only the leading scheme is removed; the same text inside the token must survive
+        var token = GenerateValidSasToken(
+            ValidTopicKey,
+            $"http://localhost/{Constants.SasAuthorizationType}",
+            DateTimeOffset.UtcNow.AddMinutes(5)
+        );
+        var headers = new HeaderDictionary
+        {
+            { HeaderNames.Authorization, $"{Constants.SasAuthorizationType} {token}" },
+        };
+
+        var result = Validator.Validate(headers, ValidTopicKey);
+
+        result.ShouldBe(Valid);
     }
 
     [Fact]
@@ -76,7 +96,7 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
             { HeaderNames.Authorization, $"{Constants.SasAuthorizationType} {token}" },
         };
 
-        Validator.IsValid(headers, ValidTopicKey);
+        Validator.Validate(headers, ValidTopicKey);
 
         Logger
             .Received()
@@ -101,9 +121,19 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
             { HeaderNames.Authorization, "Bearer some-jwt-token" },
         };
 
-        var result = Validator.IsValid(headers, ValidTopicKey);
+        var result = Validator.Validate(headers, ValidTopicKey);
 
-        result.ShouldBeFalse();
+        result.ShouldBe(Failed(SasValidationFailureReason.BearerTokenInvalid));
+    }
+
+    [Fact]
+    public void GivenBasicAuthorizationHeader_WhenValidated_ThenFailsWithUnsupportedAuthScheme()
+    {
+        var headers = new HeaderDictionary { { HeaderNames.Authorization, "Basic abc" } };
+
+        var result = Validator.Validate(headers, ValidTopicKey);
+
+        result.ShouldBe(Failed(SasValidationFailureReason.UnsupportedAuthScheme));
     }
 
     [Fact]
@@ -119,8 +149,8 @@ public class SasKeyValidatorAuthorizationHeaderTests : SasKeyValidatorTestBase
             { "AUTHORIZATION", $"{Constants.SasAuthorizationType} {token}" },
         };
 
-        var result = Validator.IsValid(headers, ValidTopicKey);
+        var result = Validator.Validate(headers, ValidTopicKey);
 
-        result.ShouldBeTrue();
+        result.ShouldBe(Valid);
     }
 }

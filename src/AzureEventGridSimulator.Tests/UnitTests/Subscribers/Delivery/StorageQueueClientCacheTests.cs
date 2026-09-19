@@ -33,12 +33,11 @@ public class StorageQueueClientCacheTests
             ConnectionString = "this-is-not-a-valid-connection-string",
             QueueName = "my-queue",
         };
-        var topic = TestHelpers.CreateValidTopicSettings();
-        var evt = TestHelpers.CreateSimulatorEventFromEventGrid();
+        var delivery = TestHelpers.CreatePendingDelivery(subscription);
 
-        // SendAsync swallows delivery errors (logs them), so both calls complete
-        await service.SendAsync(subscription, evt, topic, EventSchema.EventGridSchema);
-        await service.SendAsync(subscription, evt, topic, EventSchema.EventGridSchema);
+        // DeliverAsync maps the failure to a result, so both attempts complete
+        var first = await service.DeliverAsync(delivery, CancellationToken.None);
+        var second = await service.DeliverAsync(delivery, CancellationToken.None);
 
         // The client factory must run once per attempt; a cached failed creation
         // would log "Creating Storage Queue client" only once.
@@ -54,15 +53,10 @@ public class StorageQueueClientCacheTests
                 Arg.Any<Func<object, Exception?, string>>()
             );
 
-        // Both attempts surface the failure in the error log rather than silently dropping
-        logger
-            .Received(2)
-            .Log(
-                LogLevel.Error,
-                Arg.Any<EventId>(),
-                Arg.Is<object>(o => o != null && string.Concat(o).Contains("Failed to send event")),
-                Arg.Any<Exception?>(),
-                Arg.Any<Func<object, Exception?, string>>()
-            );
+        // Both attempts surface the failure rather than silently dropping it
+        first.Success.ShouldBeFalse();
+        first.Outcome.ShouldBe(DeliveryOutcome.StorageQueueError);
+        second.Success.ShouldBeFalse();
+        second.Outcome.ShouldBe(DeliveryOutcome.StorageQueueError);
     }
 }

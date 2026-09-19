@@ -45,17 +45,12 @@ body:
     validations:
       required: true
 
-  - type: dropdown
+  - type: input
     id: version
     attributes:
       label: Version
-      description: What version of Azure Event Grid Simulator are you using?
-      options:
-        - Latest (from source)
-        - 4.x
-        - 3.x
-        - 2.x
-        - Other (please specify in description)
+      description: The NuGet tool version (shown by `dotnet tool list -g`, or `dotnet tool list` for a local install), the Docker image tag, the release you downloaded, or the commit SHA if you built from source.
+      placeholder: "e.g. 5.1.0, pmcilreavy/azureeventgridsimulator:5.1.0 or a1b2c3d"
     validations:
       required: true
 
@@ -90,7 +85,7 @@ body:
     attributes:
       label: .NET Version
       description: Output of `dotnet --version`
-      placeholder: "8.0.100"
+      placeholder: "10.0.100"
 
   - type: textarea
     id: config

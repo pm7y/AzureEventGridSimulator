@@ -8,6 +8,10 @@ namespace AzureEventGridSimulator.Infrastructure.JsonConverters;
 ///     JSON converter that accepts strings, numbers, and booleans and converts them to strings.
 ///     Azure Event Grid is lenient and coerces primitive types to strings.
 /// </summary>
+/// <remarks>
+///     Numbers that don't parse as an Int64 are normalised through <see cref="double" />, so their
+///     original text isn't kept (for example <c>1.0</c> becomes "1" and <c>1e3</c> becomes "1000").
+/// </remarks>
 public sealed class StringOrPrimitiveConverter : JsonConverter<string>
 {
     public override string? Read(

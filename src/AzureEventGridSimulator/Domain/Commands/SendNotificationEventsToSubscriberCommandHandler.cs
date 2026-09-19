@@ -1,7 +1,7 @@
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Filtering;
 using AzureEventGridSimulator.Domain.Services.Dashboard;
 using AzureEventGridSimulator.Domain.Services.Retry;
-using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
@@ -72,9 +72,7 @@ public class SendNotificationEventsToSubscriberCommandHandler(
 
         // Log events that are filtered out by all subscribers
         var eventsFilteredOutByAllSubscribers = request
-            .Events.Where(e =>
-                allSubscribers.All(s => !(s.Filter ?? new FilterSetting()).AcceptsEvent(e))
-            )
+            .Events.Where(e => allSubscribers.All(s => !s.Filter.AcceptsEvent(e)))
             .ToArray();
 
         foreach (var filteredEvent in eventsFilteredOutByAllSubscribers)
@@ -119,7 +117,7 @@ public class SendNotificationEventsToSubscriberCommandHandler(
 
             foreach (var evt in request.Events)
             {
-                if (!(subscriber.Filter ?? new FilterSetting()).AcceptsEvent(evt))
+                if (!subscriber.Filter.AcceptsEvent(evt))
                 {
                     logger.LogDebug(
                         "Event {EventId} filtered out for subscriber '{SubscriberName}'",

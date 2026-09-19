@@ -1,4 +1,5 @@
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Domain.Filtering;
 using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
@@ -10,7 +11,9 @@ namespace AzureEventGridSimulator.Tests.UnitTests.Filtering;
 [Trait("Category", "unit")]
 public class AdvancedFilterEventAcceptanceTests
 {
-    private static readonly EventGridEvent _gridEvent = CreateTestEvent();
+    private static readonly SimulatorEvent _simulatorEvent = SimulatorEvent.FromEventGridEvent(
+        CreateTestEvent()
+    );
 
     private static EventGridEvent CreateTestEvent()
     {
@@ -43,7 +46,7 @@ public class AdvancedFilterEventAcceptanceTests
         var filterConfig = new FilterSetting { AdvancedFilters = new[] { filter } };
 
         filterConfig
-            .AcceptsEvent(_gridEvent)
+            .AcceptsEvent(_simulatorEvent)
             .ShouldBeTrue(
                 $"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}"
             );
@@ -56,10 +59,20 @@ public class AdvancedFilterEventAcceptanceTests
         var filterConfig = new FilterSetting { AdvancedFilters = new[] { filter } };
 
         filterConfig
-            .AcceptsEvent(_gridEvent)
+            .AcceptsEvent(_simulatorEvent)
             .ShouldBeFalse(
                 $"{filter.Key} - {filter.OperatorType} - {filter.Value} - {filter.Values.Separate()}"
             );
+    }
+
+    [Fact]
+    public void GivenFilterTestCaseContainers_WhenEnumerated_ThenRowCountsAreAsExpected()
+    {
+        // Catches rows lost or duplicated when the containers are edited (78 + 94 = 172)
+        new PositiveFilterTestCaseContainer()
+            .Count()
+            .ShouldBe(78);
+        new NegativeFilterTestCaseContainer().Count().ShouldBe(94);
     }
 
     [Fact]
@@ -77,9 +90,11 @@ public class AdvancedFilterEventAcceptanceTests
                 },
             ],
         };
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(data: 1);
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(data: 1)
+        );
 
-        filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
+        filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue();
     }
 
     [Fact]
@@ -107,9 +122,11 @@ public class AdvancedFilterEventAcceptanceTests
                 },
             ],
         };
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(data: 1);
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(data: 1)
+        );
 
-        filterConfig.AcceptsEvent(gridEvent).ShouldBeTrue();
+        filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue();
     }
 
     [Fact]
@@ -127,8 +144,10 @@ public class AdvancedFilterEventAcceptanceTests
                 },
             ],
         };
-        var gridEvent = TestHelpers.CreateValidEventGridEvent(data: 1);
+        var simulatorEvent = SimulatorEvent.FromEventGridEvent(
+            TestHelpers.CreateValidEventGridEvent(data: 1)
+        );
 
-        filterConfig.AcceptsEvent(gridEvent).ShouldBeFalse();
+        filterConfig.AcceptsEvent(simulatorEvent).ShouldBeFalse();
     }
 }

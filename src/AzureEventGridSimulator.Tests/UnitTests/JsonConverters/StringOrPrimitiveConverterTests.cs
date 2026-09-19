@@ -21,9 +21,27 @@ public class StringOrPrimitiveConverterTests
     [Theory]
     [InlineData("\"hello\"", "hello")]
     [InlineData("42", "42")]
+    [InlineData("-5", "-5")]
+    [InlineData("9223372036854775807", "9223372036854775807")]
     [InlineData("true", "true")]
     [InlineData("false", "false")]
     public void GivenPrimitiveToken_WhenDeserialized_ThenCoercedToString(
+        string json,
+        string expected
+    )
+    {
+        JsonSerializer.Deserialize<string>(json, _options).ShouldBe(expected);
+    }
+
+    // These rows record the current lossy behaviour rather than endorse it: any number that
+    // doesn't parse as an Int64 is read as a double and re-formatted, so its original text is lost.
+    [Theory]
+    [InlineData("1.0", "1")]
+    [InlineData("1.10", "1.1")]
+    [InlineData("1e3", "1000")]
+    [InlineData("-0.0", "-0")]
+    [InlineData("12345678901234567890", "1.2345678901234567E+19")]
+    public void GivenNonInt64Number_WhenDeserialized_ThenNormalisedViaDouble(
         string json,
         string expected
     )

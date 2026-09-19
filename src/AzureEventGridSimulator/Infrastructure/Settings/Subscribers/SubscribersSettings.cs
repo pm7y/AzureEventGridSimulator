@@ -66,39 +66,4 @@ public class SubscribersSettings
     /// </summary>
     [JsonIgnore]
     public IEnumerable<EventHubSubscriberSettings> EventHubSubscribers => EventHub ?? [];
-
-    /// <summary>
-    ///     Gets whether there are any subscribers configured.
-    /// </summary>
-    [JsonIgnore]
-    public bool Any => All.Any();
-
-    /// <summary>
-    ///     Gets the total count of subscribers.
-    /// </summary>
-    [JsonIgnore]
-    public int Count => All.Count();
-
-    public void Validate()
-    {
-        foreach (var subscriber in All)
-        {
-            subscriber.Validate();
-        }
-
-        // Check for duplicate names
-        var names = All.Select(s => s.Name).ToList();
-        var duplicates = names
-            .GroupBy(n => n, StringComparer.OrdinalIgnoreCase)
-            .Where(g => g.Count() > 1)
-            .Select(g => g.Key)
-            .ToList();
-
-        if (duplicates.Count != 0)
-        {
-            throw new ArgumentException(
-                $"Duplicate subscriber names found: {string.Join(", ", duplicates)}"
-            );
-        }
-    }
 }

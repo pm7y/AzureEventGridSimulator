@@ -1,11 +1,15 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.4.4">
+<!-- Keep the Sdk version in lockstep with the Aspire.Hosting.* versions in Directory.Packages.props -->
+<Project Sdk="Aspire.AppHost.Sdk/13.5.3">
     <PropertyGroup>
+        <!-- TargetFramework, ImplicitUsings and Nullable are inherited from Directory.Build.props -->
         <OutputType>Exe</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
         <IsAspireHost>true</IsAspireHost>
         <UserSecretsId>568b81ee-880c-4743-beb4-ca331e309492</UserSecretsId>
+        <!-- Keep DCP and the Aspire Dashboard coming from NuGet, so `dotnet run` works without the
+             Aspire CLI installed. Aspire 13.5+ warns about this (ASPIRE010); the suppression is
+             what https://aka.ms/aspire/diagnostics/aspire010 recommends for this choice. -->
+        <AspireUseCliBundle>false</AspireUseCliBundle>
+        <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,12 +17,6 @@
         <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" />
         <PackageReference Include="Aspire.Hosting.Azure.EventHubs" />
         <PackageReference Include="Aspire.Hosting.SqlServer" />
-        <!-- Security pin: forces patched MessagePack over the vulnerable version the Aspire
-             SDK pulls transitively (GHSA-hv8m-jj95-wg3x). Not used by our code directly. -->
-        <PackageReference Include="Azure.Storage.Queues" />
-        <PackageReference Include="MessagePack" />
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     </ItemGroup>
 
     <!-- Set ASPIRE_ENABLED=true to include ServiceDefaults in the build -->

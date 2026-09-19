@@ -11,7 +11,10 @@ namespace AzureEventGridSimulator.Domain.Services.Retry;
 /// </summary>
 public class RetryDeliveryBackgroundService(
     IDeliveryQueue queue,
-    IServiceProvider serviceProvider,
+    HttpEventDeliveryService httpDeliveryService,
+    ServiceBusEventDeliveryService serviceBusDeliveryService,
+    StorageQueueEventDeliveryService storageQueueDeliveryService,
+    EventHubEventDeliveryService eventHubDeliveryService,
     DeadLetterService deadLetterService,
     IEventHistoryService eventHistoryService,
     RetryScheduler retryScheduler,
@@ -19,6 +22,11 @@ public class RetryDeliveryBackgroundService(
     ILogger<RetryDeliveryBackgroundService> logger
 ) : BackgroundService
 {
+    /// <summary>
+    ///     The most subscribers a pass delivers to at the same time.
+    /// </summary>
+    private const int MaxConcurrentSubscribers = 8;
+
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
 
     /// <inheritdoc />
@@ -44,7 +52,9 @@ public class RetryDeliveryBackgroundService(
 
             try
             {
-                await Task.Delay(PollInterval, stoppingToken);
+                // A delay after each pass, not a fixed period, so a slow pass isn't followed
+                // straight away by another
+                await Task.Delay(PollInterval, timeProvider, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -57,23 +67,80 @@ public class RetryDeliveryBackgroundService(
     }
 
     /// <summary>
-    ///     Processes all deliveries that are due.
+    ///     Processes all deliveries that are due. Each subscriber's deliveries are processed one at
+    ///     a time, in the order they fell due, while different subscribers are processed
+    ///     concurrently, so a slow or unreachable subscriber doesn't hold up the others. The pass
+    ///     ends when every subscriber's deliveries have been processed. If it's cancelled (at
+    ///     shutdown), the deliveries in flight finish, the rest are dropped without being sent
+    ///     (they are off the queue, which shutdown discards anyway), and the pass throws an
+    ///     <see cref="OperationCanceledException" />.
     /// </summary>
-    private async Task ProcessDueDeliveriesAsync(CancellationToken cancellationToken)
+    internal async Task ProcessDueDeliveriesAsync(CancellationToken cancellationToken)
     {
+        var dueDeliveries = new List<PendingDelivery>();
         await foreach (var delivery in queue.GetDueDeliveriesAsync(cancellationToken))
         {
             // Remove from queue before processing (we'll re-add if retry needed)
             queue.Remove(delivery.Id);
+            dueDeliveries.Add(delivery);
+        }
 
+        // GroupBy keeps the due order within each group
+        var subscriberGroups = dueDeliveries.GroupBy(d => (d.Topic.Name, d.Subscriber.Name));
+
+        await Parallel.ForEachAsync(
+            subscriberGroups,
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = MaxConcurrentSubscribers,
+                CancellationToken = cancellationToken,
+            },
+            async (subscriberDeliveries, ct) =>
+            {
+                foreach (var delivery in subscriberDeliveries)
+                {
+                    // Once the pass is cancelled, don't start another delivery: it would go out
+                    // with a cancelled token and be recorded as a failed attempt, or even
+                    // dead-lettered, without ever being sent
+                    if (ct.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    await ProcessDeliveryIsolatedAsync(delivery, ct);
+                }
+            }
+        );
+    }
+
+    /// <summary>
+    ///     Processes a delivery, logging an unexpected error instead of letting it end the pass,
+    ///     which would cancel the deliveries in flight to other subscribers.
+    /// </summary>
+    private async Task ProcessDeliveryIsolatedAsync(
+        PendingDelivery delivery,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
             await ProcessDeliveryAsync(delivery, cancellationToken);
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogError(
+                ex,
+                "Error processing event {EventId} for subscriber '{SubscriberName}'",
+                delivery.Event.Id,
+                delivery.Subscriber.Name
+            );
         }
     }
 
     /// <summary>
     ///     Processes a single delivery.
     /// </summary>
-    private async Task ProcessDeliveryAsync(
+    internal async Task ProcessDeliveryAsync(
         PendingDelivery delivery,
         CancellationToken cancellationToken
     )
@@ -87,13 +154,7 @@ public class RetryDeliveryBackgroundService(
                 delivery.Subscriber.Name
             );
 
-            await deadLetterService.WriteDeadLetterAsync(delivery, "EventTimeToLiveExpired");
-            eventHistoryService.RecordDeliveryCompleted(
-                delivery.Event.Id,
-                delivery.Subscriber.Name,
-                DeliveryStatus.DeadLettered,
-                timeProvider.GetUtcNow()
-            );
+            await DeadLetterAsync(delivery, DeadLetterReasons.EventTimeToLiveExpired);
             return;
         }
 
@@ -103,17 +164,11 @@ public class RetryDeliveryBackgroundService(
             logger.LogWarning(
                 "Event {EventId} reached max delivery attempts ({MaxAttempts}) for subscriber '{SubscriberName}'",
                 delivery.Event.Id,
-                delivery.Subscriber.RetryPolicy?.MaxDeliveryAttempts ?? 30,
+                delivery.EffectiveRetryPolicy.MaxDeliveryAttempts,
                 delivery.Subscriber.Name
             );
 
-            await deadLetterService.WriteDeadLetterAsync(delivery, "MaxDeliveryAttemptsExceeded");
-            eventHistoryService.RecordDeliveryCompleted(
-                delivery.Event.Id,
-                delivery.Subscriber.Name,
-                DeliveryStatus.DeadLettered,
-                timeProvider.GetUtcNow()
-            );
+            await DeadLetterAsync(delivery, DeadLetterReasons.MaxDeliveryAttemptsExceeded);
             return;
         }
 
@@ -160,30 +215,29 @@ public class RetryDeliveryBackgroundService(
     }
 
     /// <summary>
-    ///     Attempts to deliver an event.
+    ///     Attempts to deliver an event. Each delivery service turns its own failures, exceptions
+    ///     included, into a failed <see cref="DeliveryResult" />.
     /// </summary>
     private async Task<DeliveryResult> AttemptDeliveryAsync(
         PendingDelivery delivery,
         CancellationToken cancellationToken
     )
     {
-        using var scope = serviceProvider.CreateScope();
-
         return delivery.Subscriber switch
         {
-            HttpSubscriberSettings => await DeliverToHttpAsync(scope, delivery, cancellationToken),
-            ServiceBusSubscriberSettings => await DeliverToServiceBusAsync(
-                scope,
+            HttpSubscriberSettings => await httpDeliveryService.DeliverAsync(
                 delivery,
                 cancellationToken
             ),
-            StorageQueueSubscriberSettings => await DeliverToStorageQueueAsync(
-                scope,
+            ServiceBusSubscriberSettings => await serviceBusDeliveryService.DeliverAsync(
                 delivery,
                 cancellationToken
             ),
-            EventHubSubscriberSettings => await DeliverToEventHubAsync(
-                scope,
+            StorageQueueSubscriberSettings => await storageQueueDeliveryService.DeliverAsync(
+                delivery,
+                cancellationToken
+            ),
+            EventHubSubscriberSettings => await eventHubDeliveryService.DeliverAsync(
                 delivery,
                 cancellationToken
             ),
@@ -193,108 +247,6 @@ public class RetryDeliveryBackgroundService(
                 ErrorMessage: "Unknown subscriber type"
             ),
         };
-    }
-
-    /// <summary>
-    ///     Delivers to an HTTP endpoint.
-    /// </summary>
-    private static async Task<DeliveryResult> DeliverToHttpAsync(
-        IServiceScope scope,
-        PendingDelivery delivery,
-        CancellationToken cancellationToken
-    )
-    {
-        var service = scope.ServiceProvider.GetRequiredService<HttpEventDeliveryService>();
-        return await service.DeliverAsync(delivery, cancellationToken);
-    }
-
-    /// <summary>
-    ///     Delivers to Service Bus.
-    /// </summary>
-    private async Task<DeliveryResult> DeliverToServiceBusAsync(
-        IServiceScope scope,
-        PendingDelivery delivery,
-        CancellationToken cancellationToken
-    )
-    {
-        try
-        {
-            var service =
-                scope.ServiceProvider.GetRequiredService<ServiceBusEventDeliveryService>();
-            return await service.DeliverAsync(delivery, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(
-                ex,
-                "Service Bus delivery failed for event {EventId}",
-                delivery.Event.Id
-            );
-            return new DeliveryResult(
-                false,
-                DeliveryOutcome.ServiceBusError,
-                ErrorMessage: ex.Message
-            );
-        }
-    }
-
-    /// <summary>
-    ///     Delivers to Storage Queue.
-    /// </summary>
-    private async Task<DeliveryResult> DeliverToStorageQueueAsync(
-        IServiceScope scope,
-        PendingDelivery delivery,
-        CancellationToken cancellationToken
-    )
-    {
-        try
-        {
-            var service =
-                scope.ServiceProvider.GetRequiredService<StorageQueueEventDeliveryService>();
-            return await service.DeliverAsync(delivery, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(
-                ex,
-                "Storage Queue delivery failed for event {EventId}",
-                delivery.Event.Id
-            );
-            return new DeliveryResult(
-                false,
-                DeliveryOutcome.StorageQueueError,
-                ErrorMessage: ex.Message
-            );
-        }
-    }
-
-    /// <summary>
-    ///     Delivers to Event Hub.
-    /// </summary>
-    private async Task<DeliveryResult> DeliverToEventHubAsync(
-        IServiceScope scope,
-        PendingDelivery delivery,
-        CancellationToken cancellationToken
-    )
-    {
-        try
-        {
-            var service = scope.ServiceProvider.GetRequiredService<EventHubEventDeliveryService>();
-            return await service.DeliverAsync(delivery, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(
-                ex,
-                "Event Hub delivery failed for event {EventId}",
-                delivery.Event.Id
-            );
-            return new DeliveryResult(
-                false,
-                DeliveryOutcome.EventHubError,
-                ErrorMessage: ex.Message
-            );
-        }
     }
 
     /// <summary>
@@ -323,13 +275,7 @@ public class RetryDeliveryBackgroundService(
                 delivery.Subscriber.Name
             );
 
-            await deadLetterService.WriteDeadLetterAsync(delivery, reason);
-            eventHistoryService.RecordDeliveryCompleted(
-                delivery.Event.Id,
-                delivery.Subscriber.Name,
-                DeliveryStatus.DeadLettered,
-                timeProvider.GetUtcNow()
-            );
+            await DeadLetterAsync(delivery, reason);
             return;
         }
 
@@ -342,13 +288,7 @@ public class RetryDeliveryBackgroundService(
                 delivery.Subscriber.Name
             );
 
-            await deadLetterService.WriteDeadLetterAsync(delivery, "RetryDisabled_DeliveryFailed");
-            eventHistoryService.RecordDeliveryCompleted(
-                delivery.Event.Id,
-                delivery.Subscriber.Name,
-                DeliveryStatus.DeadLettered,
-                timeProvider.GetUtcNow()
-            );
+            await DeadLetterAsync(delivery, DeadLetterReasons.RetryDisabledDeliveryFailed);
             return;
         }
 
@@ -361,17 +301,12 @@ public class RetryDeliveryBackgroundService(
                 delivery.Subscriber.Name
             );
 
-            await deadLetterService.WriteDeadLetterAsync(delivery, "MaxDeliveryAttemptsExceeded");
-            eventHistoryService.RecordDeliveryCompleted(
-                delivery.Event.Id,
-                delivery.Subscriber.Name,
-                DeliveryStatus.DeadLettered,
-                timeProvider.GetUtcNow()
-            );
+            await DeadLetterAsync(delivery, DeadLetterReasons.MaxDeliveryAttemptsExceeded);
             return;
         }
 
-        // Check if TTL will be exceeded before next retry
+        // Check if the TTL has already expired (e.g. during a slow attempt). This checks the
+        // current time, not whether the TTL would run out before the next retry
         if (delivery.IsExpired(timeProvider.GetUtcNow()))
         {
             logger.LogWarning(
@@ -380,13 +315,7 @@ public class RetryDeliveryBackgroundService(
                 delivery.Subscriber.Name
             );
 
-            await deadLetterService.WriteDeadLetterAsync(delivery, "EventTimeToLiveExpired");
-            eventHistoryService.RecordDeliveryCompleted(
-                delivery.Event.Id,
-                delivery.Subscriber.Name,
-                DeliveryStatus.DeadLettered,
-                timeProvider.GetUtcNow()
-            );
+            await DeadLetterAsync(delivery, DeadLetterReasons.EventTimeToLiveExpired);
             return;
         }
 
@@ -403,8 +332,23 @@ public class RetryDeliveryBackgroundService(
             delivery.Event.Id,
             delivery.NextAttemptTime,
             delivery.AttemptCount,
-            delivery.Subscriber.RetryPolicy?.MaxDeliveryAttempts ?? 30,
+            delivery.EffectiveRetryPolicy.MaxDeliveryAttempts,
             delivery.Subscriber.Name
+        );
+    }
+
+    /// <summary>
+    ///     Writes the delivery to the subscriber's dead-letter folder (when dead-lettering is
+    ///     enabled), then records it as dead-lettered for the dashboard.
+    /// </summary>
+    private async Task DeadLetterAsync(PendingDelivery delivery, string reason)
+    {
+        await deadLetterService.WriteDeadLetterAsync(delivery, reason);
+        eventHistoryService.RecordDeliveryCompleted(
+            delivery.Event.Id,
+            delivery.Subscriber.Name,
+            DeliveryStatus.DeadLettered,
+            timeProvider.GetUtcNow()
         );
     }
 }

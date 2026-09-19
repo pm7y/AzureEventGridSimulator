@@ -41,18 +41,11 @@ public class CloudEventSchemaFormatter : IEventSchemaFormatter
     }
 
     /// <inheritdoc />
-    public string SerializeArray(IEnumerable<SimulatorEvent> events)
-    {
-        var cloudEvents = events.Select(ConvertToCloudEvent).ToArray();
-        return JsonSerializer.Serialize(cloudEvents, _serializerOptions);
-    }
-
-    /// <inheritdoc />
     public Dictionary<string, string> GetHeaders(SimulatorEvent evt)
     {
         // Structured mode includes all attributes in the body
         // No additional CloudEvents headers needed
-        return new Dictionary<string, string>();
+        return [];
     }
 
     /// <summary>

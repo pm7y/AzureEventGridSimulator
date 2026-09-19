@@ -6,15 +6,20 @@ on:
       - master
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
-  actions: write
+# Each job declares the token scopes it needs.
+permissions: {}
 
 jobs:
   release-please:
     name: "AEGS: Release Please"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # contents and pull-requests write let release-please push the release branch, open the PR
+    # and create the release. actions write is for the CodeQL dispatch step.
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -22,21 +27,48 @@ jobs:
     steps:
       - name: Release Please
         id: release
-        uses: googleapis/release-please-action@v5
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: .github/release-please-config.json
           manifest-file: .github/.release-please-manifest.json
+
+      # The release PR is pushed with GITHUB_TOKEN, so CodeQL doesn't run on it by itself: the push
+      # starts no workflows and the pull_request run waits for a maintainer to approve it. Code
+      # scanning protection blocks the merge until results exist. A GITHUB_TOKEN workflow_dispatch
+      # does start a run, so dispatch CodeQL on the release branch whenever release-please creates
+      # or updates the PR.
+      # A failed dispatch must not fail this job: one run can both create a release and update the
+      # PR, and trigger-release-workflows is skipped unless this job succeeds. If it fails, approve
+      # the PR's CodeQL run or run `gh workflow run codeql.yml --ref <release-branch>` instead.
+      - name: Run CodeQL on the release PR branch
+        if: steps.release.outputs.prs_created == 'true'
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR: ${{ steps.release.outputs.pr }}
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'codeql.yml',
+              ref: JSON.parse(process.env.PR).headBranchName
+            });
 
   trigger-release-workflows:
     name: "AEGS: Trigger Release Workflows"
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Only dispatches the publish workflows
+    permissions:
+      actions: write
 
     steps:
       - name: Trigger GitHub Release (binaries)
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
@@ -50,7 +82,7 @@ jobs:
             });
 
       - name: Trigger NuGet Release
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
@@ -64,7 +96,7 @@ jobs:
             });
 
       - name: Trigger Docker Release
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({

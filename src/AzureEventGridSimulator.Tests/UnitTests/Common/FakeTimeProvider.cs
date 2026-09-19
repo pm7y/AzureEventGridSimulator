@@ -1,4 +1,4 @@
-namespace AzureEventGridSimulator.Tests.Helpers;
+namespace AzureEventGridSimulator.Tests.UnitTests.Common;
 
 /// <summary>
 ///     A fake TimeProvider for testing time-dependent code.

@@ -110,4 +110,87 @@ public class HttpSubscriberSettingsEndpointValidationTests
 
         Should.NotThrow(() => settings.Validate());
     }
+
+    [Fact]
+    public void GivenInvalidRetryPolicy_WhenValidated_ThenThrowsArgumentException()
+    {
+        var settings = new HttpSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            Endpoint = "https://example.com",
+            RetryPolicy = new RetryPolicySettings { MaxDeliveryAttempts = 0 },
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+        exception.Message.ShouldBe(
+            "MaxDeliveryAttempts must be between 1 and 30. (Parameter 'MaxDeliveryAttempts')"
+        );
+    }
+
+    // Validation order for HTTP: name, endpoint present, endpoint is an HTTP(S) URL, then
+    // filter, retry policy and dead-letter. Each test below breaks two adjacent rules and
+    // pins which message wins, word for word.
+
+    [Fact]
+    public void GivenBlankEndpointAndInvalidFilter_WhenValidated_ThenEndpointRequiredErrorIsReported()
+    {
+        var settings = new HttpSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            Endpoint = "   ",
+            Filter = new FilterSetting { AdvancedFilters = [new AdvancedFilterSetting()] },
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+        exception.Message.ShouldBe(
+            "Endpoint is required for HTTP subscribers. (Parameter 'Endpoint')"
+        );
+    }
+
+    [Fact]
+    public void GivenNonHttpEndpointAndInvalidFilter_WhenValidated_ThenEndpointUrlErrorIsReported()
+    {
+        var settings = new HttpSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            Endpoint = "ftp://example.com/file",
+            Filter = new FilterSetting { AdvancedFilters = [new AdvancedFilterSetting()] },
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+        exception.Message.ShouldBe(
+            "Endpoint must be a valid HTTP or HTTPS URL. (Parameter 'Endpoint')"
+        );
+    }
+
+    [Fact]
+    public void GivenInvalidFilterAndInvalidRetryPolicy_WhenValidated_ThenFilterErrorIsReported()
+    {
+        var settings = new HttpSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            Endpoint = "https://example.com",
+            Filter = new FilterSetting { AdvancedFilters = [new AdvancedFilterSetting()] },
+            RetryPolicy = new RetryPolicySettings { MaxDeliveryAttempts = 0 },
+        };
+
+        var exception = Should.Throw<ArgumentException>(() => settings.Validate());
+        exception.Message.ShouldBe("A filter key must be provided (Parameter 'Key')");
+    }
+
+    [Fact]
+    public void GivenDeadLetterWithBlankFolderPath_WhenValidated_ThenDefaultFolderPathIsApplied()
+    {
+        var deadLetter = new DeadLetterSettings { FolderPath = "" };
+        var settings = new HttpSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            Endpoint = "https://example.com",
+            DeadLetter = deadLetter,
+        };
+
+        settings.Validate();
+
+        deadLetter.FolderPath.ShouldBe("./dead-letters");
+    }
 }

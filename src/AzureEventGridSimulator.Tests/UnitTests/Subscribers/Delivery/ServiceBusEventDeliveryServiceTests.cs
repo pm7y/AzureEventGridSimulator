@@ -1,8 +1,8 @@
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
-using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -32,55 +32,8 @@ public class ServiceBusEventDeliveryServiceTests
         );
     }
 
-    private static ServiceBusSubscriberSettings CreateValidQueueSettings()
-    {
-        return new ServiceBusSubscriberSettings
-        {
-            Name = "TestSubscriber",
-            ConnectionString =
-                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
-            Queue = "my-queue",
-        };
-    }
-
-    private static ServiceBusSubscriberSettings CreateValidTopicSettings()
-    {
-        return new ServiceBusSubscriberSettings
-        {
-            Name = "TestSubscriber",
-            ConnectionString =
-                "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
-            Topic = "my-topic",
-        };
-    }
-
-    private static TopicSettings CreateTopicSettings()
-    {
-        return new TopicSettings
-        {
-            Name = "TestTopic",
-            Port = 60101,
-            Key = "TheLocal+DevelopmentKey=",
-        };
-    }
-
-    private static SimulatorEvent CreateTestEvent()
-    {
-        return SimulatorEvent.FromEventGridEvent(
-            new EventGridEvent
-            {
-                Id = "test-event-id",
-                Subject = "test/subject",
-                EventType = "Test.EventType",
-                EventTime = "2025-01-15T10:30:00Z",
-                DataVersion = "1.0",
-                Data = new { customerId = "cust-123" },
-            }
-        );
-    }
-
     [Fact]
-    public async Task GivenDisabledSubscription_WhenSending_ThenLogsWarningAndReturnsEarly()
+    public async Task GivenDisabledSubscription_WhenDelivering_ThenReturnsServiceBusError()
     {
         var subscription = new ServiceBusSubscriberSettings
         {
@@ -90,27 +43,19 @@ public class ServiceBusEventDeliveryServiceTests
             Queue = "my-queue",
             Disabled = true,
         };
-        var topic = CreateTopicSettings();
-        var evt = CreateTestEvent();
+        var delivery = TestHelpers.CreatePendingDelivery(subscription);
 
-        await _service.SendAsync(subscription, evt, topic, EventSchema.EventGridSchema);
+        var result = await _service.DeliverAsync(delivery, CancellationToken.None);
 
-        // Verify warning was logged (subscription is disabled)
-        _logger
-            .Received()
-            .Log(
-                LogLevel.Warning,
-                Arg.Any<EventId>(),
-                Arg.Is<object>(o => o != null && string.Concat(o).Contains("disabled")),
-                Arg.Any<Exception?>(),
-                Arg.Any<Func<object, Exception?, string>>()
-            );
+        result.Success.ShouldBeFalse();
+        result.Outcome.ShouldBe(DeliveryOutcome.ServiceBusError);
+        result.ErrorMessage.ShouldBe("Subscription is disabled");
     }
 
     [Fact]
     public void GivenQueueSubscription_WhenChecked_ThenIsTopicIsFalse()
     {
-        var subscription = CreateValidQueueSettings();
+        var subscription = TestHelpers.CreateValidServiceBusSettings();
 
         subscription.IsTopic.ShouldBeFalse();
         subscription.DestinationName.ShouldBe("my-queue");
@@ -119,7 +64,7 @@ public class ServiceBusEventDeliveryServiceTests
     [Fact]
     public void GivenTopicSubscription_WhenChecked_ThenIsTopicIsTrue()
     {
-        var subscription = CreateValidTopicSettings();
+        var subscription = TestHelpers.CreateValidServiceBusSettings(topic: "my-topic");
 
         subscription.IsTopic.ShouldBeTrue();
         subscription.DestinationName.ShouldBe("my-topic");
@@ -128,7 +73,7 @@ public class ServiceBusEventDeliveryServiceTests
     [Fact]
     public void SubscriberType_ShouldBeServiceBus()
     {
-        var subscription = CreateValidQueueSettings();
+        var subscription = TestHelpers.CreateValidServiceBusSettings();
 
         subscription.SubscriberType.ShouldBe("serviceBus");
     }
@@ -166,7 +111,7 @@ public class ServiceBusEventDeliveryServiceTests
     [Fact]
     public void GivenSubscriptionWithoutDeliverySchema_WhenConfigured_ThenSchemaIsNull()
     {
-        var subscription = CreateValidQueueSettings();
+        var subscription = TestHelpers.CreateValidServiceBusSettings();
 
         subscription.DeliverySchema.ShouldBeNull();
     }
@@ -187,7 +132,11 @@ public class ServiceBusEventDeliveryServiceTests
     public void GivenEventGridFormatter_WhenSerializing_ThenReturnsJsonArray()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.EventGridSchema);
-        var evt = CreateTestEvent();
+        var evt = TestHelpers.CreateSimulatorEventFromEventGrid(
+            id: "test-event-id",
+            subject: "test/subject",
+            data: new { customerId = "cust-123" }
+        );
 
         var json = formatter.Serialize(evt);
 
@@ -201,7 +150,11 @@ public class ServiceBusEventDeliveryServiceTests
     public void GivenCloudEventFormatter_WhenSerializing_ThenReturnsJsonArray()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.CloudEventV1_0);
-        var evt = CreateTestEvent();
+        var evt = TestHelpers.CreateSimulatorEventFromEventGrid(
+            id: "test-event-id",
+            subject: "test/subject",
+            data: new { customerId = "cust-123" }
+        );
 
         var json = formatter.Serialize(evt);
 
@@ -235,7 +188,14 @@ public class ServiceBusEventDeliveryServiceTests
             ["Label"] = new() { Type = "static", Value = "test-label" },
         };
 
-        var resolved = _propertyResolver.ResolveProperties(properties, CreateTestEvent());
+        var resolved = _propertyResolver.ResolveProperties(
+            properties,
+            TestHelpers.CreateSimulatorEventFromEventGrid(
+                id: "test-event-id",
+                subject: "test/subject",
+                data: new { customerId = "cust-123" }
+            )
+        );
 
         resolved["Label"].ShouldBe("test-label");
     }
@@ -248,7 +208,14 @@ public class ServiceBusEventDeliveryServiceTests
             ["Subject"] = new() { Type = "dynamic", Value = "Subject" },
         };
 
-        var resolved = _propertyResolver.ResolveProperties(properties, CreateTestEvent());
+        var resolved = _propertyResolver.ResolveProperties(
+            properties,
+            TestHelpers.CreateSimulatorEventFromEventGrid(
+                id: "test-event-id",
+                subject: "test/subject",
+                data: new { customerId = "cust-123" }
+            )
+        );
 
         resolved["Subject"].ShouldBe("test/subject");
     }
@@ -257,7 +224,11 @@ public class ServiceBusEventDeliveryServiceTests
     public void GivenCloudEventFormatter_WhenSerializingSingle_ThenReturnsJsonWithoutArray()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.CloudEventV1_0);
-        var evt = CreateTestEvent();
+        var evt = TestHelpers.CreateSimulatorEventFromEventGrid(
+            id: "test-event-id",
+            subject: "test/subject",
+            data: new { customerId = "cust-123" }
+        );
 
         var json = formatter.SerializeSingle(evt);
 
@@ -272,7 +243,11 @@ public class ServiceBusEventDeliveryServiceTests
     public void GivenEventGridFormatter_WhenSerializingSingle_ThenReturnsJsonWithoutArray()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.EventGridSchema);
-        var evt = CreateTestEvent();
+        var evt = TestHelpers.CreateSimulatorEventFromEventGrid(
+            id: "test-event-id",
+            subject: "test/subject",
+            data: new { customerId = "cust-123" }
+        );
 
         var json = formatter.SerializeSingle(evt);
 

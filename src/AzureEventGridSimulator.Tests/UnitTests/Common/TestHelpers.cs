@@ -245,4 +245,41 @@ public static class TestHelpers
             Key = key,
         };
     }
+
+    /// <summary>
+    ///     Creates a PendingDelivery for testing. Defaults to a validated HTTP subscriber,
+    ///     <see cref="CreateSimulatorEventFromEventGrid" /> and <see cref="CreateValidTopicSettings" />.
+    ///     NextAttemptTime keeps the PendingDelivery default unless one is given.
+    /// </summary>
+    public static PendingDelivery CreatePendingDelivery(
+        ISubscriberSettings? subscriber = null,
+        SimulatorEvent? evt = null,
+        TopicSettings? topic = null,
+        EventSchema inputSchema = EventSchema.EventGridSchema,
+        DateTimeOffset? nextAttemptTime = null
+    )
+    {
+        var delivery = new PendingDelivery
+        {
+            Event = evt ?? CreateSimulatorEventFromEventGrid(),
+            Subscriber =
+                subscriber
+                ?? new HttpSubscriberSettings
+                {
+                    Name = "TestSubscriber",
+                    Endpoint = "https://example.com/webhook",
+                    DisableValidation = true,
+                    ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful,
+                },
+            Topic = topic ?? CreateValidTopicSettings(),
+            InputSchema = inputSchema,
+        };
+
+        if (nextAttemptTime is { } time)
+        {
+            delivery.NextAttemptTime = time;
+        }
+
+        return delivery;
+    }
 }

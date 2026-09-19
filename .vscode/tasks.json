@@ -7,13 +7,10 @@
             "label": "build",
             "command": "dotnet",
             "type": "shell",
-            "osx":{
-                "args": [
-                    "build",
-                    "${workspaceFolder}/src/AzureEventGridSimulator.slnx"
-                ],
-            },
-      
+            "args": [
+                "build",
+                "${workspaceFolder}/src/AzureEventGridSimulator.slnx"
+            ],
             "group": "build",
             "presentation": {
                 "reveal": "silent"

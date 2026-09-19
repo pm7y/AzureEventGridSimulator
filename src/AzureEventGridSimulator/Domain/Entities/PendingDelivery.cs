@@ -34,6 +34,13 @@ public class PendingDelivery
     public required EventSchema InputSchema { get; init; }
 
     /// <summary>
+    ///     Gets the schema to deliver the event in: the subscriber's delivery schema, then the
+    ///     topic's output schema, then the input schema.
+    /// </summary>
+    public EventSchema DeliverySchema =>
+        Subscriber.DeliverySchema ?? Topic.OutputSchema ?? InputSchema;
+
+    /// <summary>
     ///     Gets or sets the time the event was enqueued.
     /// </summary>
     public DateTimeOffset EnqueuedTime { get; init; } = DateTimeOffset.UtcNow;
@@ -54,9 +61,10 @@ public class PendingDelivery
     public List<DeliveryAttempt> Attempts { get; } = [];
 
     /// <summary>
-    ///     Gets the effective retry policy for this delivery.
+    ///     Gets the effective retry policy for this delivery: the subscriber's, or the defaults when
+    ///     it has none.
     /// </summary>
-    private RetryPolicySettings EffectiveRetryPolicy =>
+    internal RetryPolicySettings EffectiveRetryPolicy =>
         Subscriber.RetryPolicy ?? new RetryPolicySettings();
 
     /// <summary>

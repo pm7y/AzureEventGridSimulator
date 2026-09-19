@@ -1,3 +1,4 @@
+using AzureEventGridSimulator.Infrastructure.Middleware;
 using Shouldly;
 using Xunit;
 
@@ -11,9 +12,9 @@ public class SasKeyValidatorNoAuthTests : SasKeyValidatorTestBase
     {
         var headers = new HeaderDictionary();
 
-        var result = Validator.IsValid(headers, ValidTopicKey);
+        var result = Validator.Validate(headers, ValidTopicKey);
 
-        result.ShouldBeFalse();
+        result.ShouldBe(Failed(SasValidationFailureReason.MissingKey));
     }
 
     [Fact]
@@ -25,8 +26,8 @@ public class SasKeyValidatorNoAuthTests : SasKeyValidatorTestBase
             { "Accept", "*/*" },
         };
 
-        var result = Validator.IsValid(headers, ValidTopicKey);
+        var result = Validator.Validate(headers, ValidTopicKey);
 
-        result.ShouldBeFalse();
+        result.ShouldBe(Failed(SasValidationFailureReason.MissingKey));
     }
 }

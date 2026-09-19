@@ -1,6 +1,7 @@
 using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;
 using Xunit;
 
@@ -9,7 +10,10 @@ namespace AzureEventGridSimulator.Tests.UnitTests.EventGrid;
 [Trait("Category", "unit")]
 public class EventGridSchemaFormatterTests
 {
-    private readonly EventGridSchemaFormatter _formatter = new(TimeProvider.System);
+    // Deliberately not the events' own time, so a pass-through can't be mistaken for the fallback
+    private static readonly DateTimeOffset FixedTime = new(2025, 6, 1, 8, 15, 30, TimeSpan.Zero);
+
+    private readonly EventGridSchemaFormatter _formatter = new(new FakeTimeProvider(FixedTime));
 
     [Fact]
     public void GivenEventGridEvent_WhenSerialized_ThenJsonContainsAllFields()
@@ -38,7 +42,8 @@ public class EventGridSchemaFormatterTests
         evt.GetProperty("id").GetString().ShouldBe("event-123");
         evt.GetProperty("subject").GetString().ShouldBe("/test/subject");
         evt.GetProperty("eventType").GetString().ShouldBe("Test.Event.Type");
-        evt.TryGetProperty("eventTime", out _).ShouldBeTrue(); // Time format may vary by locale
+        evt.GetProperty("eventTime").GetString().ShouldBe("2025-01-15T10:30:00Z");
+        evt.GetProperty("data").GetProperty("Property").GetString().ShouldBe("Value");
         evt.GetProperty("dataVersion").GetString().ShouldBe("1.0");
     }
 
@@ -66,9 +71,10 @@ public class EventGridSchemaFormatterTests
         var evt = parsed[0];
         evt.GetProperty("id").GetString().ShouldBe("test-id-123");
         evt.GetProperty("eventType").GetString().ShouldBe("com.example.test");
-        evt.TryGetProperty("eventTime", out _).ShouldBeTrue(); // Time format may vary by locale
+        evt.GetProperty("eventTime").GetString().ShouldBe("2025-01-15T10:30:00Z");
         evt.GetProperty("subject").GetString().ShouldBe("/test/subject");
         evt.GetProperty("topic").GetString().ShouldBe("/test/source");
+        evt.GetProperty("data").GetProperty("Property").GetString().ShouldBe("Value");
     }
 
     [Fact]

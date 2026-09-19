@@ -36,17 +36,10 @@ public class EventGridSchemaFormatter(TimeProvider timeProvider) : IEventSchemaF
     }
 
     /// <inheritdoc />
-    public string SerializeArray(IEnumerable<SimulatorEvent> events)
-    {
-        var eventGridEvents = events.Select(ConvertToEventGridEvent).ToArray();
-        return JsonSerializer.Serialize(eventGridEvents, _serializerOptions);
-    }
-
-    /// <inheritdoc />
     public Dictionary<string, string> GetHeaders(SimulatorEvent evt)
     {
         // Event Grid schema doesn't require special headers for delivery
-        return new Dictionary<string, string>();
+        return [];
     }
 
     /// <summary>

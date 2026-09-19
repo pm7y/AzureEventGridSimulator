@@ -76,11 +76,9 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
         // Check for notification request (POST /api/events with appropriate content)
         if (IsNotificationRequest(context))
         {
-            // No matching enabled topic (e.g. request on the dashboard port, a Host header
-            // without a port, or a disabled topic's port) is treated as an unknown path.
-            var topic = simulatorSettings.Topics.FirstOrDefault(t =>
-                !t.Disabled && t.Port == context.Request.Host.Port
-            );
+            // No matching enabled topic (e.g. a request on the dashboard port or a disabled
+            // topic's port) is treated as an unknown path.
+            var topic = ResolveTopic(context);
             return topic is null
                 ? new RequestRouteResult(RequestType.NotFound)
                 : new RequestRouteResult(RequestType.Notification, topic);
@@ -116,10 +114,7 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
             && context.Request.Method == HttpMethods.Options
         )
         {
-            var topic = simulatorSettings.Topics.FirstOrDefault(t =>
-                !t.Disabled && t.Port == context.Request.Host.Port
-            );
-            return new RequestRouteResult(RequestType.OptionsPreFlight, topic);
+            return new RequestRouteResult(RequestType.OptionsPreFlight, ResolveTopic(context));
         }
 
         // HEAD request to /api/events (Azure returns 404)
@@ -148,6 +143,25 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
         return new RequestRouteResult(RequestType.NotFound);
     }
 
+    /// <summary>
+    ///     Finds the enabled topic that a request was sent to, by the port the connection arrived
+    ///     on rather than the client-supplied Host header, so a remapped port (for example
+    ///     <c>docker run --publish 8443:60101</c>) still reaches its topic.
+    /// </summary>
+    /// <remarks>
+    ///     Falls back to the Host header's port when the connection's local port isn't known
+    ///     (0), which is the case under TestServer.
+    /// </remarks>
+    /// <param name="context">The HTTP context.</param>
+    /// <returns>The enabled topic listening on the request's port, or null if there isn't one.</returns>
+    public TopicSettings? ResolveTopic(HttpContext context)
+    {
+        var port = context.Connection.LocalPort is > 0 and var localPort
+            ? localPort
+            : context.Request.Host.Port;
+        return simulatorSettings.Topics.FirstOrDefault(t => !t.Disabled && t.Port == port);
+    }
+
     private static bool IsNotificationRequest(HttpContext context)
     {
         // Azure accepts paths in any case and with trailing slash
@@ -161,7 +175,7 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
         }
 
         // Check for CloudEvents binary mode (indicated by ce-* headers)
-        if (IsCloudEventsBinaryMode(context))
+        if (CloudEventsHttp.IsBinaryMode(context.Request.Headers))
         {
             return true;
         }
@@ -189,17 +203,6 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
                 StringComparison.OrdinalIgnoreCase
             )
             || !contentType.Contains("cloudevents", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsCloudEventsBinaryMode(HttpContext context)
-    {
-        var headers = context.Request.Headers;
-        // Binary mode is detected when any ce-* header is present
-        // Azure validates required headers during parsing and returns specific errors
-        return headers.ContainsKey(Constants.CeSpecVersionHeader)
-            || headers.ContainsKey(Constants.CeIdHeader)
-            || headers.ContainsKey(Constants.CeSourceHeader)
-            || headers.ContainsKey(Constants.CeTypeHeader);
     }
 
     private static bool IsValidationRequest(HttpContext context)

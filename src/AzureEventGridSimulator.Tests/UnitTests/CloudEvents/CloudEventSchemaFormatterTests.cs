@@ -58,8 +58,8 @@ public class CloudEventSchemaFormatterTests
         array.GetArrayLength().ShouldBe(1);
         var parsed = array[0];
         parsed.GetProperty("subject").GetString().ShouldBe("/test/subject");
-        parsed.TryGetProperty("time", out _).ShouldBeTrue(); // Time format may vary by locale
-        parsed.TryGetProperty("data", out _).ShouldBeTrue();
+        parsed.GetProperty("time").GetString().ShouldBe("2025-01-15T10:30:00Z");
+        parsed.GetProperty("data").GetProperty("Property").GetString().ShouldBe("Value");
     }
 
     [Fact]
@@ -87,7 +87,8 @@ public class CloudEventSchemaFormatterTests
         parsed.GetProperty("source").GetString().ShouldBe("/test/topic");
         parsed.GetProperty("id").GetString().ShouldBe("event-123");
         parsed.GetProperty("subject").GetString().ShouldBe("/test/subject");
-        parsed.TryGetProperty("time", out _).ShouldBeTrue(); // Time format may vary by locale
+        parsed.GetProperty("time").GetString().ShouldBe("2025-01-15T10:30:00Z");
+        parsed.GetProperty("data").GetProperty("Property").GetString().ShouldBe("Value");
     }
 
     [Fact]

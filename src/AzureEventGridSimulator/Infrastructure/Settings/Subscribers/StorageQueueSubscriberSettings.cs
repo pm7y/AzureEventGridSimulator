@@ -1,20 +1,12 @@
 using System.Text.Json.Serialization;
-using AzureEventGridSimulator.Domain.Entities;
 
 namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
 /// <summary>
 ///     Settings for Azure Storage Queue subscribers.
 /// </summary>
-public class StorageQueueSubscriberSettings : ISubscriberSettings
+public class StorageQueueSubscriberSettings : SubscriberSettingsBase
 {
-    /// <summary>
-    ///     Internal reference to the parent topic for connection string inheritance.
-    ///     Set during validation in SimulatorSettings.
-    /// </summary>
-    [JsonIgnore]
-    internal TopicSettings? ParentTopic { get; set; }
-
     /// <summary>
     ///     Gets or sets the Storage Queue connection string.
     /// </summary>
@@ -36,46 +28,12 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
             ? ConnectionString
             : ParentTopic?.StorageQueueConnectionString;
 
-    [JsonPropertyName("name")]
-    public required string Name { get; init; }
-
-    [JsonPropertyName("filter")]
-    public FilterSetting? Filter { get; init; }
-
-    [JsonPropertyName("disabled")]
-    public bool Disabled { get; init; }
-
-    /// <summary>
-    ///     Gets or sets the delivery schema for events sent to this subscriber.
-    ///     If null, uses the topic's output schema or the original event schema.
-    /// </summary>
-    [JsonPropertyName("deliverySchema")]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public EventSchema? DeliverySchema { get; init; }
-
-    /// <summary>
-    ///     Gets or sets the retry policy for this subscriber.
-    ///     If null, default Azure Event Grid retry behavior is used (enabled with 30 attempts, 24h TTL).
-    /// </summary>
-    [JsonPropertyName("retryPolicy")]
-    public RetryPolicySettings? RetryPolicy { get; init; }
-
-    /// <summary>
-    ///     Gets or sets the dead-letter settings for this subscriber.
-    ///     Events that cannot be delivered are written to the dead-letter destination.
-    /// </summary>
-    [JsonPropertyName("deadLetter")]
-    public DeadLetterSettings? DeadLetter { get; init; }
-
     [JsonIgnore]
-    public string SubscriberType => "storageQueue";
+    public override string SubscriberType => "storageQueue";
 
-    public void Validate()
+    public override void Validate()
     {
-        if (string.IsNullOrWhiteSpace(Name))
-        {
-            throw new ArgumentException("Subscriber name is required.", nameof(Name));
-        }
+        ValidateName();
 
         // Validate connection string (considering topic-level default)
         if (string.IsNullOrWhiteSpace(EffectiveConnectionString))
@@ -92,8 +50,6 @@ public class StorageQueueSubscriberSettings : ISubscriberSettings
             );
         }
 
-        Filter?.Validate();
-        RetryPolicy?.Validate();
-        DeadLetter?.Validate();
+        ValidateCommonTail();
     }
 }

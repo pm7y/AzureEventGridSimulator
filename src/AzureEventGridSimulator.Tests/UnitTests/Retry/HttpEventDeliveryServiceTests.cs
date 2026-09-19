@@ -50,7 +50,7 @@ public class HttpEventDeliveryServiceTests : IDisposable
     {
         var httpClientFactory = CreateMockHttpClientFactory(statusCode);
         var service = new HttpEventDeliveryService(httpClientFactory, _formatterFactory, _logger);
-        var delivery = CreatePendingDelivery();
+        var delivery = TestHelpers.CreatePendingDelivery();
 
         var result = await service.DeliverAsync(delivery, CancellationToken.None);
 
@@ -75,7 +75,7 @@ public class HttpEventDeliveryServiceTests : IDisposable
     {
         var httpClientFactory = CreateMockHttpClientFactory(statusCode);
         var service = new HttpEventDeliveryService(httpClientFactory, _formatterFactory, _logger);
-        var delivery = CreatePendingDelivery();
+        var delivery = TestHelpers.CreatePendingDelivery();
 
         var result = await service.DeliverAsync(delivery, CancellationToken.None);
 
@@ -96,7 +96,7 @@ public class HttpEventDeliveryServiceTests : IDisposable
         );
         var httpClientFactory = CreateMockHttpClientFactory(throwException: timeoutException);
         var service = new HttpEventDeliveryService(httpClientFactory, _formatterFactory, _logger);
-        var delivery = CreatePendingDelivery();
+        var delivery = TestHelpers.CreatePendingDelivery();
 
         // Pass a DIFFERENT cancellation token than the one in the exception
         var result = await service.DeliverAsync(delivery, CancellationToken.None);
@@ -115,7 +115,7 @@ public class HttpEventDeliveryServiceTests : IDisposable
             throwException: new TaskCanceledException(null, null, cts.Token)
         );
         var service = new HttpEventDeliveryService(httpClientFactory, _formatterFactory, _logger);
-        var delivery = CreatePendingDelivery();
+        var delivery = TestHelpers.CreatePendingDelivery();
 
         var result = await service.DeliverAsync(delivery, cts.Token);
 
@@ -138,19 +138,26 @@ public class HttpEventDeliveryServiceTests : IDisposable
             Queue = "test-queue",
         };
 
-        var delivery = new PendingDelivery
-        {
-            Event = CreateTestEvent(),
-            Subscriber = serviceBusSubscriber, // Wrong subscriber type
-            Topic = CreateTopicSettings(),
-            InputSchema = EventSchema.EventGridSchema,
-        };
+        // Wrong subscriber type
+        var delivery = TestHelpers.CreatePendingDelivery(serviceBusSubscriber);
 
         var result = await service.DeliverAsync(delivery, CancellationToken.None);
 
         result.Success.ShouldBeFalse();
         result.Outcome.ShouldBe(DeliveryOutcome.NetworkError);
         result.ErrorMessage.ShouldNotBeNullAnd().ShouldContain("Invalid subscriber type");
+    }
+
+    [Fact]
+    public async Task GivenHttpSubscriber_WhenDelivering_ThenUsesTheSimulatorsNamedHttpClient()
+    {
+        // The named client carries the timeout and the optional certificate bypass
+        var httpClientFactory = CreateMockHttpClientFactory();
+        var service = new HttpEventDeliveryService(httpClientFactory, _formatterFactory, _logger);
+
+        await service.DeliverAsync(TestHelpers.CreatePendingDelivery(), CancellationToken.None);
+
+        httpClientFactory.Received(1).CreateClient(Constants.HttpClientName);
     }
 
     [Fact]
@@ -165,7 +172,7 @@ public class HttpEventDeliveryServiceTests : IDisposable
             }
         });
         var service = new HttpEventDeliveryService(httpClientFactory, _formatterFactory, _logger);
-        var delivery = CreatePendingDelivery();
+        var delivery = TestHelpers.CreatePendingDelivery();
         delivery.AttemptCount = 5;
 
         await service.DeliverAsync(delivery, CancellationToken.None);
@@ -181,7 +188,7 @@ public class HttpEventDeliveryServiceTests : IDisposable
             throwException: new HttpRequestException("Connection refused")
         );
         var service = new HttpEventDeliveryService(httpClientFactory, _formatterFactory, _logger);
-        var delivery = CreatePendingDelivery();
+        var delivery = TestHelpers.CreatePendingDelivery();
 
         var result = await service.DeliverAsync(delivery, CancellationToken.None);
 
@@ -197,7 +204,7 @@ public class HttpEventDeliveryServiceTests : IDisposable
             throwException: new HttpRequestException("No such host is known")
         );
         var service = new HttpEventDeliveryService(httpClientFactory, _formatterFactory, _logger);
-        var delivery = CreatePendingDelivery();
+        var delivery = TestHelpers.CreatePendingDelivery();
 
         var result = await service.DeliverAsync(delivery, CancellationToken.None);
 
@@ -206,18 +213,99 @@ public class HttpEventDeliveryServiceTests : IDisposable
         result.ErrorMessage.ShouldNotBeNullAnd().ShouldContain("No such host");
     }
 
+    // The subscriber's deliverySchema wins, then the topic's outputSchema, then the input schema
+    [Theory]
+    [InlineData(null, null, EventSchema.EventGridSchema, EventSchema.EventGridSchema)]
+    [InlineData(null, null, EventSchema.CloudEventV1_0, EventSchema.CloudEventV1_0)]
+    [InlineData(
+        null,
+        EventSchema.CloudEventV1_0,
+        EventSchema.EventGridSchema,
+        EventSchema.CloudEventV1_0
+    )]
+    [InlineData(
+        null,
+        EventSchema.EventGridSchema,
+        EventSchema.CloudEventV1_0,
+        EventSchema.EventGridSchema
+    )]
+    [InlineData(
+        EventSchema.CloudEventV1_0,
+        EventSchema.EventGridSchema,
+        EventSchema.EventGridSchema,
+        EventSchema.CloudEventV1_0
+    )]
+    [InlineData(
+        EventSchema.EventGridSchema,
+        EventSchema.CloudEventV1_0,
+        EventSchema.CloudEventV1_0,
+        EventSchema.EventGridSchema
+    )]
+    public async Task GivenSchemaSettings_WhenDelivering_ThenTheMostSpecificSchemaIsUsed(
+        EventSchema? subscriberDeliverySchema,
+        EventSchema? topicOutputSchema,
+        EventSchema inputSchema,
+        EventSchema expectedSchema
+    )
+    {
+        // Captured inside the handler, because the request is disposed once delivery returns
+        string? mediaType = null;
+        var hasDataVersionHeader = false;
+        var httpClientFactory = CreateMockHttpClientFactory(captureRequest: request =>
+        {
+            mediaType = request.Content?.Headers.ContentType?.MediaType;
+            hasDataVersionHeader = request.Headers.Contains(Constants.AegDataVersionHeader);
+        });
+        var service = new HttpEventDeliveryService(httpClientFactory, _formatterFactory, _logger);
+        var subscriber = new HttpSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            Endpoint = "https://example.com/webhook",
+            DisableValidation = true,
+            DeliverySchema = subscriberDeliverySchema,
+        };
+        var topic = new TopicSettings
+        {
+            Name = "TestTopic",
+            Port = 60101,
+            Key = "TheLocal+DevelopmentKey=",
+            OutputSchema = topicOutputSchema,
+        };
+        var delivery = TestHelpers.CreatePendingDelivery(
+            subscriber,
+            topic: topic,
+            inputSchema: inputSchema
+        );
+
+        var result = await service.DeliverAsync(delivery, CancellationToken.None);
+
+        result.Success.ShouldBeTrue();
+        if (expectedSchema == EventSchema.CloudEventV1_0)
+        {
+            mediaType.ShouldBe("application/cloudevents-batch+json");
+            hasDataVersionHeader.ShouldBeFalse();
+        }
+        else
+        {
+            mediaType.ShouldBe("application/json");
+            hasDataVersionHeader.ShouldBeTrue();
+        }
+    }
+
     private IHttpClientFactory CreateMockHttpClientFactory(
         HttpStatusCode statusCode = HttpStatusCode.OK,
         Exception? throwException = null,
         Action? responseAction = null,
-        Action<HttpRequestHeaders>? captureHeaders = null
+        Action<HttpRequestHeaders>? captureHeaders = null,
+        Action<HttpRequestMessage>? captureRequest = null
     )
     {
         var handler = new MockHttpMessageHandler(
             statusCode,
             throwException,
             responseAction,
-            captureHeaders
+            captureHeaders,
+            captureRequest
         );
         var httpClient = new HttpClient(handler);
         _httpClients.Add(httpClient);
@@ -228,88 +316,34 @@ public class HttpEventDeliveryServiceTests : IDisposable
         return factory;
     }
 
-    private static PendingDelivery CreatePendingDelivery()
+    private class MockHttpMessageHandler(
+        HttpStatusCode statusCode,
+        Exception? exception = null,
+        Action? responseAction = null,
+        Action<HttpRequestHeaders>? captureHeaders = null,
+        Action<HttpRequestMessage>? captureRequest = null
+    ) : HttpMessageHandler
     {
-        var subscriber = new HttpSubscriberSettings
-        {
-            Name = "TestSubscriber",
-            Endpoint = "https://example.com/webhook",
-            DisableValidation = true,
-            ValidationStatus = SubscriptionValidationStatus.ValidationSuccessful,
-        };
-
-        return new PendingDelivery
-        {
-            Event = CreateTestEvent(),
-            Subscriber = subscriber,
-            Topic = CreateTopicSettings(),
-            InputSchema = EventSchema.EventGridSchema,
-        };
-    }
-
-    private static TopicSettings CreateTopicSettings()
-    {
-        return new TopicSettings
-        {
-            Name = "TestTopic",
-            Port = 60101,
-            Key = "TestKey",
-        };
-    }
-
-    private static SimulatorEvent CreateTestEvent()
-    {
-        return SimulatorEvent.FromEventGridEvent(
-            new EventGridEvent
-            {
-                Id = Guid.NewGuid().ToString(),
-                Subject = "test/subject",
-                EventType = "Test.EventType",
-                EventTime = DateTimeOffset.UtcNow.ToString("o"),
-                DataVersion = "1.0",
-                Data = new { test = "data" },
-            }
-        );
-    }
-
-    private class MockHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Action<HttpRequestHeaders>? _captureHeaders;
-        private readonly Exception? _exception;
-        private readonly Action? _responseAction;
         private readonly List<HttpResponseMessage> _responses = [];
-        private readonly HttpStatusCode _statusCode;
-
-        public MockHttpMessageHandler(
-            HttpStatusCode statusCode,
-            Exception? exception = null,
-            Action? responseAction = null,
-            Action<HttpRequestHeaders>? captureHeaders = null
-        )
-        {
-            _statusCode = statusCode;
-            _exception = exception;
-            _responseAction = responseAction;
-            _captureHeaders = captureHeaders;
-        }
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken
         )
         {
-            _captureHeaders?.Invoke(request.Headers);
-            _responseAction?.Invoke();
+            captureHeaders?.Invoke(request.Headers);
+            captureRequest?.Invoke(request);
+            responseAction?.Invoke();
 
-            if (_exception != null)
+            if (exception != null)
             {
-                throw _exception;
+                throw exception;
             }
 
-            var response = new HttpResponseMessage(_statusCode)
+            var response = new HttpResponseMessage(statusCode)
             {
                 Content = new StringContent(""),
-                ReasonPhrase = _statusCode.ToString(),
+                ReasonPhrase = statusCode.ToString(),
             };
             _responses.Add(response);
 

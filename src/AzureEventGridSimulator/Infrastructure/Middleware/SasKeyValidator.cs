@@ -65,20 +65,16 @@ public enum SasValidationFailureReason
 
 public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator> logger)
 {
-    public bool IsValid(IHeaderDictionary requestHeaders, string topicKey)
-    {
-        return Validate(requestHeaders, topicKey).IsValid;
-    }
+    // The range of Unix times DateTimeOffset.FromUnixTimeSeconds accepts
+    private static readonly long MinExpiryEpoch = DateTimeOffset.MinValue.ToUnixTimeSeconds();
+    private static readonly long MaxExpiryEpoch = DateTimeOffset.MaxValue.ToUnixTimeSeconds();
 
     public SasValidationResult Validate(IHeaderDictionary requestHeaders, string topicKey)
     {
-        if (
-            requestHeaders.Any(h =>
-                string.Equals(Constants.AegSasKeyHeader, h.Key, StringComparison.OrdinalIgnoreCase)
-            )
-        )
+        // Header lookups ignore case
+        if (requestHeaders.TryGetValue(Constants.AegSasKeyHeader, out var keyValues))
         {
-            var keyValue = requestHeaders[Constants.AegSasKeyHeader].FirstOrDefault();
+            var keyValue = keyValues.FirstOrDefault();
 
             // Azure returns 400 Bad Request for empty keys
             if (string.IsNullOrEmpty(keyValue))
@@ -87,7 +83,7 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
                 return new SasValidationResult(false, SasValidationFailureReason.EmptyKey);
             }
 
-            if (!string.Equals(keyValue, topicKey))
+            if (!SecretEquals(keyValue, topicKey))
             {
                 logger.LogError("'aeg-sas-key' value did not match the expected value!");
                 return new SasValidationResult(false, SasValidationFailureReason.KeyMismatch);
@@ -96,17 +92,9 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             return new SasValidationResult(true);
         }
 
-        if (
-            requestHeaders.Any(h =>
-                string.Equals(
-                    Constants.AegSasTokenHeader,
-                    h.Key,
-                    StringComparison.OrdinalIgnoreCase
-                )
-            )
-        )
+        if (requestHeaders.TryGetValue(Constants.AegSasTokenHeader, out var tokenValues))
         {
-            var token = requestHeaders[Constants.AegSasTokenHeader].FirstOrDefault();
+            var token = tokenValues.FirstOrDefault();
             if (token == null)
             {
                 return new SasValidationResult(false, SasValidationFailureReason.MissingKey);
@@ -122,20 +110,16 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             return new SasValidationResult(true);
         }
 
-        if (
-            requestHeaders.Any(h =>
-                string.Equals(HeaderNames.Authorization, h.Key, StringComparison.OrdinalIgnoreCase)
-            )
-        )
+        if (requestHeaders.TryGetValue(HeaderNames.Authorization, out var authValues))
         {
-            var token = requestHeaders[HeaderNames.Authorization].ToString();
+            // ToString() joins multiple values with commas
+            var token = authValues.ToString();
             if (
                 token.StartsWith(Constants.SasAuthorizationType, StringComparison.OrdinalIgnoreCase)
             )
             {
-                var tokenValue = token
-                    .Replace(Constants.SasAuthorizationType, "", StringComparison.OrdinalIgnoreCase)
-                    .Trim();
+                // Remove only the leading scheme, not the same text further into the token
+                var tokenValue = token[Constants.SasAuthorizationType.Length..].Trim();
 
                 var tokenResult = ValidateToken(tokenValue, topicKey);
                 if (!tokenResult.IsValid)
@@ -186,11 +170,21 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
             return new SasValidationResult(false, SasValidationFailureReason.InvalidTokenFormat);
         }
 
-        // Parse expiration as Unix epoch seconds
-        if (
-            !long.TryParse(expiration, out var expiryEpoch)
-            || DateTimeOffset.FromUnixTimeSeconds(expiryEpoch) <= timeProvider.GetUtcNow()
-        )
+        // Parse expiration as Unix epoch seconds. A value that isn't a number is reported as
+        // expired, which is the 401 message users have always had for it.
+        if (!long.TryParse(expiration, out var expiryEpoch))
+        {
+            return new SasValidationResult(false, SasValidationFailureReason.TokenExpired);
+        }
+
+        // A number too large or small to be a date (such as an expiry in milliseconds) would
+        // make FromUnixTimeSeconds throw, so reject it as a malformed token
+        if (expiryEpoch < MinExpiryEpoch || expiryEpoch > MaxExpiryEpoch)
+        {
+            return new SasValidationResult(false, SasValidationFailureReason.InvalidTokenFormat);
+        }
+
+        if (DateTimeOffset.FromUnixTimeSeconds(expiryEpoch) <= timeProvider.GetUtcNow())
         {
             return new SasValidationResult(false, SasValidationFailureReason.TokenExpired);
         }
@@ -202,24 +196,31 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
 
         try
         {
-            using var hmac = new HMACSHA256(Convert.FromBase64String(key));
             var computedSignature = Convert.ToBase64String(
-                hmac.ComputeHash(Encoding.UTF8.GetBytes(stringToSign))
+                HMACSHA256.HashData(
+                    Convert.FromBase64String(key),
+                    Encoding.UTF8.GetBytes(stringToSign)
+                )
             );
 
             // ParseQueryString already decodes URL-encoded values, so signature is ready to compare
             // Note: Don't call UrlDecode again as it would convert '+' to space
-            if (string.Equals(signature, computedSignature, StringComparison.Ordinal))
+            if (SecretEquals(signature, computedSignature))
             {
                 return new SasValidationResult(true);
             }
 
-            // Sanitize signature to prevent log forging by escaping all control characters
-            var sanitizedSignature = SanitizeForLogging(signature);
+            // Never log the computed signature: it's the HMAC of the caller's own resource and
+            // expiry, so it would be a valid signature for them. Everything logged here comes
+            // from the caller, so control characters are escaped to prevent log forging.
             logger.LogWarning(
-                "SAS token signature mismatch. Expected: {Expected}, Got: {Actual}",
-                computedSignature,
-                sanitizedSignature
+                "SAS token signature mismatch. Got: {Actual}",
+                SanitizeForLogging(signature)
+            );
+            logger.LogDebug(
+                "The SAS token signature was checked against the string-to-sign '{Resource}\\n{Expiry}' (the decoded resource and the expiry, separated by a newline)",
+                SanitizeForLogging(decodedResource),
+                SanitizeForLogging(expiration)
             );
 
             return new SasValidationResult(false, SasValidationFailureReason.SignatureMismatch);
@@ -228,6 +229,18 @@ public class SasKeyValidator(TimeProvider timeProvider, ILogger<SasKeyValidator>
         {
             return new SasValidationResult(false, SasValidationFailureReason.InvalidBase64);
         }
+    }
+
+    /// <summary>
+    ///     Compares two secrets in constant time for a given length, so the time taken doesn't
+    ///     reveal how much of the value matched.
+    /// </summary>
+    private static bool SecretEquals(string a, string b)
+    {
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(a),
+            Encoding.UTF8.GetBytes(b)
+        );
     }
 
     /// <summary>

@@ -15,13 +15,18 @@
     let activeTab = 'events';
     let autoRefreshEnabled = true;
     let refreshTimer = null;
+    // Bumped whenever polling starts or stops, so a poll that is still in flight doesn't
+    // schedule another tick for a loop that has since been stopped or replaced
+    let pollGeneration = 0;
+    // The last response text for each list, so a poll that brings nothing new doesn't re-render
+    let lastEventsText = null;
+    let lastRejectionsText = null;
     let knownTopics = new Set();
 
     // DOM Elements
     const elements = {
         autoRefresh: document.getElementById('autoRefresh'),
         refreshIndicator: document.getElementById('refreshIndicator'),
-        statsSection: document.getElementById('statsSection'),
         statTotalReceived: document.getElementById('statTotalReceived'),
         statInHistory: document.getElementById('statInHistory'),
         statDelivered: document.getElementById('statDelivered'),
@@ -46,10 +51,14 @@
     };
 
     // Initialize
-    function init() {
+    async function init() {
         setupEventListeners();
-        startAutoRefresh();
-        fetchData();
+
+        // Start polling once the first fetch is done, so the first poll can't overlap it
+        await fetchData();
+        if (autoRefreshEnabled) {
+            startAutoRefresh();
+        }
     }
 
     function setupEventListeners() {
@@ -58,19 +67,27 @@
         elements.topicFilter.addEventListener('change', handleTopicFilterChange);
         elements.tabEvents.addEventListener('click', () => switchTab('events'));
         elements.tabRejections.addEventListener('click', () => switchTab('rejections'));
+        elements.clearBtn.addEventListener('click', clearHistory);
 
-        if (elements.clearBtn) {
-            elements.clearBtn.addEventListener('click', clearHistory);
-        } else {
-            console.error('Clear button not found!');
-        }
+        // One listener per container, so re-rendering the items doesn't mean re-attaching them
+        elements.eventsList.addEventListener('click', e => {
+            const item = e.target.closest('.event-item');
+            if (item) selectEvent(item.dataset.eventId);
+        });
+        elements.rejectionsList.addEventListener('click', e => {
+            const item = e.target.closest('.rejection-item');
+            if (item) selectRejection(item.dataset.rejectionId);
+        });
+        elements.detailContent.addEventListener('click', e => {
+            const toggle = e.target.closest('.attempt-toggle');
+            if (toggle) toggleAttempts(toggle);
+        });
 
         // Keyboard navigation
         document.addEventListener('keydown', handleKeyDown);
     }
 
     async function clearHistory() {
-        console.log('Clear button clicked');
         if (!confirm('Clear all events and rejections?')) return;
 
         elements.clearBtn.disabled = true;
@@ -84,9 +101,9 @@
                 selectedEventId = null;
                 selectedRejectionId = null;
                 knownTopics = new Set();
-                closeDetailPanel();
-                renderEventsList();
-                renderRejectionsList();
+                lastEventsText = null;
+                lastRejectionsText = null;
+                closeDetailPanel(); // also re-renders both lists
                 updateRejectionCount();
                 updateTopicFilter();
                 await fetchData(); // Refresh stats
@@ -107,6 +124,8 @@
 
         elements.tabEvents.classList.toggle('active', tab === 'events');
         elements.tabRejections.classList.toggle('active', tab === 'rejections');
+        elements.tabEvents.setAttribute('aria-selected', String(tab === 'events'));
+        elements.tabRejections.setAttribute('aria-selected', String(tab === 'rejections'));
         elements.eventsTab.classList.toggle('hidden', tab !== 'events');
         elements.rejectionsTab.classList.toggle('hidden', tab !== 'rejections');
     }
@@ -122,16 +141,25 @@
         }
     }
 
+    // Each poll schedules the next one only after it has finished, so slow polls can't overlap
     function startAutoRefresh() {
-        if (refreshTimer) return;
-        refreshTimer = setInterval(fetchData, REFRESH_INTERVAL);
+        stopAutoRefresh();
+        scheduleNextPoll(++pollGeneration);
+    }
+
+    function scheduleNextPoll(generation) {
+        refreshTimer = setTimeout(async () => {
+            await fetchData();
+            if (generation === pollGeneration) {
+                scheduleNextPoll(generation);
+            }
+        }, REFRESH_INTERVAL);
     }
 
     function stopAutoRefresh() {
-        if (refreshTimer) {
-            clearInterval(refreshTimer);
-            refreshTimer = null;
-        }
+        pollGeneration++;
+        clearTimeout(refreshTimer);
+        refreshTimer = null;
     }
 
     function handleTopicFilterChange() {
@@ -140,7 +168,18 @@
     }
 
     function handleKeyDown(e) {
-        const list = activeTab === 'events' ? events : rejections;
+        // Leave the arrow keys to form controls that use them, so they still change the topic
+        // filter. Escape still closes the panel, and checkboxes don't use the arrow keys.
+        const usesArrowKeys = 'select, textarea, input:not([type="checkbox"])';
+        if (e.key !== 'Escape' && e.target instanceof Element && e.target.closest(usesArrowKeys)) return;
+
+        // Escape closes the panel even when the topic filter leaves the active list empty
+        if (e.key === 'Escape') {
+            closeDetailPanel();
+            return;
+        }
+
+        const list = getVisibleItems();
         const selectedId = activeTab === 'events' ? selectedEventId : selectedRejectionId;
 
         if (!list.length) return;
@@ -162,9 +201,6 @@
                     selectItem(list[currentIndex - 1].id);
                 }
                 break;
-            case 'Escape':
-                closeDetailPanel();
-                break;
         }
     }
 
@@ -185,19 +221,39 @@
                 fetch(`${API_BASE}/rejections`),
             ]);
 
-            if (eventsResponse.ok) {
-                events = await eventsResponse.json();
+            // Read all three responses before rendering, so the topic filter sees this poll's
+            // rejections as well as its events
+            const eventsText = eventsResponse.ok ? await eventsResponse.text() : null;
+            const stats = statsResponse.ok ? await statsResponse.json() : null;
+            const rejectionsText = rejectionsResponse.ok ? await rejectionsResponse.text() : null;
+
+            // Only parse and re-render a list when its response has changed since the last poll
+            const eventsChanged = eventsText !== null && eventsText !== lastEventsText;
+            const rejectionsChanged = rejectionsText !== null && rejectionsText !== lastRejectionsText;
+
+            if (eventsChanged) {
+                events = JSON.parse(eventsText);
+                lastEventsText = eventsText;
+            }
+
+            if (rejectionsChanged) {
+                rejections = JSON.parse(rejectionsText);
+                lastRejectionsText = rejectionsText;
+            }
+
+            if (eventsChanged || rejectionsChanged) {
                 updateTopicFilter();
+            }
+
+            if (eventsChanged) {
                 renderEventsList();
             }
 
-            if (statsResponse.ok) {
-                const stats = await statsResponse.json();
+            if (stats) {
                 renderStats(stats);
             }
 
-            if (rejectionsResponse.ok) {
-                rejections = await rejectionsResponse.json();
+            if (rejectionsChanged) {
                 renderRejectionsList();
                 updateRejectionCount();
             }
@@ -208,7 +264,7 @@
 
     async function fetchEventDetails(eventId) {
         try {
-            const response = await fetch(`${API_BASE}/events/${eventId}`);
+            const response = await fetch(`${API_BASE}/events/${encodeURIComponent(eventId)}`);
             if (response.ok) {
                 return await response.json();
             }
@@ -265,11 +321,15 @@
         return true;
     }
 
-    function renderEventsList() {
+    // The events or rejections shown in a tab, narrowed by the topic filter
+    function getVisibleItems(tab = activeTab) {
+        const items = tab === 'events' ? events : rejections;
         const filterTopic = elements.topicFilter.value;
-        const filteredEvents = filterTopic
-            ? events.filter(e => e.topicName === filterTopic)
-            : events;
+        return filterTopic ? items.filter(item => item.topicName === filterTopic) : items;
+    }
+
+    function renderEventsList() {
+        const filteredEvents = getVisibleItems('events');
 
         if (filteredEvents.length === 0) {
             elements.emptyState.classList.remove('hidden');
@@ -282,18 +342,10 @@
         elements.eventsList.innerHTML = DOMPurify.sanitize(filteredEvents
             .map(event => renderEventItem(event))
             .join(''));
-
-        // Attach click handlers
-        elements.eventsList.querySelectorAll('.event-item').forEach(item => {
-            item.addEventListener('click', () => selectEvent(item.dataset.eventId));
-        });
     }
 
     function renderRejectionsList() {
-        const filterTopic = elements.topicFilter.value;
-        const filteredRejections = filterTopic
-            ? rejections.filter(r => r.topicName === filterTopic)
-            : rejections;
+        const filteredRejections = getVisibleItems('rejections');
 
         if (filteredRejections.length === 0) {
             elements.emptyRejectionsState.classList.remove('hidden');
@@ -306,11 +358,6 @@
         elements.rejectionsList.innerHTML = DOMPurify.sanitize(filteredRejections
             .map(rejection => renderRejectionItem(rejection))
             .join(''));
-
-        // Attach click handlers
-        elements.rejectionsList.querySelectorAll('.rejection-item').forEach(item => {
-            item.addEventListener('click', () => selectRejection(item.dataset.rejectionId));
-        });
     }
 
     function renderEventItem(event) {
@@ -364,6 +411,10 @@
         renderEventsList();
 
         const eventDetails = await fetchEventDetails(eventId);
+
+        // Another item was selected, or the panel was closed, while this request was in flight
+        if (selectedEventId !== eventId) return;
+
         if (eventDetails) {
             renderEventDetails(eventDetails);
             elements.detailPanel.classList.add('open');
@@ -391,50 +442,34 @@
         renderRejectionsList();
     }
 
+    // A label/value row in the detail panel. valueHtml must already be escaped.
+    function detailRow(label, valueHtml, valueClass = '') {
+        const className = valueClass ? `detail-value ${valueClass}` : 'detail-value';
+        return `
+            <div class="detail-row">
+                <span class="detail-label">${label}</span>
+                <span class="${className}">${valueHtml}</span>
+            </div>
+        `;
+    }
+
     function renderEventDetails(event) {
         const html = `
             <div class="detail-section">
                 <h4 class="detail-section-title">Event Information</h4>
-                <div class="detail-row">
-                    <span class="detail-label">Event ID</span>
-                    <span class="detail-value">${escapeHtml(event.id)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Event Type</span>
-                    <span class="detail-value">${escapeHtml(event.eventType)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Subject</span>
-                    <span class="detail-value">${escapeHtml(event.subject || '-')}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Source</span>
-                    <span class="detail-value">${escapeHtml(event.source || '-')}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Event Time</span>
-                    <span class="detail-value">${formatDateTime(event.eventTime)}</span>
-                </div>
+                ${detailRow('Event ID', escapeHtml(event.id))}
+                ${detailRow('Event Type', escapeHtml(event.eventType))}
+                ${detailRow('Subject', escapeHtml(event.subject || '-'))}
+                ${detailRow('Source', escapeHtml(event.source || '-'))}
+                ${detailRow('Event Time', formatDateTime(event.eventTime))}
             </div>
 
             <div class="detail-section">
                 <h4 class="detail-section-title">Diagnostic Info</h4>
-                <div class="detail-row">
-                    <span class="detail-label">Received At</span>
-                    <span class="detail-value">${formatDateTime(event.receivedAt)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Topic</span>
-                    <span class="detail-value">${escapeHtml(event.topicName)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Port</span>
-                    <span class="detail-value">${event.topicPort}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Schema</span>
-                    <span class="detail-value">${escapeHtml(event.inputSchema)}</span>
-                </div>
+                ${detailRow('Received At', formatDateTime(event.receivedAt))}
+                ${detailRow('Topic', escapeHtml(event.topicName))}
+                ${detailRow('Port', event.topicPort)}
+                ${detailRow('Schema', escapeHtml(event.inputSchema))}
             </div>
 
             <div class="detail-section">
@@ -448,52 +483,32 @@
         `;
 
         elements.detailContent.innerHTML = DOMPurify.sanitize(html);
+    }
 
-        // Attach attempt toggle handlers
-        elements.detailContent.querySelectorAll('.attempt-toggle').forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                const list = toggle.nextElementSibling;
-                if (!list) return;
-                list.classList.toggle('hidden');
-                toggle.textContent = list.classList.contains('hidden')
-                    ? `Show ${toggle.dataset.count} attempts`
-                    : 'Hide attempts';
-            });
-        });
+    function toggleAttempts(toggle) {
+        const list = toggle.nextElementSibling;
+        if (!list) return;
+        const hidden = list.classList.toggle('hidden');
+        toggle.setAttribute('aria-expanded', String(!hidden));
+        toggle.textContent = hidden
+            ? `Show ${toggle.dataset.count} attempts`
+            : 'Hide attempts';
     }
 
     function renderRejectionDetails(rejection) {
         const html = `
             <div class="detail-section">
                 <h4 class="detail-section-title">Rejection Details</h4>
-                <div class="detail-row">
-                    <span class="detail-label">Status Code</span>
-                    <span class="detail-value rejection-status-code">HTTP ${rejection.statusCode}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Error Message</span>
-                    <span class="detail-value" style="color: var(--color-error);">${escapeHtml(rejection.errorMessage)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Rejected At</span>
-                    <span class="detail-value">${formatDateTime(rejection.rejectedAt)}</span>
-                </div>
+                ${detailRow('Status Code', `HTTP ${rejection.statusCode}`, 'rejection-status-code')}
+                ${detailRow('Error Message', escapeHtml(rejection.errorMessage), 'detail-value-error')}
+                ${detailRow('Rejected At', formatDateTime(rejection.rejectedAt))}
             </div>
 
             <div class="detail-section">
                 <h4 class="detail-section-title">Request Info</h4>
-                <div class="detail-row">
-                    <span class="detail-label">Topic</span>
-                    <span class="detail-value">${escapeHtml(rejection.topicName)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Port</span>
-                    <span class="detail-value">${rejection.topicPort}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Content-Type</span>
-                    <span class="detail-value">${escapeHtml(rejection.contentType || '-')}</span>
-                </div>
+                ${detailRow('Topic', escapeHtml(rejection.topicName))}
+                ${detailRow('Port', rejection.topicPort)}
+                ${detailRow('Content-Type', escapeHtml(rejection.contentType || '-'))}
             </div>
 
             ${rejection.rawBody ? `
@@ -514,7 +529,7 @@
             return `
                 <div class="detail-section">
                     <h4 class="detail-section-title">Deliveries</h4>
-                    <p style="color: var(--color-text-secondary); font-size: 13px;">No delivery attempts recorded</p>
+                    <p class="detail-note">No delivery attempts recorded</p>
                 </div>
             `;
         }
@@ -526,7 +541,7 @@
                     <span class="delivery-badge ${d.status.toLowerCase()}">${formatStatus(d.status)}</span>
                 </div>
                 <div class="delivery-endpoint">${escapeHtml(d.endpoint)} (${escapeHtml(d.subscriberType)})</div>
-                ${d.completedAt ? `<div class="detail-row"><span class="detail-label">Completed</span><span class="detail-value">${formatDateTime(d.completedAt)}</span></div>` : ''}
+                ${d.completedAt ? detailRow('Completed', formatDateTime(d.completedAt)) : ''}
                 ${renderAttempts(d.attempts || [])}
             </div>
         `).join('');
@@ -553,7 +568,7 @@
 
         return `
             <div class="delivery-attempts">
-                <button class="attempt-toggle" data-count="${attempts.length}">Show ${attempts.length} attempt${attempts.length > 1 ? 's' : ''}</button>
+                <button aria-expanded="false" class="attempt-toggle" data-count="${attempts.length}">Show ${attempts.length} attempt${attempts.length > 1 ? 's' : ''}</button>
                 <div class="attempt-list hidden">${attemptItems}</div>
             </div>
         `;
@@ -585,9 +600,7 @@
             'Failed': 'Failed',
             'DeadLettered': 'Dead Lettered',
             'Success': 'Success',
-            'Failure': 'Failed',
             'Timeout': 'Timeout',
-            'Exception': 'Exception',
         };
         return statusMap[status] || status;
     }
@@ -602,11 +615,13 @@
         }
     }
 
+    // Escapes quotes as well as &, < and >, so the result is safe inside attribute values
+    // (event ids, for example, can contain any character).
+    const HTML_ESCAPES = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'};
+
     function escapeHtml(text) {
         if (text === null || text === undefined) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        return String(text).replace(/[&<>"']/g, c => HTML_ESCAPES[c]);
     }
 
     // Start the application

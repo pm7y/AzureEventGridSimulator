@@ -4,9 +4,9 @@ Thank you for your interest in contributing! This simulator is intended for **lo
 
 ## Quick Start
 
-1. **Prerequisites:** .NET 10.0 SDK (multi-targets 8.0, 9.0, 10.0)
+1. **Prerequisites:** .NET 10 SDK (see [global.json](../global.json))
 2. **Build:** `dotnet build src/AzureEventGridSimulator.slnx`
-3. **Test:** `dotnet test src/AzureEventGridSimulator.slnx`
+3. **Test:** `dotnet test src/AzureEventGridSimulator.slnx --filter "Category!=integration-actual"` runs the tests every CI leg runs. Drop the filter to also run the `integration-actual` tests, which start the built simulator on `https://localhost:60101` and need a development certificate (`dotnet dev-certs https`); CI runs those on the ubuntu leg only.
 4. **Format:** Code is auto-formatted with [CSharpier](https://csharpier.com/) on build
 
 ## Documentation

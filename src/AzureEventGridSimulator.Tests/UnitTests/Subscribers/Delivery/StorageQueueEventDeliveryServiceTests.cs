@@ -4,6 +4,7 @@ using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -27,44 +28,8 @@ public class StorageQueueEventDeliveryServiceTests
         _service = new StorageQueueEventDeliveryService(_logger, _formatterFactory);
     }
 
-    private static StorageQueueSubscriberSettings CreateValidSettings()
-    {
-        return new StorageQueueSubscriberSettings
-        {
-            Name = "TestSubscriber",
-            ConnectionString =
-                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=abc123;EndpointSuffix=core.windows.net",
-            QueueName = "my-queue",
-        };
-    }
-
-    private static TopicSettings CreateTopicSettings()
-    {
-        return new TopicSettings
-        {
-            Name = "TestTopic",
-            Port = 60101,
-            Key = "TheLocal+DevelopmentKey=",
-        };
-    }
-
-    private static SimulatorEvent CreateTestEvent()
-    {
-        return SimulatorEvent.FromEventGridEvent(
-            new EventGridEvent
-            {
-                Id = "test-event-id",
-                Subject = "test/subject",
-                EventType = "Test.EventType",
-                EventTime = "2025-01-15T10:30:00Z",
-                DataVersion = "1.0",
-                Data = new { customerId = "cust-123" },
-            }
-        );
-    }
-
     [Fact]
-    public async Task GivenDisabledSubscription_WhenSending_ThenLogsWarningAndReturnsEarly()
+    public async Task GivenDisabledSubscription_WhenDelivering_ThenReturnsStorageQueueError()
     {
         var subscription = new StorageQueueSubscriberSettings
         {
@@ -74,27 +39,19 @@ public class StorageQueueEventDeliveryServiceTests
             QueueName = "my-queue",
             Disabled = true,
         };
-        var topic = CreateTopicSettings();
-        var evt = CreateTestEvent();
+        var delivery = TestHelpers.CreatePendingDelivery(subscription);
 
-        await _service.SendAsync(subscription, evt, topic, EventSchema.EventGridSchema);
+        var result = await _service.DeliverAsync(delivery, CancellationToken.None);
 
-        // Verify warning was logged (subscription is disabled)
-        _logger
-            .Received()
-            .Log(
-                LogLevel.Warning,
-                Arg.Any<EventId>(),
-                Arg.Is<object>(o => o != null && string.Concat(o).Contains("disabled")),
-                Arg.Any<Exception?>(),
-                Arg.Any<Func<object, Exception?, string>>()
-            );
+        result.Success.ShouldBeFalse();
+        result.Outcome.ShouldBe(DeliveryOutcome.StorageQueueError);
+        result.ErrorMessage.ShouldBe("Subscription is disabled");
     }
 
     [Fact]
     public void SubscriberType_ShouldBeStorageQueue()
     {
-        var subscription = CreateValidSettings();
+        var subscription = TestHelpers.CreateValidStorageQueueSettings();
 
         subscription.SubscriberType.ShouldBe("storageQueue");
     }
@@ -128,7 +85,7 @@ public class StorageQueueEventDeliveryServiceTests
     [Fact]
     public void GivenSubscriptionWithoutDeliverySchema_WhenConfigured_ThenSchemaIsNull()
     {
-        var subscription = CreateValidSettings();
+        var subscription = TestHelpers.CreateValidStorageQueueSettings();
 
         subscription.DeliverySchema.ShouldBeNull();
     }
@@ -149,7 +106,11 @@ public class StorageQueueEventDeliveryServiceTests
     public void GivenEventGridFormatter_WhenSerializing_ThenReturnsJson()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.EventGridSchema);
-        var evt = CreateTestEvent();
+        var evt = TestHelpers.CreateSimulatorEventFromEventGrid(
+            id: "test-event-id",
+            subject: "test/subject",
+            data: new { customerId = "cust-123" }
+        );
 
         var json = formatter.Serialize(evt);
 
@@ -161,7 +122,11 @@ public class StorageQueueEventDeliveryServiceTests
     public void GivenCloudEventFormatter_WhenSerializing_ThenReturnsJson()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.CloudEventV1_0);
-        var evt = CreateTestEvent();
+        var evt = TestHelpers.CreateSimulatorEventFromEventGrid(
+            id: "test-event-id",
+            subject: "test/subject",
+            data: new { customerId = "cust-123" }
+        );
 
         var json = formatter.Serialize(evt);
 
@@ -174,7 +139,11 @@ public class StorageQueueEventDeliveryServiceTests
     {
         // This tests the Base64 encoding behavior used by the service
         var formatter = _formatterFactory.GetFormatter(EventSchema.EventGridSchema);
-        var evt = CreateTestEvent();
+        var evt = TestHelpers.CreateSimulatorEventFromEventGrid(
+            id: "test-event-id",
+            subject: "test/subject",
+            data: new { customerId = "cust-123" }
+        );
         var json = formatter.Serialize(evt);
 
         // Encode as Base64 (same as the service does)
@@ -188,7 +157,7 @@ public class StorageQueueEventDeliveryServiceTests
     [Fact]
     public void GivenSubscription_WhenQueueNameSet_ThenQueueNameIsAccessible()
     {
-        var subscription = CreateValidSettings();
+        var subscription = TestHelpers.CreateValidStorageQueueSettings();
 
         subscription.QueueName.ShouldBe("my-queue");
     }
@@ -196,7 +165,7 @@ public class StorageQueueEventDeliveryServiceTests
     [Fact]
     public void GivenSubscription_WhenConnectionStringSet_ThenEffectiveConnectionStringIsAccessible()
     {
-        var subscription = CreateValidSettings();
+        var subscription = TestHelpers.CreateValidStorageQueueSettings();
 
         subscription.EffectiveConnectionString.ShouldBe(subscription.ConnectionString);
     }
@@ -251,7 +220,11 @@ public class StorageQueueEventDeliveryServiceTests
     [Fact]
     public void GivenEventGridEvent_WhenFormattedAsArray_ThenArrayContainsSingleEvent()
     {
-        var evt = CreateTestEvent();
+        var evt = TestHelpers.CreateSimulatorEventFromEventGrid(
+            id: "test-event-id",
+            subject: "test/subject",
+            data: new { customerId = "cust-123" }
+        );
         var formatter = _formatterFactory.GetFormatter(EventSchema.EventGridSchema);
         var json = formatter.Serialize(evt);
 

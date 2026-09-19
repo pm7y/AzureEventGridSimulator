@@ -25,10 +25,18 @@ public class RequestRouterTests
         );
     }
 
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="path">The request path.</param>
+    /// <param name="port">The port in the Host header, or null for a Host header without one.</param>
+    /// <param name="localPort">
+    ///     The port the connection arrived on. 0 (the default) leaves it unset, as TestServer
+    ///     does, so the router falls back to the Host header's port.
+    /// </param>
     private static DefaultHttpContext CreateContext(
         string method,
         string path,
-        int? port = TopicPort
+        int? port = TopicPort,
+        int localPort = 0
     )
     {
         var context = new DefaultHttpContext();
@@ -37,6 +45,7 @@ public class RequestRouterTests
         context.Request.Host = port.HasValue
             ? new HostString("localhost", port.Value)
             : new HostString("localhost");
+        context.Connection.LocalPort = localPort;
         return context;
     }
 
@@ -167,15 +176,158 @@ public class RequestRouterTests
         result.Topic.ShouldNotBeNullAnd().Name.ShouldBe("EnabledTopic");
     }
 
-    [Theory]
-    [InlineData("GET")]
-    [InlineData("PUT")]
-    [InlineData("DELETE")]
-    [InlineData("PATCH")]
-    public void GivenNonPostMethodToApiEvents_WhenRouted_ThenMethodNotAllowed(string method)
+    [Fact]
+    public void GivenRemappedHostPort_WhenPostedToApiEvents_ThenTopicIsSelectedByConnectionPort()
+    {
+        // e.g. docker run --publish 8443:60101: the client's Host header names the published
+        // port, but the connection arrives on the topic's port
+        var router = CreateRouter();
+        var context = CreateContext(HttpMethods.Post, "/api/events", port: 8443, localPort: 60101);
+
+        var result = router.RouteRequest(context);
+
+        result.Type.ShouldBe(RequestType.Notification);
+        result.Topic.ShouldNotBeNullAnd().Name.ShouldBe("TestTopic");
+    }
+
+    [Fact]
+    public void GivenHostHeaderNamingAnotherTopic_WhenPostedToApiEvents_ThenTopicIsSelectedByConnectionPort()
+    {
+        var router = CreateRouter(
+            TestHelpers.CreateValidTopicSettings(name: "TopicOne", port: 60101),
+            TestHelpers.CreateValidTopicSettings(name: "TopicTwo", port: 60102)
+        );
+        var context = CreateContext(HttpMethods.Post, "/api/events", port: 60101, localPort: 60102);
+
+        var result = router.RouteRequest(context);
+
+        result.Type.ShouldBe(RequestType.Notification);
+        result.Topic.ShouldNotBeNullAnd().Name.ShouldBe("TopicTwo");
+    }
+
+    [Fact]
+    public void GivenHostHeaderWithoutPort_WhenPostedToApiEvents_ThenTopicIsSelectedByConnectionPort()
     {
         var router = CreateRouter();
-        var context = CreateContext(method, "/api/events");
+        var context = CreateContext(HttpMethods.Post, "/api/events", port: null, localPort: 60101);
+
+        var result = router.RouteRequest(context);
+
+        result.Type.ShouldBe(RequestType.Notification);
+        result.Topic.ShouldNotBeNullAnd().Name.ShouldBe("TestTopic");
+    }
+
+    [Fact]
+    public void GivenConnectionOnDisabledTopicPort_WhenHostHeaderNamesEnabledTopic_ThenNotFound()
+    {
+        // e.g. dashboardPort set to a disabled topic's port: the Host header can't pull the
+        // request over to another topic
+        var router = CreateRouter(
+            TestHelpers.CreateValidTopicSettings(name: "EnabledTopic", port: 60101),
+            CreateDisabledTopic(60103)
+        );
+        var context = CreateContext(HttpMethods.Post, "/api/events", port: 60101, localPort: 60103);
+
+        var result = router.RouteRequest(context);
+
+        result.Type.ShouldBe(RequestType.NotFound);
+        result.Topic.ShouldBeNull();
+    }
+
+    [Fact]
+    public void GivenRemappedHostPort_WhenOptionsToApiEvents_ThenTopicIsSelectedByConnectionPort()
+    {
+        var router = CreateRouter();
+        var context = CreateContext(
+            HttpMethods.Options,
+            "/api/events",
+            port: 8443,
+            localPort: 60101
+        );
+
+        var result = router.RouteRequest(context);
+
+        result.Type.ShouldBe(RequestType.OptionsPreFlight);
+        result.Topic.ShouldNotBeNullAnd().Name.ShouldBe("TestTopic");
+    }
+
+    [Theory]
+    [InlineData(60101, 0, "TopicOne")] // no connection port (TestServer): the Host port is used
+    [InlineData(60101, 60102, "TopicTwo")] // the connection port wins over the Host port
+    [InlineData(8443, 60101, "TopicOne")] // a remapped Host port doesn't matter
+    public void GivenHostAndConnectionPorts_WhenTopicIsResolved_ThenConnectionPortWinsWhenSet(
+        int hostPort,
+        int localPort,
+        string expectedTopic
+    )
+    {
+        var router = CreateRouter(
+            TestHelpers.CreateValidTopicSettings(name: "TopicOne", port: 60101),
+            TestHelpers.CreateValidTopicSettings(name: "TopicTwo", port: 60102)
+        );
+        var context = CreateContext(HttpMethods.Get, "/validate", hostPort, localPort);
+
+        var topic = router.ResolveTopic(context);
+
+        topic.ShouldNotBeNullAnd().Name.ShouldBe(expectedTopic);
+    }
+
+    [Theory]
+    [InlineData(60103, 0)] // disabled topic's port via the Host header
+    [InlineData(60101, 60103)] // disabled topic's port via the connection
+    [InlineData(59999, 0)] // no topic on the port
+    public void GivenPortWithNoEnabledTopic_WhenTopicIsResolved_ThenNull(
+        int hostPort,
+        int localPort
+    )
+    {
+        var router = CreateRouter(
+            TestHelpers.CreateValidTopicSettings(name: "EnabledTopic", port: 60101),
+            CreateDisabledTopic(60103)
+        );
+        var context = CreateContext(HttpMethods.Get, "/validate", hostPort, localPort);
+
+        router.ResolveTopic(context).ShouldBeNull();
+    }
+
+    [Theory]
+    [InlineData("GET", "/api/events")]
+    [InlineData("PUT", "/api/events")]
+    [InlineData("DELETE", "/api/events")]
+    [InlineData("PATCH", "/api/events")]
+    [InlineData("GET", "/API/EVENTS")]
+    [InlineData("PUT", "/API/EVENTS")]
+    [InlineData("DELETE", "/API/EVENTS")]
+    [InlineData("PATCH", "/API/EVENTS")]
+    [InlineData("GET", "/api/events/")]
+    [InlineData("PUT", "/api/events/")]
+    [InlineData("DELETE", "/api/events/")]
+    [InlineData("PATCH", "/api/events/")]
+    public void GivenNonPostMethodToApiEvents_WhenRouted_ThenMethodNotAllowed(
+        string method,
+        string path
+    )
+    {
+        var router = CreateRouter();
+        var context = CreateContext(method, path);
+
+        var result = router.RouteRequest(context);
+
+        result.Type.ShouldBe(RequestType.MethodNotAllowed);
+    }
+
+    // The HEAD and OPTIONS routes match "/api/events" case-insensitively but don't trim a
+    // trailing slash, so "/api/events/" falls through to 405. Azure's answer hasn't been
+    // recorded yet; changing this would be a separate, flagged behaviour change.
+    [Theory]
+    [InlineData("HEAD")]
+    [InlineData("OPTIONS")]
+    public void GivenHeadOrOptionsToApiEventsWithTrailingSlash_WhenRouted_ThenMethodNotAllowed(
+        string method
+    )
+    {
+        var router = CreateRouter();
+        var context = CreateContext(method, "/api/events/");
 
         var result = router.RouteRequest(context);
 
