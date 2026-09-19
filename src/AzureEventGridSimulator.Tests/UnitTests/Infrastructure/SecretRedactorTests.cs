@@ -32,6 +32,8 @@ public class SecretRedactorTests
     [InlineData("Kestrel:Certificates:Default:Path")]
     [InlineData("key:0:name")]
     [InlineData("Serilog:MinimumLevel:Default")]
+    [InlineData("topics:0:subscribers:http:0:filter:advancedFilters:0:key")]
+    [InlineData("topics:1:subscribers:serviceBus:2:filter:AdvancedFilters:3:Key")]
     [InlineData("")]
     public void GivenAKeyThatDoesNotNameASecret_WhenChecked_ThenItIsNotSecret(string key)
     {

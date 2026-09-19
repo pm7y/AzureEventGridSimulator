@@ -30,9 +30,21 @@ public static class SecretRedactor
     /// <summary>
     ///     Whether a configuration key (e.g. <c>topics:0:key</c>) holds a secret: its last
     ///     segment ends with key, password, connectionString or sharedAccessKey, ignoring case.
+    ///     Nothing under an advanced filter is a secret (its <c>key</c> is the event property
+    ///     being filtered), so those stay readable.
     /// </summary>
     public static bool IsSecretKey(string key)
     {
+        if (
+            key.Split(':')
+                .Any(segment =>
+                    segment.Equals("advancedFilters", StringComparison.OrdinalIgnoreCase)
+                )
+        )
+        {
+            return false;
+        }
+
         var lastSegment = key[(key.LastIndexOf(':') + 1)..];
 
         return SecretKeySuffixes.Any(suffix =>
