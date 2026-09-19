@@ -61,9 +61,10 @@ public class PendingDelivery
     public List<DeliveryAttempt> Attempts { get; } = [];
 
     /// <summary>
-    ///     Gets the effective retry policy for this delivery.
+    ///     Gets the effective retry policy for this delivery: the subscriber's, or the defaults when
+    ///     it has none.
     /// </summary>
-    private RetryPolicySettings EffectiveRetryPolicy =>
+    internal RetryPolicySettings EffectiveRetryPolicy =>
         Subscriber.RetryPolicy ?? new RetryPolicySettings();
 
     /// <summary>

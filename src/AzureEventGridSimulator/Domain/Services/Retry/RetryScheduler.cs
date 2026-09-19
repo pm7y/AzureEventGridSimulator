@@ -23,11 +23,6 @@ public class RetryScheduler
     ];
 
     /// <summary>
-    ///     HTTP status codes that indicate successful delivery.
-    /// </summary>
-    private static readonly int[] SuccessStatusCodes = [200, 201, 202, 203, 204];
-
-    /// <summary>
     ///     HTTP status codes that should immediately dead-letter (no retry).
     /// </summary>
     private static readonly int[] ImmediateDeadLetterStatusCodes = [400, 401, 403, 413];
@@ -100,20 +95,6 @@ public class RetryScheduler
     }
 
     /// <summary>
-    ///     Determines if an HTTP status code indicates successful delivery.
-    /// </summary>
-    /// <param name="statusCode">
-    ///     The HTTP status code.
-    /// </param>
-    /// <returns>
-    ///     True if the status code indicates success.
-    /// </returns>
-    public bool IsSuccessStatusCode(int statusCode)
-    {
-        return SuccessStatusCodes.Contains(statusCode);
-    }
-
-    /// <summary>
     ///     Determines if an HTTP status code should immediately dead-letter (no retry).
     /// </summary>
     /// <param name="statusCode">
@@ -140,10 +121,10 @@ public class RetryScheduler
     {
         return statusCode switch
         {
-            400 => "BadRequest",
-            401 => "Unauthorized",
-            403 => "Forbidden",
-            413 => "PayloadTooLarge",
+            400 => DeadLetterReasons.BadRequest,
+            401 => DeadLetterReasons.Unauthorized,
+            403 => DeadLetterReasons.Forbidden,
+            413 => DeadLetterReasons.PayloadTooLarge,
             _ => $"HttpStatus{statusCode}",
         };
     }

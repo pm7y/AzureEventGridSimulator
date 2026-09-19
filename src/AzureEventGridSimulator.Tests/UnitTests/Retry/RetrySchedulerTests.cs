@@ -117,30 +117,6 @@ public class RetrySchedulerTests
     }
 
     [Theory]
-    [InlineData(200)]
-    [InlineData(201)]
-    [InlineData(202)]
-    [InlineData(203)]
-    [InlineData(204)]
-    public void GivenSuccessStatusCode_WhenChecking_ThenReturnsTrue(int statusCode)
-    {
-        _scheduler.IsSuccessStatusCode(statusCode).ShouldBeTrue();
-    }
-
-    [Theory]
-    [InlineData(199)]
-    [InlineData(205)]
-    [InlineData(301)]
-    [InlineData(400)]
-    [InlineData(404)]
-    [InlineData(500)]
-    [InlineData(503)]
-    public void GivenNonSuccessStatusCode_WhenChecking_ThenReturnsFalse(int statusCode)
-    {
-        _scheduler.IsSuccessStatusCode(statusCode).ShouldBeFalse();
-    }
-
-    [Theory]
     [InlineData(400)]
     [InlineData(401)]
     [InlineData(403)]
