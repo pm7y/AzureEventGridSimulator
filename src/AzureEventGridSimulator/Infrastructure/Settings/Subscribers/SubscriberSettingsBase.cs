@@ -44,6 +44,7 @@ public abstract class SubscriberSettingsBase : ISubscriberSettings
     /// <summary>
     ///     Gets or sets the dead-letter settings for this subscriber.
     ///     Events that cannot be delivered are written to the dead-letter destination.
+    ///     If null, dead-lettering is disabled and undeliverable events are dropped.
     /// </summary>
     [JsonPropertyName("deadLetter")]
     public DeadLetterSettings? DeadLetter { get; init; }

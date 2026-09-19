@@ -42,6 +42,7 @@ public interface ISubscriberSettings
     /// <summary>
     ///     Gets the dead-letter settings for this subscriber.
     ///     Events that cannot be delivered are written to the dead-letter destination.
+    ///     If null, dead-lettering is disabled and undeliverable events are dropped.
     /// </summary>
     DeadLetterSettings? DeadLetter { get; }
 

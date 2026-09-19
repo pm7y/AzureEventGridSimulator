@@ -188,7 +188,7 @@ Every subscriber type accepts these settings:
 | `deliverySchema` | No | `EventGridSchema` or `CloudEventV1_0` (defaults to the topic's `outputSchema`, then the schema the event arrived in) |
 | `filter` | No | Event filtering rules, see [Filtering](https://github.com/pm7y/AzureEventGridSimulator/wiki/Filtering) |
 | `retryPolicy` | No | Retry settings, see [Retry and Dead-Letter](https://github.com/pm7y/AzureEventGridSimulator/wiki/Retry-and-Dead-Letter) |
-| `deadLetter` | No | Where undeliverable events are written, see [Retry and Dead-Letter](https://github.com/pm7y/AzureEventGridSimulator/wiki/Retry-and-Dead-Letter) |
+| `deadLetter` | No | Where undeliverable events are written. Without it they're dropped, see [Retry and Dead-Letter](https://github.com/pm7y/AzureEventGridSimulator/wiki/Retry-and-Dead-Letter) |
 
 ### HTTP Webhook
 
@@ -267,13 +267,13 @@ Needs an `eventHubName` and a `connectionString` (or `namespace`, `sharedAccessK
 
 ### Retry, Dead-Letter and Filtering
 
-Failed deliveries are retried with Azure Event Grid's exponential backoff, and a subscriber's `deadLetter` settings write undeliverable events to JSON files (see *Container User and File Permissions* below to keep them outside the container). Subscribers can also filter on event type, subject and advanced conditions on event fields and data. The settings, schedules, operators and limits are in [Retry and Dead-Letter](https://github.com/pm7y/AzureEventGridSimulator/wiki/Retry-and-Dead-Letter) and [Filtering](https://github.com/pm7y/AzureEventGridSimulator/wiki/Filtering).
+Failed deliveries are retried with Azure Event Grid's exponential backoff, and a subscriber's `deadLetter` settings write undeliverable events to JSON files (see *Container User and File Permissions* below to keep them outside the container). Dead-lettering is opt-in: it only happens when a subscriber has a `deadLetter` object (`enabled: true` and `folderPath: ./dead-letters` are the defaults inside it), and without one, events that exhaust their retries or get a 400, 401, 403 or 413 response are dropped. Subscribers can also filter on event type, subject and advanced conditions on event fields and data. The settings, schedules, operators and limits are in [Retry and Dead-Letter](https://github.com/pm7y/AzureEventGridSimulator/wiki/Retry-and-Dead-Letter) and [Filtering](https://github.com/pm7y/AzureEventGridSimulator/wiki/Filtering).
 
 ---
 
 ## Dashboard
 
-The simulator serves a web dashboard showing received events, delivery attempts and rejected requests. It's served on each enabled topic's port, for example `https://localhost:60101/dashboard`, and also on `dashboardPort` if you set one (publish that port too, e.g. `-p 5000:5000`). Turn it off with `-e AEGS_dashboardEnabled=false`. More: [Dashboard](https://github.com/pm7y/AzureEventGridSimulator/wiki/Dashboard).
+The simulator serves a web dashboard showing received events, delivery attempts and rejected requests. It's served on each enabled topic's port, for example `https://localhost:60101/dashboard`, and also on `dashboardPort` if you set one (publish that port too, e.g. `-p 5000:5000`). Turn it off with `-e AEGS_dashboardEnabled=false`. The dashboard and its API have no authentication, so on an untrusted network either turn it off or publish ports on the host's loopback address only, e.g. `-p 127.0.0.1:60101:60101` (see [Dashboard security](https://github.com/pm7y/AzureEventGridSimulator/wiki/Dashboard#security)). More: [Dashboard](https://github.com/pm7y/AzureEventGridSimulator/wiki/Dashboard).
 
 ---
 

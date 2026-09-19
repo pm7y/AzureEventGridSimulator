@@ -5,6 +5,9 @@ namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 /// <summary>
 ///     Dead-letter destination settings.
 ///     Events that cannot be delivered are written to JSON files in the specified folder.
+///     Dead-lettering is opt-in: if a subscriber's <see cref="ISubscriberSettings.DeadLetter" /> is
+///     null (no <c>deadLetter</c> object configured), dead-lettering is disabled and undeliverable
+///     events are dropped. The defaults below only apply once the object is present.
 /// </summary>
 public class DeadLetterSettings
 {
@@ -12,7 +15,7 @@ public class DeadLetterSettings
 
     /// <summary>
     ///     Gets or sets whether dead-lettering is enabled.
-    ///     Default is true.
+    ///     Default is true when a <c>deadLetter</c> object is configured.
     /// </summary>
     [JsonPropertyName("enabled")]
     public bool Enabled { get; set; } = true;
