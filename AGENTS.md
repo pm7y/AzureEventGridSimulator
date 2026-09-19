@@ -2,7 +2,7 @@
 
 ## Overview
 
-Azure Event Grid Simulator - local HTTPS simulator for Azure Event Grid topics/subscribers. Compatible with Microsoft.Azure.EventGrid client library, supports EventGrid and CloudEvents v1.0 schemas.
+Azure Event Grid Simulator - local HTTPS simulator for Azure Event Grid topics/subscribers. Compatible with the Azure.Messaging.EventGrid SDK (and the legacy Microsoft.Azure.EventGrid client), supports EventGrid and CloudEvents v1.0 schemas.
 
 **Stack:** .NET 10 (net10.0), C#, Serilog, xUnit/Shouldly/NSubstitute
 

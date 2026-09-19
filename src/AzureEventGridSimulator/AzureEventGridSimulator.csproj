@@ -14,7 +14,7 @@
 
         <!-- NuGet metadata -->
         <Authors>Paul McIlreavy</Authors>
-        <Description>A simulator that provides endpoints to mimic the functionality of Azure Event Grid topics and subscribers. Compatible with the Microsoft.Azure.EventGrid client library. Supports both EventGrid and CloudEvents v1.0 schemas.</Description>
+        <Description>A simulator that provides endpoints to mimic the functionality of Azure Event Grid topics and subscribers. Compatible with the Azure.Messaging.EventGrid SDK (and the legacy Microsoft.Azure.EventGrid client). Supports both EventGrid and CloudEvents v1.0 schemas.</Description>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/pm7y/AzureEventGridSimulator</PackageProjectUrl>
         <RepositoryUrl>https://github.com/pm7y/AzureEventGridSimulator</RepositoryUrl>

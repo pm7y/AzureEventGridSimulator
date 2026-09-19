@@ -18,7 +18,8 @@
 
 A simulator that provides HTTPS endpoints to
 mimic [Azure Event Grid](https://azure.microsoft.com/en-au/services/event-grid/) topics and subscribers. Compatible with
-the `Microsoft.Azure.EventGrid` client library and supports both EventGrid and CloudEvents v1.0 schemas.
+the `Azure.Messaging.EventGrid` SDK (and the legacy `Microsoft.Azure.EventGrid` client) and supports both EventGrid and
+CloudEvents v1.0 schemas.
 
 > **Note:** This simulator is intended for **local development and testing only**.
 

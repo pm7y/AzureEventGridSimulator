@@ -4,12 +4,7 @@
 
 ## Supported Versions
 
-The following versions of Azure Event Grid Simulator are currently supported with security updates:
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 4.x     | :white_check_mark: |
-| < 4.0   | :x:                |
+Only the latest release (see [GitHub Releases](https://github.com/pm7y/AzureEventGridSimulator/releases) / the [Docker Hub](https://hub.docker.com/r/pmcilreavy/azureeventgridsimulator) `latest` tag) receives security fixes; older versions are not supported.
 
 ## Reporting a Vulnerability
 
