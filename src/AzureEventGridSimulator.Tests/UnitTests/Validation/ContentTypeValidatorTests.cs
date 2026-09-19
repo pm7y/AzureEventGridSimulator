@@ -112,4 +112,26 @@ public class ContentTypeValidatorTests
         result.StatusCode.ShouldBe(HttpStatusCode.UnsupportedMediaType);
         result.ErrorCode.ShouldBe(ErrorDetailCodes.InvalidContentType);
     }
+
+    // Binary and structured mode reject an unacceptable content type with the same message
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void GivenCloudEventWithUnacceptableContentType_WhenValidated_Then415MessageIsAzures(
+        bool binaryMode
+    )
+    {
+        var context = binaryMode
+            ? TestHelpers.CreateCloudEventsBinaryModeContext()
+            : new DefaultHttpContext();
+        context.Request.ContentType = "text/plain";
+
+        var result = _validator.ValidateContentType(context, EventSchema.CloudEventV1_0);
+
+        result.ErrorMessage.ShouldBe(
+            "The Content-Type header is either missing or it doesn't have a valid value. "
+                + "The content type header must either be application/cloudevents+json; charset=utf-8 "
+                + "or application/cloudevents-batch+json; charset=UTF-8."
+        );
+    }
 }

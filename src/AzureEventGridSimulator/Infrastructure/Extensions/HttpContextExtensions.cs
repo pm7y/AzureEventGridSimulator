@@ -43,9 +43,15 @@ public static class HttpContextExtensions
     {
         public async Task<string> RequestBody()
         {
-            // leaveOpen: the request body stream is owned by ASP.NET Core and may be re-read
-            // after EnableBuffering(); disposing the reader must not close it.
-            context.Request.Body.Position = 0;
+            // The body is read once, straight from the server's request stream. Kestrel's stream
+            // can't seek (setting Position throws), so only a seekable stream is rewound.
+            if (context.Request.Body.CanSeek)
+            {
+                context.Request.Body.Position = 0;
+            }
+
+            // leaveOpen: the request body stream is owned by ASP.NET Core; disposing the reader
+            // must not close it.
             using var reader = new StreamReader(context.Request.Body, leaveOpen: true);
             return await reader.ReadToEndAsync();
         }

@@ -69,7 +69,6 @@ public class HttpContextExtensionsTests
     public async Task GivenRequestBody_WhenRead_ThenUnderlyingStreamIsNotDisposed()
     {
         // The reader must leave the stream open - it's owned by ASP.NET Core
-        // and may be re-read later in the pipeline.
         var context = CreateContextWithBody(Body);
 
         _ = await context.RequestBody();
@@ -83,6 +82,18 @@ public class HttpContextExtensionsTests
     {
         var context = CreateContextWithBody(Body);
         context.Request.Body.Position = context.Request.Body.Length;
+
+        var body = await context.RequestBody();
+
+        body.ShouldBe(Body);
+    }
+
+    [Fact]
+    public async Task GivenNonSeekableRequestBody_WhenRead_ThenFullBodyIsReturned()
+    {
+        // Kestrel's request body stream can't seek, and throws if its Position is set
+        var context = new DefaultHttpContext();
+        context.Request.Body = new NonSeekableStream(Encoding.UTF8.GetBytes(Body));
 
         var body = await context.RequestBody();
 
@@ -248,5 +259,59 @@ public class HttpContextExtensionsTests
         );
 
         exception.Message.ShouldContain("EventGridMiddleware");
+    }
+
+    /// <summary>
+    ///     A read-only stream that, like Kestrel's request body, can't seek.
+    /// </summary>
+    private sealed class NonSeekableStream(byte[] content) : Stream
+    {
+        private readonly MemoryStream _inner = new(content);
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            return _inner.Read(buffer, offset, count);
+        }
+
+        public override void Flush() { }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _inner.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
     }
 }

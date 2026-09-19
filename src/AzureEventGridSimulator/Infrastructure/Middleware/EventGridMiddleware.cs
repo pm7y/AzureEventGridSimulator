@@ -124,8 +124,8 @@ public class EventGridMiddleware(RequestDelegate next)
             }
         }
 
-        // 2. Buffer and read request body
-        context.Request.EnableBuffering();
+        // 2. Read the request body. Nothing reads it again, so it isn't buffered (buffering
+        // writes a body over 30 KB to a temp file).
         var requestBody = await context.RequestBody();
 
         // 3. Validate events through the orchestrator
@@ -137,14 +137,12 @@ public class EventGridMiddleware(RequestDelegate next)
 
         if (!eventValidation.IsValid)
         {
-            // Add Report suffix to error message if not already present
+            // Add the Report suffix to the error message
             // Azure does not add Report suffix for 413 (RequestEntityTooLarge) errors
             var errorMessage =
-                eventValidation.ErrorMessage!.Contains("Report '", StringComparison.Ordinal)
-                    ? eventValidation.ErrorMessage
-                : eventValidation.StatusCode == HttpStatusCode.RequestEntityTooLarge
-                    ? eventValidation.ErrorMessage
-                : eventValidation.ErrorMessage + context.GenerateReportSuffix();
+                eventValidation.StatusCode == HttpStatusCode.RequestEntityTooLarge
+                    ? eventValidation.ErrorMessage!
+                    : eventValidation.ErrorMessage + context.GenerateReportSuffix();
 
             // Record the rejection in event history
             var contentType = context.Request.Headers.ContentType.FirstOrDefault();
@@ -197,8 +195,7 @@ public class EventGridMiddleware(RequestDelegate next)
 
     private async Task HandleOptionsRequest(HttpContext context, TopicSettings? topic)
     {
-        var schemaName =
-            topic?.InputSchema == EventSchema.CloudEventV1_0 ? "CloudEventV10" : "EventGridEvent";
+        var schemaName = (topic?.InputSchema ?? EventSchema.EventGridSchema).ToAzureSchemaName();
 
         context.Response.Headers.Append("Allow", "POST, OPTIONS");
         context.Response.Headers.Append("api-supported-versions", Constants.SupportedApiVersion);

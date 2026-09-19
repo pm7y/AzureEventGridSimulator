@@ -63,7 +63,10 @@ public class RequestBodyValidator(ILogger<RequestBodyValidator> logger)
     )
     {
         // Azure returns 400 for empty body in binary mode CloudEvents
-        if (IsCloudEventsBinaryMode(context) && string.IsNullOrWhiteSpace(requestBody))
+        if (
+            CloudEventsHttp.IsBinaryMode(context.Request.Headers)
+            && string.IsNullOrWhiteSpace(requestBody)
+        )
         {
             return new BodyValidationResult(
                 IsValid: false,
@@ -124,15 +127,5 @@ public class RequestBodyValidator(ILogger<RequestBodyValidator> logger)
         }
 
         return new BodyValidationResult(IsValid: true);
-    }
-
-    private static bool IsCloudEventsBinaryMode(HttpContext context)
-    {
-        var headers = context.Request.Headers;
-        // Binary mode is detected when any ce-* header is present
-        return headers.ContainsKey(Constants.CeSpecVersionHeader)
-            || headers.ContainsKey(Constants.CeIdHeader)
-            || headers.ContainsKey(Constants.CeSourceHeader)
-            || headers.ContainsKey(Constants.CeTypeHeader);
     }
 }

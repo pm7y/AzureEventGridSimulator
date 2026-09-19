@@ -175,7 +175,7 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
         }
 
         // Check for CloudEvents binary mode (indicated by ce-* headers)
-        if (IsCloudEventsBinaryMode(context))
+        if (CloudEventsHttp.IsBinaryMode(context.Request.Headers))
         {
             return true;
         }
@@ -203,17 +203,6 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
                 StringComparison.OrdinalIgnoreCase
             )
             || !contentType.Contains("cloudevents", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsCloudEventsBinaryMode(HttpContext context)
-    {
-        var headers = context.Request.Headers;
-        // Binary mode is detected when any ce-* header is present
-        // Azure validates required headers during parsing and returns specific errors
-        return headers.ContainsKey(Constants.CeSpecVersionHeader)
-            || headers.ContainsKey(Constants.CeIdHeader)
-            || headers.ContainsKey(Constants.CeSourceHeader)
-            || headers.ContainsKey(Constants.CeTypeHeader);
     }
 
     private static bool IsValidationRequest(HttpContext context)

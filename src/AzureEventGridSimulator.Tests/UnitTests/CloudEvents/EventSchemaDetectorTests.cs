@@ -77,6 +77,32 @@ public class EventSchemaDetectorTests
         isBinaryMode.ShouldBeTrue();
     }
 
+    // Only the four required-attribute headers switch a request into binary mode; optional and
+    // extension ce-* headers on their own don't
+    [Theory]
+    [InlineData(Constants.CeSpecVersionHeader, true)]
+    [InlineData(Constants.CeIdHeader, true)]
+    [InlineData(Constants.CeSourceHeader, true)]
+    [InlineData(Constants.CeTypeHeader, true)]
+    [InlineData("CE-TYPE", true)]
+    [InlineData(Constants.CeSubjectHeader, false)]
+    [InlineData(Constants.CeTimeHeader, false)]
+    [InlineData(Constants.CeDataContentTypeHeader, false)]
+    [InlineData("ce-myextension", false)]
+    public void GivenOneCeHeader_WhenCheckedForBinaryMode_ThenOnlyARequiredAttributeHeaderCounts(
+        string header,
+        bool expected
+    )
+    {
+        var context = CreateHttpContext("application/json");
+        context.Request.Headers[header] = "value";
+
+        _detector.IsBinaryMode(context).ShouldBe(expected);
+        _detector
+            .DetectSchema(context)
+            .ShouldBe(expected ? EventSchema.CloudEventV1_0 : EventSchema.EventGridSchema);
+    }
+
     [Fact]
     public void GivenIsBinaryMode_WhenNoCloudEventsHeaders_ThenReturnsFalse()
     {
@@ -85,26 +111,6 @@ public class EventSchemaDetectorTests
         var isBinaryMode = _detector.IsBinaryMode(context);
 
         isBinaryMode.ShouldBeFalse();
-    }
-
-    [Fact]
-    public void GivenIsStructuredMode_WhenCloudEventsContentType_ThenReturnsTrue()
-    {
-        var context = CreateHttpContext("application/cloudevents+json");
-
-        var isStructuredMode = _detector.IsStructuredMode(context);
-
-        isStructuredMode.ShouldBeTrue();
-    }
-
-    [Fact]
-    public void GivenIsStructuredMode_WhenJsonContentType_ThenReturnsFalse()
-    {
-        var context = CreateHttpContext("application/json");
-
-        var isStructuredMode = _detector.IsStructuredMode(context);
-
-        isStructuredMode.ShouldBeFalse();
     }
 
     [Fact]

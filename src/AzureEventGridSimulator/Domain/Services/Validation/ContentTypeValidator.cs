@@ -24,6 +24,11 @@ public record ContentTypeValidationResult(
 /// </summary>
 public class ContentTypeValidator(ILogger<ContentTypeValidator> logger)
 {
+    private const string InvalidContentTypeMessage =
+        "The Content-Type header is either missing or it doesn't have a valid value. "
+        + "The content type header must either be application/cloudevents+json; charset=utf-8 "
+        + "or application/cloudevents-batch+json; charset=UTF-8.";
+
     /// <summary>
     ///     Validates Content-Type headers for CloudEvents schema requests.
     /// </summary>
@@ -43,7 +48,7 @@ public class ContentTypeValidator(ILogger<ContentTypeValidator> logger)
             return new ContentTypeValidationResult(IsValid: true);
         }
 
-        if (IsCloudEventsBinaryMode(context))
+        if (CloudEventsHttp.IsBinaryMode(context.Request.Headers))
         {
             // Binary mode with structured content type is a conflict - Azure returns 400
             if (IsValidCloudEventsContentType(contentType))
@@ -61,20 +66,16 @@ public class ContentTypeValidator(ILogger<ContentTypeValidator> logger)
                 );
             }
 
-            // Binary mode: Content-Type is the data's content type
-            // Azure only accepts application/json for binary mode
-            if (!IsValidBinaryModeContentType(contentType))
+            // Binary mode: Content-Type represents the data's content type
+            // Azure only accepts application/json for binary mode CloudEvents
+            // Azure returns 415 for text/plain, application/octet-stream, etc.
+            if (!IsApplicationJson(contentType))
             {
-                var errorMessage =
-                    "The Content-Type header is either missing or it doesn't have a valid value. "
-                    + "The content type header must either be application/cloudevents+json; charset=utf-8 "
-                    + "or application/cloudevents-batch+json; charset=UTF-8.";
-
-                logger.LogError(errorMessage);
+                logger.LogError(InvalidContentTypeMessage);
 
                 return new ContentTypeValidationResult(
                     IsValid: false,
-                    ErrorMessage: errorMessage,
+                    ErrorMessage: InvalidContentTypeMessage,
                     StatusCode: HttpStatusCode.UnsupportedMediaType,
                     ErrorCode: ErrorDetailCodes.InvalidContentType
                 );
@@ -87,16 +88,11 @@ public class ContentTypeValidator(ILogger<ContentTypeValidator> logger)
             // It will fail with 400 if the body is an array instead of an object
             if (!IsValidCloudEventsContentType(contentType) && !IsApplicationJson(contentType))
             {
-                var errorMessage =
-                    "The Content-Type header is either missing or it doesn't have a valid value. "
-                    + "The content type header must either be application/cloudevents+json; charset=utf-8 "
-                    + "or application/cloudevents-batch+json; charset=UTF-8.";
-
-                logger.LogError(errorMessage);
+                logger.LogError(InvalidContentTypeMessage);
 
                 return new ContentTypeValidationResult(
                     IsValid: false,
-                    ErrorMessage: errorMessage,
+                    ErrorMessage: InvalidContentTypeMessage,
                     StatusCode: HttpStatusCode.UnsupportedMediaType,
                     ErrorCode: ErrorDetailCodes.InvalidContentType
                 );
@@ -104,16 +100,6 @@ public class ContentTypeValidator(ILogger<ContentTypeValidator> logger)
         }
 
         return new ContentTypeValidationResult(IsValid: true);
-    }
-
-    private static bool IsCloudEventsBinaryMode(HttpContext context)
-    {
-        var headers = context.Request.Headers;
-        // Binary mode is detected when any ce-* header is present
-        return headers.ContainsKey(Constants.CeSpecVersionHeader)
-            || headers.ContainsKey(Constants.CeIdHeader)
-            || headers.ContainsKey(Constants.CeSourceHeader)
-            || headers.ContainsKey(Constants.CeTypeHeader);
     }
 
     private static bool IsValidCloudEventsContentType(string? contentType)
@@ -140,20 +126,8 @@ public class ContentTypeValidator(ILogger<ContentTypeValidator> logger)
             return false;
         }
 
-        // Azure accepts application/json for CloudEvents and treats it as single event mode
-        return contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsValidBinaryModeContentType(string? contentType)
-    {
-        if (string.IsNullOrWhiteSpace(contentType))
-        {
-            return false;
-        }
-
-        // In binary mode, Content-Type represents the data's content type
-        // Azure only accepts application/json for binary mode CloudEvents
-        // Azure returns 415 for text/plain, application/octet-stream, etc.
+        // Azure accepts application/json for CloudEvents: as a single event in structured mode,
+        // and as the only data content type in binary mode
         return contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase);
     }
 }

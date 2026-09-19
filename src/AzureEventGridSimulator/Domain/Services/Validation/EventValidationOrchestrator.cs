@@ -124,9 +124,9 @@ public class EventValidationOrchestrator(
         {
             logger.LogError(ex, "Failed to parse events");
 
-            // Determine the appropriate error code based on the exception message
-            var errorCode = ex.Message.Contains("header", StringComparison.OrdinalIgnoreCase)
-                ? ErrorDetailCodes.InvalidCloudEventHeader
+            // Parse failures are InputJsonInvalid unless the parser says otherwise
+            var errorCode = ex is EventParseException parseException
+                ? parseException.ErrorCode
                 : ErrorDetailCodes.InputJsonInvalid;
 
             return new EventValidationResult(
@@ -141,15 +141,9 @@ public class EventValidationOrchestrator(
         // 5. Validate events array is not empty
         if (events == null || events.Length == 0)
         {
-            var schemaName =
-                detectedSchema == EventSchema.CloudEventV1_0 ? "CloudEventV10" : "EventGridEvent";
-            var errorMessage =
-                $"This resource is configured to receive event in '{schemaName}' schema. "
-                + "The JSON received does not conform to the expected schema.";
-
             return new EventValidationResult(
                 IsValid: false,
-                ErrorMessage: errorMessage,
+                ErrorMessage: SchemaErrorMessages.NotConforming(detectedSchema),
                 StatusCode: HttpStatusCode.BadRequest,
                 ErrorCode: ErrorDetailCodes.InputJsonInvalid,
                 FailureStage: ValidationFailureStage.Parsing

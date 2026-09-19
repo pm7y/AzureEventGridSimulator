@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Validation;
@@ -146,6 +147,69 @@ public class EventValidationOrchestratorTests
         result
             .ErrorMessage.ShouldNotBeNullAnd()
             .ShouldContain("does not conform to the expected schema");
+    }
+
+    [Fact]
+    public async Task GivenBinaryModeRequestWithoutARequiredHeader_WhenValidated_ThenFailsWithInvalidCloudEventHeader()
+    {
+        var orchestrator = CreateOrchestrator();
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext();
+        context.Request.Headers.Remove(Constants.CeSourceHeader);
+
+        var result = await orchestrator.ValidateEvents(
+            context,
+            TestHelpers.CreateValidTopicSettings(),
+            "{}"
+        );
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureStage.ShouldBe(ValidationFailureStage.Parsing);
+        result.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.InvalidCloudEventHeader);
+        result.ErrorMessage.ShouldNotBeNullAnd().ShouldStartWith("ce-source header is missing");
+    }
+
+    [Fact]
+    public async Task GivenBinaryModeRequestWithAnEmptyRequiredHeader_WhenValidated_ThenFailsWithInvalidCloudEventHeader()
+    {
+        var orchestrator = CreateOrchestrator();
+        var context = TestHelpers.CreateCloudEventsBinaryModeContext(id: "");
+
+        var result = await orchestrator.ValidateEvents(
+            context,
+            TestHelpers.CreateValidTopicSettings(),
+            "{}"
+        );
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureStage.ShouldBe(ValidationFailureStage.Parsing);
+        result.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.InvalidCloudEventHeader);
+        result.ErrorMessage.ShouldNotBeNullAnd().ShouldStartWith("ce-id header is empty");
+    }
+
+    [Fact]
+    public async Task GivenMalformedJsonWhoseErrorPathMentionsHeaders_WhenValidated_ThenFailsWithInputJsonInvalid()
+    {
+        // STJ's error reads "... Path: $[0].headers ...". The error code comes from the kind of
+        // failure, not from the word "header" appearing in the message.
+        var orchestrator = CreateOrchestrator();
+        var context = TestHelpers.CreateCloudEventsBatchModeContext();
+        const string body = """
+            [{ "specversion": "1.0", "type": "t", "source": "s", "id": "1", "headers": [1,}]
+            """;
+
+        var result = await orchestrator.ValidateEvents(
+            context,
+            TestHelpers.CreateValidTopicSettings(),
+            body
+        );
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureStage.ShouldBe(ValidationFailureStage.Parsing);
+        result.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        result.ErrorMessage.ShouldNotBeNullAnd().ShouldContain("$[0].headers");
+        result.ErrorCode.ShouldBe(ErrorDetailCodes.InputJsonInvalid);
     }
 
     [Fact]

@@ -1,6 +1,9 @@
+using System.Globalization;
+using System.Text.Json;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
+using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
 using Shouldly;
 using Xunit;
@@ -204,8 +207,10 @@ public class CloudEventSchemaParserTests
         var exception = Should.Throw<InvalidOperationException>(() =>
             _parser.Parse(context, requestBody)
         );
-        // Azure returns the raw JSON parsing error
-        exception.ShouldNotBeNull();
+        // The parser passes System.Text.Json's message through unchanged and adds no report
+        // suffix; EventGridMiddleware appends the suffix to the response, as Azure does.
+        exception.Message.ShouldNotContain("to our forums");
+        exception.InnerException.ShouldBeAssignableTo<JsonException>();
     }
 
     [Fact]
@@ -302,8 +307,10 @@ public class CloudEventSchemaParserTests
         var exception = Should.Throw<InvalidOperationException>(() =>
             _parser.Parse(context, requestBody)
         );
-        // Azure returns the raw JSON parsing error
-        exception.ShouldNotBeNull();
+        // The parser passes System.Text.Json's message through unchanged and adds no report
+        // suffix; EventGridMiddleware appends the suffix to the response, as Azure does.
+        exception.Message.ShouldNotContain("to our forums");
+        exception.InnerException.ShouldBeAssignableTo<JsonException>();
     }
 
     [Fact]
@@ -325,22 +332,75 @@ public class CloudEventSchemaParserTests
         Should.NotThrow(() => _parser.Validate(events));
     }
 
-    [Fact]
-    public void GivenCloudEventJsonWithMissingRequiredFields_WhenParsed_ThenExceptionThrown()
+    // System.Text.Json reports the missing required properties (type and id); the parser names
+    // one of them in Azure's order and shows 'type' as 'eventType', as Azure does
+    [Theory]
+    [InlineData(new[] { "type" }, "eventType")]
+    [InlineData(new[] { "id" }, "id")]
+    [InlineData(new[] { "type", "id" }, "eventType")]
+    public void GivenCloudEventJsonWithMissingRequiredFields_WhenParsed_ThenMessageNamesTheFieldAzureReports(
+        string[] missingFields,
+        string expectedField
+    )
     {
-        // CloudEvents with missing required fields should fail during JSON deserialization
         var context = CreateStructuredModeContext();
+        var evt = new Dictionary<string, object>(StringComparer.Ordinal)
+        {
+            ["specversion"] = "1.0",
+            ["type"] = "com.example.test",
+            ["source"] = "/test/source",
+            ["id"] = "test-id",
+        };
+        foreach (var field in missingFields)
+        {
+            evt.Remove(field);
+        }
+
+        var requestBody = JsonSerializer.Serialize(evt);
+
+        // STJ joins the missing names with the UI culture's list separator, and the parser splits
+        // on ','
+        var originalCulture = CultureInfo.CurrentCulture;
+        var originalUiCulture = CultureInfo.CurrentUICulture;
+        InvalidOperationException exception;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+
+            exception = Should.Throw<InvalidOperationException>(() =>
+                _parser.Parse(context, requestBody)
+            );
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUiCulture;
+        }
+
+        exception.Message.ShouldStartWith(
+            $"This resource is configured for 'CloudEventV10' schema and requires '{expectedField}' property to be set."
+        );
+    }
+
+    [Fact]
+    public void GivenApplicationJsonArray_WhenParsed_ThenRejectedAsNotConformingToSingleEventSchema()
+    {
+        // With application/json, Azure expects a single CloudEvent object, not an array
+        var context = new DefaultHttpContext { Request = { ContentType = "application/json" } };
         const string requestBody = """
-            {
-                "specversion": "1.0"
-            }
+            [{ "specversion": "1.0", "type": "com.example.test", "source": "/test/source", "id": "abc-1" }]
             """;
 
         var exception = Should.Throw<InvalidOperationException>(() =>
             _parser.Parse(context, requestBody)
         );
-        // Azure returns the raw JSON parsing error
-        exception.ShouldNotBeNull();
+
+        exception.Message.ShouldStartWith(
+            "This resource is configured to receive event in 'CloudEventV10' schema. "
+                + "The JSON received does not conform to the expected schema. "
+                + "Token Expected: StartObject, Actual Token Received: StartArray."
+        );
     }
 
     [Fact]
@@ -378,6 +438,58 @@ public class CloudEventSchemaParserTests
 
         events.ShouldHaveSingleItem();
         events[0].CloudEvent.ShouldNotBeNullAnd().Source.ShouldBe("/test/source");
+    }
+
+    [Theory]
+    [InlineData(Constants.CeSpecVersionHeader)]
+    [InlineData(Constants.CeIdHeader)]
+    [InlineData(Constants.CeSourceHeader)]
+    [InlineData(Constants.CeTypeHeader)]
+    public void GivenBinaryModeRequestWithoutARequiredHeader_WhenParsed_ThenMessageNamesTheMissingHeader(
+        string header
+    )
+    {
+        var context = CreateBinaryModeContext(
+            "1.0",
+            "com.example.test",
+            "/test/source",
+            "test-id-123"
+        );
+        context.Request.Headers.Remove(header);
+
+        var exception = Should.Throw<EventParseException>(() => _parser.Parse(context, "{}"));
+
+        exception.ErrorCode.ShouldBe(ErrorDetailCodes.InvalidCloudEventHeader);
+        exception.Message.ShouldBe(
+            $"{header} header is missing for the cloud event. "
+                + "Please check required attributes at https://github.com/cloudevents/spec/blob/v1.0/spec.md#required-attributes"
+        );
+    }
+
+    [Theory]
+    [InlineData(Constants.CeSpecVersionHeader)]
+    [InlineData(Constants.CeIdHeader)]
+    [InlineData(Constants.CeSourceHeader)]
+    [InlineData(Constants.CeTypeHeader)]
+    public void GivenBinaryModeRequestWithAnEmptyRequiredHeader_WhenParsed_ThenMessageNamesTheEmptyHeader(
+        string header
+    )
+    {
+        var context = CreateBinaryModeContext(
+            "1.0",
+            "com.example.test",
+            "/test/source",
+            "test-id-123"
+        );
+        context.Request.Headers[header] = "";
+
+        var exception = Should.Throw<EventParseException>(() => _parser.Parse(context, "{}"));
+
+        exception.ErrorCode.ShouldBe(ErrorDetailCodes.InvalidCloudEventHeader);
+        exception.Message.ShouldBe(
+            $"{header} header is empty for the cloud event. "
+                + "Please check required attributes at https://github.com/cloudevents/spec/blob/v1.0/spec.md#required-attributes"
+        );
     }
 
     private static DefaultHttpContext CreateBinaryModeContext(

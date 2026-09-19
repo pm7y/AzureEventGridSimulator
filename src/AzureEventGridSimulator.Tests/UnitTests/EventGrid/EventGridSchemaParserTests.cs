@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
@@ -156,8 +158,12 @@ public class EventGridSchemaParserTests
         var exception = Should.Throw<InvalidOperationException>(() =>
             _parser.Parse(context, requestBody)
         );
-        // Azure returns the raw JSON parsing error
-        exception.ShouldNotBeNull();
+        // The parser passes System.Text.Json's message through unchanged and adds no report
+        // suffix; EventGridMiddleware appends the suffix to the response, as Azure does. STJ's
+        // exact wording varies between runtime versions, so only its type is pinned here
+        // (JsonDocument throws an internal JsonException subclass).
+        exception.Message.ShouldNotContain("to our forums");
+        exception.InnerException.ShouldBeAssignableTo<JsonException>();
     }
 
     [Fact]
@@ -206,8 +212,9 @@ public class EventGridSchemaParserTests
         var exception = Should.Throw<InvalidOperationException>(() =>
             _parser.Parse(context, requestBody)
         );
-        // Azure returns the raw JSON parsing error
-        exception.ShouldNotBeNull();
+        exception.Message.ShouldStartWith(
+            "This resource is configured for 'EventGridEvent' schema and requires 'id' property to be set."
+        );
     }
 
     [Fact]
@@ -225,8 +232,72 @@ public class EventGridSchemaParserTests
         var exception = Should.Throw<InvalidOperationException>(() =>
             _parser.Parse(context, requestBody)
         );
-        // Azure returns the raw JSON parsing error
-        exception.ShouldNotBeNull();
+        exception.Message.ShouldStartWith(
+            "This resource is configured for 'EventGridEvent' schema and requires 'subject' property to be set."
+        );
+    }
+
+    // System.Text.Json lists every missing required property in declaration order (id, subject,
+    // eventType, eventTime). The parser names only one of them, picked in the order Azure
+    // validates: subject, id, eventType, eventTime. The single-field rows also pin the `required`
+    // modifiers on EventGridEvent: without them the event would parse with the field left null.
+    [Theory]
+    [InlineData(new[] { "id" }, "id", false)]
+    [InlineData(new[] { "subject" }, "subject", false)]
+    [InlineData(new[] { "eventType" }, "eventType", false)]
+    [InlineData(new[] { "eventTime" }, "eventTime", false)]
+    [InlineData(new[] { "subject", "id" }, "subject", false)]
+    [InlineData(new[] { "id", "eventType" }, "id", false)]
+    [InlineData(new[] { "eventType", "eventTime" }, "eventType", false)]
+    [InlineData(new[] { "id", "subject", "eventType", "eventTime" }, "subject", false)]
+    [InlineData(new[] { "subject", "id" }, "subject", true)]
+    [InlineData(new[] { "eventType", "eventTime" }, "eventType", true)]
+    public void GivenEventMissingRequiredFields_WhenParsed_ThenMessageNamesTheFirstInAzureOrder(
+        string[] missingFields,
+        string expectedField,
+        bool singleObject
+    )
+    {
+        var context = CreateEventGridContext();
+        var evt = new Dictionary<string, object>(StringComparer.Ordinal)
+        {
+            ["id"] = "test-id",
+            ["subject"] = "/test/subject",
+            ["eventType"] = "Test.EventType",
+            ["eventTime"] = "2025-01-15T10:30:00Z",
+        };
+        foreach (var field in missingFields)
+        {
+            evt.Remove(field);
+        }
+
+        var requestBody = singleObject
+            ? JsonSerializer.Serialize(evt)
+            : JsonSerializer.Serialize(new[] { evt });
+
+        // STJ joins the missing names with the UI culture's list separator (';' in de-DE, for
+        // example), and the parser splits on ','
+        var originalCulture = CultureInfo.CurrentCulture;
+        var originalUiCulture = CultureInfo.CurrentUICulture;
+        InvalidOperationException exception;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+
+            exception = Should.Throw<InvalidOperationException>(() =>
+                _parser.Parse(context, requestBody)
+            );
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUiCulture;
+        }
+
+        exception.Message.ShouldStartWith(
+            $"This resource is configured for 'EventGridEvent' schema and requires '{expectedField}' property to be set."
+        );
     }
 
     [Fact]
