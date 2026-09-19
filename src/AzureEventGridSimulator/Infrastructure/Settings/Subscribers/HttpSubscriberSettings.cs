@@ -11,6 +11,17 @@ public class HttpSubscriberSettings : ISubscriberSettings
 {
     private readonly DateTimeOffset _createdAt = DateTimeOffset.UtcNow;
 
+    // Computed once on first read (Endpoint is init-only, so the code never changes).
+    // Lazy rather than a Guid? field: the /validate handler reads this from request threads
+    // and a Nullable<Guid> write is not atomic. PublicationOnly keeps today's behaviour of
+    // not caching a failure (e.g. a null Endpoint throws again on the next read).
+    private readonly Lazy<Guid> _validationCode;
+
+    public HttpSubscriberSettings()
+    {
+        _validationCode = new Lazy<Guid>(GetValidationCode, LazyThreadSafetyMode.PublicationOnly);
+    }
+
     [JsonPropertyName("endpoint")]
     public required string Endpoint { get; init; }
 
@@ -21,7 +32,7 @@ public class HttpSubscriberSettings : ISubscriberSettings
     public SubscriptionValidationStatus ValidationStatus { get; set; }
 
     [JsonIgnore]
-    public Guid ValidationCode => GetValidationCode();
+    public Guid ValidationCode => _validationCode.Value;
 
     [JsonPropertyName("name")]
     public required string Name { get; init; }

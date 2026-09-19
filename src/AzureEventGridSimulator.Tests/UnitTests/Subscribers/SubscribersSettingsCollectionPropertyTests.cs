@@ -15,12 +15,14 @@ public class SubscribersSettingsCollectionPropertyTests : SubscribersSettingsTes
             Http = [CreateValidHttpSubscriber("Http1")],
             ServiceBus = [CreateValidServiceBusSubscriber("ServiceBus1")],
             StorageQueue = [CreateValidStorageQueueSubscriber("StorageQueue1")],
+            EventHub = [CreateValidEventHubSubscriber("EventHub1")],
         };
 
         settings.All.ShouldContain(s => s.Name == "Http1");
         settings.All.ShouldContain(s => s.Name == "ServiceBus1");
         settings.All.ShouldContain(s => s.Name == "StorageQueue1");
-        settings.Count.ShouldBe(3);
+        settings.All.ShouldContain(s => s.Name == "EventHub1");
+        settings.All.Count().ShouldBe(4);
     }
 
     [Fact]
@@ -31,10 +33,10 @@ public class SubscribersSettingsCollectionPropertyTests : SubscribersSettingsTes
             Http = null,
             ServiceBus = null,
             StorageQueue = null,
+            EventHub = null,
         };
 
         settings.All.ShouldBeEmpty();
-        settings.Any.ShouldBeFalse();
     }
 
     [Fact]
@@ -77,6 +79,19 @@ public class SubscribersSettingsCollectionPropertyTests : SubscribersSettingsTes
     }
 
     [Fact]
+    public void GivenEventHubSubscribers_ThenEventHubSubscribersReturnsOnlyEventHub()
+    {
+        var settings = new SubscribersSettings
+        {
+            Http = [CreateValidHttpSubscriber("Http1")],
+            EventHub = [CreateValidEventHubSubscriber("EventHub1")],
+        };
+
+        settings.EventHubSubscribers.ShouldHaveSingleItem();
+        settings.EventHubSubscribers.ShouldContain(s => s.Name == "EventHub1");
+    }
+
+    [Fact]
     public void GivenNullHttpArray_ThenHttpSubscribersReturnsEmpty()
     {
         var settings = new SubscribersSettings { Http = null };
@@ -98,5 +113,13 @@ public class SubscribersSettingsCollectionPropertyTests : SubscribersSettingsTes
         var settings = new SubscribersSettings { StorageQueue = null };
 
         settings.StorageQueueSubscribers.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void GivenNullEventHubArray_ThenEventHubSubscribersReturnsEmpty()
+    {
+        var settings = new SubscribersSettings { EventHub = null };
+
+        settings.EventHubSubscribers.ShouldBeEmpty();
     }
 }

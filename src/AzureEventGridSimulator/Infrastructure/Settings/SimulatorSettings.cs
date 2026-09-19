@@ -27,6 +27,8 @@ public class SimulatorSettings
 
     public void Validate()
     {
+        Normalize();
+
         if (Topics.GroupBy(o => o.Port).Count() != Topics.Length)
         {
             throw new InvalidOperationException("Each topic must use a unique port.");
@@ -57,37 +59,45 @@ public class SimulatorSettings
             }
         }
 
-        if (
-            Topics
-                .Select(t => t.Name)
-                .Any(name =>
-                    string.IsNullOrWhiteSpace(name)
-                    || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))
-                )
-        )
+        if (Topics.Any(t => !IsValidResourceName(t.Name)))
         {
             throw new InvalidOperationException(
                 "A topic name can only contain letters, numbers, and dashes."
             );
         }
 
-        if (
-            allSubscribers
-                .Select(s => s.Name)
-                .Any(name =>
-                    string.IsNullOrWhiteSpace(name)
-                    || name.ToArray().Any(c => !(char.IsLetterOrDigit(c) || c == '-'))
-                )
-        )
+        if (allSubscribers.Any(s => !IsValidResourceName(s.Name)))
         {
             throw new InvalidOperationException(
                 "A subscriber name can only contain letters, numbers, and dashes."
             );
         }
 
-        // Wire up topic references for connection string inheritance
+        // Validate each subscriber (this also validates its filter, retry policy and dead-letter settings)
+        foreach (var subscriber in allSubscribers)
+        {
+            subscriber.Validate();
+        }
+
+        // Validate dashboard port is determinable if dashboard is enabled
+        if (DashboardEnabled && DashboardPort is null && !Topics.Any(t => !t.Disabled))
+        {
+            throw new InvalidOperationException(
+                "Dashboard is enabled but no port is available. Either set 'dashboardPort' or enable at least one topic."
+            );
+        }
+    }
+
+    /// <summary>
+    ///     Wires up parent-topic references and applies defaults. Runs as the first step of
+    ///     <see cref="Validate" /> because subscriber validation reads <c>ParentTopic</c> to
+    ///     resolve topic-level credentials.
+    /// </summary>
+    private void Normalize()
+    {
         foreach (var topic in Topics)
         {
+            // Wire up topic references for connection string inheritance
             foreach (var subscriber in topic.Subscribers.ServiceBusSubscribers)
             {
                 subscriber.ParentTopic = topic;
@@ -102,26 +112,14 @@ public class SimulatorSettings
             {
                 subscriber.ParentTopic = topic;
             }
-        }
 
-        // Validate each subscriber
-        foreach (var subscriber in allSubscribers)
-        {
-            subscriber.Validate();
-        }
-
-        // Validate filters
-        foreach (var filter in allSubscribers.Where(s => s.Filter != null).Select(s => s.Filter!))
-        {
-            filter.Validate();
-        }
-
-        // Validate dashboard port is determinable if dashboard is enabled
-        if (DashboardEnabled && DashboardPort is null && !Topics.Any(t => !t.Disabled))
-        {
-            throw new InvalidOperationException(
-                "Dashboard is enabled but no port is available. Either set 'dashboardPort' or enable at least one topic."
-            );
+            foreach (var subscriber in topic.Subscribers.All)
+            {
+                subscriber.DeadLetter?.ApplyDefaults();
+            }
         }
     }
+
+    private static bool IsValidResourceName(string? name) =>
+        !string.IsNullOrWhiteSpace(name) && name.All(c => char.IsLetterOrDigit(c) || c == '-');
 }

@@ -30,4 +30,15 @@ public abstract class SubscribersSettingsTestBase
             QueueName = "test-queue",
         };
     }
+
+    protected static EventHubSubscriberSettings CreateValidEventHubSubscriber(string name)
+    {
+        return new EventHubSubscriberSettings
+        {
+            Name = name,
+            ConnectionString =
+                "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abc123",
+            EventHubName = "test-hub",
+        };
+    }
 }

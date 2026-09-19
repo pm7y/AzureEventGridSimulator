@@ -8,6 +8,8 @@ namespace AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 /// </summary>
 public class DeadLetterSettings
 {
+    private const string DefaultFolderPath = "./dead-letters";
+
     /// <summary>
     ///     Gets or sets whether dead-lettering is enabled.
     ///     Default is true.
@@ -21,15 +23,22 @@ public class DeadLetterSettings
     ///     Default is "./dead-letters".
     /// </summary>
     [JsonPropertyName("folderPath")]
-    public string FolderPath { get; set; } = "./dead-letters";
+    public string FolderPath { get; set; } = DefaultFolderPath;
 
     public void Validate()
     {
         // Path validation is performed at runtime when writing files
-        // Empty/null path will use the default
+        ApplyDefaults();
+    }
+
+    /// <summary>
+    ///     Replaces an empty/null folder path with the default. Safe to call more than once.
+    /// </summary>
+    internal void ApplyDefaults()
+    {
         if (string.IsNullOrWhiteSpace(FolderPath))
         {
-            FolderPath = "./dead-letters";
+            FolderPath = DefaultFolderPath;
         }
     }
 }
