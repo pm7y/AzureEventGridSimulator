@@ -55,10 +55,7 @@ public class FilterSettingsValidationTests
     {
         Should.NotThrow(() =>
         {
-            var filterConfig = new FilterSetting
-            {
-                AdvancedFilters = new List<AdvancedFilterSetting>(),
-            };
+            var filterConfig = new FilterSetting { AdvancedFilters = [] };
             for (byte i = 0; i < n; i++)
             {
                 filterConfig.AdvancedFilters.Add(GetValidAdvancedFilter());
@@ -71,10 +68,7 @@ public class FilterSettingsValidationTests
     [Fact]
     public void TestFilterSettingsValidationWithTooManyAdvancedFilters()
     {
-        var filterConfig = new FilterSetting
-        {
-            AdvancedFilters = new List<AdvancedFilterSetting>(),
-        };
+        var filterConfig = new FilterSetting { AdvancedFilters = [] };
         // Azure Event Grid allows up to 25 filters, so 26 should fail
         for (var i = 0; i < 26; i++)
         {

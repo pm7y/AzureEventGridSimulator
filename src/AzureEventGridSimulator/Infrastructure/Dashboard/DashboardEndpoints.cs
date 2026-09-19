@@ -87,7 +87,7 @@ public static class DashboardEndpoints
             Subject = record.Subject,
             TopicName = record.TopicName,
             ReceivedAt = record.ReceivedAt,
-            Deliveries = record.GetDeliveries().Select(MapToDeliverySummary).ToList(),
+            Deliveries = [.. record.GetDeliveries().Select(MapToDeliverySummary)],
         };
     }
 
@@ -105,7 +105,7 @@ public static class DashboardEndpoints
             InputSchema = record.InputSchema.ToString(),
             ReceivedAt = record.ReceivedAt,
             PayloadJson = record.PayloadJson,
-            Deliveries = record.GetDeliveries().Select(MapToDeliveryDetails).ToList(),
+            Deliveries = [.. record.GetDeliveries().Select(MapToDeliveryDetails)],
         };
     }
 
@@ -128,7 +128,7 @@ public static class DashboardEndpoints
             Status = delivery.Status.ToString(),
             LastAttemptAt = delivery.LastAttemptAt,
             CompletedAt = delivery.CompletedAt,
-            Attempts = delivery.Attempts.Select(MapToAttemptResponse).ToList(),
+            Attempts = [.. delivery.Attempts.Select(MapToAttemptResponse)],
         };
     }
 

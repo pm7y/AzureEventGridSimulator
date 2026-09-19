@@ -132,7 +132,7 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
     private static string SanitizeFileName(string name)
     {
         var invalidChars = Path.GetInvalidFileNameChars();
-        var sanitized = new string(name.Where(c => !invalidChars.Contains(c)).ToArray());
+        var sanitized = new string([.. name.Where(c => !invalidChars.Contains(c))]);
 
         // Limit length
         return sanitized.Length > 50 ? sanitized[..50] : sanitized;
@@ -149,7 +149,7 @@ public class DeadLetterService(ILogger<DeadLetterService> logger)
             .Concat([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar])
             .ToHashSet();
 
-        var sanitized = new string(name.Where(c => !invalidChars.Contains(c)).ToArray());
+        var sanitized = new string([.. name.Where(c => !invalidChars.Contains(c))]);
 
         // Limit length
         return sanitized.Length > 100 ? sanitized[..100] : sanitized;

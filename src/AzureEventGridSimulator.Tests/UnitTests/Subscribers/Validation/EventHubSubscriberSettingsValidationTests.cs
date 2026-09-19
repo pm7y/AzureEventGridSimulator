@@ -344,7 +344,7 @@ public class EventHubSubscriberSettingsValidationTests
             EventHubName = "my-event-hub",
             Filter = new FilterSetting
             {
-                IncludedEventTypes = new List<string> { "MyEvent" },
+                IncludedEventTypes = ["MyEvent"],
                 SubjectBeginsWith = "test/",
             },
         };

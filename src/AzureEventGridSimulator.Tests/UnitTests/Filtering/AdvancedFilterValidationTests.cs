@@ -142,8 +142,14 @@ public class AdvancedFilterValidationTests
         );
     }
 
-    public static TheoryData<AdvancedFilterSetting.AdvancedFilterOperatorType> AllOperators =>
-        new(Enum.GetValues<AdvancedFilterSetting.AdvancedFilterOperatorType>());
+    public static TheoryData<AdvancedFilterSetting.AdvancedFilterOperatorType> AllOperators()
+    {
+        // Built by hand: `new(values)` trips IDE0028, and a collection expression on TheoryData
+        // trips MA0005 (Use Array.Empty<T>()).
+        var data = new TheoryData<AdvancedFilterSetting.AdvancedFilterOperatorType>();
+        data.AddRange(Enum.GetValues<AdvancedFilterSetting.AdvancedFilterOperatorType>());
+        return data;
+    }
 
     [Theory]
     [MemberData(nameof(AllOperators))]

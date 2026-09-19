@@ -181,7 +181,7 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
             throw new InvalidOperationException(SchemaErrorMessages.NotConforming(Schema));
         }
 
-        return events.Select(SimulatorEvent.FromCloudEvent).ToArray();
+        return [.. events.Select(SimulatorEvent.FromCloudEvent)];
     }
 
     // CloudEvents binary-mode headers that map to known attributes; any other "ce-" header

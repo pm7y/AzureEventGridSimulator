@@ -56,7 +56,7 @@ public class EventGridSchemaParser : IEventSchemaParser
             throw new InvalidOperationException(SchemaErrorMessages.NotConforming(Schema));
         }
 
-        return events.Select(SimulatorEvent.FromEventGridEvent).ToArray();
+        return [.. events.Select(SimulatorEvent.FromEventGridEvent)];
     }
 
     /// <inheritdoc />

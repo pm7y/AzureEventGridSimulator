@@ -316,48 +316,34 @@ public class HttpEventDeliveryServiceTests : IDisposable
         return factory;
     }
 
-    private class MockHttpMessageHandler : HttpMessageHandler
+    private class MockHttpMessageHandler(
+        HttpStatusCode statusCode,
+        Exception? exception = null,
+        Action? responseAction = null,
+        Action<HttpRequestHeaders>? captureHeaders = null,
+        Action<HttpRequestMessage>? captureRequest = null
+    ) : HttpMessageHandler
     {
-        private readonly Action<HttpRequestHeaders>? _captureHeaders;
-        private readonly Action<HttpRequestMessage>? _captureRequest;
-        private readonly Exception? _exception;
-        private readonly Action? _responseAction;
         private readonly List<HttpResponseMessage> _responses = [];
-        private readonly HttpStatusCode _statusCode;
-
-        public MockHttpMessageHandler(
-            HttpStatusCode statusCode,
-            Exception? exception = null,
-            Action? responseAction = null,
-            Action<HttpRequestHeaders>? captureHeaders = null,
-            Action<HttpRequestMessage>? captureRequest = null
-        )
-        {
-            _statusCode = statusCode;
-            _exception = exception;
-            _responseAction = responseAction;
-            _captureHeaders = captureHeaders;
-            _captureRequest = captureRequest;
-        }
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken
         )
         {
-            _captureHeaders?.Invoke(request.Headers);
-            _captureRequest?.Invoke(request);
-            _responseAction?.Invoke();
+            captureHeaders?.Invoke(request.Headers);
+            captureRequest?.Invoke(request);
+            responseAction?.Invoke();
 
-            if (_exception != null)
+            if (exception != null)
             {
-                throw _exception;
+                throw exception;
             }
 
-            var response = new HttpResponseMessage(_statusCode)
+            var response = new HttpResponseMessage(statusCode)
             {
                 Content = new StringContent(""),
-                ReasonPhrase = _statusCode.ToString(),
+                ReasonPhrase = statusCode.ToString(),
             };
             _responses.Add(response);
 

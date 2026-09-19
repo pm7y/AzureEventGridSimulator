@@ -354,7 +354,7 @@ public class ServiceBusSubscriberSettingsValidationTests
             Queue = "my-queue",
             Filter = new FilterSetting
             {
-                IncludedEventTypes = new List<string> { "MyEvent" },
+                IncludedEventTypes = ["MyEvent"],
                 SubjectBeginsWith = "test/",
             },
         };

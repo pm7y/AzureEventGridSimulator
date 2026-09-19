@@ -139,7 +139,7 @@ public class StorageQueueSubscriberSettingsValidationTests
             QueueName = "my-queue",
             Filter = new FilterSetting
             {
-                IncludedEventTypes = new List<string> { "MyEvent" },
+                IncludedEventTypes = ["MyEvent"],
                 SubjectBeginsWith = "test/",
             },
         };
