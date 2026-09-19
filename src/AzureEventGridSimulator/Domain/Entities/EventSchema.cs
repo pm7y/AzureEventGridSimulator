@@ -13,6 +13,8 @@ public enum EventSchema
     /// <summary>
     ///     CloudEvents v1.0 schema.
     /// </summary>
+    // Member names are public config values (inputSchema/outputSchema/deliverySchema)
+    // and appear in the dashboard; do not rename.
     // ReSharper disable once InconsistentNaming
     CloudEventV1_0,
 }
