@@ -173,6 +173,12 @@
         const usesArrowKeys = 'select, textarea, input:not([type="checkbox"])';
         if (e.key !== 'Escape' && e.target instanceof Element && e.target.closest(usesArrowKeys)) return;
 
+        // Escape closes the panel even when the topic filter leaves the active list empty
+        if (e.key === 'Escape') {
+            closeDetailPanel();
+            return;
+        }
+
         const list = getVisibleItems();
         const selectedId = activeTab === 'events' ? selectedEventId : selectedRejectionId;
 
@@ -194,9 +200,6 @@
                 if (currentIndex > 0) {
                     selectItem(list[currentIndex - 1].id);
                 }
-                break;
-            case 'Escape':
-                closeDetailPanel();
                 break;
         }
     }
