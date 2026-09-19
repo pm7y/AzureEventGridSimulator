@@ -1,6 +1,7 @@
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
+using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -97,6 +98,25 @@ public class ValidateSubscriptionCommandHandlerTests
                 Arg.Any<Exception?>(),
                 Arg.Any<Func<object, Exception?, string>>()
             );
+    }
+
+    [Fact]
+    public async Task GivenValidationCodeAfterFiveMinutes_WhenHandled_ThenReturnsFalseAndStatusUnchanged()
+    {
+        // The subscriber's five-minute window starts when it's created (on the real clock), so
+        // a clock six minutes ahead puts a correct code outside the window
+        var subscriber = CreateHttpSubscriber("https://example.com/webhook");
+        var topic = CreateTopicWithSubscriber(subscriber);
+        var command = new ValidateSubscriptionCommand(topic, subscriber.ValidationCode);
+        var handler = new ValidateSubscriptionCommandHandler(
+            new FakeTimeProvider(DateTimeOffset.UtcNow.AddMinutes(6)),
+            _logger
+        );
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.ShouldBeFalse();
+        subscriber.ValidationStatus.ShouldBe(default);
     }
 
     [Fact]

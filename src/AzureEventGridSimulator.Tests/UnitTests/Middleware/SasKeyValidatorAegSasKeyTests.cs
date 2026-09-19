@@ -1,4 +1,6 @@
 using AzureEventGridSimulator.Domain;
+using AzureEventGridSimulator.Infrastructure.Middleware;
+using Microsoft.Net.Http.Headers;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -13,9 +15,9 @@ public class SasKeyValidatorAegSasKeyTests : SasKeyValidatorTestBase
     {
         var headers = new HeaderDictionary { { Constants.AegSasKeyHeader, ValidTopicKey } };
 
-        var result = Validator.IsValid(headers, ValidTopicKey);
+        var result = Validator.Validate(headers, ValidTopicKey);
 
-        result.ShouldBeTrue();
+        result.ShouldBe(Valid);
     }
 
     [Fact]
@@ -23,9 +25,9 @@ public class SasKeyValidatorAegSasKeyTests : SasKeyValidatorTestBase
     {
         var headers = new HeaderDictionary { { Constants.AegSasKeyHeader, "wrong-key" } };
 
-        var result = Validator.IsValid(headers, ValidTopicKey);
+        var result = Validator.Validate(headers, ValidTopicKey);
 
-        result.ShouldBeFalse();
+        result.ShouldBe(Failed(SasValidationFailureReason.KeyMismatch));
     }
 
     [Fact]
@@ -33,7 +35,7 @@ public class SasKeyValidatorAegSasKeyTests : SasKeyValidatorTestBase
     {
         var headers = new HeaderDictionary { { Constants.AegSasKeyHeader, "wrong-key" } };
 
-        Validator.IsValid(headers, ValidTopicKey);
+        Validator.Validate(headers, ValidTopicKey);
 
         Logger
             .Received()
@@ -51,8 +53,34 @@ public class SasKeyValidatorAegSasKeyTests : SasKeyValidatorTestBase
     {
         var headers = new HeaderDictionary { { "AEG-SAS-KEY", ValidTopicKey } };
 
-        var result = Validator.IsValid(headers, ValidTopicKey);
+        var result = Validator.Validate(headers, ValidTopicKey);
 
-        result.ShouldBeTrue();
+        result.ShouldBe(Valid);
+    }
+
+    [Fact]
+    public void GivenEmptyAegSasKey_WhenValidated_ThenFailsWithEmptyKey()
+    {
+        // EmptyKey is the one failure the middleware answers with a 400 rather than a 401
+        var headers = new HeaderDictionary { { Constants.AegSasKeyHeader, string.Empty } };
+
+        var result = Validator.Validate(headers, ValidTopicKey);
+
+        result.ShouldBe(Failed(SasValidationFailureReason.EmptyKey));
+    }
+
+    [Fact]
+    public void GivenValidAegSasKeyAndBadAuthorizationHeader_WhenValidated_ThenAegSasKeyWins()
+    {
+        // aeg-sas-key is checked first; the other auth headers aren't looked at when it's present
+        var headers = new HeaderDictionary
+        {
+            { Constants.AegSasKeyHeader, ValidTopicKey },
+            { HeaderNames.Authorization, "Basic abc" },
+        };
+
+        var result = Validator.Validate(headers, ValidTopicKey);
+
+        result.ShouldBe(Valid);
     }
 }

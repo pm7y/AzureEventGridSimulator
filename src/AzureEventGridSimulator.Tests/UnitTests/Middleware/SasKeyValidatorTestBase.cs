@@ -18,6 +18,20 @@ public abstract class SasKeyValidatorTestBase
         Validator = new SasKeyValidator(TimeProvider.System, Logger);
     }
 
+    /// <summary>
+    ///     The result for a request that passed validation.
+    /// </summary>
+    protected static SasValidationResult Valid { get; } = new(true);
+
+    /// <summary>
+    ///     The result for a request that failed validation for the given reason.
+    ///     <see cref="SasValidationResult" /> is a record, so results compare by value.
+    /// </summary>
+    protected static SasValidationResult Failed(SasValidationFailureReason reason)
+    {
+        return new SasValidationResult(false, reason);
+    }
+
     protected static string GenerateValidSasToken(
         string key,
         string resource,

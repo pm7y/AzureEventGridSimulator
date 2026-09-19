@@ -15,6 +15,7 @@ using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Middleware;
 using AzureEventGridSimulator.Infrastructure.Settings;
+using Microsoft.AspNetCore.Diagnostics;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Hosting;
@@ -31,6 +32,12 @@ public class Program
         {
             // Build it and fire it up
             var app = CreateWebHostBuilder(args).Build();
+
+            // First, so an exception from anywhere in the pipeline gets an Azure-style 500
+            // rather than an empty 500 (or the developer exception page in Development)
+            app.UseExceptionHandler(
+                new ExceptionHandlerOptions { ExceptionHandler = WriteUnhandledExceptionResponse }
+            );
 
             app.UseSerilogRequestLogging(options =>
             {
@@ -73,6 +80,32 @@ public class Program
         {
             await Log.CloseAndFlushAsync();
         }
+    }
+
+    /// <summary>
+    ///     Writes the response for a request that threw an exception nothing else handled. The
+    ///     exception handler middleware has already logged the exception and cleared the response.
+    ///     Requests Kestrel itself rejects keep Kestrel's status and empty body.
+    /// </summary>
+    internal static Task WriteUnhandledExceptionResponse(HttpContext context)
+    {
+        // Kestrel throws BadHttpRequestException for requests it rejects, such as a 413 for a body
+        // over MaxRequestBodySize or a 408 for one that arrives too slowly. Keep that status: a 500
+        // would also make Azure SDK clients retry a request that can never succeed.
+        if (
+            context.Features.Get<IExceptionHandlerFeature>()?.Error
+            is BadHttpRequestException rejection
+        )
+        {
+            context.Response.StatusCode = rejection.StatusCode;
+            return Task.CompletedTask;
+        }
+
+        return context.WriteErrorResponse(
+            HttpStatusCode.InternalServerError,
+            $"The simulator encountered an unexpected error while processing the request.{context.GenerateReportSuffix()}",
+            null
+        );
     }
 
     public static async Task StartSimulator(WebApplication host, CancellationToken token = default)
