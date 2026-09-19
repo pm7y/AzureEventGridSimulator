@@ -9,7 +9,7 @@ using OpenTelemetry.Trace;
 
 namespace Microsoft.Extensions.Hosting;
 
-// Adds common .NET Aspire services: service discovery, resilience, health checks, and OpenTelemetry.
+// Adds common .NET Aspire services: service discovery, health checks, and OpenTelemetry.
 // This project should be referenced by each service project in your solution.
 // To learn more about using this project, see https://aka.ms/dotnet/aspire/service-defaults
 public static class Extensions
@@ -28,8 +28,9 @@ public static class Extensions
 
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
-            // Turn on resilience by default
-            http.AddStandardResilienceHandler();
+            // No standard resilience handler: the simulator's own retry scheduler and 60s delivery
+            // timeout model Event Grid's retry policy. Polly underneath would resend one simulated
+            // attempt (with the same aeg-delivery-count) and time slow subscribers out early.
 
             // Turn on service discovery by default
             http.AddServiceDiscovery();
@@ -127,11 +128,15 @@ public static class Extensions
         // See https://aka.ms/dotnet/aspire/healthchecks for details before enabling these endpoints in non-development environments.
         if (app.Environment.IsDevelopment())
         {
+            // Registered as middleware rather than routed endpoints because the simulator's
+            // EventGridMiddleware runs before routing and answers unknown paths with a 404,
+            // so call this before UseEventGridMiddleware().
+
             // All health checks must pass for app to be considered ready to accept traffic after starting
-            app.MapHealthChecks(HealthEndpointPath);
+            app.UseHealthChecks(HealthEndpointPath);
 
             // Only health checks tagged with the "live" tag must pass for app to be considered alive
-            app.MapHealthChecks(
+            app.UseHealthChecks(
                 AlivenessEndpointPath,
                 new HealthCheckOptions { Predicate = r => r.Tags.Contains("live") }
             );

@@ -3,6 +3,7 @@ using Asp.Versioning;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
 using AzureEventGridSimulator.Infrastructure;
+using AzureEventGridSimulator.Infrastructure.Extensions;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using Microsoft.AspNetCore.Mvc;
@@ -20,9 +21,17 @@ public class SubscriptionValidationController(
     [HttpGet]
     public async Task<IActionResult> Get(Guid id)
     {
-        var topicSettingsForCurrentRequestPort = simulatorSettings.Topics.First(t =>
-            t.Port == HttpContext.Request.Host.Port
+        // No enabled topic on this port (e.g. a dedicated dashboard port, or a disabled
+        // topic's port) is an unknown resource, the same as any other unmatched request.
+        var topicSettingsForCurrentRequestPort = simulatorSettings.Topics.FirstOrDefault(t =>
+            !t.Disabled && t.Port == HttpContext.Request.Host.Port
         );
+        if (topicSettingsForCurrentRequestPort is null)
+        {
+            await HttpContext.WriteResourceNotFoundResponse();
+            return new EmptyResult();
+        }
+
         var isValid = await mediator.Send(
             new ValidateSubscriptionCommand(topicSettingsForCurrentRequestPort, id)
         );

@@ -1,6 +1,7 @@
 using System.Net;
 using AzureEventGridSimulator.Domain;
 using AzureEventGridSimulator.Domain.Commands;
+using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Mediator;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
@@ -28,12 +29,12 @@ public class SubscriptionHandshakeTests(IntegrationContextFixture factory)
             .Subscribers.HttpSubscribers.Single(s => s.Name == name);
     }
 
-    private HttpClient CreateTopicClient()
+    private HttpClient CreateTopicClient(int port = 60102)
     {
         return factory.CreateClient(
             new WebApplicationFactoryClientOptions
             {
-                BaseAddress = new Uri("https://localhost:60102"),
+                BaseAddress = new Uri($"https://localhost:{port}"),
             }
         );
     }
@@ -90,6 +91,21 @@ public class SubscriptionHandshakeTests(IntegrationContextFixture factory)
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
         (await response.Content.ReadAsStringAsync()).ShouldContain(
             "The validation code was not correct"
+        );
+    }
+
+    [Theory]
+    [InlineData(60199)] // no topic on this port, e.g. a dedicated dashboardPort
+    [InlineData(60103)] // DisabledTopic's port
+    public async Task GivenPortWithNoEnabledTopic_WhenValidationUrlIsCalled_ThenNotFound(int port)
+    {
+        var client = CreateTopicClient(port);
+
+        var response = await client.GetAsync($"/validate?id={Guid.NewGuid()}");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync()).ShouldContain(
+            ErrorDetailCodes.ResourceNotFound
         );
     }
 }

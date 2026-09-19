@@ -76,10 +76,10 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
         // Check for notification request (POST /api/events with appropriate content)
         if (IsNotificationRequest(context))
         {
-            // No matching topic (e.g. request on the dashboard port, or a Host header
-            // without a port) is treated as an unknown path rather than crashing.
+            // No matching enabled topic (e.g. request on the dashboard port, a Host header
+            // without a port, or a disabled topic's port) is treated as an unknown path.
             var topic = simulatorSettings.Topics.FirstOrDefault(t =>
-                t.Port == context.Request.Host.Port
+                !t.Disabled && t.Port == context.Request.Host.Port
             );
             return topic is null
                 ? new RequestRouteResult(RequestType.NotFound)
@@ -117,7 +117,7 @@ public class RequestRouter(SimulatorSettings simulatorSettings)
         )
         {
             var topic = simulatorSettings.Topics.FirstOrDefault(t =>
-                t.Port == context.Request.Host.Port
+                !t.Disabled && t.Port == context.Request.Host.Port
             );
             return new RequestRouteResult(RequestType.OptionsPreFlight, topic);
         }

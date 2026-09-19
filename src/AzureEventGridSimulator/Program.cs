@@ -36,6 +36,13 @@ public class Program
             {
                 options.GetLevel = (_, _, _) => LogEventLevel.Debug;
             });
+
+#if ASPIRE_ENABLED
+            // Aspire health checks (/health, /alive) must run before the Event Grid middleware,
+            // which answers every path it doesn't recognise with a 404
+            app.MapDefaultEndpoints();
+#endif
+
             app.UseEventGridMiddleware();
 
             // Conditionally enable dashboard based on settings
@@ -48,11 +55,6 @@ public class Program
             app.UseRouting();
             app.MapControllers();
 
-#if ASPIRE_ENABLED
-            // Map Aspire health check endpoints (/health, /alive)
-            app.MapDefaultEndpoints();
-#endif
-
             if (simulatorSettings.DashboardEnabled)
             {
                 app.MapDashboardEndpoints();
@@ -60,9 +62,12 @@ public class Program
 
             await StartSimulator(app);
         }
-        catch (Exception ex)
+        // HostAbortedException is how host-resolving tooling (HostFactoryResolver) stops Main
+        // once it has the built host; it isn't a failed start, so let it propagate.
+        catch (Exception ex) when (ex is not HostAbortedException)
         {
             Log.Fatal(ex, "Failed to start the Azure Event Grid Simulator");
+            Environment.ExitCode = 1;
         }
         finally
         {
@@ -107,6 +112,7 @@ public class Program
                 Log.Fatal(
                     "All of the configured topics are disabled. The application will now exit"
                 );
+                Environment.ExitCode = 1;
                 lifetime.StopApplication();
                 return;
             }
@@ -156,6 +162,7 @@ public class Program
         catch (Exception e)
         {
             Log.Fatal(e, "It died !");
+            Environment.ExitCode = 1;
             lifetime.StopApplication();
         }
     }
@@ -262,6 +269,10 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // Serilog replaces the default logging providers. Clear them before AddServiceDefaults()
+        // so that, under Aspire, the OpenTelemetry logger provider it registers survives.
+        builder.Logging.ClearProviders();
+
 #if ASPIRE_ENABLED
         // Add Aspire service defaults (OpenTelemetry, health checks, service discovery)
         builder.AddServiceDefaults();
@@ -342,7 +353,12 @@ public class Program
             })
             .AddMvc();
 
-        builder.Logging.ClearProviders();
+#if ASPIRE_ENABLED
+        // Also pass Serilog events on to the OpenTelemetry logger provider from AddServiceDefaults()
+        const bool writeToProviders = true;
+#else
+        const bool writeToProviders = false;
+#endif
         builder.Host.UseSerilog(
             (context, loggerConfiguration) =>
             {
@@ -372,7 +388,8 @@ public class Program
                         _ => !hasAtLeastOneLogSinkBeenConfigured,
                         sinkConfiguration => sinkConfiguration.Console()
                     );
-            }
+            },
+            writeToProviders: writeToProviders
         );
 
         builder.Configuration.AddConfiguration(configuration);
@@ -384,16 +401,29 @@ public class Program
 
             options.ConfigureSimulatorCertificate();
 
-            foreach (var topics in options.ApplicationServices.EnabledTopics())
+            foreach (var port in GetListenPorts(options.ApplicationServices.SimulatorSettings()))
             {
-                options.Listen(
-                    IPAddress.Any,
-                    topics.Port,
-                    listenOptions => listenOptions.UseHttps()
-                );
+                options.Listen(IPAddress.Any, port, listenOptions => listenOptions.UseHttps());
             }
         });
 
         return builder;
+    }
+
+    /// <summary>
+    ///     The ports Kestrel listens on over HTTPS: the port of each enabled topic, plus the
+    ///     dedicated dashboard port when one is configured.
+    /// </summary>
+    internal static IEnumerable<int> GetListenPorts(SimulatorSettings settings)
+    {
+        var ports = settings.Topics.Where(t => !t.Disabled).Select(t => t.Port);
+
+        if (settings.DashboardEnabled && settings.DashboardPort is { } dashboardPort)
+        {
+            ports = ports.Append(dashboardPort);
+        }
+
+        // The dashboard port may also be a topic's port, and Kestrel can't listen on a port twice
+        return ports.Distinct();
     }
 }

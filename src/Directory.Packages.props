@@ -29,7 +29,6 @@
         <PackageVersion Include="Aspire.Hosting.Azure.ServiceBus" Version="13.5.3" />
         <PackageVersion Include="Aspire.Hosting.Azure.EventHubs" Version="13.5.3" />
         <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.5.3" />
-        <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
         <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.10.0" />
         <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.18.0" />
         <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />

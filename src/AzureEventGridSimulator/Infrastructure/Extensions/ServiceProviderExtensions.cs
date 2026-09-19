@@ -10,10 +10,5 @@ public static class ServiceProviderExtensions
         {
             return provider.GetRequiredService<SimulatorSettings>();
         }
-
-        public IEnumerable<TopicSettings> EnabledTopics()
-        {
-            return provider.SimulatorSettings().Topics.Where(o => !o.Disabled);
-        }
     }
 }

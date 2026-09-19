@@ -17,12 +17,12 @@ namespace AzureEventGridSimulator.Tests.IntegrationTests;
 [Collection(nameof(IntegrationContextFixtureCollection))]
 public class RequestPipelineTests(IntegrationContextFixture factory)
 {
-    private HttpClient CreateClient(bool withSasKey = true)
+    private HttpClient CreateClient(bool withSasKey = true, int port = 60101)
     {
         var client = factory.CreateClient(
             new WebApplicationFactoryClientOptions
             {
-                BaseAddress = new Uri("https://localhost:60101"),
+                BaseAddress = new Uri($"https://localhost:{port}"),
             }
         );
 
@@ -58,6 +58,18 @@ public class RequestPipelineTests(IntegrationContextFixture factory)
         var response = await client.PostAsync(path, content);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GivenValidEvent_WhenPostedToDisabledTopicPort_ThenNotFound()
+    {
+        // DisabledTopic (port 60103) is configured with "disabled": true
+        var client = CreateClient(port: 60103);
+
+        using var content = CreateValidEventContent();
+        var response = await client.PostAsync("/api/events", content);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
     [Fact]

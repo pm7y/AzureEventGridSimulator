@@ -40,6 +40,17 @@ public class RequestRouterTests
         return context;
     }
 
+    private static TopicSettings CreateDisabledTopic(int port)
+    {
+        return new TopicSettings
+        {
+            Name = "DisabledTopic",
+            Port = port,
+            Key = "TheLocal+DevelopmentKey=",
+            Disabled = true,
+        };
+    }
+
     [Theory]
     [InlineData("/api/events")]
     [InlineData("/API/EVENTS")]
@@ -108,6 +119,52 @@ public class RequestRouterTests
 
         result.Type.ShouldBe(RequestType.Notification);
         result.Topic.ShouldNotBeNullAnd().Name.ShouldBe("TopicTwo");
+    }
+
+    [Fact]
+    public void GivenPostToApiEvents_WhenPortMatchesDisabledTopic_ThenNotFound()
+    {
+        // e.g. dashboardPort set to a disabled topic's port, or a Host header naming it
+        var router = CreateRouter(
+            TestHelpers.CreateValidTopicSettings(name: "EnabledTopic", port: 60101),
+            CreateDisabledTopic(60103)
+        );
+        var context = CreateContext(HttpMethods.Post, "/api/events", port: 60103);
+
+        var result = router.RouteRequest(context);
+
+        result.Type.ShouldBe(RequestType.NotFound);
+        result.Topic.ShouldBeNull();
+    }
+
+    [Fact]
+    public void GivenOptionsToApiEvents_WhenPortMatchesDisabledTopic_ThenOptionsPreFlightWithNullTopic()
+    {
+        var router = CreateRouter(
+            TestHelpers.CreateValidTopicSettings(name: "EnabledTopic", port: 60101),
+            CreateDisabledTopic(60103)
+        );
+        var context = CreateContext(HttpMethods.Options, "/api/events", port: 60103);
+
+        var result = router.RouteRequest(context);
+
+        result.Type.ShouldBe(RequestType.OptionsPreFlight);
+        result.Topic.ShouldBeNull();
+    }
+
+    [Fact]
+    public void GivenEnabledAndDisabledTopics_WhenPostedToEnabledTopicPort_ThenNotification()
+    {
+        var router = CreateRouter(
+            CreateDisabledTopic(60103),
+            TestHelpers.CreateValidTopicSettings(name: "EnabledTopic", port: 60101)
+        );
+        var context = CreateContext(HttpMethods.Post, "/api/events", port: 60101);
+
+        var result = router.RouteRequest(context);
+
+        result.Type.ShouldBe(RequestType.Notification);
+        result.Topic.ShouldNotBeNullAnd().Name.ShouldBe("EnabledTopic");
     }
 
     [Theory]
