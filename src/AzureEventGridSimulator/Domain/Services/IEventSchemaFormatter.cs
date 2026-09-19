@@ -42,17 +42,6 @@ public interface IEventSchemaFormatter
     string SerializeSingle(SimulatorEvent evt);
 
     /// <summary>
-    ///     Serializes multiple events to JSON for delivery.
-    /// </summary>
-    /// <param name="events">
-    ///     The events to serialize.
-    /// </param>
-    /// <returns>
-    ///     The JSON representation of the events.
-    /// </returns>
-    string SerializeArray(IEnumerable<SimulatorEvent> events);
-
-    /// <summary>
     ///     Gets the HTTP headers to include with the delivery.
     /// </summary>
     /// <param name="evt">

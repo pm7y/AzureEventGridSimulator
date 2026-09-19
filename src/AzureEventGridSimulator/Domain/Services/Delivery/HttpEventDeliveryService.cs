@@ -31,12 +31,7 @@ public class HttpEventDeliveryService(
 
         try
         {
-            // Determine the delivery schema
-            var deliverySchema =
-                httpSubscriber.DeliverySchema
-                ?? delivery.Topic.OutputSchema
-                ?? delivery.InputSchema;
-
+            var deliverySchema = delivery.DeliverySchema;
             var formatter = formatterFactory.GetFormatter(deliverySchema);
             var json = formatter.Serialize(delivery.Event);
 

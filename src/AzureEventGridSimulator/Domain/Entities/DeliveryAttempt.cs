@@ -24,11 +24,4 @@ public record DeliveryAttempt(
     DateTimeOffset AttemptTime,
     int? HttpStatusCode = null,
     string? ErrorMessage = null
-)
-{
-    /// <summary>
-    ///     Creates a new delivery attempt with the current UTC time.
-    /// </summary>
-    public DeliveryAttempt(int attemptNumber, DeliveryOutcome outcome)
-        : this(attemptNumber, outcome, DateTimeOffset.UtcNow) { }
-}
+);

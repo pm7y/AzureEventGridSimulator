@@ -3,7 +3,6 @@ using System.Text;
 using Azure;
 using Azure.Storage.Queues;
 using AzureEventGridSimulator.Domain.Entities;
-using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
@@ -53,10 +52,7 @@ public class StorageQueueEventDeliveryService(
                 );
             }
 
-            // Determine the delivery schema
-            var deliverySchema =
-                subscription.DeliverySchema ?? delivery.Topic.OutputSchema ?? delivery.InputSchema;
-            var formatter = formatterFactory.GetFormatter(deliverySchema);
+            var formatter = formatterFactory.GetFormatter(delivery.DeliverySchema);
 
             // Serialize the event
             var json = formatter.Serialize(delivery.Event);
@@ -115,64 +111,6 @@ public class StorageQueueEventDeliveryService(
                 false,
                 DeliveryOutcome.StorageQueueError,
                 ErrorMessage: ex.Message
-            );
-        }
-    }
-
-    /// <summary>
-    ///     Sends an event to a Storage Queue subscriber.
-    /// </summary>
-    public async Task SendAsync(
-        StorageQueueSubscriberSettings subscription,
-        SimulatorEvent evt,
-        TopicSettings topic,
-        EventSchema inputSchema
-    )
-    {
-        try
-        {
-            if (subscription.Disabled)
-            {
-                logger.LogWarning(
-                    "Storage Queue subscription '{SubscriberName}' on topic '{TopicName}' is disabled",
-                    subscription.Name,
-                    topic.Name
-                );
-                return;
-            }
-
-            // Determine the delivery schema
-            var deliverySchema = subscription.DeliverySchema ?? topic.OutputSchema ?? inputSchema;
-            var formatter = formatterFactory.GetFormatter(deliverySchema);
-
-            // Serialize the event
-            var json = formatter.Serialize(evt);
-
-            // Get or create the queue client (creates queue if it doesn't exist)
-            var client = await GetOrCreateClientAsync(subscription);
-
-            // Base64 encode the JSON (matches Azure Event Grid behavior)
-            var messageText = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
-
-            // Send the message
-            await client.SendMessageAsync(messageText);
-
-            logger.LogDebug(
-                "Event {EventId} sent to Storage Queue '{QueueName}' via subscription '{SubscriberName}' on topic '{TopicName}'",
-                evt.Id,
-                subscription.QueueName,
-                subscription.Name,
-                topic.Name
-            );
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Failed to send event {EventId} to Storage Queue '{QueueName}' via subscription '{SubscriberName}'",
-                evt.Id,
-                subscription.QueueName,
-                subscription.Name
             );
         }
     }

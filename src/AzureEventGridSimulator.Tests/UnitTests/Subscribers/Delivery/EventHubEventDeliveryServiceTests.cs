@@ -1,7 +1,6 @@
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Domain.Services;
 using AzureEventGridSimulator.Domain.Services.Delivery;
-using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 using AzureEventGridSimulator.Tests.UnitTests.Common;
 using NSubstitute;
@@ -40,46 +39,6 @@ public class EventHubEventDeliveryServiceTests
         };
     }
 
-    private static TopicSettings CreateTopicSettings()
-    {
-        return new TopicSettings
-        {
-            Name = "TestTopic",
-            Port = 60101,
-            Key = "TheLocal+DevelopmentKey=",
-        };
-    }
-
-    private static SimulatorEvent CreateTestEvent()
-    {
-        return SimulatorEvent.FromEventGridEvent(
-            new EventGridEvent
-            {
-                Id = "test-event-id",
-                Subject = "test/subject",
-                EventType = "Test.EventType",
-                EventTime = "2025-01-15T10:30:00Z",
-                DataVersion = "1.0",
-                Data = new { customerId = "cust-123" },
-            }
-        );
-    }
-
-    private static PendingDelivery CreatePendingDelivery(
-        EventHubSubscriberSettings? subscriber = null,
-        SimulatorEvent? evt = null,
-        TopicSettings? topic = null
-    )
-    {
-        return new PendingDelivery
-        {
-            Event = evt ?? CreateTestEvent(),
-            Subscriber = subscriber ?? CreateValidSettings(),
-            Topic = topic ?? CreateTopicSettings(),
-            InputSchema = EventSchema.EventGridSchema,
-        };
-    }
-
     [Fact]
     public async Task GivenDisabledSubscription_WhenDelivering_ThenReturnsEventHubError()
     {
@@ -91,7 +50,7 @@ public class EventHubEventDeliveryServiceTests
             EventHubName = "my-event-hub",
             Disabled = true,
         };
-        var delivery = CreatePendingDelivery(subscription);
+        var delivery = TestHelpers.CreatePendingDelivery(subscription);
 
         var result = await _service.DeliverAsync(delivery, CancellationToken.None);
 
@@ -109,15 +68,7 @@ public class EventHubEventDeliveryServiceTests
             Name = "WrongType",
             Endpoint = "https://example.com",
         };
-        var evt = CreateTestEvent();
-        var topic = CreateTopicSettings();
-        var delivery = new PendingDelivery
-        {
-            Event = evt,
-            Subscriber = httpSubscriber,
-            Topic = topic,
-            InputSchema = EventSchema.EventGridSchema,
-        };
+        var delivery = TestHelpers.CreatePendingDelivery(httpSubscriber);
 
         var result = await _service.DeliverAsync(delivery, CancellationToken.None);
 
@@ -186,7 +137,11 @@ public class EventHubEventDeliveryServiceTests
     public void GivenEventGridFormatter_WhenSerializing_ThenReturnsJson()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.EventGridSchema);
-        var evt = CreateTestEvent();
+        var evt = TestHelpers.CreateSimulatorEventFromEventGrid(
+            id: "test-event-id",
+            subject: "test/subject",
+            data: new { customerId = "cust-123" }
+        );
 
         var json = formatter.Serialize(evt);
 
@@ -198,7 +153,11 @@ public class EventHubEventDeliveryServiceTests
     public void GivenCloudEventFormatter_WhenSerializing_ThenReturnsJson()
     {
         var formatter = _formatterFactory.GetFormatter(EventSchema.CloudEventV1_0);
-        var evt = CreateTestEvent();
+        var evt = TestHelpers.CreateSimulatorEventFromEventGrid(
+            id: "test-event-id",
+            subject: "test/subject",
+            data: new { customerId = "cust-123" }
+        );
 
         var json = formatter.Serialize(evt);
 
@@ -214,7 +173,14 @@ public class EventHubEventDeliveryServiceTests
             ["Label"] = new() { Type = "static", Value = "test-label" },
         };
 
-        var resolved = _propertyResolver.ResolveProperties(properties, CreateTestEvent());
+        var resolved = _propertyResolver.ResolveProperties(
+            properties,
+            TestHelpers.CreateSimulatorEventFromEventGrid(
+                id: "test-event-id",
+                subject: "test/subject",
+                data: new { customerId = "cust-123" }
+            )
+        );
 
         resolved["Label"].ShouldBe("test-label");
     }
@@ -227,7 +193,14 @@ public class EventHubEventDeliveryServiceTests
             ["Subject"] = new() { Type = "dynamic", Value = "Subject" },
         };
 
-        var resolved = _propertyResolver.ResolveProperties(properties, CreateTestEvent());
+        var resolved = _propertyResolver.ResolveProperties(
+            properties,
+            TestHelpers.CreateSimulatorEventFromEventGrid(
+                id: "test-event-id",
+                subject: "test/subject",
+                data: new { customerId = "cust-123" }
+            )
+        );
 
         resolved["Subject"].ShouldBe("test/subject");
     }
@@ -283,7 +256,10 @@ public class EventHubEventDeliveryServiceTests
         // then stops before it reaches the network
         using var cancelled = new CancellationTokenSource();
         await cancelled.CancelAsync();
-        await service.DeliverAsync(CreatePendingDelivery(subscription), cancelled.Token);
+        await service.DeliverAsync(
+            TestHelpers.CreatePendingDelivery(subscription),
+            cancelled.Token
+        );
 
         logger
             .Received(1)

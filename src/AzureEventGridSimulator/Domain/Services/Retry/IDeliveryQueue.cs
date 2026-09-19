@@ -40,14 +40,6 @@ public interface IDeliveryQueue
     void RequeueForRetry(PendingDelivery delivery);
 
     /// <summary>
-    ///     Gets all deliveries that are due for processing.
-    /// </summary>
-    /// <returns>
-    ///     Enumerable of due deliveries.
-    /// </returns>
-    IEnumerable<PendingDelivery> GetDueDeliveries();
-
-    /// <summary>
     ///     Gets all deliveries that are due for processing as an async stream.
     /// </summary>
     /// <param name="cancellationToken">

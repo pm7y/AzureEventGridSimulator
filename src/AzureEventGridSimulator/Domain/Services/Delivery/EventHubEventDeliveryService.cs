@@ -4,7 +4,6 @@ using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using AzureEventGridSimulator.Domain.Entities;
 using AzureEventGridSimulator.Infrastructure;
-using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
 namespace AzureEventGridSimulator.Domain.Services.Delivery;
@@ -68,9 +67,7 @@ public class EventHubEventDeliveryService(
                 );
             }
 
-            // Determine the delivery schema
-            var deliverySchema =
-                subscription.DeliverySchema ?? delivery.Topic.OutputSchema ?? delivery.InputSchema;
+            var deliverySchema = delivery.DeliverySchema;
             var formatter = formatterFactory.GetFormatter(deliverySchema);
 
             // Serialize the event
@@ -97,15 +94,17 @@ public class EventHubEventDeliveryService(
             }
 
             // Add standard Event Grid headers as properties
-            eventData.Properties["aeg-event-type"] = "Notification";
-            eventData.Properties["aeg-subscription-name"] = subscription.Name.ToUpperInvariant();
-            eventData.Properties["aeg-delivery-count"] = delivery.AttemptCount + 1;
-            eventData.Properties["aeg-output-event-id"] = delivery.Event.Id;
+            eventData.Properties[Constants.AegEventTypeHeader] = Constants.NotificationEventType;
+            eventData.Properties[Constants.AegSubscriptionNameHeader] =
+                subscription.Name.ToUpperInvariant();
+            eventData.Properties[Constants.AegDeliveryCountHeader] = delivery.AttemptCount + 1;
+            eventData.Properties[Constants.AegOutputEventIdHeader] = delivery.Event.Id;
 
             if (deliverySchema == EventSchema.EventGridSchema)
             {
-                eventData.Properties["aeg-data-version"] = delivery.Event.DataVersion ?? "";
-                eventData.Properties["aeg-metadata-version"] = "1";
+                eventData.Properties[Constants.AegDataVersionHeader] =
+                    delivery.Event.DataVersion ?? "";
+                eventData.Properties[Constants.AegMetadataVersionHeader] = "1";
             }
 
             // Send the event with partition key based on event ID
@@ -157,89 +156,6 @@ public class EventHubEventDeliveryService(
                 false,
                 DeliveryOutcome.EventHubError,
                 ErrorMessage: ex.Message
-            );
-        }
-    }
-
-    /// <summary>
-    ///     Sends an event to an Event Hub subscriber.
-    /// </summary>
-    public async Task SendAsync(
-        EventHubSubscriberSettings subscription,
-        SimulatorEvent evt,
-        TopicSettings topic,
-        EventSchema inputSchema
-    )
-    {
-        try
-        {
-            if (subscription.Disabled)
-            {
-                logger.LogWarning(
-                    "Event Hub subscription '{SubscriberName}' on topic '{TopicName}' is disabled",
-                    subscription.Name,
-                    topic.Name
-                );
-                return;
-            }
-
-            // Determine the delivery schema
-            var deliverySchema = subscription.DeliverySchema ?? topic.OutputSchema ?? inputSchema;
-            var formatter = formatterFactory.GetFormatter(deliverySchema);
-
-            // Serialize the event
-            var json = formatter.Serialize(evt);
-
-            // Get or create the producer
-            var producer = GetOrCreateProducer(subscription);
-
-            // Create the event data
-            var eventData = new EventData(Encoding.UTF8.GetBytes(json))
-            {
-                ContentType = formatter.ContentType,
-                MessageId = evt.Id,
-            };
-
-            // Add delivery properties
-            var properties = propertyResolver.ResolveProperties(subscription.Properties, evt);
-            foreach (var (name, value) in properties)
-            {
-                eventData.Properties[name] = value;
-            }
-
-            // Add standard Event Grid headers as properties
-            eventData.Properties["aeg-event-type"] = "Notification";
-            eventData.Properties["aeg-subscription-name"] = subscription.Name.ToUpperInvariant();
-            eventData.Properties["aeg-delivery-count"] = 1;
-            eventData.Properties["aeg-output-event-id"] = evt.Id;
-
-            if (deliverySchema == EventSchema.EventGridSchema)
-            {
-                eventData.Properties["aeg-data-version"] = evt.DataVersion ?? "";
-                eventData.Properties["aeg-metadata-version"] = "1";
-            }
-
-            // Send the event with partition key based on event ID
-            var sendOptions = new SendEventOptions { PartitionKey = evt.Id };
-
-            await producer.SendAsync([eventData], sendOptions);
-
-            logger.LogDebug(
-                "Event {EventId} sent to Event Hub '{EventHubName}' via subscription '{SubscriberName}' on topic '{TopicName}'",
-                evt.Id,
-                subscription.EventHubName,
-                subscription.Name,
-                topic.Name
-            );
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Failed to send event {EventId} to Event Hub '{EventHubName}' via subscription '{SubscriberName}'",
-                evt.Id,
-                subscription.EventHubName,
-                subscription.Name
             );
         }
     }
