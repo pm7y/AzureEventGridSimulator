@@ -2,6 +2,9 @@
 
 public static class Constants
 {
+    // The named HttpClient used for webhook delivery and subscription validation
+    public const string HttpClientName = "AzureEventGridSimulator";
+
     // Headers
     public const string AegSasTokenHeader = "aeg-sas-token";
     public const string AegSasKeyHeader = "aeg-sas-key";

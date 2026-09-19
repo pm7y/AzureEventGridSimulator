@@ -66,8 +66,7 @@ public class ValidateAllSubscriptionsCommandHandler(
                 Data = new SubscriptionValidationRequest
                 {
                     ValidationCode = subscription.ValidationCode,
-                    ValidationUrl =
-                        $"https://{validationIpAddress}:{topic.Port}/validate?id={subscription.ValidationCode}",
+                    ValidationUrl = validationUrl,
                 },
             };
 
@@ -76,31 +75,27 @@ public class ValidateAllSubscriptionsCommandHandler(
                 new JsonSerializerOptions { WriteIndented = true }
             );
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
-            // Use the named client so the optional DangerousAcceptAnyServerCertificateValidator applies
-            using var httpClient = httpClientFactory.CreateClient(nameof(AzureEventGridSimulator));
-            httpClient.DefaultRequestHeaders.Add(
-                Constants.AegEventTypeHeader,
-                Constants.ValidationEventType
-            );
-            httpClient.DefaultRequestHeaders.Add(
+            // Use the named client so its timeout and the optional
+            // DangerousAcceptAnyServerCertificateValidator apply
+            using var httpClient = httpClientFactory.CreateClient(Constants.HttpClientName);
+
+            // Per-request headers belong on the request message, not the client
+            using var request = new HttpRequestMessage(HttpMethod.Post, subscription.Endpoint)
+            {
+                Content = content,
+            };
+            request.Headers.Add(Constants.AegEventTypeHeader, Constants.ValidationEventType);
+            request.Headers.Add(
                 Constants.AegSubscriptionNameHeader,
                 subscription.Name.ToUpperInvariant()
             );
-            httpClient.DefaultRequestHeaders.Add(Constants.AegDataVersionHeader, evt.DataVersion);
-            httpClient.DefaultRequestHeaders.Add(
-                Constants.AegMetadataVersionHeader,
-                evt.MetadataVersion
-            );
-            httpClient.DefaultRequestHeaders.Add(Constants.AegDeliveryCountHeader, "0"); // TODO implement re-tries
-            httpClient.Timeout = TimeSpan.FromSeconds(60);
+            request.Headers.Add(Constants.AegDataVersionHeader, evt.DataVersion);
+            request.Headers.Add(Constants.AegMetadataVersionHeader, evt.MetadataVersion);
+            request.Headers.Add(Constants.AegDeliveryCountHeader, "0"); // TODO implement re-tries
 
             subscription.ValidationStatus = SubscriptionValidationStatus.ValidationEventSent;
 
-            using var response = await httpClient.PostAsync(
-                subscription.Endpoint,
-                content,
-                cancellationToken
-            );
+            using var response = await httpClient.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var text = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -121,13 +116,19 @@ public class ValidateAllSubscriptionsCommandHandler(
                 return;
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The simulator is shutting down, so this isn't a failed validation. An HttpClient
+            // timeout also throws TaskCanceledException, but without cancelling our token, so
+            // it still falls through to the catch below.
+            return;
+        }
         catch (Exception ex)
         {
             logger.LogError(
                 ex,
-                "Failed to validate subscriber '{SubscriberName}'. Note that subscriber must be started before the simulator. Or you can disable validation for this subscriber via settings: '{Error}'",
-                subscription.Name,
-                ex.Message
+                "Failed to validate subscriber '{SubscriberName}'. Note that subscriber must be started before the simulator. Or you can disable validation for this subscriber via settings.",
+                subscription.Name
             );
             logger.LogInformation(
                 "'{SubscriberName}' manual validation url: {ValidationUrl}",

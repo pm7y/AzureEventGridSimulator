@@ -247,4 +247,66 @@ public class EventHubEventDeliveryServiceTests
 
         subscription.EventHubName.ShouldBe("my-event-hub");
     }
+
+    [Theory]
+    [InlineData(
+        "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=Root;SharedAccessKey=KeyLastSecret=",
+        "KeyLastSecret"
+    )]
+    [InlineData(
+        "SharedAccessKey=KeyFirstSecret=;Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessKeyName=Root",
+        "KeyFirstSecret"
+    )]
+    [InlineData(
+        "Endpoint=sb://my-namespace.servicebus.windows.net/;SharedAccessSignature=SharedAccessSignature sr=sb%3a%2f%2fmy-namespace.servicebus.windows.net%2fmy-event-hub&sig=SasSecret%3d&se=4102444800&skn=Root",
+        "SasSecret"
+    )]
+    public async Task GivenConnectionStringWithASecret_WhenProducerIsCreated_ThenTheSecretIsNotLogged(
+        string connectionString,
+        string secret
+    )
+    {
+        var logger = Substitute.For<ILogger<EventHubEventDeliveryService>>();
+        await using var service = new EventHubEventDeliveryService(
+            logger,
+            _formatterFactory,
+            _propertyResolver
+        );
+        var subscription = new EventHubSubscriberSettings
+        {
+            Name = "TestSubscriber",
+            ConnectionString = connectionString,
+            EventHubName = "my-event-hub",
+        };
+
+        // The producer is created (and logged) before the send, which the cancelled token
+        // then stops before it reaches the network
+        using var cancelled = new CancellationTokenSource();
+        await cancelled.CancelAsync();
+        await service.DeliverAsync(CreatePendingDelivery(subscription), cancelled.Token);
+
+        logger
+            .Received(1)
+            .Log(
+                LogLevel.Information,
+                Arg.Any<EventId>(),
+                Arg.Is<object>(o =>
+                    o != null
+                    && string.Concat(o).Contains("Creating Event Hub producer client")
+                    && string.Concat(o).Contains("my-namespace.servicebus.windows.net")
+                    && string.Concat(o).Contains("***REDACTED***")
+                ),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
+            );
+        logger
+            .DidNotReceive()
+            .Log(
+                Arg.Any<LogLevel>(),
+                Arg.Any<EventId>(),
+                Arg.Is<object>(o => o != null && string.Concat(o).Contains(secret)),
+                Arg.Any<Exception?>(),
+                Arg.Any<Func<object, Exception?, string>>()
+            );
+    }
 }

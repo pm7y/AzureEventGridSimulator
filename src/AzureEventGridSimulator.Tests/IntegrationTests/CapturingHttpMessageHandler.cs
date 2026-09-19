@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using AzureEventGridSimulator.Domain;
 
 namespace AzureEventGridSimulator.Tests.IntegrationTests;
 
@@ -22,9 +23,10 @@ public sealed class CapturedRequest
 /// <summary>
 ///     Replaces the primary handler of the simulator's named HttpClient so
 ///     integration tests can observe outbound deliveries without any network
-///     access. Acts as a fake subscriber: requests to the echo-handshaker.test
-///     host get the subscription validation code echoed back (the synchronous
-///     handshake); every other request gets a plain 200.
+///     access. Acts as a fake subscriber: subscription validation events sent to
+///     the echo-handshaker.test host get the validation code echoed back (the
+///     synchronous handshake); every other request, including ordinary event
+///     deliveries to that host, gets a plain 200.
 /// </summary>
 public sealed class CapturingHttpMessageHandler : HttpMessageHandler
 {
@@ -69,6 +71,8 @@ public sealed class CapturingHttpMessageHandler : HttpMessageHandler
                 "echo-handshaker.test",
                 StringComparison.OrdinalIgnoreCase
             )
+            && headers.TryGetValue(Constants.AegEventTypeHeader, out var eventType)
+            && string.Equals(eventType, Constants.ValidationEventType, StringComparison.Ordinal)
         )
         {
             return CreateValidationEchoResponse(body);

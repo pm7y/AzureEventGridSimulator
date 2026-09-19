@@ -154,6 +154,18 @@ public class HttpEventDeliveryServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GivenHttpSubscriber_WhenDelivering_ThenUsesTheSimulatorsNamedHttpClient()
+    {
+        // The named client carries the timeout and the optional certificate bypass
+        var httpClientFactory = CreateMockHttpClientFactory();
+        var service = new HttpEventDeliveryService(httpClientFactory, _formatterFactory, _logger);
+
+        await service.DeliverAsync(CreatePendingDelivery(), CancellationToken.None);
+
+        httpClientFactory.Received(1).CreateClient(Constants.HttpClientName);
+    }
+
+    [Fact]
     public async Task GivenMultipleAttempts_WhenDelivering_ThenIncludesDeliveryCountHeader()
     {
         string? capturedDeliveryCount = null;

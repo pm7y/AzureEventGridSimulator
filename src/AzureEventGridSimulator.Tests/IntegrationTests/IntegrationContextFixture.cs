@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using AzureEventGridSimulator.Domain;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Xunit;
@@ -49,7 +50,7 @@ public class IntegrationContextFixture : WebApplicationFactory<Program>, IAsyncL
             // Route the simulator's outbound HTTP (deliveries, validation events)
             // through the capturing handler instead of the network.
             services
-                .AddHttpClient(nameof(AzureEventGridSimulator))
+                .AddHttpClient(Constants.HttpClientName)
                 .ConfigurePrimaryHttpMessageHandler(() => OutboundHttp);
 
             // The simulator binds SimulatorSettings from its own standalone

@@ -119,7 +119,11 @@ public class Program
 
             var mediator = app.ApplicationServices.GetRequiredService<IMediator>();
 
-            await mediator.Send(new ValidateAllSubscriptionsCommand());
+            // Pass the stopping token so Ctrl-C isn't held up by a subscriber that doesn't answer
+            await mediator.Send(
+                new ValidateAllSubscriptionsCommand(),
+                lifetime.ApplicationStopping
+            );
 
             // Log all configured subscribers
             foreach (var topic in simulatorSettings.Topics.Where(t => !t.Disabled))
@@ -313,7 +317,12 @@ public class Program
         builder.Services.AddSingleton<EventHistoryStore>();
         builder.Services.AddSingleton<IEventHistoryService, EventHistoryService>();
 
-        var httpClientBuilder = builder.Services.AddHttpClient(nameof(AzureEventGridSimulator));
+        // One named client for webhook delivery and subscription validation, so the timeout
+        // and the optional certificate bypass below apply to both
+        var httpClientBuilder = builder.Services.AddHttpClient(
+            Constants.HttpClientName,
+            client => client.Timeout = TimeSpan.FromSeconds(60)
+        );
         if (configuration.GetValue<bool>("dangerousAcceptAnyServerCertificateValidator"))
         {
             Log.Warning(
@@ -395,7 +404,13 @@ public class Program
         builder.Configuration.AddConfiguration(configuration);
         builder.WebHost.UseKestrel(options =>
         {
-            var debugView = ((IConfigurationRoot)configuration).GetDebugView().Normalize();
+            // Mask topic keys, connection strings and passwords (the configuration includes the
+            // AEGS_ and ASPNETCORE_ environment variables)
+            var debugView = ((IConfigurationRoot)configuration)
+                .GetDebugView(context =>
+                    SecretRedactor.IsSecretKey(context.Key) ? "***" : context.Value ?? string.Empty
+                )
+                .Normalize();
             // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
             Log.Verbose(debugView);
 

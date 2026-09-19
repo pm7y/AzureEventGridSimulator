@@ -3,6 +3,7 @@ using System.Text;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using AzureEventGridSimulator.Domain.Entities;
+using AzureEventGridSimulator.Infrastructure;
 using AzureEventGridSimulator.Infrastructure.Settings;
 using AzureEventGridSimulator.Infrastructure.Settings.Subscribers;
 
@@ -253,19 +254,9 @@ public class EventHubEventDeliveryService(
                 _ => new Lazy<EventHubProducerClient>(() =>
                 {
                     // Mask the connection string for logging (show endpoint but hide key)
-                    var connectionForLogging = subscription.EffectiveConnectionString;
-                    if (connectionForLogging != null)
-                    {
-                        var keyIndex = connectionForLogging.IndexOf(
-                            "SharedAccessKey=",
-                            StringComparison.OrdinalIgnoreCase
-                        );
-                        if (keyIndex > 0)
-                        {
-                            connectionForLogging =
-                                connectionForLogging[..(keyIndex + 16)] + "***REDACTED***";
-                        }
-                    }
+                    var connectionForLogging = SecretRedactor.RedactConnectionString(
+                        subscription.EffectiveConnectionString
+                    );
 
                     logger.LogInformation(
                         "Creating Event Hub producer client for subscription '{SubscriberName}' on hub '{EventHubName}'. Connection: {Connection}",

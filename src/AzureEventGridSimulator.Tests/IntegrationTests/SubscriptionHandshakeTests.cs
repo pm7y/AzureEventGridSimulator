@@ -55,8 +55,19 @@ public class SubscriptionHandshakeTests(IntegrationContextFixture factory)
         GetSubscriber("EchoHandshaker")
             .ValidationStatus.ShouldBe(SubscriptionValidationStatus.ValidationSuccessful);
 
+        // The same sweep sends ManualHandshaker's validation event too, but that
+        // subscriber answers with an empty body, so its handshake fails
+        GetSubscriber("ManualHandshaker")
+            .ValidationStatus.ShouldBe(SubscriptionValidationStatus.ValidationFailed);
+
+        // Other tests in the collection publish events that are delivered to the
+        // same host, so pick out the validation event by its payload
         var validationRequest = factory.OutboundHttp.Requests.FirstOrDefault(r =>
             r.Url.StartsWith("https://echo-handshaker.test", StringComparison.OrdinalIgnoreCase)
+            && r.Body.Contains(
+                "Microsoft.EventGrid.SubscriptionValidationEvent",
+                StringComparison.Ordinal
+            )
         );
 
         var captured = validationRequest.ShouldNotBeNullAnd("no validation event was sent");
@@ -64,6 +75,17 @@ public class SubscriptionHandshakeTests(IntegrationContextFixture factory)
         captured.Body.ShouldContain("Microsoft.EventGrid.SubscriptionValidationEvent");
         captured.Body.ShouldContain("validationCode");
         captured.Body.ShouldContain("validationUrl");
+    }
+
+    [Fact]
+    public void GivenTheSimulatorsNamedHttpClient_WhenCreated_ThenItTimesOutAfter60Seconds()
+    {
+        // Subscription validation and webhook delivery both send through this client
+        using var client = factory
+            .Services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient(Constants.HttpClientName);
+
+        client.Timeout.ShouldBe(TimeSpan.FromSeconds(60));
     }
 
     [Fact]
