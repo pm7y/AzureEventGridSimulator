@@ -53,6 +53,8 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 **/Properties/launchSettings.json
+# Track the AppHost profile: it holds the Aspire dashboard and resource service URLs
+!src/AzureEventGridSimulator.AppHost/Properties/launchSettings.json
 
 # StyleCop
 StyleCopReport.xml

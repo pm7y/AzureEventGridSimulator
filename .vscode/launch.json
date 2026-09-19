@@ -13,7 +13,7 @@
         },
         "justMyCode": true,
         "preLaunchTask": "build",
-        "program": "${workspaceFolder}/src/AzureEventGridSimulator/bin/Debug/net6.0/AzureEventGridSimulator.dll",
+        "program": "${workspaceFolder}/src/AzureEventGridSimulator/bin/Debug/net10.0/AzureEventGridSimulator.dll",
         "args": [],
         "cwd": "${workspaceFolder}/src/AzureEventGridSimulator",
         "stopAtEntry": false,

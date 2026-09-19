@@ -5,5 +5,8 @@
 *.sh text eol=lf
 Dockerfile text eol=lf
 
+# Git hooks are sh scripts; CRLF line endings break them
+.githooks/* text eol=lf
+
 # Binary files
 *.pfx binary
