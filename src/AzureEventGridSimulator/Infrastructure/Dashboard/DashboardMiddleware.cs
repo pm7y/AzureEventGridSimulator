@@ -41,24 +41,25 @@ public class DashboardMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var path = context.Request.Path.Value ?? string.Empty;
-
-        // Only handle /dashboard paths (but not /dashboard/api)
+        // Only handle the /dashboard segment, matched the same way as RequestRouter. Anything
+        // starting /dashboard/api (a plain prefix, as before) is left to the API endpoints.
         if (
-            !path.StartsWith("/dashboard", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWith("/dashboard/api", StringComparison.OrdinalIgnoreCase)
+            !context.Request.Path.StartsWithSegments(
+                "/dashboard",
+                StringComparison.OrdinalIgnoreCase,
+                out var remaining
+            )
+            || remaining.Value?.StartsWith("/api", StringComparison.OrdinalIgnoreCase) == true
         )
         {
             await _next(context);
             return;
         }
 
-        // Determine the resource to serve
-        var resourcePath =
-            path.Equals("/dashboard", StringComparison.OrdinalIgnoreCase)
-            || path.Equals("/dashboard/", StringComparison.OrdinalIgnoreCase)
-                ? "index.html"
-                : path["/dashboard/".Length..];
+        // Determine the resource to serve. remaining is "" for /dashboard and otherwise starts
+        // with '/'. Drop exactly one '/', so /dashboard//styles.css still isn't an asset.
+        var remainingPath = remaining.Value ?? string.Empty;
+        var resourcePath = remainingPath is "" or "/" ? "index.html" : remainingPath[1..];
 
         // Security: prevent directory traversal
         if (
