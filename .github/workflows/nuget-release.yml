@@ -31,16 +31,17 @@ jobs:
   publish-nuget:
     name: "AEGS: Publish to NuGet"
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       # Build the tagged commit, not whatever the dispatched ref (master) points at now.
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/tags/${{ env.VERSION_NUMBER }}
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
