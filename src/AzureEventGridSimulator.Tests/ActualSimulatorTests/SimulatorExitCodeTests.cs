@@ -113,12 +113,13 @@ public sealed class SimulatorExitCodeTests : IDisposable
         {
             await process.WaitForExitAsync(timeout.Token);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
             process.Kill(true);
             await process.WaitForExitAsync();
             throw new TimeoutException(
-                $"The simulator did not exit within {ExitTimeout.TotalSeconds}s.{Environment.NewLine}{await standardOutput}{await standardError}"
+                $"The simulator did not exit within {ExitTimeout.TotalSeconds}s.{Environment.NewLine}{await standardOutput}{await standardError}",
+                ex
             );
         }
 
