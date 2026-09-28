@@ -1,5 +1,5 @@
 <!-- Keep the Sdk version in lockstep with the Aspire.Hosting.* versions in Directory.Packages.props -->
-<Project Sdk="Aspire.AppHost.Sdk/13.5.3">
+<Project Sdk="Aspire.AppHost.Sdk/13.5.4">
     <PropertyGroup>
         <!-- TargetFramework, ImplicitUsings and Nullable are inherited from Directory.Build.props -->
         <OutputType>Exe</OutputType>
