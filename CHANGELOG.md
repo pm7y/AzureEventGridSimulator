@@ -1,5 +1,14 @@
 # Changelog
 
+## [6.0.1](https://github.com/pm7y/AzureEventGridSimulator/compare/6.0.0...6.0.1) (2026-10-06)
+
+
+### Dependencies
+
+* **actions:** bump the actions group with 3 updates ([#325](https://github.com/pm7y/AzureEventGridSimulator/issues/325)) ([66e60d3](https://github.com/pm7y/AzureEventGridSimulator/commit/66e60d36a66c248877398ea693b52b88b403c838))
+* **nuget:** Bump Aspire.Hosting.Azure.EventHubs and 12 others ([#326](https://github.com/pm7y/AzureEventGridSimulator/issues/326)) ([ed087f7](https://github.com/pm7y/AzureEventGridSimulator/commit/ed087f73589a579582ee77fe2628ce8e9da13c2f))
+* **nuget:** Bump the minor-and-patch group with 6 updates ([#328](https://github.com/pm7y/AzureEventGridSimulator/issues/328)) ([584141e](https://github.com/pm7y/AzureEventGridSimulator/commit/584141e5d2a4fd8dadba72c02ac6cc82ae1dade2))
+
 ## [6.0.0](https://github.com/pm7y/AzureEventGridSimulator/compare/5.1.0...6.0.0) (2026-09-19)
 
 
