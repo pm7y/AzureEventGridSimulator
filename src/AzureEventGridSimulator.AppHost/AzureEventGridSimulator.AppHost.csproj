@@ -19,6 +19,7 @@
         <PackageReference Include="Aspire.Hosting.SqlServer" />
         <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
         <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" />
     </ItemGroup>
 
     <!-- Set ASPIRE_ENABLED=true to include ServiceDefaults in the build -->
