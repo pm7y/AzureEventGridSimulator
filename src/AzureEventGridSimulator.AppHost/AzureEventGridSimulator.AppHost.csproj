@@ -17,6 +17,7 @@
         <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" />
         <PackageReference Include="Aspire.Hosting.Azure.EventHubs" />
         <PackageReference Include="Aspire.Hosting.SqlServer" />
+        <PackageReference Include="MessagePack" />
         <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
         <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
         <PackageReference Include="System.Security.Cryptography.Pkcs" />
