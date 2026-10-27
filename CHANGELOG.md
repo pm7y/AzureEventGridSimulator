@@ -1,5 +1,22 @@
 # Changelog
 
+## [6.0.1](https://github.com/pm7y/AzureEventGridSimulator/compare/6.0.0...6.0.1) (2026-10-27)
+
+
+### Dependencies
+
+* **actions:** bump the actions group with 3 updates ([#325](https://github.com/pm7y/AzureEventGridSimulator/issues/325)) ([66e60d3](https://github.com/pm7y/AzureEventGridSimulator/commit/66e60d36a66c248877398ea693b52b88b403c838))
+* **actions:** bump the actions group with 3 updates ([#333](https://github.com/pm7y/AzureEventGridSimulator/issues/333)) ([1aae6f9](https://github.com/pm7y/AzureEventGridSimulator/commit/1aae6f9a34152f3834779abdafdd3af194747c2f))
+* **actions:** bump the actions group with 4 updates ([#330](https://github.com/pm7y/AzureEventGridSimulator/issues/330)) ([5eac9cb](https://github.com/pm7y/AzureEventGridSimulator/commit/5eac9cb4908ebc1c017c308d3f5bdfa075044ff7))
+* **actions:** bump the actions group with 4 updates ([#334](https://github.com/pm7y/AzureEventGridSimulator/issues/334)) ([478a6cf](https://github.com/pm7y/AzureEventGridSimulator/commit/478a6cfe4f479f585b4e2c378781896559aecbf0))
+* **nuget:** Bump Aspire.Hosting.Azure.EventHubs and 11 others ([#337](https://github.com/pm7y/AzureEventGridSimulator/issues/337)) ([f7fab98](https://github.com/pm7y/AzureEventGridSimulator/commit/f7fab98d88620ce439ef6b9cc086d32b69ee8daa))
+* **nuget:** Bump Aspire.Hosting.Azure.EventHubs and 12 others ([#326](https://github.com/pm7y/AzureEventGridSimulator/issues/326)) ([ed087f7](https://github.com/pm7y/AzureEventGridSimulator/commit/ed087f73589a579582ee77fe2628ce8e9da13c2f))
+* **nuget:** Bump MessagePack from 2.5.303 to 3.1.12 ([#336](https://github.com/pm7y/AzureEventGridSimulator/issues/336)) ([d50b878](https://github.com/pm7y/AzureEventGridSimulator/commit/d50b87892e2819507ac6d134b86bc390df7dec21))
+* **nuget:** Bump the minor-and-patch group with 13 updates ([#335](https://github.com/pm7y/AzureEventGridSimulator/issues/335)) ([8b8effe](https://github.com/pm7y/AzureEventGridSimulator/commit/8b8effeb5427277a05364e97292b4fc687c7e48a))
+* **nuget:** Bump the minor-and-patch group with 6 updates ([#328](https://github.com/pm7y/AzureEventGridSimulator/issues/328)) ([584141e](https://github.com/pm7y/AzureEventGridSimulator/commit/584141e5d2a4fd8dadba72c02ac6cc82ae1dade2))
+* **nuget:** Bump the minor-and-patch group with 7 updates ([#329](https://github.com/pm7y/AzureEventGridSimulator/issues/329)) ([fb60606](https://github.com/pm7y/AzureEventGridSimulator/commit/fb60606aefb98bddfd4e24e9857db9a8f45ab258))
+* **nuget:** Bump the minor-and-patch group with 9 updates ([#332](https://github.com/pm7y/AzureEventGridSimulator/issues/332)) ([6368a93](https://github.com/pm7y/AzureEventGridSimulator/commit/6368a93199c866ab3d2fee30df36537de8782c21))
+
 ## [6.0.0](https://github.com/pm7y/AzureEventGridSimulator/compare/5.1.0...6.0.0) (2026-09-19)
 
 
