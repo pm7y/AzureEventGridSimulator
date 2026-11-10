@@ -32,6 +32,10 @@ jobs:
     name: "AEGS: Publish to NuGet"
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      # Lets the job request the OIDC token that nuget.org exchanges for a temporary API key
+      id-token: write
 
     steps:
       # Build the tagged commit, not whatever the dispatched ref (master) points at now.
@@ -63,9 +67,20 @@ jobs:
           /p:Version=${{ env.VERSION_NUMBER }}
           --output ./nupkg
 
+      # Trusted Publishing: nuget.org checks this run against the policy registered for this
+      # workflow file and returns an API key that lasts an hour, so it's requested just before
+      # the push. Renaming this file breaks the policy until it's updated on nuget.org.
+      - name: NuGet login
+        id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Push to NuGet
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: >-
           dotnet nuget push ./nupkg/*.nupkg
-          --api-key ${{ secrets.NUGET_API_KEY }}
+          --api-key "$NUGET_API_KEY"
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
