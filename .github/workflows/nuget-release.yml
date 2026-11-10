@@ -11,8 +11,17 @@ on:
         required: true
         type: string
 
+  # These two only run the Trusted Publishing check below. Nothing is published.
+  push:
+    branches: [master]
+
+  schedule:
+    - cron: "17 3 * * 1"
+
+# The event name keeps a check on master from sharing a queue with a manually dispatched publish,
+# where a newer queued run would cancel an older one that's still waiting.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -30,6 +39,7 @@ env:
 jobs:
   publish-nuget:
     name: "AEGS: Publish to NuGet"
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -84,3 +94,20 @@ jobs:
           --api-key "$NUGET_API_KEY"
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
+
+  # Releases can be months apart, so this proves the Trusted Publishing login still works in
+  # between: on every push to master and once a week. It requests a key and discards it. Nothing
+  # is built or pushed, so it can't show that the policy's scope allows a push.
+  verify-trusted-publishing:
+    name: "AEGS: Verify NuGet Trusted Publishing"
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      id-token: write
+
+    steps:
+      - name: NuGet login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USER }}
