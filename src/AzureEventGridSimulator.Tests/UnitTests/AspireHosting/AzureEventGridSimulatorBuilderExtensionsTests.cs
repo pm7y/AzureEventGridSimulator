@@ -131,15 +131,16 @@ public class AzureEventGridSimulatorBuilderExtensionsTests
     }
 
     [Fact]
-    public void GivenATopic_WhenAdded_ThenItHasAStateForWaitForToWatch()
+    public void GivenATopic_WhenAdded_ThenItShowsAsANotStartedEventGridTopic()
     {
         var builder = CreateBuilder();
         var simulator = builder.AddAzureEventGridSimulator("eventgrid");
 
         var topic = simulator.AddTopic("orders", 60101);
 
-        // A resource with no state never counts as running, so WaitFor(topic) would hang
+        // Aspire copies the simulator's state onto the topic once the simulator starts
         var snapshot = topic.Resource.Annotations.OfType<ResourceSnapshotAnnotation>().Single();
+        snapshot.InitialSnapshot.ResourceType.ShouldBe("EventGridTopic");
         snapshot.InitialSnapshot.State!.Text.ShouldBe(KnownResourceStates.NotStarted);
     }
 

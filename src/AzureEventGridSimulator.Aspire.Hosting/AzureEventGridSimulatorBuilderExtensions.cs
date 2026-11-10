@@ -1,7 +1,6 @@
 using System.Reflection;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Lifecycle;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Aspire.Hosting;
 
@@ -115,19 +114,8 @@ public static class AzureEventGridSimulatorBuilderExtensions
             builder.WithHttpHealthCheck(HealthPath, endpointName: name);
         }
 
-        // Nothing runs a topic itself, so it has to report the simulator's readiness as its own.
-        // Without a Running state, WaitFor(topic) would never complete.
-        builder.ApplicationBuilder.Eventing.Subscribe<ResourceReadyEvent>(
-            simulator,
-            (@event, _) =>
-                @event
-                    .Services.GetRequiredService<ResourceNotificationService>()
-                    .PublishUpdateAsync(
-                        topic,
-                        snapshot => snapshot with { State = KnownResourceStates.Running }
-                    )
-        );
-
+        // Aspire reports the simulator's state and health as the topic's own, because the topic
+        // is its child. That's what lets WaitFor(topic) wait for the simulator.
         return builder
             .ApplicationBuilder.AddResource(topic)
             .WithInitialState(
