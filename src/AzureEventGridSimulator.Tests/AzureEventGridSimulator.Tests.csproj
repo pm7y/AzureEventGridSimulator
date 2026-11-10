@@ -22,6 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\AzureEventGridSimulator.Aspire.Hosting\AzureEventGridSimulator.Aspire.Hosting.csproj" />
         <ProjectReference Include="..\AzureEventGridSimulator\AzureEventGridSimulator.csproj" />
     </ItemGroup>
 </Project>

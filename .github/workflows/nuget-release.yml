@@ -25,6 +25,7 @@ env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
   DOTNET_NOLOGO: "true"
   PROJECT_PATH: ./src/AzureEventGridSimulator/AzureEventGridSimulator.csproj
+  HOSTING_PROJECT_PATH: ./src/AzureEventGridSimulator.Aspire.Hosting/AzureEventGridSimulator.Aspire.Hosting.csproj
   CONFIGURATION: Release
 
 jobs:
@@ -50,7 +51,9 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
-        run: dotnet restore ${{ env.PROJECT_PATH }}
+        run: |
+          dotnet restore ${{ env.PROJECT_PATH }}
+          dotnet restore ${{ env.HOSTING_PROJECT_PATH }}
 
       - name: Build
         run: >-
@@ -59,9 +62,24 @@ jobs:
           --no-restore
           /p:Version=${{ env.VERSION_NUMBER }}
 
+      - name: Build Aspire hosting package
+        run: >-
+          dotnet build ${{ env.HOSTING_PROJECT_PATH }}
+          --configuration ${{ env.CONFIGURATION }}
+          --no-restore
+          /p:Version=${{ env.VERSION_NUMBER }}
+
       - name: Pack
         run: >-
           dotnet pack ${{ env.PROJECT_PATH }}
+          --configuration ${{ env.CONFIGURATION }}
+          --no-build
+          /p:Version=${{ env.VERSION_NUMBER }}
+          --output ./nupkg
+
+      - name: Pack Aspire hosting package
+        run: >-
+          dotnet pack ${{ env.HOSTING_PROJECT_PATH }}
           --configuration ${{ env.CONFIGURATION }}
           --no-build
           /p:Version=${{ env.VERSION_NUMBER }}

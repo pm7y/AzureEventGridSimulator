@@ -65,6 +65,21 @@ Aspire Dashboard provides distributed traces, logs, and metrics.
 
 See the [Aspire](https://github.com/pm7y/AzureEventGridSimulator/wiki/Aspire) wiki page for details.
 
+### Using the simulator from your own AppHost
+
+The `AzureEventGridSimulator.Aspire.Hosting` package adds the simulator to any Aspire AppHost, as a container:
+
+```csharp
+var orders = builder
+    .AddAzureEventGridSimulator("eventgrid")
+    .AddTopic("orders", port: 60101, key: key)
+    .WithWebhookSubscriber("api-webhook", api, path: "/api/events");
+
+builder.AddProject<Projects.Publisher>("publisher").WithReference(orders).WaitFor(orders);
+```
+
+See the [package README](src/AzureEventGridSimulator.Aspire.Hosting/README.md) for subscribers and the settings a referencing application receives.
+
 ## Quick Start
 
 Create an `appsettings.json` file:
