@@ -1,5 +1,31 @@
 # Changelog
 
+## [6.1.0](https://github.com/pm7y/AzureEventGridSimulator/compare/6.0.0...6.1.0) (2026-11-10)
+
+
+### Features
+
+* add Aspire hosting integration ([#342](https://github.com/pm7y/AzureEventGridSimulator/issues/342)) ([d2624df](https://github.com/pm7y/AzureEventGridSimulator/commit/d2624dfd12335ecd54d33871bc2eeef2e554efee)), closes [#312](https://github.com/pm7y/AzureEventGridSimulator/issues/312)
+
+
+### Dependencies
+
+* **actions:** bump danielpalme/ReportGenerator-GitHub-Action ([#339](https://github.com/pm7y/AzureEventGridSimulator/issues/339)) ([e07f6d0](https://github.com/pm7y/AzureEventGridSimulator/commit/e07f6d09dd6001754934222420258214fb2ebf4f))
+* **actions:** bump the actions group with 3 updates ([#325](https://github.com/pm7y/AzureEventGridSimulator/issues/325)) ([66e60d3](https://github.com/pm7y/AzureEventGridSimulator/commit/66e60d36a66c248877398ea693b52b88b403c838))
+* **actions:** bump the actions group with 3 updates ([#333](https://github.com/pm7y/AzureEventGridSimulator/issues/333)) ([1aae6f9](https://github.com/pm7y/AzureEventGridSimulator/commit/1aae6f9a34152f3834779abdafdd3af194747c2f))
+* **actions:** bump the actions group with 4 updates ([#330](https://github.com/pm7y/AzureEventGridSimulator/issues/330)) ([5eac9cb](https://github.com/pm7y/AzureEventGridSimulator/commit/5eac9cb4908ebc1c017c308d3f5bdfa075044ff7))
+* **actions:** bump the actions group with 4 updates ([#334](https://github.com/pm7y/AzureEventGridSimulator/issues/334)) ([478a6cf](https://github.com/pm7y/AzureEventGridSimulator/commit/478a6cfe4f479f585b4e2c378781896559aecbf0))
+* **actions:** bump the actions group with 6 updates ([#340](https://github.com/pm7y/AzureEventGridSimulator/issues/340)) ([b68549f](https://github.com/pm7y/AzureEventGridSimulator/commit/b68549f42c9d0f4791fd14fa11043c28d247855c))
+* **nuget:** Bump Aspire.Hosting.Azure.EventHubs and 11 others ([#337](https://github.com/pm7y/AzureEventGridSimulator/issues/337)) ([f7fab98](https://github.com/pm7y/AzureEventGridSimulator/commit/f7fab98d88620ce439ef6b9cc086d32b69ee8daa))
+* **nuget:** Bump Aspire.Hosting.Azure.EventHubs and 12 others ([#326](https://github.com/pm7y/AzureEventGridSimulator/issues/326)) ([ed087f7](https://github.com/pm7y/AzureEventGridSimulator/commit/ed087f73589a579582ee77fe2628ce8e9da13c2f))
+* **nuget:** Bump MessagePack from 2.5.303 to 3.1.12 ([#336](https://github.com/pm7y/AzureEventGridSimulator/issues/336)) ([d50b878](https://github.com/pm7y/AzureEventGridSimulator/commit/d50b87892e2819507ac6d134b86bc390df7dec21))
+* **nuget:** Bump the minor-and-patch group with 1 update ([#338](https://github.com/pm7y/AzureEventGridSimulator/issues/338)) ([2ac4898](https://github.com/pm7y/AzureEventGridSimulator/commit/2ac489870e92df56fb59e92ff50a0bed4b486555))
+* **nuget:** Bump the minor-and-patch group with 13 updates ([#335](https://github.com/pm7y/AzureEventGridSimulator/issues/335)) ([8b8effe](https://github.com/pm7y/AzureEventGridSimulator/commit/8b8effeb5427277a05364e97292b4fc687c7e48a))
+* **nuget:** Bump the minor-and-patch group with 3 updates ([#341](https://github.com/pm7y/AzureEventGridSimulator/issues/341)) ([7ac43d6](https://github.com/pm7y/AzureEventGridSimulator/commit/7ac43d62fa11c33d5d009d9e3b58a31809dbe96d))
+* **nuget:** Bump the minor-and-patch group with 6 updates ([#328](https://github.com/pm7y/AzureEventGridSimulator/issues/328)) ([584141e](https://github.com/pm7y/AzureEventGridSimulator/commit/584141e5d2a4fd8dadba72c02ac6cc82ae1dade2))
+* **nuget:** Bump the minor-and-patch group with 7 updates ([#329](https://github.com/pm7y/AzureEventGridSimulator/issues/329)) ([fb60606](https://github.com/pm7y/AzureEventGridSimulator/commit/fb60606aefb98bddfd4e24e9857db9a8f45ab258))
+* **nuget:** Bump the minor-and-patch group with 9 updates ([#332](https://github.com/pm7y/AzureEventGridSimulator/issues/332)) ([6368a93](https://github.com/pm7y/AzureEventGridSimulator/commit/6368a93199c866ab3d2fee30df36537de8782c21))
+
 ## [6.0.0](https://github.com/pm7y/AzureEventGridSimulator/compare/5.1.0...6.0.0) (2026-09-19)
 
 
