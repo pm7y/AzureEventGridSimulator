@@ -19,6 +19,7 @@
             Bump the Aspire.AppHost.Sdk version in AzureEventGridSimulator.AppHost.csproj
             in lockstep with these; Dependabot has not been updating it.
         -->
+        <PackageVersion Include="Aspire.Hosting" Version="13.6.4" />
         <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.6.4" />
         <PackageVersion Include="Aspire.Hosting.Azure.ServiceBus" Version="13.6.4" />
         <PackageVersion Include="Aspire.Hosting.Azure.EventHubs" Version="13.6.4" />

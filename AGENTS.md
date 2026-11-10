@@ -65,6 +65,7 @@ public class MyTests
 - **Message limits** - defaults: 1,049,600 bytes (~1 MB) per event, 1,536,000 bytes (~1.5 MB) overall body
 - **Schemas** - EventGrid (default) or CloudEvents v1.0, auto-detected or configured
 - **Build flavours** - the AppHost builds the simulator with `ASPIRE_ENABLED=true` into separate `bin/aspire/` and `obj/aspire/` paths; the regular build uses `bin/`/`obj/`. Don't mix artifacts between the two.
+- **Aspire hosting package** - `AzureEventGridSimulator.Aspire.Hosting` ships to NuGet alongside the tool and runs the Docker image tagged with its own version, so a release needs both the NuGet and Docker workflows to succeed. It gives the container the developer certificate through Aspire's experimental certificate APIs (`ASPIRECERTIFICATES001`), so an Aspire bump can break it. It writes the simulator's settings as `AEGS_` variables, so a new subscriber setting needs adding there too.
 - **Vendored DOMPurify** - the dashboard serves its own copy, `Dashboard/purify-<version>.min.js` (embedded, with `-text` in `.gitattributes` so its bytes never change). Dependabot can't see it, so bump it by hand: replace the file and update the `<script src>` in `Dashboard/index.html`.
 
 ## Commits & Releases

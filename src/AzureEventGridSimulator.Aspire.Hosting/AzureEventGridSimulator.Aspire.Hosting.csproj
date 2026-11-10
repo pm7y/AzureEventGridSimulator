@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <!-- The lowest framework Aspire.Hosting ships for, so AppHosts on any supported .NET can use this -->
+        <TargetFramework>net8.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!-- Giving a container the developer certificate is still experimental in Aspire, so an Aspire bump may need a change here -->
+        <NoWarn>$(NoWarn);ASPIRECERTIFICATES001</NoWarn>
+
+        <PackageId>AzureEventGridSimulator.Aspire.Hosting</PackageId>
+        <Authors>Paul McIlreavy</Authors>
+        <Description>Aspire hosting integration for the Azure Event Grid Simulator. Runs the simulator as a container from an AppHost, with topics and subscribers declared in code.</Description>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/pm7y/AzureEventGridSimulator</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/pm7y/AzureEventGridSimulator</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>aspire;hosting;azure;eventgrid;event-grid;simulator;emulator</PackageTags>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="/" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="AzureEventGridSimulator.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.Hosting" />
+    </ItemGroup>
+</Project>
