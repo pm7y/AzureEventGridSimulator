@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.1.1](https://github.com/pm7y/AzureEventGridSimulator/compare/6.1.0...6.1.1) (2026-11-11)
+
+
+### Dependencies
+
+* **nuget:** bump Aspire to 13.6.5 ([#346](https://github.com/pm7y/AzureEventGridSimulator/issues/346)) ([08d2d65](https://github.com/pm7y/AzureEventGridSimulator/commit/08d2d654e4eaace444984427b532d68fb9cfb535))
+
 ## [6.1.0](https://github.com/pm7y/AzureEventGridSimulator/compare/6.0.0...6.1.0) (2026-11-10)
 
 
