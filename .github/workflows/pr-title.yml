@@ -1,0 +1,39 @@
+name: "AEGS: PR Title"
+
+# Release Please only releases commits that follow Conventional Commits, and a squash merge
+# takes its commit title from the pull request. The local commit-msg hook never sees commits
+# made on GitHub, such as Dependabot's, so the title is checked here as well.
+on:
+  pull_request:
+    branches: [master, main]
+    # "edited" reruns the check when the title is fixed
+    types: [opened, edited, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  pr-title:
+    name: "AEGS: PR Title"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check the title follows Conventional Commits
+        env:
+          # A title is untrusted input, so it's passed through the environment
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # Keep this pattern the same as the one in .githooks/commit-msg
+          pattern='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|deps)(\(.+\))?!?: .+'
+
+          if printf '%s\n' "$PR_TITLE" | grep -qE "$pattern"; then
+            echo "The title follows Conventional Commits."
+            exit 0
+          fi
+
+          echo "::error title=The pull request title is not a Conventional Commit::Rename it to '<type>: <description>' or '<type>(<scope>): <description>', for example 'deps(nuget): bump Aspire to 13.6.5'. Release Please ignores any other title, so the change won't trigger a release on its own or appear in the changelog."
+          exit 1
