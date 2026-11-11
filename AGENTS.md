@@ -75,7 +75,7 @@ Uses [Conventional Commits](https://www.conventionalcommits.org/) with Release P
 - `feat:` = minor bump, `fix:` = patch bump, `feat!:`/`fix!:` = major bump
 - `docs`, `style`, `refactor`, `test`, `chore` = no version bump
 
-The local `commit-msg` hook never sees commits made on GitHub, such as Dependabot's or a squash merge, so the `pr-title.yml` workflow checks pull request titles as well. Release Please ignores a merged commit whose title isn't conventional, so it would never be released.
+The local `commit-msg` hook never sees commits made on GitHub, such as Dependabot's or a squash merge, so the `pr-title.yml` workflow checks pull request titles as well. Release Please ignores a merged commit whose title isn't conventional, so it won't trigger a release on its own or appear in the changelog.
 
 Merging Release Please PRs triggers GitHub releases, NuGet publish, and Docker builds.
 

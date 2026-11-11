@@ -35,5 +35,5 @@ jobs:
             exit 0
           fi
 
-          echo "::error title=The pull request title is not a Conventional Commit::Rename it to '<type>: <description>' or '<type>(<scope>): <description>', for example 'deps(nuget): bump Aspire to 13.6.5'. Release Please ignores any other title, so the change would never be released."
+          echo "::error title=The pull request title is not a Conventional Commit::Rename it to '<type>: <description>' or '<type>(<scope>): <description>', for example 'deps(nuget): bump Aspire to 13.6.5'. Release Please ignores any other title, so the change won't trigger a release on its own or appear in the changelog."
           exit 1
