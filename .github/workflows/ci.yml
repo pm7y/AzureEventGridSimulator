@@ -96,7 +96,7 @@ jobs:
       # Informational only: no threshold, nothing gates on the numbers.
       - name: Generate coverage report
         if: matrix.os == 'ubuntu-latest'
-        uses: danielpalme/ReportGenerator-GitHub-Action@861674232075b2c6bd1405a04c4bb9b150653e81 # v5.5.12
+        uses: danielpalme/ReportGenerator-GitHub-Action@5f3701a41d14548c9b8e575a5c235230e515cbc0 # v5.6.0
         with:
           reports: "**/TestResults/**/coverage.cobertura.xml"
           targetdir: coveragereport
