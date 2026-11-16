@@ -65,8 +65,7 @@ internal static partial class SchemaErrorMessages
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             // Pick the first property in Azure's validation order
-            var firstProperty =
-                fieldPriority.FirstOrDefault(f => missingProps.Contains(f))
+            var firstProperty = fieldPriority.FirstOrDefault(f => missingProps.Contains(f))
                 ?? missingProps.FirstOrDefault();
 
             if (!string.IsNullOrEmpty(firstProperty))

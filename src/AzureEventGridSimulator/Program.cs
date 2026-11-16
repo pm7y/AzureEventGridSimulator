@@ -184,8 +184,7 @@ public class Program
             // Note: Validation ensures DashboardPort is set or at least one topic is enabled
             if (simulatorSettings.DashboardEnabled)
             {
-                var dashboardPort =
-                    simulatorSettings.DashboardPort
+                var dashboardPort = simulatorSettings.DashboardPort
                     ?? simulatorSettings.Topics.First(t => !t.Disabled).Port;
 
                 Log.Information(
@@ -351,9 +350,8 @@ public class Program
 
         // One named client for webhook delivery and subscription validation, so the timeout
         // and the optional certificate bypass below apply to both
-        var httpClientBuilder = builder.Services.AddHttpClient(
-            Constants.HttpClientName,
-            client => client.Timeout = TimeSpan.FromSeconds(60)
+        var httpClientBuilder = builder.Services.AddHttpClient(Constants.HttpClientName, client =>
+            client.Timeout = TimeSpan.FromSeconds(60)
         );
         if (configuration.GetValue<bool>("dangerousAcceptAnyServerCertificateValidator"))
         {

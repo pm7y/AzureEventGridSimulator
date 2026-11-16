@@ -71,28 +71,22 @@ public static class EventFilterEvaluator
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringContains:
                 retVal = Try(() =>
-                    AnyStringMatch(
-                        value,
-                        filterValues,
-                        static (s, v) => s.Contains(v, StringComparison.OrdinalIgnoreCase)
+                    AnyStringMatch(value, filterValues, static (s, v) =>
+                        s.Contains(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringBeginsWith:
                 retVal = Try(() =>
-                    AnyStringMatch(
-                        value,
-                        filterValues,
-                        static (s, v) => s.StartsWith(v, StringComparison.OrdinalIgnoreCase)
+                    AnyStringMatch(value, filterValues, static (s, v) =>
+                        s.StartsWith(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringEndsWith:
                 retVal = Try(() =>
-                    AnyStringMatch(
-                        value,
-                        filterValues,
-                        static (s, v) => s.EndsWith(v, StringComparison.OrdinalIgnoreCase)
+                    AnyStringMatch(value, filterValues, static (s, v) =>
+                        s.EndsWith(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
                 break;
@@ -119,28 +113,22 @@ public static class EventFilterEvaluator
             // Negate inside Try, never !Try(...): if evaluation throws, the filter must not match
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotContains:
                 retVal = Try(() =>
-                    !AnyStringMatch(
-                        value,
-                        filterValues,
-                        static (s, v) => s.Contains(v, StringComparison.OrdinalIgnoreCase)
+                    !AnyStringMatch(value, filterValues, static (s, v) =>
+                        s.Contains(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotBeginsWith:
                 retVal = Try(() =>
-                    !AnyStringMatch(
-                        value,
-                        filterValues,
-                        static (s, v) => s.StartsWith(v, StringComparison.OrdinalIgnoreCase)
+                    !AnyStringMatch(value, filterValues, static (s, v) =>
+                        s.StartsWith(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
                 break;
             case AdvancedFilterSetting.AdvancedFilterOperatorType.StringNotEndsWith:
                 retVal = Try(() =>
-                    !AnyStringMatch(
-                        value,
-                        filterValues,
-                        static (s, v) => s.EndsWith(v, StringComparison.OrdinalIgnoreCase)
+                    !AnyStringMatch(value, filterValues, static (s, v) =>
+                        s.EndsWith(v, StringComparison.OrdinalIgnoreCase)
                     )
                 );
                 break;

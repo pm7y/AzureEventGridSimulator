@@ -58,9 +58,8 @@ public class InvariantCultureFilterTests
 
         // With culture-sensitive parsing under de-DE the filter value "3.5" would
         // become 35 and the comparison (3.5 >= 35) would fail.
-        RunWithCulture(
-            cultureName,
-            () => filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue(cultureName)
+        RunWithCulture(cultureName, () =>
+            filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue(cultureName)
         );
     }
 
@@ -88,9 +87,8 @@ public class InvariantCultureFilterTests
         };
 
         // Culture-sensitive parsing would read the range as [15, 45] and exclude 3.5
-        RunWithCulture(
-            cultureName,
-            () => filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue(cultureName)
+        RunWithCulture(cultureName, () =>
+            filterConfig.AcceptsEvent(simulatorEvent).ShouldBeTrue(cultureName)
         );
     }
 
