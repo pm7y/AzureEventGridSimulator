@@ -1,5 +1,17 @@
 # Changelog
 
+## [6.1.1](https://github.com/pm7y/AzureEventGridSimulator/compare/6.1.0...6.1.1) (2026-11-16)
+
+
+### Dependencies
+
+* **actions:** bump danielpalme/ReportGenerator-GitHub-Action from 5.5.12 to 5.6.0 in the actions group ([#349](https://github.com/pm7y/AzureEventGridSimulator/issues/349)) ([48a65bd](https://github.com/pm7y/AzureEventGridSimulator/commit/48a65bdc4f89b558ee804b6367efd58ac59a59b2))
+* **nuget:** bump Aspire to 13.6.5 ([#346](https://github.com/pm7y/AzureEventGridSimulator/issues/346)) ([08d2d65](https://github.com/pm7y/AzureEventGridSimulator/commit/08d2d654e4eaace444984427b532d68fb9cfb535))
+* **nuget:** Bump coverlet.collector and 9 others ([#353](https://github.com/pm7y/AzureEventGridSimulator/issues/353)) ([1914c3f](https://github.com/pm7y/AzureEventGridSimulator/commit/1914c3f3bed38c2a0548061e4e24f4df00aa3b34))
+* **nuget:** Bump Microsoft.Extensions.ServiceDiscovery from 10.11.0 to 11.0.0 ([#351](https://github.com/pm7y/AzureEventGridSimulator/issues/351)) ([3ac46a4](https://github.com/pm7y/AzureEventGridSimulator/commit/3ac46a4dec43a0245a013f5174d03c56789e18c5))
+* **nuget:** Bump System.Security.Cryptography.Pkcs from 10.0.14 to 11.0.0 ([#352](https://github.com/pm7y/AzureEventGridSimulator/issues/352)) ([13670d2](https://github.com/pm7y/AzureEventGridSimulator/commit/13670d2a55fe325ab36342e4cb52b3e37ec18265))
+* **nuget:** Bump the minor-and-patch group with 11 updates ([#350](https://github.com/pm7y/AzureEventGridSimulator/issues/350)) ([27efb59](https://github.com/pm7y/AzureEventGridSimulator/commit/27efb5964ee0892b4a6b18d7c3bbffc76b35e6e8))
+
 ## [6.1.0](https://github.com/pm7y/AzureEventGridSimulator/compare/6.0.0...6.1.0) (2026-11-10)
 
 
