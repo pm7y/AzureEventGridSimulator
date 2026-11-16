@@ -27,5 +27,7 @@
 
     <ItemGroup>
         <PackageReference Include="Aspire.Hosting" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     </ItemGroup>
 </Project>
