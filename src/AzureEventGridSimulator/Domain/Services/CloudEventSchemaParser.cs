@@ -62,8 +62,7 @@ public class CloudEventSchemaParser(EventSchemaDetector schemaDetector) : IEvent
             Type = GetRequiredHeaderValue(headers, Constants.CeTypeHeader),
             Time = GetHeaderValue(headers, Constants.CeTimeHeader),
             Subject = GetHeaderValue(headers, Constants.CeSubjectHeader),
-            DataContentType =
-                GetHeaderValue(headers, Constants.CeDataContentTypeHeader)
+            DataContentType = GetHeaderValue(headers, Constants.CeDataContentTypeHeader)
                 ?? context.Request.ContentType,
             DataSchema = GetHeaderValue(headers, Constants.CeDataSchemaHeader),
             ExtensionAttributes = GetExtensionAttributesFromHeaders(headers),

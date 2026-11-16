@@ -98,8 +98,10 @@ public class ServiceBusEventDeliveryService(
 
             if (deliverySchema == EventSchema.EventGridSchema)
             {
-                message.ApplicationProperties[Constants.AegDataVersionHeader] =
-                    delivery.Event.DataVersion ?? "";
+                message.ApplicationProperties[Constants.AegDataVersionHeader] = delivery
+                    .Event
+                    .DataVersion
+                    ?? "";
                 message.ApplicationProperties[Constants.AegMetadataVersionHeader] = "1";
             }
 
@@ -161,38 +163,31 @@ public class ServiceBusEventDeliveryService(
         var key = $"{subscription.EffectiveConnectionString}:{subscription.DestinationName}";
 
         return _senders
-            .GetOrAdd(
-                key,
-                _ => new Lazy<ServiceBusSender>(() =>
-                {
-                    var client = GetOrCreateClient(subscription);
-                    return client.CreateSender(subscription.DestinationName);
-                })
-            )
+            .GetOrAdd(key, _ => new Lazy<ServiceBusSender>(() =>
+            {
+                var client = GetOrCreateClient(subscription);
+                return client.CreateSender(subscription.DestinationName);
+            }))
             .Value;
     }
 
     private ServiceBusClient GetOrCreateClient(ServiceBusSubscriberSettings subscription)
     {
-        var connectionString =
-            subscription.EffectiveConnectionString
+        var connectionString = subscription.EffectiveConnectionString
             ?? throw new InvalidOperationException(
                 $"No connection string available for subscription '{subscription.Name}'"
             );
 
         return _clients
-            .GetOrAdd(
-                connectionString,
-                cs => new Lazy<ServiceBusClient>(() =>
-                {
-                    logger.LogDebug(
-                        "Creating Service Bus client for subscription '{SubscriberName}'",
-                        subscription.Name
-                    );
+            .GetOrAdd(connectionString, cs => new Lazy<ServiceBusClient>(() =>
+            {
+                logger.LogDebug(
+                    "Creating Service Bus client for subscription '{SubscriberName}'",
+                    subscription.Name
+                );
 
-                    return new ServiceBusClient(cs);
-                })
-            )
+                return new ServiceBusClient(cs);
+            }))
             .Value;
     }
 }

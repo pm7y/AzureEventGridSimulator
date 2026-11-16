@@ -102,8 +102,8 @@ public class EventHubEventDeliveryService(
 
             if (deliverySchema == EventSchema.EventGridSchema)
             {
-                eventData.Properties[Constants.AegDataVersionHeader] =
-                    delivery.Event.DataVersion ?? "";
+                eventData.Properties[Constants.AegDataVersionHeader] = delivery.Event.DataVersion
+                    ?? "";
                 eventData.Properties[Constants.AegMetadataVersionHeader] = "1";
             }
 
@@ -165,35 +165,30 @@ public class EventHubEventDeliveryService(
         var key = $"{subscription.EffectiveConnectionString}:{subscription.EventHubName}";
 
         return _producers
-            .GetOrAdd(
-                key,
-                _ => new Lazy<EventHubProducerClient>(() =>
-                {
-                    // Mask the connection string for logging (show endpoint but hide key)
-                    var connectionForLogging = SecretRedactor.RedactConnectionString(
-                        subscription.EffectiveConnectionString
-                    );
+            .GetOrAdd(key, _ => new Lazy<EventHubProducerClient>(() =>
+            {
+                // Mask the connection string for logging (show endpoint but hide key)
+                var connectionForLogging = SecretRedactor.RedactConnectionString(
+                    subscription.EffectiveConnectionString
+                );
 
-                    logger.LogInformation(
-                        "Creating Event Hub producer client for subscription '{SubscriberName}' on hub '{EventHubName}'. Connection: {Connection}",
-                        subscription.Name,
-                        subscription.EventHubName,
-                        connectionForLogging
-                    );
+                logger.LogInformation(
+                    "Creating Event Hub producer client for subscription '{SubscriberName}' on hub '{EventHubName}'. Connection: {Connection}",
+                    subscription.Name,
+                    subscription.EventHubName,
+                    connectionForLogging
+                );
 
-                    var effectiveConnectionString =
-                        subscription.EffectiveConnectionString
-                        ?? throw new InvalidOperationException(
-                            $"No connection string for Event Hub subscription '{subscription.Name}'"
-                        );
-                    var eventHubName =
-                        subscription.EventHubName
-                        ?? throw new InvalidOperationException(
-                            $"No Event Hub name for subscription '{subscription.Name}'"
-                        );
-                    return new EventHubProducerClient(effectiveConnectionString, eventHubName);
-                })
-            )
+                var effectiveConnectionString = subscription.EffectiveConnectionString
+                    ?? throw new InvalidOperationException(
+                        $"No connection string for Event Hub subscription '{subscription.Name}'"
+                    );
+                var eventHubName = subscription.EventHubName
+                    ?? throw new InvalidOperationException(
+                        $"No Event Hub name for subscription '{subscription.Name}'"
+                    );
+                return new EventHubProducerClient(effectiveConnectionString, eventHubName);
+            }))
             .Value;
     }
 }

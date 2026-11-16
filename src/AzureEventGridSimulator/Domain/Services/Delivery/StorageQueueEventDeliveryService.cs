@@ -121,10 +121,9 @@ public class StorageQueueEventDeliveryService(
     {
         var key = $"{subscription.EffectiveConnectionString}:{subscription.QueueName}";
 
-        var lazyClient = _clients.GetOrAdd(
-            key,
-            _ => new Lazy<Task<QueueClient>>(() => CreateClientAsync(subscription))
-        );
+        var lazyClient = _clients.GetOrAdd(key, _ => new Lazy<Task<QueueClient>>(() =>
+            CreateClientAsync(subscription)
+        ));
 
         try
         {

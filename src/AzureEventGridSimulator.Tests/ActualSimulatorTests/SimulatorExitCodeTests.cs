@@ -101,8 +101,7 @@ public sealed class SimulatorExitCodeTests : IDisposable
         // so bind a dynamic loopback port instead.
         startInfo.Environment["ASPNETCORE_URLS"] = "http://127.0.0.1:0";
 
-        using var process =
-            Process.Start(startInfo)
+        using var process = Process.Start(startInfo)
             ?? throw new InvalidOperationException("Failed to start the simulator process.");
 
         var standardOutput = process.StandardOutput.ReadToEndAsync();

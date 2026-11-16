@@ -45,38 +45,34 @@ public class SubscribersSettingsConverter : JsonConverter<SubscribersSettings>
 
             if (root.TryGetProperty("http", out var httpElement))
             {
-                result.Http =
-                    JsonSerializer.Deserialize<HttpSubscriberSettings[]>(
-                        httpElement.GetRawText(),
-                        options
-                    ) ?? [];
+                result.Http = JsonSerializer.Deserialize<HttpSubscriberSettings[]>(
+                    httpElement.GetRawText(),
+                    options
+                ) ?? [];
             }
 
             if (root.TryGetProperty("serviceBus", out var serviceBusElement))
             {
-                result.ServiceBus =
-                    JsonSerializer.Deserialize<ServiceBusSubscriberSettings[]>(
-                        serviceBusElement.GetRawText(),
-                        options
-                    ) ?? [];
+                result.ServiceBus = JsonSerializer.Deserialize<ServiceBusSubscriberSettings[]>(
+                    serviceBusElement.GetRawText(),
+                    options
+                ) ?? [];
             }
 
             if (root.TryGetProperty("storageQueue", out var storageQueueElement))
             {
-                result.StorageQueue =
-                    JsonSerializer.Deserialize<StorageQueueSubscriberSettings[]>(
-                        storageQueueElement.GetRawText(),
-                        options
-                    ) ?? [];
+                result.StorageQueue = JsonSerializer.Deserialize<StorageQueueSubscriberSettings[]>(
+                    storageQueueElement.GetRawText(),
+                    options
+                ) ?? [];
             }
 
             if (root.TryGetProperty("eventHub", out var eventHubElement))
             {
-                result.EventHub =
-                    JsonSerializer.Deserialize<EventHubSubscriberSettings[]>(
-                        eventHubElement.GetRawText(),
-                        options
-                    ) ?? [];
+                result.EventHub = JsonSerializer.Deserialize<EventHubSubscriberSettings[]>(
+                    eventHubElement.GetRawText(),
+                    options
+                ) ?? [];
             }
 
             return result;

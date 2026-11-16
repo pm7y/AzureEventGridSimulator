@@ -26,14 +26,12 @@ public class Mediator(IServiceProvider serviceProvider) : IMediator
             typeof(TResponse)
         );
         var handler = serviceProvider.GetRequiredService(handlerType);
-        var handleMethod =
-            handlerType.GetMethod("Handle")
+        var handleMethod = handlerType.GetMethod("Handle")
             ?? throw new InvalidOperationException(
                 $"Handle method not found on handler type {handlerType.Name}"
             );
 
-        var result =
-            handleMethod.Invoke(handler, [request, cancellationToken])
+        var result = handleMethod.Invoke(handler, [request, cancellationToken])
             ?? throw new InvalidOperationException($"Handler for {requestType.Name} returned null");
 
         return (Task<TResponse>)result;
