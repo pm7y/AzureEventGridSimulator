@@ -69,9 +69,7 @@ public class AdvancedFilterEventAcceptanceTests
     public void GivenFilterTestCaseContainers_WhenEnumerated_ThenRowCountsAreAsExpected()
     {
         // Catches rows lost or duplicated when the containers are edited (78 + 94 = 172)
-        new PositiveFilterTestCaseContainer()
-            .Count()
-            .ShouldBe(78);
+        new PositiveFilterTestCaseContainer().Count().ShouldBe(78);
         new NegativeFilterTestCaseContainer().Count().ShouldBe(94);
     }
 

@@ -262,8 +262,7 @@ public static class TestHelpers
         var delivery = new PendingDelivery
         {
             Event = evt ?? CreateSimulatorEventFromEventGrid(),
-            Subscriber =
-                subscriber
+            Subscriber = subscriber
                 ?? new HttpSubscriberSettings
                 {
                     Name = "TestSubscriber",

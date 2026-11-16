@@ -79,8 +79,8 @@ public static class HttpContextExtensions
         public string GenerateReportSuffix()
         {
             var requestId = context.GetRequestId();
-            var timeProvider =
-                context.RequestServices?.GetService<TimeProvider>() ?? TimeProvider.System;
+            var timeProvider = context.RequestServices?.GetService<TimeProvider>()
+                ?? TimeProvider.System;
             var timestamp = timeProvider
                 .GetUtcNow()
                 .ToString("M/d/yyyy h:mm:ss tt", System.Globalization.CultureInfo.InvariantCulture);

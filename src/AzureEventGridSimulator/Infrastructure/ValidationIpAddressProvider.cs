@@ -28,12 +28,11 @@ public class ValidationIpAddressProvider
             .ToList();
 
         // Prefer an interface with an IPv4 gateway (the one that reaches the rest of the network)
-        var address =
-            FirstCandidateAddress(
-                interfaces.Where(o =>
-                    o.GatewayAddresses.Any(g => g.AddressFamily == AddressFamily.InterNetwork)
-                )
+        var address = FirstCandidateAddress(
+            interfaces.Where(o =>
+                o.GatewayAddresses.Any(g => g.AddressFamily == AddressFamily.InterNetwork)
             )
+        )
             ?? FirstCandidateAddress(interfaces)
             ?? IPAddress.Loopback;
 
